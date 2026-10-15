@@ -5,6 +5,24 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-16 device JSON authoring/workshop: F13/F24 CAN devices both use strict
+app_image.json + app_irq_handlers.json; generators own metadata INC/identity/
+vectors, with no manual INC fallback. Reject stale linked metadata/IRQ tables.
+App clean rebuilds retain original BIN size/CRC/hash; Boot/host/Tool unchanged.
+Ten-step teaching, byte/output/error tables, three flows and four PDFs updated;
+both local web guides synchronized. Seven workshop +25 documentation tests,
+F13 generator-only, F24 seven artifact/IRQ tests and safe C/PC models PASS.
+Nine canonical web checks,198 local refs and24 safe-clean audit PASS. Full F13
+Boot map/clnk audit unavailable; no hardware/COM writes or site publication.
+
+2026-10-15 F24 CAN device: three independent Transfer/Boot/App projects use
+4MHz target board,Classical500K,targetF24B/F2V1. Boot stays8KiB,App2000,
+minimum512-byte spare and protected final1KiB. Mandatory map/RFD RAM/vector/
+metadata/CRC packaging, seven artifact/IRQ stack tests and production C RAM
+fault / production PC parser tests PASS. Host/Tool/F13 binaries unchanged.
+Design MD and both web guides synchronized. No device writes or publication;
+CAN register-level model and all F24 device hardware acceptance remain open.
+
 2026-10-15 cross-layer CAN teaching: canonical CAN_UPDATE_WALKTHROUGH MD/PDF,
 15 tables/9 Mermaid diagrams/15 source links map UI/BIN validation, F24 generic
 UART-CAN transport and F13 RX/metadata/RAM/Flash/END. Worked wire/address example,

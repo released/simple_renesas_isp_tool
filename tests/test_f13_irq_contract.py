@@ -171,9 +171,9 @@ class Contract(unittest.TestCase):
             project = re.sub(r'<RelativePath>(.*?)</RelativePath>',
                 lambda m: '<RelativePath>'+str(APP/m[1])+'</RelativePath>', project)
             (dest/'sample.mtpj').write_text(project,encoding='utf-8')
-            (dest/'ftable.inc').write_text(re.sub(
-                r'(APP_IMAGE_VERSION\s+\.EQU\s+)(?:0x[0-9A-Fa-f]+|[0-9]+)',
-                r'\g<1>0x00020000', (APP/'ftable.inc').read_text()), encoding='utf-8')
+            identity=json.loads((APP/'app_image.json').read_text())
+            identity['version']='0x00020000'
+            (dest/'app_image.json').write_text(json.dumps(identity),encoding='utf-8')
             for invalid in ({'0x7E':'bad'},{'0x35':'bad'},{'0x64':'bad'},{'0x34':'not_a_registered_isr'}):
                 (dest/'app_irq_handlers.json').write_text(json.dumps(invalid))
                 result = subprocess.run(['powershell','-NoProfile','-File',str(script),'-Mode','App','-AppProject',temp],capture_output=True)

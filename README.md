@@ -7,7 +7,19 @@ solution/project, executable and settings remain `FirmwareUpgradeTool` /
 Native Windows tool and MCU-bridge firmware for CAN/CAN FD transfer testing,
 target firmware updates and staged I2C master communication.
 
+The separate [F24 MCU CAN device design](docs/F24_CAN_DEVICE_DESIGN_zh-TW.md)
+uses an8KiB Boot and App at0x2000, independent of the F24 host's Misc/UART
+self-update firmware. Its Transfer/Boot/App builds and safe software models
+are checked; F24 device hardware acceptance is still required.
+
 ## Downloads and operating guides
+
+For editing device image metadata or adding App interrupts, use the
+[F13/F24 CAN device workshop](docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md):
+editable versus generated fields, before/after examples, App-only commands
+and BIN/vector verification. Both devices use app_image.json and
+app_irq_handlers.json; generators own INC/header/vector outputs. F24 host
+firmware is outside that tutorial.
 
 Start with the [public download and workflow index](https://released.github.io/slide_isp_tool_for_RL78/#downloads):
 Tool EXE, F24 Host Boot/App, F13 Device Boot/App, six operating/flowchart entries

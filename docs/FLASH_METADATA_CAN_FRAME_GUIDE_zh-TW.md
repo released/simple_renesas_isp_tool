@@ -448,7 +448,7 @@ F24 host 範例BIN SHA-256：`B263AAC4300F94B5D385444FD4022D31CE3F8C2AE6E7FA5A0C
 
 | 用途 | 原始碼／位置 | 要如何閱讀或修改 |
 | --- | --- | --- |
-| F13 metadata常數 | [ftable.inc](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/ftable.inc) | FLASH_TABLE、IMAGE_MANIFEST_*、APP_IMAGE_VERSION／BUILD、APP_REGION_SIZE、CAN IDs／rate masks |
+| F13 metadata生成常數 | [ftable.inc](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/ftable.inc) | 此檔現為生成檔；編輯App的app_image.json，由App-mode generator結合Boot contract產生常數；不可手改.inc |
 | F13 byte排列／policy | [ftable_RL78_F13.asm](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/ftable_RL78_F13.asm) | .appmeta從APP_MANIFEST_TABLE開始，.DB4依LE放4 bytes；尾128 bytes填FF |
 | F13實際size／CRC封裝 | [generate_update_image.ps1](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/generate_update_image.ps1) | 依map決定結尾、patch image_size、計算尾CRC；ExpectedTargetId等驗證亦須與新專案一致 |
 | F13 Boot驗證契約 | [can_boot_config.h](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_config.h)／[can_boot_metadata.inc](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_metadata.inc) | g_manifest_contract／MetadataValid核對欄位；不能只改App產生端 |
@@ -601,7 +601,7 @@ F24 host自身的Misc更新則是[Host Link UART／BUR1](https://github.com/rele
 1. 先決定角色與更新介面。F24 MCU CAN device不能直接拿F24 host的HOST_APP／BUR1／Misc當CAN更新流程。
 2. 固定MCU／Flash erase-write單位、Boot／App分區、完整向量／startup／handoff RAM及IRQ ABI；
    新MCU先對齊其clock、CAN driver與FSL／RFD，不能移植另一系列register或Flash library。
-3. 建立自己的producer及validator。F13參考ftable.inc＋組語＋post-build與Boot config；
+3. 建立自己的producer及validator。F13參考app_image.json→生成ftable.inc＋組語＋post-build與Boot config；
    F24 host參考layout header＋app_image.json＋packager與Bu_ParseManifest。依上方欄位／原始碼表逐項修改。
 4. 同一MCU／固定契約只改App功能、版本或一般ISR時，使用該App自己的JSON／mapping／版本常數及封裝流程，
    不重產共用Boot。改分區、role、更新協定、ABI或metadata格式則必須重新驗證並安裝matching Boot/App。

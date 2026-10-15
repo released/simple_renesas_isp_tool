@@ -11,6 +11,7 @@ Tool／F24／F13下載與六項操作／流程圖入口集中於
 
 | 需求 | 文件 |
 | --- | --- |
+| F13／F24 device Metadata 編輯／產生、App 新增 IRQ／獨立產表與驗證 | [修改前後實作教學](DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md)／[PDF](DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.pdf) |
 | 從 Tool 操作理解 BIN 驗證、F24 橋接與 F13 decode／Flash | [逐層教學與對照表](CAN_UPDATE_WALKTHROUGH_zh-TW.md)／[PDF](CAN_UPDATE_WALKTHROUGH_zh-TW.pdf) |
 | Flash mapping、metadata每byte address／範例程式、CAN逐byte格式 | [完整對照指南](FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md)／[PDF](FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.pdf) |
 | 第一版上傳檔案、配套版本、實測與SHA-256 | [2026-10-15交付說明](FIRST_DELIVERY_20261015_zh-TW.md) |

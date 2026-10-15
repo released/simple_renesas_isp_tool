@@ -31,7 +31,7 @@ Keep features, protocol contracts, status/steps and screenshot gates consistent 
 Public web navigation/intros use evergreen function descriptions, not product
 build numbers, delivery milestones, snapshot metrics or draft/publication labels.
 Qualify current CAN example roles as F24 (MCU CAN host) and F13 (MCU CAN device).
-Future F24 (MCU CAN device) is a separate Boot/App project and image contract;
+F24 (MCU CAN device) is a separate 4MHz,8KiB Boot/App project and image contract;
 do not infer role from MCU model or relabel legacy UART/I2C samples as CAN hosts.
 Host App self-update remains Misc/UART, not CAN device programming.
 Keep exact versions/hashes/measurements in release records; retain technical
@@ -134,6 +134,12 @@ Keep8KiB ROM and512-byte spare guards; G16 new boot/app development is deferred.
 
 ### Target firmware
 
+- F24 CAN device source/build/model baseline is documented in
+  docs/F24_CAN_DEVICE_DESIGN_zh-TW.md. It is not the 20MHz F24 host.
+  Keep device Boot8KiB/App2000,512-byte spare,F2V1,targetF24B,last1KiB protected,
+  complete App-local IRQ tables and RAM-only RFD. Hardware NOT RUN. Synchronize
+  its independent web block with scripts/sync_f24_device_design.ps1.
+
 - F13 image format6 uses a fixed complete normal-vector interface. Boot
   pre-build owns all04..7C stubs independently of app mappings; no competing
   -VECTN/C vect ownership. App handlers, including INTTRJ0, are normal RETI
@@ -226,6 +232,16 @@ file, log prefix, and documentation aligned with that identifier. Do not read
 or write the copied legacy INI filename.
 
 ## Public documentation
+
+F13/F24 CAN device editing tutorial is canonical in
+docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md (DEVICE_WORKSHOP block).
+sync_device_workshop.ps1 synchronizes both web guides; keep source JSON/inc,
+generated outputs, App-only commands and verification boundaries distinct.
+Do not use host BUR1/Misc or host IRQ scripts for F24 CAN device examples.
+Both devices now use the same five-field app_image.json plus app_irq_handlers.json.
+F13 ftable.inc and F24 device app_metadata.generated.inc are generated, not
+manual inputs. No INC fallback; preserve strict JSON/contract and stale linked
+metadata checks before packaging. App-mode generation must not rebuild Boot.
 
 Keep current user/developer guides and authoritative specifications in docs;
 put historical verification reports, implementation plans and diagnostic

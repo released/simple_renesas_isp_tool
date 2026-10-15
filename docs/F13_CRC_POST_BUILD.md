@@ -38,6 +38,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "generate_update_image.p
 In CS+, configure it at **CC-RL Build Tool > Common Options > Build Events >
 Commands executed after build**.
 
+App pre-build reads `app_image.json` and the matching Boot contract to generate
+`ftable.inc`, `app_identity.h` and the App IRQ table from `app_irq_handlers.json`.
+Users edit these two JSON inputs, not generated INC/header/table files. The
+post-build first runs CheckOnly and rejects compiled metadata that is stale
+relative to the JSON version/build; changing JSON requires a clean App rebuild.
+It also checks every linked App BR slot against this App's IRQ JSON and map,
+including mapped ISR RETI bytes. Fresh generated text cannot legitimize stale
+linked vectors. This App-only check does not require a Boot map.
 The script reads layout/identity constants emitted by `ftable.inc`; it does not
 own a duplicate `0x2000` app start, `0x1E000` capacity, or target-ID rule. It:
 

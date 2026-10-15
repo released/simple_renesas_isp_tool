@@ -1,5 +1,37 @@
 # Host Link v2 Self-Check
 
+## Device Metadata / vector editing workshop
+
+- [x] Dedicated F13/F24 CAN device chapter with before/after metadata and IRQ
+  examples; host self-update excluded. Editable/generated/contract fields,
+  source/MTPJ/JSON/RETI, reserved slots and App-only versus Boot changes explicit.
+- [x] Both devices use the same five-field image JSON plus IRQ JSON; generated
+  INC/header/table files are not editable inputs and have no old INC fallback.
+- [x] Temporary App generation; twelve malformed/contract JSON cases per device,
+  tampered generated INC, stale compiled metadata and F13 stale IRQ table rejected.
+- [x] App-only clean rebuilds PASS; original BIN sizes/CRC/SHA-256 unchanged.
+  Tool EXE/host images/F13 Boot and combined HEX hashes unchanged.
+- [x] Seven workshop +25 existing documentation/renderer tests, one F13
+  generator-only test and seven F24 artifact/IRQ tests plus safe C/PC models PASS.
+- [x] Four PDFs rendered/visually inspected; no orphan blank table page. Nine
+  canonical checks,198 local web references and workspace24 clean audit PASS.
+- [ ] Full F13 Boot map/clnk audit NOT RUN: these existing artifacts are missing;
+  App-only post-build guards pass without them. No Boot rebuild in this change.
+- [ ] New IRQ execution / flashing / CAN-RFD hardware acceptance NOT RUN.
+
+## F24 MCU CAN device (source/build/model)
+
+- [x] Three clean builds; Boot8KiB/512spare guard, App2000/metadata256/CRC,
+  protected final1KiB and complete vectors. No host/F13/PC runtime change.
+- [x] Actual HEX/RETI/IRQ stack and App-local mapping tests7 PASS; RAM RFD
+  address/copy/map-reference guards; production C RAM helper fault tests PASS.
+- [x] Existing PC production parser accepts real F24 BIN, rejects wrong CRC;
+  image policy rejects device I2C and Misc host routes.
+- [x] Design MD and both web blocks synchronized, no fabricated F24 public
+  source/download URLs or hardware evidence. Existing delivery is unchanged.
+- [ ] CAN register model, electrical ACK, RFD erase/write, ENTER/reset/App
+  execution, disconnect/cancel/timeout/power faults on F24 hardware NOT RUN.
+
 ## Cross-layer CAN teaching guide (2026-10-15)
 
 - [x] New canonical tutorial:15 tables/9 Mermaid diagrams map Tool UI and

@@ -3,10 +3,12 @@ import importlib.util
 from pathlib import Path
 import re
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch, MagicMock
 
 from pypdf import PdfReader
-from reportlab.platypus import Paragraph
+from reportlab.platypus import Paragraph, Spacer, NextPageTemplate
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("guide_pdf", ROOT / "scripts/generate_f13_guide_pdf.py")
@@ -15,6 +17,21 @@ SPEC.loader.exec_module(GUIDE)
 
 
 class GuideMarkdownTests(unittest.TestCase):
+    def test_portrait_break_does_not_leave_table_spacer_on_blank_page(self):
+        GUIDE.register_fonts()
+        source = '# Test\n\n| A | B |\n| --- | --- |\n| x | y |\n\n#### Diagram\n\n![diagram](fake.png)\n'
+        with tempfile.TemporaryDirectory(prefix='guide_page_break_') as folder:
+            path = Path(folder)/'source.md'
+            path.write_text(source,encoding='utf-8')
+            picture = MagicMock()
+            picture.__enter__.return_value.width = 100
+            picture.__enter__.return_value.height = 200
+            with patch.object(GUIDE.PillowImage,'open',return_value=picture), \
+                    patch.object(GUIDE,'diagram_image',return_value=(Spacer(1,10),0.5)):
+                story = GUIDE.build_story(path,GUIDE.make_styles())
+        portrait = next(i for i,value in enumerate(story) if isinstance(value,NextPageTemplate))
+        self.assertNotIsInstance(story[portrait-1],Spacer)
+
     def test_fourth_level_heading_and_hidden_sync_comments(self):
         GUIDE.register_fonts()
         styles = GUIDE.make_styles()

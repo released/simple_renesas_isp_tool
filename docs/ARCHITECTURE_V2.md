@@ -2,6 +2,12 @@
 
 Status: implementation baseline
 
+F24 MCU CAN device now has separate Transfer/Boot/App source/build/model
+projects. It is not the F24 host backend:4MHz X1,8KiB Boot/App2000,targetF24B,
+F2V1 IRQ ABI,RFD and protected final1KiB. It reuses CAN protocol5/image6 with
+dynamic identity/layout; host forwarding and PC runtime are unchanged.
+See F24_CAN_DEVICE_DESIGN_zh-TW.md. Actual F24 device hardware NOT RUN.
+
 0082 adds generic CAN_BURST_WAIT_RX22/feature bit12, compact standard Classical
 records and nonblocking F24 progression. F13 v5 owns64-byte indexed data blocks,
 CRC/replay/Flash semantics; the bridge does not. Same image format6,256-byte
@@ -46,6 +52,13 @@ full-width TAB surface. Existing controls/data remain frame-owned once; there
 is no reparenting, duplicate BIN storage or change to bus/update contracts.
 
 ## 1. Objective
+
+CAN device App authoring (F13 and F24 device, not F24 host) uses the same
+five-field app_image.json plus App-local app_irq_handlers.json. Pre-build owns
+generated metadata INC/identity/vectors; post-build rejects stale linked
+metadata and verifies compiled IRQ destinations before packaging. Contract
+fields remain Boot-owned; changing user JSON cannot change device geometry,
+transport or IRQ ABI. See DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md.
 
 F24 app IRQ generation is now app-local: app_irq_handlers.json selects the
 registered normal ISR symbols, app_image.json owns app version/build. The

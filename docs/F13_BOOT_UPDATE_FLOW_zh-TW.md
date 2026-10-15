@@ -179,7 +179,7 @@ BIN，也不能略過 address／identity 驗證。
   描述同一份實體 flash geometry，且 image range 不可越界或溢位。
 - app manifest 與 boot INFO 必須同步 target、MCU family/part、protocol/format、
   CAN mode/bitrate、ID format、request/response ID；任何一欄不符都禁止 START。
-- 修改 boot size 或 app start 時，需同步修改 boot config、app `ftable.inc`、
+- 修改 boot size 或 app start 時，需同步修改 boot config、重產 app `ftable.inc`、
   linker section、CS+ divided-output range，重建 boot/app 後再執行 artifact checker。
 - F24 只轉送 Host Link 與 CAN frame，不得在 host firmware 內硬編碼 F13 flash
   address 或 image size。
@@ -333,7 +333,7 @@ App pre-build 會驗證 pragma 並產生 app_irq_table.inc；不要手改產物�
 不同 app 專案可共用 boot 的前提：相同 R5F10BMG、8KiB boot／app2000、
 完整跳轉表、FF700 recovery 與 FF710..FF71F no-init／stack 保留、startup 與
 4MHz／PLL32／CAN16 交接、format6 的256-byte metadata／CRC32，以及
-CAN protocol5／ID700與701。App 版本／build 由自己的 ftable.inc 產生，
+CAN protocol5／ID700與701。App 版本／build 由自己的 app_image.json 產生 ftable.inc／identity，
 不綁定 boot 的編譯版本；若仍需 Tool 從 app ENTER 回 boot，該 app 必須實作
 INFO／ENTER 與相同 reset request，不能只加入向量表。
 

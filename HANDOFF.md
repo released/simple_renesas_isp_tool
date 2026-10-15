@@ -1,6 +1,54 @@
 # Development Handoff
 
-Last updated: 2026-10-15
+Last updated: 2026-10-16
+
+## Device Metadata / App vector workshop
+
+Both CAN devices now use exactly two editable JSON inputs: app_image.json
+(version/build/target/role/transport) and app_irq_handlers.json. F13 App-mode
+generator emits ftable.inc/identity/table; F24 device pre-build emits metadata
+INC/ASM wrapper/identity/vectors, with metadata linked at2100. No manual INC
+fallback. Strict schema/identity and stale linked metadata guards added; F13
+also checks compiled BR targets/ISR RETI directly from its App map. Defaults,
+wire/image contracts and Boot images are unchanged. F24 host is out of scope.
+
+Clean App rebuilds PASS: F13 Error0/Warning3,19244B/CRC CA0DF55C; F24 device
+Error0/Warning5,3876B/CRC B4BEBC0C. Packaged BIN SHA-256 unchanged from the
+pre-migration backup. Tool EXE, host Boot/App, F13 Boot and combined HEX hashes
+also unchanged. F13 complete Boot artifact audit NOT RUN because the existing
+checkout lacks Boot map/clnk; Boot was intentionally not rebuilt. Its App-only
+post-build checks and independent generator-only regression PASS.
+
+Canonical DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md provides before/after JSON,
+C90 INTP1 ISR, source registration, ten first-use steps, App-only commands,
+generated outputs, address/byte and Tool validation/error tables, three flows.
+Dedicated block synchronized to both web guides; porting/flow/byte references
+and four PDFs updated. PDF renderer removes a table spacer before portrait
+diagrams to avoid an empty page; focused regression added. Latest PDFs visually
+reviewed (workshop12/porting10/F13 flow30/byte reference28 pages).
+
+Verification:7 workshop tests +25 documentation/renderer regressions; one F13
+generator-only test; F24 seven artifact/IRQ-stack tests plus production C RAM
+fault and Tool parser/policy models PASS. Nine canonical web checks,198 local
+references and workspace24 safe-clean scripts PASS. No COM, device writes,
+new IRQ hardware activation, Git commit/push or website publication.
+
+## F24 MCU CAN device source/build baseline
+
+Separate sibling projects RL78_F24_CAN_Transfer / RL78_F24_Boot_loader_CAN /
+RL78_F24_Boot_loader_CAN_app use own SC + Boot common backend and contained RFD.
+Not the Tool's20MHz host:4MHz target,Classical500K,CAN3,targetF24B,F2V1.
+Boot8KiB/App2000,ROM end1DFD/spare514; Boot UART log disabled, all validation
+and fixed complete IRQ forwarding retained. App BIN3876B/CRC B4BEBC0C.
+Three clean builds pass mandatory map/image audit; RFD14 RAM functions/19
+map-visible references,7 artifact/stack tests and C RAM fault + unmodified PC
+parser/policy tests PASS. Compiler license warnings and App device-file
+option warnings are recorded in the Boot project handoff, not hidden.
+No COM/flashing or full CAN/RFD hardware validation, no Git/site publication.
+Device design MD/web block is independent of frozen release-guide examples;
+existing F13/host guides/PDFs keep their measured contracts. This is not a new
+verified hardware release. See docs/F24_CAN_DEVICE_DESIGN_zh-TW.md and run
+scripts/sync_f24_device_design.ps1 -WebRoot <web checkout> -CheckOnly.
 
 ## Authority
 

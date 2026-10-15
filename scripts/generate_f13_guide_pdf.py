@@ -292,6 +292,10 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
                         len(story) - last_heading_index <= 3):
                     preamble = story[last_heading_index:]
                     del story[last_heading_index:]
+                # A table's trailing spacer may otherwise spill onto an empty
+                # landscape page immediately before this portrait page break.
+                while story and isinstance(story[-1], Spacer):
+                    story.pop()
                 if (len(story) >= 2 and
                         isinstance(story[-2], NextPageTemplate) and
                         isinstance(story[-1], PageBreak)):

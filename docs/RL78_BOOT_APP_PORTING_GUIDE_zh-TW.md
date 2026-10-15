@@ -9,6 +9,11 @@
 <!-- RL78_PORTING_BEGIN -->
 ## 自訂 Bootloader／App：先選導入方式
 
+要實際編輯／產生 Metadata 或新增 App IRQ，請先讀
+[F13／F24 device 實作教學](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-vector-workshop)：
+有修改前後範例、產生命令與驗證表。以下既有比較欄中的 F24 指 MCU CAN host；
+F24 MCU CAN device 使用獨立章節的 8 KiB／App2000 工程，不套用 host 分區或產表腳本。
+
 本節現行配套為 **F13 (MCU CAN device)** 與 **F24 (MCU CAN host)**。
 F24 host的Boot/App走Misc／UART自更新，不是後續F24 (MCU CAN device) 的CAN Boot/App；
 型號相同不代表板子角色、映像政策或更新協定相同。舊UART／I2C教材依各自專案判定角色。
@@ -88,7 +93,7 @@ BIN 長度由 linker map 的實際 loaded section 決定、4-byte 對齊，最�
 不是每次固定輸出整個 App capacity，也不是把 CRC 永遠放在 Flash 最後4 bytes。
 
 F13 layout／CAN identity 來源是 Boot 的 can_boot_config.h／user_def.h，
-App ftable.inc 與 linker／分割 HEX 設定必須一致；版本／build 是 App 自己的欄位。
+App 生成的 ftable.inc 與 linker／分割 HEX 設定必須一致，不應手改生成檔；版本／build 是 App 自己的欄位。
 F24 分區集中在 firmware/f24_bridge_common/f24_bridge_layout.h，
 App 版本／build 由該 App 自己的 app_image.json 提供。
 改分區時須一起調整 linker、產表／封裝／驗證腳本及 metadata，重新安裝 matching Boot/App。
@@ -171,16 +176,17 @@ F13 需保留 f13_board_support 與生成檔 user-area clock hook，不能在 Ap
 | 檔案 | 責任 |
 | --- | --- |
 | cstart.asm | App runtime startup 與 RAM／stack 初始化 |
-| ftable.inc、ftable_RL78_F13.asm | layout／App identity 與256-byte metadata |
+| app_image.json | 此 App 的 version／build 與固定 target／role／transport 核對值 |
+| ftable.inc、ftable_RL78_F13.asm | pre-build 生成常數／固定排列，產生256-byte metadata；不手改 ftable.inc |
 | app_irq_handlers.json | 此 App 的實體 vector → ISR 名稱 |
 | app_irq_table.inc、app_identity.h | pre-build 生成，不手改 |
 | generate_update_image.ps1 | map 導出長度、metadata 檢查、CRC 與安裝／更新產物 |
-| Boot 的 generate_irq_contract.ps1 | -Mode App 時只產此 App 表與 identity；Boot 表獨立 |
+| Boot 的 generate_irq_contract.ps1 | -Mode App 時只產此 App 的 ftable.inc、表與 identity；Boot 表獨立 |
 | f13_board_support、App INFO／ENTER | clock／周邊交接、在線資訊及回 Boot 入口 |
 
 1. 複製已整合 App，先不改 MCU／分區。備份原 Boot image 與已知可用 App。
 2. 將自己的功能來源加入 MTPJ；保留仍需要的 timer／UART／INFO／ENTER。
-3. 在自己的 app_irq_handlers.json 加入合法 IRQ；在 ftable.inc 改 App version／build。
+3. 在自己的 app_irq_handlers.json 加入合法 IRQ；在 app_image.json 改 App version／build。
 4. CS+ pre-build 保留以下命令，搬移後修正腳本路徑；post-build 保留 generate_update_image.ps1。
 
 ```powershell
