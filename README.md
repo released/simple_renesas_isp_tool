@@ -16,6 +16,16 @@ The matching offline source is [the multi-bus guide](docs/MULTIBUS_TOOL_GUIDE_zh
 Initial Boot installation uses a programmer; Misc updates the Host App only,
 while CAN Upgrade updates the external Device App. These images are not interchangeable.
 
+For the complete Tool-to-device teaching path, start with the
+[CAN update walkthrough](docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md) and its
+[web tables/flows](https://released.github.io/slide_isp_tool_for_RL78/#can-update-walkthrough).
+It maps UI actions, offline/live validation, F24 transport and F13 receive/Flash
+functions, separating RAM staging, programming and post-reset App evidence.
+
+For per-byte Flash addresses, metadata producer/parser examples and CAN payload
+layouts, use the [Flash/metadata/CAN porting reference](docs/FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md)
+or its [web section](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference).
+
 Download this complete repository for F24 firmware; its Boot/App projects share
 board, driver, SC, library and packaging sources. F13 integration tests use the
 separate [Boot](https://github.com/released/RL78_F13_Boot_loader_CAN) and
@@ -32,11 +42,14 @@ preparation in the [shared-console guide](docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW
 The first supported path is:
 
 ```text
-Windows PC Tool -> UART/USB VCOM -> RL78/F24 Host -> CAN -> RL78/F13 Target
+Windows PC Tool -> UART/USB VCOM -> F24 (MCU CAN host) -> CAN -> F13 (MCU CAN device)
 ```
 
 Future host implementations are planned for RL78/F14, RA2L1 and RA6 while keeping the
 same Host Link protocol and PC target-profile interfaces.
+F24 (MCU CAN device) will be a separate Boot/App project, not the existing F24
+host bridge images. Board role and metadata, not the MCU model alone, select
+the update workflow; the host's own App is updated through Misc/UART.
 
 ## Current status
 

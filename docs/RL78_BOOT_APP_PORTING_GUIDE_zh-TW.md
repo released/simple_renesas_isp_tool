@@ -3,11 +3,15 @@
 2026-10-15｜依目前 firmware 原始碼整理｜文件版，未新增實板驗證
 
 本文件是 firmware 開發者入口，不要求先學會 FirmwareUpgradeTool。
-適用於 CC-RL／CS+ 的現行 F13 CAN device 與 F24 UART bridge Boot/App 範例；
+適用於 CC-RL／CS+ 的現行 F13 (MCU CAN device) 與 F24 (MCU CAN host) Boot/App 範例；
 不是所有 RL78 型號、編譯器或舊 UART／I2C 範例都可直接套用的二進位規格。
 
 <!-- RL78_PORTING_BEGIN -->
 ## 自訂 Bootloader／App：先選導入方式
+
+本節現行配套為 **F13 (MCU CAN device)** 與 **F24 (MCU CAN host)**。
+F24 host的Boot/App走Misc／UART自更新，不是後續F24 (MCU CAN device) 的CAN Boot/App；
+型號相同不代表板子角色、映像政策或更新協定相同。舊UART／I2C教材依各自專案判定角色。
 
 | 需求 | 建議切入方式 | 必須保留的邊界 |
 | --- | --- | --- |
@@ -25,7 +29,7 @@ F13與F24範例皆可由下列GitHub連結取得，不需要開發者的本機�
 F24 Boot／App位於同一Tool repository的firmware目錄，應下載完整repository，
 不能只下載個別資料夾而省略共用driver、SC、library與scripts。
 
-| 項目 | F13 Device | F24 Host Bridge |
+| 項目 | F13 (MCU CAN device) | F24 (MCU CAN host) |
 | --- | --- | --- |
 | CAN通訊測試 | [RL78_F13_CAN_Transfer](https://github.com/released/RL78_F13_CAN_Transfer)；不擦寫Flash | 搭配同一通用bridge；不是Host App更新映像 |
 | Boot 專案 | [RL78_F13_Boot_loader_CAN](https://github.com/released/RL78_F13_Boot_loader_CAN) | [RL78_F24_Bridge_boot](https://github.com/released/simple_renesas_isp_tool/tree/main/firmware/RL78_F24_Bridge_boot) |
@@ -65,7 +69,7 @@ G16 新版 I2C Boot/App 尚未開發；舊範例不代表已具備相同安全�
 
 ### 2. 先固定記憶體與映像配置
 
-| 區域 | F13 目前設定 | F24 目前設定 |
+| 區域 | F13 (MCU CAN device) 目前設定 | F24 (MCU CAN host) 目前設定 |
 | --- | --- | --- |
 | Boot | 0x0000..0x1FFF，8 KiB | 0x0000..0x4FFF，20 KiB |
 | App 可用區 | 0x2000..0x1FFFF，120 KiB | 0x5000..0x3FBFF，235 KiB |
@@ -160,7 +164,7 @@ F13 需保留 f13_board_support 與生成檔 user-area clock hook，不能在 Ap
 其板端 X1=4 MHz、CPU32／CAN16；F24 App X1=20 MHz、PLL80／CPU40，Boot 用 HOCO40。
 這些是本板設定，不是其他 RL78 的預設值。
 
-### 5. F13：把應用功能加進已整合 App
+### 5. F13 (MCU CAN device)：把應用功能加進已整合 App
 
 保留的主要檔案／責任：
 
@@ -196,7 +200,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 MTPJ 與 checker 的檔名假設，再重新驗證。這不需要為 ISR 名稱重編 Boot，
 但不能跳過工程路徑整合。不是 standalone 專案只加 JSON 就能變成 boot-compatible App。
 
-### 6. F24：各 App 自己產表、封裝，不動共用 Boot
+### 6. F24 (MCU CAN host)：各 App 自己產表、封裝，不動共用 Boot
 
 1. 從 firmware/RL78_F24_Bridge_app 建立自己的專案資料夾，保留唯一 MTPJ、
    全部 App .c／.h、generated_projection、table 登錄與 BRIDGE_SPLIT_APP 定義。
@@ -231,7 +235,7 @@ App main／Host Link／CAN service 在 App；共用 UART／timer 透過最小 ho
 
 ### 7. 初次安裝、後續更新與除錯不可混用
 
-| 用途 | F13 | F24 |
+| 用途 | F13 (MCU CAN device) | F24 (MCU CAN host) |
 | --- | --- | --- |
 | 初次 matching 安裝 | App 專案根目錄 boot_app.hex，包含 Boot＋封裝 App | Boot 的 .mot 加 App 的 *_flash.mot；先確認燒錄工具不會全片擦除另一區 |
 | 後續只更新 App | DefaultBuild/RL78_F13_Boot_loader_CAN_app_update.bin | DefaultBuild/*_bridge_update.bin，載入 Misc |

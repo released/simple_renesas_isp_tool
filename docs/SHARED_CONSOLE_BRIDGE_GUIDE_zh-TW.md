@@ -71,7 +71,7 @@ flowchart TD
 
 舊的 standalone bridge firmware 不宣告 self-update bit，所以 Misc 顯示不支援且不開放寫入；不會猜測位址或降級成 raw BIN。
 
-## 4. F24 分區與建置
+## 4. F24 (MCU CAN host) 分區與建置
 
 實際 MCU：R7F124FLJ3xFB，256 KiB code flash。依本次確認採 boot 20 KiB，app start 0x5000。最後 1 KiB 保留，不列入更新範圍。
 
@@ -96,7 +96,10 @@ App 的 `DefaultBuild/*_bridge_update.bin` 是 Misc 要載入的檔案；`*_flas
 首次安裝 Boot 仍需 debugger／programmer。可同時安裝 boot `.mot`＋matching app `_flash.mot`；也可只安裝 Boot，沒有有效 App 就留在 recovery，再於 Misc／115200 載入 matching `_bridge_update.bin`，驗證、更新後明確按 Run Validated Bridge App。Misc 不會更新 Boot。本次未執行任何實板燒錄。調整分區時必須重新安裝 matching boot，不能只換 app。
 
 <!-- F24_APP_IRQ_BEGIN -->
-### F24：各 app 專案獨立產表，沿用同一份 boot
+### F24 (MCU CAN host)：各 app 專案獨立產表，沿用同一份 boot
+
+本節為F24 (MCU CAN host) 的Bridge Boot/App；其自身App由Misc／UART更新。
+F13 (MCU CAN device) 為CAN另一端的更新對象；後續F24 (MCU CAN device) 須使用另一組Boot/App。
 
 Boot 固定轉送一般 IRQ 到 app start＋實體 vector×2；app 的64個4-byte slot
 固定佔用 offset000h..0FFh。各專案決定 slot 要跳到哪個函式，boot 不認識
@@ -104,7 +107,7 @@ aaa_irq／ccc_irq 等 app 名稱。這項流程不改 UART boot、分區或 BUR1
 
 ```mermaid
 flowchart TD
-    BOOT["同一份 F24 boot：固定一般向量轉送"] --> SLOT["app 固定 slot；位置契約不變"]
+    BOOT["同一份 F24 (MCU CAN host) boot：固定一般向量轉送"] --> SLOT["app 固定 slot；位置契約不變"]
     A["App A：自己的 mapping／aaa_irq、bbb_irq"] --> GEN["App-local pre-build 驗證與產表"]
     B["App B：自己的 mapping／ccc_irq、ddd_irq"] --> GEN
     GEN --> SLOT
@@ -265,8 +268,9 @@ MCU／target／分區／protocol／IRQ ABI／最低boot版本／CRC檢查。
 UI與worker皆檢查，device boot在首次擦寫前再驗證完整metadata，不能只靠按鈕。
 切換介面不能沿用另一介面的探索結果；port／address／rate改動後必須重新確認。
 
-F13使用CAN protocol5、image format6，DEVICE_APP／CAN／F1V1。
-F24使用BUR1 contract3，HOST_APP／UART／F2V1。
+F13 (MCU CAN device) 使用CAN protocol5、image format6，DEVICE_APP／CAN／F1V1。
+F24 (MCU CAN host) 使用BUR1 contract3，HOST_APP／UART／F2V1。
+後續F24 (MCU CAN device) 是不同專案，不能因型號相同就套用HOST_APP／BUR1。
 平台首次安裝須有matching Boot/App；不同更新協定或IRQ契約不能任意混用。
 已有matching Boot時，可用Misc更新相容的Host App；Misc不更新boot本身。
 精確配套版本與映像雜湊以交付說明、live INFO及BIN metadata為準。

@@ -28,7 +28,7 @@ class GuideMarkdownTests(unittest.TestCase):
         version = (ROOT / "src/build_version.txt").read_text(encoding="ascii").strip()
         expected = {
             "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": 10,
-            "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": 13,
+            "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": 14,
             "F13_CAN_Bootloader_Update_Guide_zh-TW.pdf": 30,
         }
         for name, pages in expected.items():
@@ -44,6 +44,8 @@ class GuideMarkdownTests(unittest.TestCase):
                 self.assertIn("UPD1",text)
                 self.assertIn("921600",text)
                 self.assertIn("device_uart_baud",text)
+                for role in ['F24 (MCU CAN host)', 'F13 (MCU CAN device)', 'F24 (MCU CAN device)']:
+                    self.assertIn(role, re.sub(r'\s+', ' ', text))
                 self.assertNotIn("####", text)
                 self.assertIn(version, re.sub(r"\s+", "", text))
                 if name.startswith('F13_'):

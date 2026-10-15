@@ -1,11 +1,11 @@
-# RL78/F13 CAN Boot Loader 與韌體更新流程
+# RL78/F13 (MCU CAN device) Boot Loader 與韌體更新流程
 
 狀態：CAN v5工程第一版；單次實板更新10963ms／END CRC通過，故障矩陣未結案  
 文件日期：2026-10-15
 
-本文件提供第一次接觸本專案的人員閱讀。主要說明 RL78/F13 device 的
-boot code、app code、共用中斷向量與 CAN 更新流程；PC tool 與 RL78/F24
-MCU host 僅說明它們如何把 F13 protocol request/response 傳送到 CAN bus。
+本文件提供第一次接觸本專案的人員閱讀。主要說明 F13 (MCU CAN device) 的
+boot code、app code、共用中斷向量與 CAN 更新流程；PC tool 與 F24 (MCU CAN host)
+僅說明它們如何把 F13 protocol request/response 傳送到 CAN bus。
 
 目前可追溯的軟體基準：
 
@@ -59,8 +59,8 @@ PC tool 的 `CAN Upgrade` workflow 依 image/device metadata 驗證更新；
 ```mermaid
 flowchart LR
     USER["User"] --> TOOL["FirmwareUpgradeTool<br/>metadata-driven CAN Upgrade"]
-    TOOL <-->|"USB-UART VCOM<br/>Host Link v2 binary frames"| F24["RL78/F24 MCU host<br/>generic CAN bridge"]
-    F24 <-->|"Classical CAN 500 kbit/s<br/>request 0x700 / response 0x701"| F13["RL78/F13 device"]
+    TOOL <-->|"USB-UART VCOM<br/>Host Link v2 binary frames"| F24["F24 (MCU CAN host)<br/>generic CAN bridge"]
+    F24 <-->|"Classical CAN 500 kbit/s<br/>request 0x700 / response 0x701"| F13["F13 (MCU CAN device)"]
     F13 --> BOOT["Boot code<br/>flash update and validation"]
     F13 --> APP["App code<br/>INFO and ENTER"]
     BOOT --> FLASH["Application flash<br/>start/capacity from matching metadata"]
@@ -219,7 +219,7 @@ HOCO-only valid app；舊 app 可能停止 inherited X1／PLL。只燒 boot 的 
 ### 2.2 Boot decision、ENTER 與所有 boot→app 條件
 
 <!-- F13_BOOT_DECISION_BEGIN -->
-本節僅適用目前 F13 CAN device boot/app（format6／CAN protocol5），不是 F24
+本節僅適用目前 F13 (MCU CAN device) boot/app（format6／CAN protocol5），不是 F24 (MCU CAN host)
 host bridge 的 Misc／RUN 規則，也不是既有 UART／I2C 教材的 boot contract。
 依據 `r_main.c` 的 `application_is_valid`／`condition_check`／`boot_main`，以及
 `can_boot_transport.c` 的 manifest、START、END 與 timeout 實作；是 source 核對，非新增實板驗證。
@@ -850,8 +850,9 @@ MCU／target／分區／protocol／IRQ ABI／最低boot版本／CRC檢查。
 UI與worker皆檢查，device boot在首次擦寫前再驗證完整metadata，不能只靠按鈕。
 切換介面不能沿用另一介面的探索結果；port／address／rate改動後必須重新確認。
 
-F13使用CAN protocol5、image format6，DEVICE_APP／CAN／F1V1。
-F24使用BUR1 contract3，HOST_APP／UART／F2V1。
+F13 (MCU CAN device) 使用CAN protocol5、image format6，DEVICE_APP／CAN／F1V1。
+F24 (MCU CAN host) 使用BUR1 contract3，HOST_APP／UART／F2V1。
+後續F24 (MCU CAN device) 是不同專案，不能因型號相同就套用HOST_APP／BUR1。
 平台首次安裝須有matching Boot/App；不同更新協定或IRQ契約不能任意混用。
 已有matching Boot時，可用Misc更新相容的Host App；Misc不更新boot本身。
 精確配套版本與映像雜湊以交付說明、live INFO及BIN metadata為準。

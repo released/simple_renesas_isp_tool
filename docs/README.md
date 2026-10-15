@@ -11,6 +11,8 @@ Tool／F24／F13下載與六項操作／流程圖入口集中於
 
 | 需求 | 文件 |
 | --- | --- |
+| 從 Tool 操作理解 BIN 驗證、F24 橋接與 F13 decode／Flash | [逐層教學與對照表](CAN_UPDATE_WALKTHROUGH_zh-TW.md)／[PDF](CAN_UPDATE_WALKTHROUGH_zh-TW.pdf) |
+| Flash mapping、metadata每byte address／範例程式、CAN逐byte格式 | [完整對照指南](FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md)／[PDF](FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.pdf) |
 | 第一版上傳檔案、配套版本、實測與SHA-256 | [2026-10-15交付說明](FIRST_DELIVERY_20261015_zh-TW.md) |
 | 把自己的 RL78 專案整合成 Boot/App | [移植指南](RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md)／[PDF](RL78_BOOT_APP_PORTING_GUIDE_zh-TW.pdf) |
 | F13 Boot→App 條件與 CAN 更新 | [流程指南](F13_BOOT_UPDATE_FLOW_zh-TW.md)／[PDF](F13_CAN_Bootloader_Update_Guide_zh-TW.pdf) |

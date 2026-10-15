@@ -98,8 +98,9 @@ MCU／target／分區／protocol／IRQ ABI／最低boot版本／CRC檢查。
 UI與worker皆檢查，device boot在首次擦寫前再驗證完整metadata，不能只靠按鈕。
 切換介面不能沿用另一介面的探索結果；port／address／rate改動後必須重新確認。
 
-F13使用CAN protocol5、image format6，DEVICE_APP／CAN／F1V1。
-F24使用BUR1 contract3，HOST_APP／UART／F2V1。
+F13 (MCU CAN device) 使用CAN protocol5、image format6，DEVICE_APP／CAN／F1V1。
+F24 (MCU CAN host) 使用BUR1 contract3，HOST_APP／UART／F2V1。
+後續F24 (MCU CAN device) 是不同專案，不能因型號相同就套用HOST_APP／BUR1。
 平台首次安裝須有matching Boot/App；不同更新協定或IRQ契約不能任意混用。
 已有matching Boot時，可用Misc更新相容的Host App；Misc不更新boot本身。
 精確配套版本與映像雜湊以交付說明、live INFO及BIN metadata為準。

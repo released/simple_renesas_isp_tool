@@ -16,6 +16,77 @@ Last updated: 2026-10-15
 
 ## Current status
 
+### Cross-layer CAN teaching guide (2026-10-15)
+
+User requested tables/Mermaid that explain Tool operations and BIN checks,
+F24 (MCU CAN host) UART-to-CAN forwarding, and F13 (MCU CAN device) metadata /
+receive/decode/Flash. New docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md is canonical
+(CAN_WALKTHROUGH block):15 tables,9 Mermaid diagrams,15 actual source links,
+UI-to-function map, offline/live/Host descriptor distinctions, packet sizes,
+metadata/byte/address example, RAM/Flash boundary, retry/error/evidence matrices.
+Discover is INFO summary, not256-byte readback; START does not erase; only
+validated COMMIT programs; END/reset/App execution have separate proof levels.
+
+sync_can_update_walkthrough.ps1 updates only the ISP managed block, with
+CheckOnly/drift/duplicate guards. Both web guides link the tutorial before the
+byte reference; README/docs index/public-resource block and web maintenance
+notes updated. New tutorial PDF20pages/9diagrams and MultiBus14pages/7diagrams
+rendered; contact sheets and full-size table/source/COMMIT/END pages inspected.
+Two wide tables initially carried into portrait pages were corrected with
+explicit diagram headings; new PDF character-boundary regression catches this.
+
+Documentation24 tests PASS (new5 plus reference6/public7/PDF2/porting4), all15
+source URLs200, canonical7 checks, web198refs/anchors and loopback7routes PASS.
+Workspace clean audit24 PASS; six measured delivery hashes unchanged. No
+runtime/firmware code change, rebuild/bump, COM/probe/reset/Flash or Git publish.
+Browser/DPI and new hardware acceptance NOT RUN; old missing-map audit gap
+unchanged. Evidence/reproduction: tmp/internal/can_update_walkthrough/VERIFICATION.md.
+
+### Complete Flash/metadata/CAN byte reference (2026-10-15)
+
+User requested per-address metadata and per-byte CAN formats with actual source
+examples for own-project porting. New docs/FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md
+is canonical (FLASH_REFERENCE block), synchronized into boot web after porting;
+ISP/public resources/README/docs index link it. Two manifest schemas and every
+offset00..FF list F13/F24-host physical addresses (512addresses), real BIN values,
+field-byte meaning and source producer map. Includes CRC scopes/dynamic tail,
+18 real GitHub source/protocol links, C90 RAM reader and F13 assembler examples,
+all CAN command/request/response/raw/ACK formats and Transfer/Self Test distinction.
+F24 host BUR1/Misc is explicitly not future F24 CAN device's partition/protocol.
+
+New generate_flash_reference.py generates only managed documentation tables from
+explicitly selected actual BINs, validates basic header/length/CRC/reserved and
+supports read-only --check. It is not the complete production validator. Layout
+changes also require manual map/example/source explanation review. New
+sync_flash_reference.ps1 checks exactly one source/target block and supports
+CheckOnly; no unrelated web content overwritten. No runtime/firmware code changed.
+
+Reference6 + existing guide/public13 tests PASS, actual C90 sample compiles /Za
+/W4 /WX. Six canonical checks and web198refs/anchor/256rows PASS;18 source URLs
+return200. New reference PDF28pages and refreshed MultiBus14pages rendered with
+Poppler/contact sheets/full-size changed pages reviewed. Six delivery hashes
+unchanged, clean audit and diff checks performed. No product rebuild/bump,
+COM/reset/flash/Git publish. Browser/DPI NOT RUN; old missing-map audit gap stays.
+Evidence: tmp/internal/flash_reference/VERIFICATION.md.
+
+### CAN board-role labels (2026-10-15)
+
+Current CAN descriptions explicitly use F24 (MCU CAN host) and F13 (MCU CAN
+device): web intros, downloads, operation entries, role/hardware/transfer
+diagrams, boot/IRQ/porting headings, metadata policy and root navigation.
+The canonical public-resources/boot-decision/F24-IRQ/porting/metadata blocks
+remain synchronized. Future F24 (MCU CAN device) is a separate Boot/App project;
+no device firmware started by this documentation task. Existing host self-update
+is still Misc/UART. Historical UART/I2C F24 samples are not universally hosts.
+Repository paths/identifiers/URLs unchanged; web URL sequences28/50 match before.
+
+Actual checks: guide/public/PDF13 PASS (new role regression), canonical5 and
+web198 refs/anchors/URLs PASS; ISP11 Mermaid diagrams render. Four PDF guides
+30/10/14/10 pages,20/5/7/2diagrams rendered with Poppler; contact sheets and
+changed role tables/flows inspected. No runtime/firmware build, version bump,
+COM probe/reset/flash or publishing. Browser/DPI remains NOT RUN. Earlier map
+audit limitation remains. Details: tmp/internal/can_role_labels/VERIFICATION.md.
+
 ### Public downloads, six workflows and source portability (2026-10-15)
 
 Both web guides now start with a canonical download/workflow index from

@@ -14,6 +14,21 @@ NAV = WEB / 'released.github.io/README.md'
 
 
 class PublicWebGuides(unittest.TestCase):
+    def test_can_roles_are_explicit_without_changing_project_identifiers(self):
+        for page in [ISP / 'index.md', BOOT / 'index.md']:
+            text = page.read_text(encoding='utf-8-sig')
+            for phrase in ['F24 (MCU CAN host)', 'F13 (MCU CAN device)',
+                           'F24 (MCU CAN device)', '角色由專案與metadata決定',
+                           'RL78_F24_Bridge_boot', 'RL78_F24_Bridge_app',
+                           'RL78_F13_Boot_loader_CAN_app', 'Misc／UART']:
+                self.assertIn(phrase, text)
+            self.assertNotRegex(text, r'https?://[^\s\n]*\(MCU')
+            for label in ['| F24 (MCU CAN host) Boot |', '| F24 (MCU CAN host) App |',
+                          '| F13 (MCU CAN device) Boot |', '| F13 (MCU CAN device) App |']:
+                self.assertIn(label, text)
+        boot = (BOOT / 'index.md').read_text(encoding='utf-8-sig')
+        self.assertIn('不能把舊UART／I2C教材中的F24一律當成CAN host', boot)
+
     def test_public_resources_downloads_anchors_and_sync(self):
         pattern = re.compile(r'<!-- PUBLIC_RESOURCES_BEGIN -->.*?<!-- PUBLIC_RESOURCES_END -->', re.S)
         source = (ROOT / 'docs/MULTIBUS_TOOL_GUIDE_zh-TW.md').read_text(encoding='utf-8-sig')

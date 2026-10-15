@@ -1,5 +1,50 @@
 # Host Link v2 Self-Check
 
+## Cross-layer CAN teaching guide (2026-10-15)
+
+- [x] New canonical tutorial:15 tables/9 Mermaid diagrams map Tool UI and
+  BIN/offline/live validation to generic F24 transport and F13 RX/metadata/
+  block/Flash/END functions.15 actual source links, worked byte/address example,
+  error/retry/evidence levels; INFO is not raw metadata readback and START
+  does not erase. Existing per-byte reference remains the lookup appendix.
+- [x] New5 + existing19 documentation tests PASS; bounded/read-only sync,
+  real functions/source files, wire/address examples, PDF9 diagrams and text
+  bounds. Seven canonical checks/web198refs/loopback7routes/source15 URLs200;
+  safe-clean24 PASS. PDFs20/14pages rendered and visually reviewed.
+- [x] No runtime or firmware changes; six delivery hashes unchanged. No
+  product rebuild/bump, COM/device writes or Git/site publication.
+- [ ] Browser/DPI and new hardware acceptance NOT RUN; prior missing-map
+  audit gap unchanged. Read the tutorial before byte lookup/own-project porting.
+
+## Complete Flash/metadata/CAN byte reference (2026-10-15)
+
+- [x] New MD/PDF and boot web section list every metadata offset00..FF,
+  both absolute Flash addresses, actual example values and field-byte meaning;
+  producer/parser source links plus C90/assembler examples and porting order.
+  CRC scopes and variable CRC address, CAN3/BUR1/Host Link roles stay separate.
+- [x] New reference6 and existing guide/public13 tests PASS; schemas cover all
+  256bytes once, generator/sync check-only preserves content and rejects drift,
+  invalid CRC/reserved examples rejected, C90 example compiles with /Za /WX.
+- [x] Six canonical sync checks, web198refs/new anchor/all256rows and18 actual
+  GitHub source links200. PDFs28/14 pages rendered and visually reviewed.
+  No runtime/firmware changes, delivery-byte changes, device writes or publishing.
+- [ ] Browser/DPI visual acceptance and hardware porting/fault tests NOT RUN;
+  new F24 CAN device firmware not implemented. Existing missing-map audit gap
+  remains. Documentation generator is not the production image validator.
+
+## CAN example role labels (2026-10-15)
+
+- [x] Web slides/root navigation and canonical MD distinguish F24 (MCU CAN
+  host) from F13 (MCU CAN device), including downloads/headings/flow labels.
+  Future F24 device projects/images are not the current host bridge firmware;
+  Host App self-update remains Misc/UART. Legacy samples keep their own roles.
+- [x] Role/policy/source checks, canonical5,198refs/anchors/URLs and guide13
+  tests PASS. Both web URL sequences unchanged28/50; identifiers kept intact.
+  ISP11 Mermaid diagrams render. PDFs30/10/14/10 pages rendered and reviewed.
+- [x] Documentation/tests only; no runtime/firmware build/version bump or
+  delivery-byte changes. No flash/reset/probe, Git push or publication.
+- [ ] Browser/DPI appearance NOT RUN; no new F24 device firmware implemented.
+
 ## Public resources and portable checkout (2026-10-15)
 
 - [x] Tool EXE, F24 Boot MOT/App BIN, F13 Boot HEX/combined HEX/App BIN

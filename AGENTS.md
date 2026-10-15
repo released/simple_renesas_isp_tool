@@ -30,6 +30,10 @@ the Tool checkout's parent), in `slide_isp_tool_for_RL78`; update
 Keep features, protocol contracts, status/steps and screenshot gates consistent with MD.
 Public web navigation/intros use evergreen function descriptions, not product
 build numbers, delivery milestones, snapshot metrics or draft/publication labels.
+Qualify current CAN example roles as F24 (MCU CAN host) and F13 (MCU CAN device).
+Future F24 (MCU CAN device) is a separate Boot/App project and image contract;
+do not infer role from MCU model or relabel legacy UART/I2C samples as CAN hosts.
+Host App self-update remains Misc/UART, not CAN device programming.
 Keep exact versions/hashes/measurements in release records; retain technical
 protocol/image/IRQ compatibility and honest unverified-feature boundaries.
 Regenerate affected guide PDFs directly in docs. Local synchronization does
@@ -239,6 +243,18 @@ web guides. Keep actual source/download URLs and stable section anchors tested.
 Companion F13 checkouts default to siblings; workspace_paths helpers support
 explicit paths and machine-local environment overrides, never personal fallbacks.
 Normal solution builds exclude the explicit F13 integration-test project.
+Per-byte Flash/metadata and CAN payload reference is canonical in
+docs/FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md (FLASH_REFERENCE block).
+generate_flash_reference.py derives all256 example byte rows from explicitly
+selected real CAN3/BUR1 BINs without writing them; sync_flash_reference.ps1
+updates the boot web guide. Keep relative-vs-absolute addresses, two manifest
+layouts, CRC scopes, source links and C90 examples distinct and verified.
+
+Cross-layer teaching is canonical in docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md
+(CAN_WALKTHROUGH block); sync_can_update_walkthrough.ps1 updates the ISP web.
+Keep Tool offline/live checks, generic host forwarding, device RAM/Flash stages
+and post-reset App evidence distinct. INFO summaries are not raw metadata readback;
+START does not erase F13 Flash. Link this tutorial before the byte lookup guide.
 
 `README.md` must not contain local absolute paths, temporary debug conclusions,
 or personal IDE settings. Detailed engineering state belongs in `HANDOFF.md`.

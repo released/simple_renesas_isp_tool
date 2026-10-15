@@ -5,6 +5,34 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-15 cross-layer CAN teaching: canonical CAN_UPDATE_WALKTHROUGH MD/PDF,
+15 tables/9 Mermaid diagrams/15 source links map UI/BIN validation, F24 generic
+UART-CAN transport and F13 RX/metadata/RAM/Flash/END. Worked wire/address example,
+offline/live distinctions and success-evidence matrix; no protocol/runtime change.
+Bounded canonical sync to ISP web, links from boot web/reader/public resources;
+24 documentation tests and7 canonical checks PASS, web198refs/loopback7routes,
+15source URLs200, PDF20/14pages rendered/visually reviewed, clean audit24 PASS.
+Six delivery hashes unchanged; no product build/bump/device write/publish.
+Browser/DPI/hardware acceptance NOT RUN; previous map-audit gap unchanged.
+
+2026-10-15 Flash/metadata/CAN byte reference: new canonical MD/PDF and boot web
+section with512 concrete Flash addresses (256bytes for each board), real-BIN
+values, field-source maps, CRC scopes and all CAN request/response/raw layouts.
+CAN3 and BUR1 layouts remain distinct; F24 host is not future F24 CAN device.
+Generator/check-only and bounded web sync helper added, no runtime changes.
+Reference6 + guide/public13 tests PASS, including C90 sample compile; actual
+18 GitHub source links200. Canonical6/web198refs/byte rows PASS. PDFs28/14 pages
+rendered/reviewed. Firmware/Tool delivery bytes unchanged; no device writes,
+product rebuild/version bump or Git/site publication. Browser/DPI NOT RUN.
+
+2026-10-15 CAN role labels: F24 (MCU CAN host), F13 (MCU CAN device) on both
+web slides, download/flow/porting/IRQ/metadata entries and root navigation.
+Future F24 (MCU CAN device) is a separate project; no device development added.
+Host self-update remains Misc/UART; legacy UART/I2C roles are not mass-relabelled.
+Canonical5/web198 refs and13 guide/public/PDF tests PASS; ISP11 Mermaid render.
+PDFs30/10/14/10 pages visually reviewed; binaries/URLs unchanged. No runtime
+build, COM/device write, Git push or browser/DPI validation in this wording task.
+
 2026-10-15 public download/flow index and checkout portability: six verified
 download URLs, F13 Transfer/Boot/App repositories and six stable workflow links
 are canonical in MULTIBUS_TOOL_GUIDE PUBLIC_RESOURCES, synchronized to both
