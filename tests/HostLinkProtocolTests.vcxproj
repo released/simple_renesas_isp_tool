@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32"><Configuration>Debug</Configuration><Platform>Win32</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32"><Configuration>Release</Configuration><Platform>Win32</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64"><Configuration>Debug</Configuration><Platform>x64</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{0BDEBA9F-7941-4B8C-B90F-C894159E2401}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>HostLinkProtocolTests</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <OutDir>$(ProjectDir)..\tmp\internal\build\tests\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)..\tmp\internal\build\obj\tests\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>HostLinkProtocolTests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\src\core;$(ProjectDir)..\firmware\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>setupapi.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="host_link_protocol_tests.cpp" />
+    <ClCompile Include="image_policy_tests.cpp" />
+    <ClCompile Include="can_block_tests.cpp" />
+    <ClCompile Include="f24_can_process_tests.cpp" />
+    <ClCompile Include="console_bridge_tests.cpp" />
+    <ClCompile Include="bridge_engine_tests.cpp" />
+    <ClCompile Include="f24_app_readback_tests.cpp">
+      <AdditionalIncludeDirectories>$(ProjectDir)f24_app_mock;$(ProjectDir)..\firmware\f24_board;$(ProjectDir)..\firmware\f24_bridge_common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\src\ui\console_geometry.cpp" />
+    <ClCompile Include="..\src\core\bridge_update_profile.cpp" />
+    <ClCompile Include="..\firmware\common\bridge_update_contract.c" />
+    <ClCompile Include="..\firmware\common\bridge_update_engine.c" />
+    <ClCompile Include="..\firmware\common\bridge_boot_link.c" />
+    <ClCompile Include="serial_port_catalog_tests.cpp" />
+    <ClCompile Include="serial_port_io_tests.cpp" />
+    <ClCompile Include="..\src\core\serial_port_catalog.cpp" />
+    <ClCompile Include="f24_can_clock_tests.c" />
+    <ClCompile Include="f24_uart_tests.c">
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="bridge_i2c_tests.c" />
+    <ClCompile Include="f24_i2c_backend_tests.c">
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="multibus_tests.cpp" />
+    <ClCompile Include="overview_model_tests.cpp" />
+    <ClCompile Include="..\src\ui\overview_model.cpp" />
+    <ClCompile Include="..\firmware\common\bridge_i2c.c" />
+    <ClCompile Include="..\src\core\bridge_port_catalog.cpp" />
+    <ClCompile Include="..\src\core\i2c_host_client.cpp" />
+    <ClCompile Include="..\src\core\g16_i2c_reference.cpp" />
+    <ClCompile Include="..\src\core\g16_i2c_discovery.cpp" />
+    <ClCompile Include="..\src\core\g16_i2c_image.cpp" />
+    <ClCompile Include="f13_board_support_tests.c" />
+    <ClCompile Include="..\..\..\_Avery_Renesas\CS+\RL78_F13_Boot_loader_CAN\f13_board_support.c">
+      <PreprocessorDefinitions>F13_BOARD_HOST_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\firmware\f24_board\f24_can_clock.c">
+      <AdditionalIncludeDirectories>$(ProjectDir)f24_clock_mock;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\firmware\f24_board\f24_can_timing.c">
+      <AdditionalIncludeDirectories>$(ProjectDir)f24_clock_mock;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\src\core\can_host_client.cpp" />
+    <ClCompile Include="..\src\core\f13_boot_profile.cpp" />
+    <ClCompile Include="..\src\core\f13_boot_update.cpp" />
+    <ClCompile Include="..\src\core\f13_transfer_profile.cpp" />
+    <ClCompile Include="..\src\core\firmware_update_profile.cpp" />
+    <ClCompile Include="..\src\core\host_link_client.cpp" />
+    <ClCompile Include="..\src\core\host_link_baud.cpp" />
+    <ClCompile Include="..\src\core\host_link_protocol.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\core\serial_port_catalog.h" />
+    <ClInclude Include="..\src\core\can_host_client.h" />
+    <ClInclude Include="..\src\core\f13_boot_profile.h" />
+    <ClInclude Include="..\src\core\f13_boot_update.h" />
+    <ClInclude Include="..\src\core\f13_transfer_profile.h" />
+    <ClInclude Include="..\src\core\firmware_update_profile.h" />
+    <ClInclude Include="..\src\core\host_link_client.h" />
+    <ClInclude Include="..\src\core\host_link_protocol.h" />
+    <ClInclude Include="..\src\core\host_link_transport.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

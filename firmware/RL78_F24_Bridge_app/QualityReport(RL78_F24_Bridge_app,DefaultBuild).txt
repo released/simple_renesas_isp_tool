@@ -1,0 +1,360 @@
+QualityReport
+2026年10月15日 下午 06:17:10
+
+------ Start build(RL78_F24_Bridge_app, DefaultBuild) ------
+D:\SourceCode\python\simple_renesas_isp_tool\firmware\RL78_F24_Bridge_app>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "..\..\scripts\prepare_f24_app_irq.ps1" -AppProject "." 
+PASS: RL78_F24_Bridge_app app-local IRQ/identity prepared; boot untouched.
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe custom_func.c -cpu=S3 -o DefaultBuild\custom_func.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_a2b2eae571584d429a02cb4654a6d2cfuus5kq52.4ui -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\common\bridge_i2c.c -cpu=S3 -o DefaultBuild\bridge_i2c.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_dcd848d5ed454261b4dfde45276ea028us2dwxds.2ve -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\general\r_cg_tau_common.c -cpu=S3 -o DefaultBuild\r_cg_tau_common.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_a35b429ae0a740358b1c7264314debe7lc0pj13w.qei -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe can_fd_module.c -cpu=S3 -o DefaultBuild\can_fd_module.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_c46a6488c47b44838f5007be2318b30b4fde2cxm.bkl -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\Config_PORT\Config_PORT_user.c -cpu=S3 -o DefaultBuild\Config_PORT_user.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_d97f63b9e1ce4f0e9dc1648f6dd23085lvevlofn.x5v -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24\r_bsp_init.c -cpu=S3 -o DefaultBuild\r_bsp_init.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_2d686141b32042fabe460290619c3c07trcijhcw.bdx -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\Config_UART0\Config_UART0.c -cpu=S3 -o DefaultBuild\Config_UART0.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_e514ff9ea1ef49cda1a2e5857cfc1f4f0pjzqoql.3do -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe generated_projection\r_rscanfd_rl78.c -cpu=S3 -o DefaultBuild\r_rscanfd_rl78.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_d06386b0de1e43f0aebde34c29f0a3dbnlsqdx2k.y00 -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\f24_can_clock.c -cpu=S3 -o DefaultBuild\f24_can_clock.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_cfc5eb61eaf14ee0b319492d85bd1d12dihihzzq.m03 -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\r_bsp\mcu\all\r_bsp_common.c -cpu=S3 -o DefaultBuild\r_bsp_common.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_fb0fa48a72b04be1a69187aefcc7be30jotloek0.a4p -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\general\r_cg_sau_common.c -cpu=S3 -o DefaultBuild\r_cg_sau_common.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_76ed8d7652d04a55b66e191127503451004um5wl.11c -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\Config_IICA0\Config_IICA0.c -cpu=S3 -o DefaultBuild\Config_IICA0.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_a9238fb78e8046a98a44cc474c11e6c8aacrn0ot.fj0 -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\f24_i2c_backend.c -cpu=S3 -o DefaultBuild\f24_i2c_backend.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_ead34373b34f4834bb1659f9237aa094gbzm412n.nln -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\host_link_uart.c -cpu=S3 -o DefaultBuild\host_link_uart.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_508360b1f1b64243b9d336ede80c8c1cz2gsiz12.4jf -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe generated_projection\Config_UART0_user.c -cpu=S3 -o DefaultBuild\Config_UART0_user.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_39973422039440c69fbdd4a0434a94dc1e15tqwe.guh -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\Config_TAU0_1\Config_TAU0_1.c -cpu=S3 -o DefaultBuild\Config_TAU0_1.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_eb0043795aff442fad8da62eef44eb1cgwvo4pbk.peh -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\Config_INTC\Config_INTC.c -cpu=S3 -o DefaultBuild\Config_INTC.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_224fb2ad12924130bc713a08bfa1c156gk4xbnk3.ggp -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe generated_projection\Config_TAU0_1_user.c -cpu=S3 -o DefaultBuild\Config_TAU0_1_user.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_54304f2de47f4b33a371283b25e33497hk354huj.kqr -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe main.c -cpu=S3 -o DefaultBuild\main.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_1fc955de6417496fb6a3b71df264e6denfbrdf3d.gkt -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\general\r_cg_iica_common.c -cpu=S3 -o DefaultBuild\r_cg_iica_common.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_7b45b69534844571931160922b3c94f62rcmigrh.qii -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe host_link_protocol.c -cpu=S3 -o DefaultBuild\host_link_protocol.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_c92a9b794aa247a996dd0e94c7b9ce7dzjaho0v4.ryx -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe generated_projection\Config_INTC_user.c -cpu=S3 -o DefaultBuild\Config_INTC_user.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_b476f4389c2d44b9a94531773042f6d5w4g2og3i.kb1 -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe misc_config.c -cpu=S3 -o DefaultBuild\misc_config.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_9742ecd7669b40e08eaac4b3bfbf91b1vct2x45s.rys -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\mcu_clocks.c -cpu=S3 -o DefaultBuild\mcu_clocks.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_39e6535c8f1a43adbda3f8d8bae668bcrlck0xgu.veg -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\f24_can_timing.c -cpu=S3 -o DefaultBuild\f24_can_timing.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_2e0199deac4f44d9a7a8feadeabe0c70qxu0n1f3.kgd -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\common\bridge_update_contract.c -cpu=S3 -o DefaultBuild\bridge_update_contract.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_4de77d5d2c1b4f4abbe78558d57542bbhdyioozx.qu2 -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe generated_projection\Config_IICA0_user.c -cpu=S3 -o DefaultBuild\Config_IICA0_user.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_59207d45d1244f49896876bb562ad11dcnojcrcv.1kc -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\general\r_cg_systeminit.c -cpu=S3 -o DefaultBuild\r_cg_systeminit.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_e239be3bb3f148b2aead070e4f5cc9582n5fpofu.2gr -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\Config_PORT\Config_PORT.c -cpu=S3 -o DefaultBuild\Config_PORT.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_0cf8ce13c3b14fd78e5001cca515fd1adcmwrqak.awt -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24\hdwinit.c -cpu=S3 -o DefaultBuild\hdwinit.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_ab692070489a4a0f9a879039c03afea9tih4wa31.mrh -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\r_pincfg\Pin.c -cpu=S3 -o DefaultBuild\Pin.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_9c14c72ade4d4d21bd554b2ab1970240h5quszhj.ros -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\common\bridge_update_engine.c -cpu=S3 -o DefaultBuild\bridge_update_engine.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_377c9eca50484ea7ba9e100172ff5b53hf3eenuh.5xv -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe generated_projection\cstart.asm -cpu=S3 -o DefaultBuild\cstart.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_59aae145c7db4a8bae108fd20f5d80daynsxd0pm.to2 -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\r_bsp\mcu\all\r_bsp_common_ccrl.asm -cpu=S3 -o DefaultBuild\r_bsp_common_ccrl.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_dc587a824efb4b0fbe3fe13fb4f9b7b8xgafh5sk.i1o -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_bridge_common\f24_bridge_support.c -cpu=S3 -o DefaultBuild\f24_bridge_support.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_2aa62de5cecb46c28d00e35449de5495g2ekg2kn.2zd -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe bridge_vectors.asm -cpu=S3 -o DefaultBuild\bridge_vectors.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_516a9d9139784d8c83bafcea0e65b42el1cm35hq.2ao -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe bridge_app.c -cpu=S3 -o DefaultBuild\bridge_app.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -g_line -Onothing -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\. -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\.\ -preinclude=..\f24_board\f24_board_config.h -D BRIDGE_SPLIT_APP -lang=c99 -far_rom -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_5b1074031d844e67badbdbf630f23cf1yaygvvpq.3wa -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\ccrl.exe ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24\stkinit.asm -cpu=S3 -o DefaultBuild\stkinit.obj "-dev=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF" -g -I . -I ..\common -I ..\f24_bridge_common -I ..\f24_bridge_common\RFDRL78T02\include -I ..\f24_bridge_common\RFDRL78T02\include\rfd -I ..\f24_board\src\smc_gen\r_config -I ..\f24_board\src\smc_gen\r_bsp\board\generic_rl78_f24 -I ..\f24_board\src\smc_gen\Config_IICA0 -I ..\f24_board\src\smc_gen\Config_INTC -I ..\f24_board\src\smc_gen\Config_PORT -I ..\f24_board\src\smc_gen\Config_TAU0_1 -I ..\f24_board\src\smc_gen\Config_UART0 -I ..\f24_board\src\smc_gen\general -I ..\f24_board\src\smc_gen\r_bsp -I ..\f24_board\src\smc_gen\r_bsp\mcu\all -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24 -I ..\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl -I ..\f24_board\src\smc_gen\r_pincfg -I ..\f24_board\src\smc_gen\r_rscanfd_rl78 -c -MAKEUD=DefaultBuild -exec_time=C:\Users\averyc\AppData\Local\Temp\CSPlusBuildTool_78f5a79d77ce4104ad7db741884af852iggulmzd.54y -msg_lang=english
+C:\Program Files (x86)\Renesas Electronics\CS+\CC\CC-RL\V1.15.01\Bin\rlink.exe -MAKEUD=DefaultBuild\RL78_F24_Bridge_app.lk.ud -subcommand=DefaultBuild\RL78_F24_Bridge_app.clnk
+W0561017:Paid license of CC-RL V1 is not found, and the evaluation period has expired. Please consider purchasing the product.
+RAMDATA SECTION:  0000215f Byte(s)
+ROMDATA SECTION:  000002ad Byte(s)
+PROGRAM SECTION:  0000a4c4 Byte(s)
+W0561017:Paid license of CC-RL V1 is not found, and the evaluation period has expired. Please consider purchasing the product.
+Renesas Optimizing Linker Completed
+D:\SourceCode\python\simple_renesas_isp_tool\firmware\RL78_F24_Bridge_app>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "..\..\scripts\package_f24_bridge.ps1" -Kind app -AppProject "." 
+PASS: RL78_F24_Bridge_app app-local IRQ/identity verified; boot untouched.
+PASS: all64 app slots match local mapping and real ISR RETI/BRK RETB.
+PASS: dynamic bridge app 42696 bytes, CRC32 0x864E811E, start0x5000, capacity240640. Source MOT unchanged.
+------ Build ended(Error:0, Warning:2)(RL78_F24_Bridge_app, DefaultBuild) ------
+
+--- CommandFile 1 ---
+DefaultBuild\RL78_F24_Bridge_app.clnk :
+-Input=DefaultBuild\main.obj
+-Input=DefaultBuild\Config_PORT.obj
+-Input=DefaultBuild\Config_PORT_user.obj
+-Input=DefaultBuild\Config_TAU0_1.obj
+-Input=DefaultBuild\Config_TAU0_1_user.obj
+-Input=DefaultBuild\r_cg_systeminit.obj
+-Input=DefaultBuild\r_cg_tau_common.obj
+-Input=DefaultBuild\hdwinit.obj
+-Input=DefaultBuild\r_bsp_init.obj
+-Input=DefaultBuild\stkinit.obj
+-Input=DefaultBuild\cstart.obj
+-Input=DefaultBuild\r_bsp_common.obj
+-Input=DefaultBuild\r_bsp_common_ccrl.obj
+-Input=DefaultBuild\mcu_clocks.obj
+-Input=DefaultBuild\Pin.obj
+-Input=DefaultBuild\custom_func.obj
+-Input=DefaultBuild\misc_config.obj
+-Input=DefaultBuild\Config_UART0.obj
+-Input=DefaultBuild\Config_UART0_user.obj
+-Input=DefaultBuild\r_cg_sau_common.obj
+-Input=DefaultBuild\Config_INTC.obj
+-Input=DefaultBuild\Config_INTC_user.obj
+-Input=DefaultBuild\r_rscanfd_rl78.obj
+-Input=DefaultBuild\can_fd_module.obj
+-Input=DefaultBuild\Config_IICA0.obj
+-Input=DefaultBuild\Config_IICA0_user.obj
+-Input=DefaultBuild\r_cg_iica_common.obj
+-Input=DefaultBuild\host_link_uart.obj
+-Input=DefaultBuild\host_link_protocol.obj
+-Input=DefaultBuild\f24_can_clock.obj
+-Input=DefaultBuild\bridge_i2c.obj
+-Input=DefaultBuild\f24_i2c_backend.obj
+-Input=DefaultBuild\f24_can_timing.obj
+-Input=DefaultBuild\bridge_update_contract.obj
+-Input=DefaultBuild\bridge_update_engine.obj
+-Input=DefaultBuild\f24_bridge_support.obj
+-Input=DefaultBuild\bridge_vectors.obj
+-Input=DefaultBuild\bridge_app.obj
+-SECURITY_ID=00000000000000000000000000000000
+-FLASH_SECURITY_ID=FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+-DEVICE=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF
+-DEBug
+-NOCOmpress
+-NOOPtimize
+-OUtput=DefaultBuild\RL78_F24_Bridge_app.abs
+-OCDBG=A5
+-SECURITY_OPT_BYTE=FE
+-DEBUG_MONITOR=3FF00-3FFFF
+-USER_OPT_BYTE=EFF3E8
+-LISt=DefaultBuild\RL78_F24_Bridge_app.map
+-SHow=Reference,Xreference,Total_size,VECTOR
+-STARt=.const,.app_vectors/5000,.text,.RLIB,.SLIB,.textf,.constf,.data,.sdata,.init_array/5200,.dataR,.stack_bss,.bss/F9F00,.sdataR,.sbss/FFE20
+-ROm=.data=.dataR
+-ROm=.sdata=.sdataR
+-NOMessage
+-Total_size
+-NOLOgo
+-LIBrary=DefaultBuild\RL78_F24_Bridge_app.lib
+-end
+-Input=DefaultBuild\RL78_F24_Bridge_app.abs
+-DEVICE=C:\Program Files (x86)\Renesas Electronics\CS+\CC\Device\RL78\Devicefile\DR7F124FLJ.DVF
+-OUtput=DefaultBuild\RL78_F24_Bridge_app.mot
+-FOrm=Stype
+-NOMessage
+-exit
+
+
+--- SHA1 hash value of output files ---
+D:\SourceCode\python\simple_renesas_isp_tool\firmware\RL78_F24_Bridge_app\DefaultBuild\RL78_F24_Bridge_app.abs: 792da6c1ca783e3b8ce3303ebcc29a9d1eccbae1
+D:\SourceCode\python\simple_renesas_isp_tool\firmware\RL78_F24_Bridge_app\DefaultBuild\RL78_F24_Bridge_app.mot: 65df1054bf564568d5435bdeee3c40affb62b069
+
+
+--- System Information ---
+*OS Version
+ Microsoft Windows 11 專業版 (-, 10.0.26200, WOW64)
+*Language
+ 中文(台灣)
+*.NET Framework Version
+ Microsoft .NET Framework 4 [.NET 4.8 or later] (533509)
+*WebView2 Version
+ 155.0.4283.45
+
+--- Application Information ---
+*Product Name
+ CS+ for CC
+*Package Version
+ V8.14.00  [02 Jun 2025]
+*Version
+ V9.14.00.04 [25 Apr 2025]
+*Assembly Version
+ 3.12.10.1
+*Sales Area
+ Japan
+*Product License
+ 
+*Execution Place
+ C:\Program Files (x86)\Renesas Electronics\CS+\CC
+*Memory Usage
+ *Private Working Set
+  163 MB
+ *Number of GDI Objects
+  1897
+ *Number of USER Objects
+  916
+ *Opened Files
+  0 editors, 0 files, 0 KB
+
+--- Build Tool Plug-in Information ---
+RH850 Build tool CC-RH Plug-in
+ *Version
+  V8.14.00.01 [10 Apr 2025]
+ *Assembly Version
+  1.1.10.12
+ *DLL File Name
+  BuildToolCCRH.dll
+RL78 Build tool CC-RL Plug-in
+ *Version
+  V8.14.00.01 [10 Apr 2025]
+ *Assembly Version
+  1.0.0.0
+ *DLL File Name
+  BuildToolCCRL.dll
+RX Build tool CC-RX Plug-in
+ *Version
+  V8.14.00.01 [10 Apr 2025]
+ *Assembly Version
+  3.12.10.1
+ *DLL File Name
+  BuildToolCCRX.dll
+RH850 Build tool GHS CCRH850 Plug-in
+ *Version
+  V1.11.00.01 [18 Apr 2025]
+ *Assembly Version
+  1.0.0.0
+ *DLL File Name
+  BuildToolGHSCCRH850.dll
+
+--- Debug Tool Plug-in Information ---
+Debugger Collection Plug-in
+ *Version
+  V8.14.00.02 [08 May 2025]
+ *Assembly Version
+  2.12.10.1
+ *DLL File Name
+  DebugToolCollection.dll
+
+--- Other Plug-in Information ---
+Code Generator Plug-in for RH850
+ *Version
+  V1.02.02.05 [25 May 2018]
+ *Assembly Version
+  1.0.0.0
+ *DLL File Name
+  CodeGeneratorRH850.dll
+Code Generator Plug-in
+ *Version
+  V4.08.06.01 [28 Oct 2022]
+ *Assembly Version
+  3.0.0.0
+ *DLL File Name
+  CodePart.dll
+Code Generator/PinView Plug-in
+ *Version
+  V2.10.07.02 [08 Nov 2021]
+ *Assembly Version
+  1.0.0.0
+ *DLL File Name
+  CodePart2.dll
+Debug Console Plug-in
+ *Version
+  V8.09.00.03 [24 Nov 2022]
+ *Assembly Version
+  8.9.0.0
+ *DLL File Name
+  DebugConsole.dll
+Quick and Effective tool solution - QE
+ *Version
+  V9.14.00.02 [08 Apr 2025]
+ *Assembly Version
+  1.15.10.16
+ *DLL File Name
+  InCarTools.dll
+Pin Configurator Plug-in
+ *Version
+  V1.54.01.01 [31 Jul 2014]
+ *Assembly Version
+  1.6.10.23
+ *DLL File Name
+  PinConfig.dll
+Program Analyzer Plug-in
+ *Version
+  V4.13.00.03 [24 May 2023]
+ *Assembly Version
+  3.12.11.9
+ *DLL File Name
+  ProgramAnalyzer.dll
+IronPython Console Plug-in
+ *Version
+  V1.49.00.02 [08 Nov 2024]
+ *Assembly Version
+  1.6.10.23
+ *DLL File Name
+  PythonConsole.dll
+Editor plug-in DLL
+ *Version
+  V1.21.00.01 [09 Apr 2025]
+ *Assembly Version
+  1.1.0.0
+ *DLL File Name
+  SEditor.dll
+Smart Configurator for RH850 Communication Plug-in
+ *Version
+  V1.02.11.01 [08 May 2025]
+ *Assembly Version
+  1.0.0.0
+ *DLL File Name
+  SmcCodePartRH850.dll
+Smart Configurator for RL78 Communication Plug-in
+ *Version
+  V1.00.11.01 [25 Nov 2024]
+ *Assembly Version
+  1.0.0.0
+ *DLL File Name
+  SmcCodePartRL78.dll
+Stack Usage Tracer
+ *Version
+  V1.05.00.02 [30 Jul 2014]
+ *Assembly Version
+  1.30.11.15
+ *DLL File Name
+  Stk.dll
+Update Manager Plug-in
+ *Version
+  V2.05.00.04 [30 May 2025]
+ *Assembly Version
+  1.25.4.17
+ *DLL File Name
+  Update.dll
+
+Debug Tool Common Interface
+ *Version
+  V8.14.00.02 [08 May 2025]
+ *Assembly Version
+  3.12.10.1
+ *DLL File Name
+  CommonDebuggerInterface.dll
+Device Information Common Interface
+ *Version
+  V9.14.00.02 [08 Apr 2025]
+ *Assembly Version
+  3.0.0.0
+ *DLL File Name
+  DeviceInformation.dll
+
+--- Main Project Information ---
+D:\SourceCode\python\simple_renesas_isp_tool\firmware\RL78_F24_Bridge_app\RL78_F24_Bridge_app.mtpj
+Microcontroller Information
+ *R7F124FLJ3xFB
+  *File Name: Version
+   RL78_Productlist.xml: V8.140100
+   R7F124FLJ3xFB_common.xml: V1.10.00.XX.XX
+   DR7F124FLJ.DVF: V1.10
+   -: -
+   -: -
+  
+
+Build Tool Information
+ *CC-RL
+   * Version of plug-in(*.dll)
+     V8.14.00.02 [10 Apr 2025]
+   * The Version of the Compiler Package
+     V1.15.01
+  
+ * The version of SMS Assembler
+   V1.00.00.01 [29 May 2020]
+ 
+
+Debug Tool Information
+ *RL78 E2 Lite
+  Debugger Library V8.14.00.02 [08 May 2025]
+  
+
+Other Tool Information
+ *None
+
+ *None
+
+ *None
+
+ *None
+
+ *Program Analyzer
+  *Version
+   V4.13.00.03 [24 May 2023]
+
+ *None
+
+ *Smart Configurator
+ *None
+
+

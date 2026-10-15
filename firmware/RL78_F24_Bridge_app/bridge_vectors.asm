@@ -1,0 +1,84 @@
+; Generated from this app's app_irq_handlers.json by prepare_f24_app_irq.ps1.
+.PUBLIC _bridge_default_isr
+.EXTERN _start
+.SECTION .app_vectors, TEXT
+.EXTERN _r_can_ch0_cfifo_rx_isr
+.EXTERN _r_can_ch0_error_isr
+.EXTERN _r_can_ch0_transmit_isr
+.EXTERN _r_can_glb_error_isr
+.EXTERN _r_can_glb_rxmb_isr
+.EXTERN _r_Config_IICA0_interrupt
+.EXTERN _r_Config_INTC_intp7_interrupt
+.EXTERN _r_Config_INTC_intp8_interrupt
+.EXTERN _r_Config_TAU0_1_interrupt
+.EXTERN _r_Config_UART0_interrupt_receive
+.EXTERN _r_Config_UART0_interrupt_send
+    BR !!_start
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_r_Config_UART0_interrupt_send
+    BR !!_r_Config_UART0_interrupt_receive
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_r_Config_IICA0_interrupt
+    BR !!_r_Config_INTC_intp8_interrupt
+    BR !!_bridge_default_isr
+    BR !!_r_Config_TAU0_1_interrupt
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_r_Config_INTC_intp7_interrupt
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_r_can_glb_rxmb_isr
+    BR !!_r_can_ch0_error_isr
+    BR !!_bridge_default_isr
+    BR !!_r_can_ch0_cfifo_rx_isr
+    BR !!_r_can_ch0_transmit_isr
+    BR !!_bridge_default_isr
+    BR !!_r_can_glb_error_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_isr
+    BR !!_bridge_default_brk
+.SECTION .text, TEXT
+_bridge_default_isr:
+    RETI
+_bridge_default_brk:
+    RETB

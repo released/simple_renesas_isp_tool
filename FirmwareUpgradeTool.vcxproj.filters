@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4B04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{8AAFF4F2-BFEC-4B68-8C9D-3D3BF23A84EF}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\app.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\can_host_client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\f13_boot_profile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\f13_boot_update.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\f13_transfer_profile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\firmware_update_profile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\host_link_client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\host_link_protocol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\serial_port.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\serial_port_catalog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\worker_bus.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\main_frame_bus.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\main_frame_i2c_image.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\main_frame_i2c_summary.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\main_frame_image.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\worker_format.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\worker_can_workflows.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\core\g16_i2c_discovery.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\core\g16_i2c_image.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\main_frame_status.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\main_frame_overview.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\ui\overview_model.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\ui\status_card.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\core\bridge_port_catalog.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\core\i2c_host_client.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\core\g16_i2c_reference.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\main_frame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main_frame_layout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main_frame_settings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main_frame_workflow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\worker_session.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\app.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\can_host_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\f13_boot_profile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\f13_boot_update.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\f13_transfer_profile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\firmware_update_profile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\host_link_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\host_link_protocol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\host_link_transport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\serial_port.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\serial_port_catalog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\status_card.h"><Filter>Source Files</Filter></ClInclude>
+    <ClInclude Include="src\ui\overview_model.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\core\bridge_port_catalog.h"><Filter>Source Files</Filter></ClInclude>
+    <ClInclude Include="src\core\i2c_host_client.h"><Filter>Source Files</Filter></ClInclude>
+    <ClInclude Include="src\core\g16_i2c_reference.h"><Filter>Source Files</Filter></ClInclude>
+    <ClInclude Include="src\main_frame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\worker_session.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FirmwareUpgradeTool.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\app_icon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

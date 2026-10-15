@@ -1,0 +1,786 @@
+#include "worker_session.h"
+#include "worker_format.h"
+
+#include "core/firmware_update_profile.h"
+#include "core/host_link_baud.h"
+
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <exception>
+#include <iomanip>
+#include <sstream>
+#include <utility>
+
+namespace firmware_upgrade::ui {
+using namespace worker_detail;
+
+namespace {
+
+constexpr std::size_t kMaximumQueuedEvents = 256U;
+
+} // namespace
+
+WorkerSession::WorkerSession() {
+    host_link_client_.SetTransport(&serial_port_);
+    host_link_client_.SetCancelCheck(
+        [this]() { return IsCancelRequested(); });
+    host_link_client_.SetTraceCallback(
+        [this](const host_link::TraceRecord& record) {
+            PostHostLinkTrace(record);
+        });
+    can_client_.SetHostLinkClient(&host_link_client_);
+    i2c_client_.SetHostLinkClient(&host_link_client_);
+    can_client_.SetTraceCallback(
+        [this](can_host::TraceDirection direction,
+               const can_host::Frame& frame) {
+            PostCanTrace(direction, frame);
+        });
+    boot_client_.SetCanClient(&can_client_);
+    boot_client_.SetTransactionPolicy(500U, 3000U, 5000U, 1U);
+    transfer_client_.SetCanClient(&can_client_);
+    transfer_client_.SetTransactionPolicy(500U, 1U);
+}
+
+WorkerSession::~WorkerSession() {
+    StopAndJoin();
+}
+
+bool WorkerSession::Start(HWND notify_window, UINT notify_message) {
+    std::lock_guard<std::mutex> lock(command_mutex_);
+    if (started_ || notify_window == nullptr || notify_message < WM_APP) {
+        return false;
+    }
+
+    notify_window_ = notify_window;
+    notify_message_ = notify_message;
+    stopping_ = false;
+    cancel_requested_ = false;
+    started_ = true;
+    worker_ = std::thread(&WorkerSession::ThreadMain, this);
+    return true;
+}
+
+void WorkerSession::StopAndJoin() {
+    {
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        if (!started_) {
+            return;
+        }
+        stopping_ = true;
+        cancel_requested_ = true;
+        commands_.clear();
+        commands_.push_back(Command{CommandType::Shutdown, L"", 0U});
+        command_pending_or_busy_ = true;
+    }
+    command_ready_.notify_one();
+
+    if (worker_.joinable()) {
+        worker_.join();
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        started_ = false;
+        command_pending_or_busy_ = false;
+        commands_.clear();
+        notify_window_ = nullptr;
+        notify_message_ = 0U;
+    }
+}
+
+bool WorkerSession::OpenAndProbe(const std::wstring& port_name,
+                                 std::uint32_t baudrate) {
+    if (port_name.empty() || baudrate == 0U) {
+        return false;
+    }
+    return Submit(Command{CommandType::OpenAndProbe, port_name, baudrate});
+}
+
+bool WorkerSession::ConnectF13Transfer(const CanSettings& settings) {
+    Command command;
+    command.type = CommandType::ConnectF13Transfer;
+    command.can_settings = settings;
+    return Submit(std::move(command));
+}
+
+bool WorkerSession::ApplyCanSettings(const CanSettings& settings) {
+    Command command;
+    command.type = CommandType::ApplyCanSettings;
+    command.can_settings = settings;
+    return Submit(std::move(command));
+}
+
+bool WorkerSession::RunF13TransferTest() {
+    return Submit(Command{CommandType::RunF13TransferTest, L"", 0U});
+}
+
+bool WorkerSession::DiscoverF13Boot(const CanSettings& settings) {
+    Command command;
+    command.type = CommandType::DiscoverF13Boot;
+    command.can_settings = settings;
+    return Submit(std::move(command));
+}
+
+bool WorkerSession::EnterF13Bootloader(const CanSettings& settings) {
+    Command command;
+    command.type = CommandType::EnterF13Bootloader;
+    command.can_settings = settings;
+    return Submit(std::move(command));
+}
+
+bool WorkerSession::ProgramF13Boot(
+    const std::vector<std::uint8_t>& image) {
+    Command command;
+    command.type = CommandType::ProgramF13Boot;
+    command.image = image;
+    return Submit(std::move(command));
+}
+
+bool WorkerSession::StartCanTxTest(const CanSettings& settings) {
+    Command command;
+    command.type = CommandType::CanTxTest;
+    command.can_settings = settings;
+    can_tx_test_stop_requested_ = false;
+    return Submit(std::move(command));
+}
+
+bool WorkerSession::StopCanTxTest() {
+    can_tx_test_stop_requested_ = true;
+    return true;
+}
+
+bool WorkerSession::ResetHost() {
+    return Submit(Command{CommandType::ResetHost, L"", 0U});
+}
+
+bool WorkerSession::RequestDisconnect() {
+    {
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        if (!started_ || stopping_) {
+            return false;
+        }
+        cancel_requested_ = true;
+        const bool already_queued = std::any_of(
+            commands_.begin(), commands_.end(),
+            [](const Command& command) {
+                return command.type == CommandType::Disconnect;
+            });
+        if (!already_queued) {
+            commands_.push_back(Command{CommandType::Disconnect, L"", 0U});
+        }
+        command_pending_or_busy_ = true;
+    }
+    command_ready_.notify_one();
+    return true;
+}
+
+void WorkerSession::SetDetailedTrace(bool enabled) {
+    detailed_trace_enabled_.store(enabled);
+}
+
+std::vector<WorkerEvent> WorkerSession::DrainEvents() {
+    std::vector<WorkerEvent> drained;
+    std::lock_guard<std::mutex> lock(event_mutex_);
+    drained.reserve(events_.size());
+    if (dropped_ui_events_ != 0U) {
+        WorkerEvent warning;
+        warning.kind = WorkerEventKind::Log;
+        warning.text = L"WARNING: UI event queue overflow; " + std::to_wstring(dropped_ui_events_) +
+            L" events/log lines dropped. This log is incomplete; do not count trace lines as wire packets.";
+        drained.push_back(std::move(warning));
+        dropped_ui_events_ = 0U;
+    }
+    while (!events_.empty()) {
+        drained.push_back(std::move(events_.front()));
+        events_.pop_front();
+    }
+    return drained;
+}
+
+bool WorkerSession::Submit(Command command) {
+    {
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        if (!started_ || stopping_ || command_pending_or_busy_) {
+            return false;
+        }
+        cancel_requested_ = false;
+        commands_.push_back(std::move(command));
+        command_pending_or_busy_ = true;
+    }
+    command_ready_.notify_one();
+    return true;
+}
+
+void WorkerSession::ThreadMain() {
+    for (;;) {
+        Command command;
+        bool have_command = false;
+        {
+            std::unique_lock<std::mutex> lock(command_mutex_);
+            command_ready_.wait_for(lock, std::chrono::milliseconds(25),
+                                    [this]() {
+                return !commands_.empty();
+            });
+            if (!commands_.empty()) {
+                command = std::move(commands_.front());
+                commands_.pop_front();
+                have_command = true;
+            }
+        }
+
+        if (!have_command) {
+            PollHostEvents();
+            continue;
+        }
+
+        if (command.type == CommandType::Shutdown) {
+            break;
+        }
+
+        state_.busy = true;
+        PostState();
+        std::wstring error;
+        bool success = false;
+
+        try {
+            switch (command.type) {
+                case CommandType::OpenAndProbe:
+                    success = ProcessOpenAndProbe(command, &error);
+                    break;
+                case CommandType::ApplyCanSettings:
+                    success = ProcessApplyCanSettings(command, &error);
+                    break;
+                case CommandType::ConnectF13Transfer:
+                    success = ProcessConnectF13Transfer(command, &error);
+                    break;
+                case CommandType::RunF13TransferTest:
+                    success = ProcessRunF13TransferTest(&error);
+                    break;
+                case CommandType::DiscoverF13Boot:
+                    success = ProcessDiscoverF13Boot(command, &error);
+                    break;
+                case CommandType::EnterF13Bootloader:
+                    success = ProcessEnterF13Bootloader(command, &error);
+                    break;
+                case CommandType::ProgramF13Boot:
+                    success = ProcessProgramF13Boot(command, &error);
+                    break;
+                case CommandType::CanTxTest:
+                    success = ProcessCanTxTest(command, &error);
+                    break;
+                case CommandType::ResetHost:
+                    success = ProcessResetHost(&error);
+                    break;
+                case CommandType::ProbeI2c:
+                    success = ProcessProbeI2c(command, &error);
+                    break;
+                case CommandType::BridgeInfo:
+                case CommandType::BridgeEnter:
+                case CommandType::BridgeProgram:
+                case CommandType::BridgeRun:
+                    success = ProcessBridgeAction(command, &error);
+                    break;
+                case CommandType::Disconnect:
+                    cancel_requested_ = false;
+                    ProcessDisconnect();
+                    success = true;
+                    break;
+                case CommandType::Shutdown:
+                    break;
+            }
+        } catch (const std::exception&) {
+            error = L"Worker operation failed with an unexpected exception.";
+            success = false;
+        } catch (...) {
+            error = L"Worker operation failed with an unknown exception.";
+            success = false;
+        }
+
+        state_.busy = false;
+        PostState();
+        if (command.type != CommandType::Disconnect) {
+            if (!success && error.empty()) {
+                error = L"Worker operation failed.";
+            }
+            PostCompletion(success, success ? L"Operation completed." : error);
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(command_mutex_);
+            command_pending_or_busy_ = !commands_.empty();
+        }
+    }
+
+    cancel_requested_ = false;
+    StopCanBestEffort();
+    RestoreLinkBaudBestEffort();
+    serial_port_.Close();
+    ResetSessionState();
+}
+
+bool WorkerSession::ProcessOpenAndProbe(const Command& command,
+                                        std::wstring* error) {
+    ProcessDisconnect();
+    if (IsCancelRequested()) {
+        *error = L"Open canceled.";
+        return false;
+    }
+
+    host_link::HostInfo host_info;
+    host_link::Capabilities capabilities;
+    PostLog(L"Probing MCU host identity and Host Link v2 capabilities.");
+    if (!OpenHostLink(command.port_name,command.baudrate,&host_info,&capabilities,error)) {
+        serial_port_.Close();
+        ResetSessionState();
+        PostState();
+        return false;
+    }
+    state_.serial_open = true;
+    state_.port_name = command.port_name;
+
+    std::wstringstream summary;
+    summary << L"Bridge " << Hex16(host_info.board_id)
+            << L"  FW "
+            << static_cast<unsigned>(host_info.firmware_major) << L"."
+            << static_cast<unsigned>(host_info.firmware_minor) << L"."
+            << static_cast<unsigned>(host_info.firmware_patch)
+            << L" build " << host_info.firmware_build
+            << L"  Host Link v2 / " << state_.baudrate << L" baud";
+    state_.host_validated = true;
+    state_.host_summary = summary.str();
+    state_.host_info = host_info;
+    state_.host_capabilities = capabilities;
+    if (!RefreshBridgePorts(error) || !RefreshBridgeInfo(error)) {
+        ProcessDisconnect();
+        return false;
+    }
+    PostLog(L"MCU host validated: " + state_.host_summary);
+    PostLog(L"Capabilities: payload=" +
+            std::to_wstring(capabilities.maximum_host_link_payload) +
+            L", CAN bytes=" +
+            std::to_wstring(capabilities.maximum_can_data_bytes) +
+            L", filters=" + std::to_wstring(capabilities.filter_slots) + L".");
+    RefreshHostStatsBestEffort();
+    PostState();
+    return true;
+}
+
+bool WorkerSession::ProcessResetHost(std::wstring* error) {
+    std::wstring port_name;
+    std::uint32_t baudrate;
+    std::wstring reset_error;
+    host_link::HostInfo host_info;
+    host_link::Capabilities capabilities;
+    bool acknowledged;
+
+    if (!state_.host_validated || !serial_port_.IsOpen()) {
+        *error = L"MCU host is not validated.";
+        return false;
+    }
+
+    const auto original_board = state_.host_info.board_id;
+    port_name = state_.port_name;
+    baudrate = state_.requested_baudrate;
+    AbortI2cBestEffort();
+    StopCanBestEffort();
+    PostLog(L"Sending one-shot RESET_HOST; waiting for ACK before the bridge "
+            L"software reset.");
+    acknowledged = host_link_client_.ResetHost(&reset_error);
+    if (!acknowledged) {
+        PostLog(L"RESET_HOST ACK warning: " + reset_error +
+                L" Reconnect probing will determine the final result.");
+    }
+
+    serial_port_.Close();
+    ResetSessionState();
+    PostState();
+    Sleep(250U);
+
+    for (unsigned attempt = 1U; attempt <= 2U; ++attempt) {
+        std::wstring open_error;
+        std::wstring probe_error;
+
+        if (IsCancelRequested()) {
+            serial_port_.Close();
+            ResetSessionState();
+            PostState();
+            *error = L"Host reset reconnect canceled.";
+            return false;
+        }
+        if (OpenHostLink(port_name,baudrate,&host_info,&capabilities,&open_error)) {
+            if (host_info.board_id!=original_board) {
+                serial_port_.Close(); ResetSessionState(); PostState();
+                *error=L"Reset reconnect found a different bridge board ID."; return false;
+            }
+            {
+                std::wstringstream summary;
+                summary << L"Bridge " << Hex16(host_info.board_id)
+                        << L"  FW "
+                        << static_cast<unsigned>(host_info.firmware_major)
+                        << L"."
+                        << static_cast<unsigned>(host_info.firmware_minor)
+                        << L"."
+                        << static_cast<unsigned>(host_info.firmware_patch)
+                        << L" build " << host_info.firmware_build
+                        << L"  Host Link v2 / " << state_.baudrate << L" baud";
+                state_.serial_open = true;
+                state_.host_validated = true;
+                state_.port_name = port_name;
+                state_.host_summary = summary.str();
+                state_.host_info = host_info;
+                state_.host_capabilities = capabilities;
+                if (!RefreshBridgePorts(&probe_error) || !RefreshBridgeInfo(&probe_error)) {
+                    serial_port_.Close();
+                    continue;
+                }
+                PostLog(L"Bridge reset/reconnect complete after probe attempt " +
+                        std::to_wstring(attempt) + L": " +
+                        state_.host_summary);
+                RefreshHostStatsBestEffort();
+                PostState();
+                return true;
+            }
+        }
+        Sleep(100U);
+    }
+
+    serial_port_.Close();
+    ResetSessionState();
+    PostState();
+    *error = acknowledged ?
+        L"Bridge acknowledged reset but bounded bootstrap/baud reconnect failed." :
+        L"RESET_HOST was not acknowledged and bounded reconnect failed.";
+    return false;
+}
+
+void WorkerSession::ProcessDisconnect() {
+    const bool was_busy = state_.busy;
+    cancel_requested_ = false;
+    AbortI2cBestEffort();
+    StopCanBestEffort();
+    RestoreLinkBaudBestEffort();
+    if (state_.f24_stats_valid) {
+        PostState();
+    }
+    if (serial_port_.IsOpen()) {
+        PostLog(L"COM closed: " + state_.port_name + L".");
+        serial_port_.Close();
+    }
+    ResetSessionState();
+    state_.busy = was_busy;
+    PostState();
+}
+
+void WorkerSession::StopCanBestEffort() {
+    if (!state_.host_validated || !serial_port_.IsOpen()) {
+        state_.can_started = false;
+        state_.target_validated = false;
+        state_.f13_bootloader_ready = false;
+        state_.target_profile = TargetProfile::None;
+        state_.target_metadata = {};
+        state_.target_summary.clear();
+        return;
+    }
+
+    if (state_.can_started) {
+        std::uint32_t controller_state = 0U;
+        std::wstring error;
+        if (!can_client_.Stop(&controller_state, &error)) {
+            PostLog(L"CAN stop warning: " + error);
+        } else {
+            PostLog(L"CAN stopped, controller state " +
+                    Hex32(controller_state) + L".");
+        }
+    }
+    RefreshHostStatsBestEffort();
+    state_.can_started = false;
+    state_.target_validated = false;
+    state_.f13_bootloader_ready = false;
+    state_.target_profile = TargetProfile::None;
+    state_.target_metadata = {};
+    state_.target_summary.clear();
+}
+
+void WorkerSession::RefreshHostStatsBestEffort() {
+    host_link::HostStats stats;
+    std::wstring error;
+
+    if (!state_.host_validated || !serial_port_.IsOpen()) {
+        return;
+    }
+    if (!host_link_client_.GetStats(&stats, &error)) {
+        PostLog(L"Host statistics warning: " + error);
+        return;
+    }
+    state_.f24_stats = stats;
+    state_.f24_stats_valid = true;
+    PostLog(L"F24 counters: CAN RX=" +
+            std::to_wstring(stats.can_rx_frames) + L", TX=" +
+            std::to_wstring(stats.can_tx_frames) + L", lost=" +
+            std::to_wstring(stats.can_rx_lost_frames) + L", TX failures=" +
+            std::to_wstring(stats.can_tx_failures) + L", warning=" +
+            std::to_wstring(stats.can_warning_entries) + L", passive=" +
+            std::to_wstring(stats.can_error_passive_entries) + L", bus-off=" +
+            std::to_wstring(stats.can_bus_off_entries) + L", recovery=" +
+            std::to_wstring(stats.can_recovery_count) + L".");
+}
+
+void WorkerSession::PollHostEvents() {
+    std::wstring error;
+    host_link::Frame event;
+    bool handled = false;
+
+    if (!state_.host_validated || !serial_port_.IsOpen() || state_.busy) {
+        return;
+    }
+    while (host_link_client_.TryPopEvent(&event)) {
+        HandleHostLinkEvent(event);
+        handled = true;
+    }
+    if (!host_link_client_.PollEvents(10U, &error)) {
+        PostLog(L"Host Link background read failed: " + error);
+        serial_port_.Close();
+        ResetSessionState();
+        PostState();
+        return;
+    }
+    while (host_link_client_.TryPopEvent(&event)) {
+        HandleHostLinkEvent(event);
+        handled = true;
+    }
+    if (handled) {
+        PostState();
+    }
+}
+
+void WorkerSession::HandleHostLinkEvent(const host_link::Frame& event) {
+    const auto command = static_cast<host_link::Command>(event.command);
+
+    if (command == host_link::Command::CanRxEvent) {
+        if (event.payload.size() < 12U || event.payload[0] != 0U ||
+            event.payload.size() !=
+                12U + static_cast<std::size_t>(event.payload[3])) {
+            PostLog(L"Invalid asynchronous CAN_RX_EVENT payload ignored.");
+            return;
+        }
+        const std::uint32_t id = ReadLe32(&event.payload[4]);
+        const std::uint32_t timestamp = ReadLe32(&event.payload[8]);
+        PostLog(L"Asynchronous CAN RX: ID=" + Hex32(id) +
+                L", DLC=" + std::to_wstring(event.payload[2]) +
+                L", timestamp=" + std::to_wstring(timestamp) + L".");
+        return;
+    }
+
+    if (command == host_link::Command::CanStateEvent ||
+        command == host_link::Command::HostErrorEvent) {
+        if (event.payload.size() != 12U) {
+            PostLog(L"Invalid asynchronous CAN diagnostic payload ignored.");
+            return;
+        }
+        const std::uint16_t channel_sources = ReadLe16(&event.payload[0]);
+        const std::uint16_t global_sources = ReadLe16(&event.payload[2]);
+        const std::uint32_t controller_state = ReadLe32(&event.payload[4]);
+        const std::uint32_t arbitration_lost = ReadLe32(&event.payload[8]);
+        state_.arbitration_lost_entries = arbitration_lost;
+        PostLog(std::wstring(command == host_link::Command::CanStateEvent ?
+                                L"CAN state event: " :
+                                L"CAN error event: ") +
+                L"channel_sources=" + Hex16(channel_sources) +
+                L" [" + CanChannelSourcesText(channel_sources) + L"]" +
+                L", global_sources=" + Hex16(global_sources) +
+                L" [" + CanGlobalSourcesText(global_sources) + L"]" +
+                L", controller_state=" + Hex32(controller_state) +
+                L", arbitration_lost=" +
+                std::to_wstring(arbitration_lost) + L".");
+        if ((channel_sources &
+             host_link::kCanChannelSourceArbitrationLost) != 0U) {
+            PostLog(L"CAN arbitration loss diagnosed; the frame was not the "
+                    L"bus winner. Cumulative count=" +
+                    std::to_wstring(arbitration_lost) + L".");
+        }
+        return;
+    }
+
+    PostLog(L"Unknown Host Link event 0x" +
+            HexBytes({event.command}) + L" ignored.");
+}
+
+void WorkerSession::ResetSessionState() {
+    const bool was_busy = state_.busy;
+    state_ = {};
+    state_.busy = was_busy;
+}
+
+bool WorkerSession::IsCancelRequested() const {
+    return cancel_requested_.load() && !cleanup_in_progress_;
+}
+
+void WorkerSession::PostLog(const std::wstring& text) {
+    WorkerEvent event;
+    event.kind = WorkerEventKind::Log;
+    event.text = text;
+    QueueEvent(std::move(event));
+}
+
+void WorkerSession::PostState() {
+    WorkerEvent event;
+    const host_link::ClientStats& stats = host_link_client_.Stats();
+    event.kind = WorkerEventKind::State;
+    event.state = state_;
+    event.state.host_requests = stats.requests;
+    event.state.host_retries = stats.retries;
+    event.state.host_timeouts = stats.response_timeouts;
+    event.state.unmatched_frames = stats.unmatched_frames;
+    event.state.received_events = stats.received_events;
+    event.state.dropped_events = stats.dropped_events;
+    QueueEvent(std::move(event));
+}
+
+void WorkerSession::PostHostLinkTrace(
+    const host_link::TraceRecord& record) {
+    if (!detailed_trace_enabled_.load()) {
+        return;
+    }
+
+    const wchar_t* kind = L"UART";
+    switch (record.kind) {
+        case host_link::TraceKind::Request: kind = L"UART TX"; break;
+        case host_link::TraceKind::Response: kind = L"UART RX"; break;
+        case host_link::TraceKind::Event: kind = L"UART EVENT"; break;
+        case host_link::TraceKind::Retry: kind = L"UART RETRY"; break;
+        case host_link::TraceKind::Timeout: kind = L"UART TIMEOUT"; break;
+        case host_link::TraceKind::Unmatched: kind = L"UART UNMATCHED"; break;
+    }
+
+    std::wstringstream stream;
+    stream << L"TRACE " << kind << L" seq=" << record.sequence
+           << L" cmd=0x" << std::hex << std::uppercase
+           << std::setfill(L'0') << std::setw(2)
+           << static_cast<unsigned>(record.command)
+           << L" status=0x" << std::setw(2)
+           << static_cast<unsigned>(record.status);
+    if (record.attempt != 0U) {
+        stream << std::dec << L" attempt=" << record.attempt;
+    }
+    stream << L" payload=[" << HexBytes(record.payload) << L"]";
+    PostLog(stream.str());
+}
+
+void WorkerSession::PostCanTrace(can_host::TraceDirection direction,
+                                 const can_host::Frame& frame) {
+    if (!detailed_trace_enabled_.load()) {
+        return;
+    }
+
+    std::wstringstream stream;
+    stream << L"TRACE CAN "
+           << (direction == can_host::TraceDirection::Transmit ? L"TX" : L"RX")
+           << L" id=0x" << std::hex << std::uppercase
+           << std::setfill(L'0') << std::setw(frame.extended ? 8 : 3)
+           << frame.id << std::dec
+           << L" IDE=" << (frame.extended ? 1 : 0)
+           << L" RTR=" << (frame.remote ? 1 : 0)
+           << L" FDF=" << (frame.fd ? 1 : 0)
+           << L" BRS=" << (frame.bit_rate_switch ? 1 : 0)
+           << L" DLC=" << static_cast<unsigned>(frame.dlc)
+           << L" timestamp=" << frame.timestamp
+           << L" data=[" << HexBytes(frame.data) << L"]";
+    if ((frame.id == f13_boot::kRequestId ||
+         frame.id == f13_boot::kResponseId) && !frame.data.empty()) {
+        const unsigned command = frame.data[0];
+        stream << L" decoded=F13_BOOT command=0x" << std::hex
+               << std::setw(2) << command << std::dec;
+        if (frame.id == f13_boot::kResponseId && frame.data.size() >= 2U) {
+            stream << L" status=" << static_cast<unsigned>(frame.data[1]);
+        }
+        if (frame.data.size() >= 8U) {
+            if (command == static_cast<unsigned>(f13_boot::Command::Info)) {
+                stream << L" page=" << static_cast<unsigned>(frame.data[2])
+                       << L" state=" << static_cast<unsigned>(frame.data[3]);
+            } else if (frame.id == f13_boot::kResponseId) {
+                const unsigned sequence =
+                    static_cast<unsigned>(frame.data[2]) |
+                    (static_cast<unsigned>(frame.data[3]) << 8U);
+                stream << L" sequence=" << sequence;
+            } else if (command == static_cast<unsigned>(f13_boot::Command::BlockBegin) ||
+                       command == static_cast<unsigned>(f13_boot::Command::BlockCommit)) {
+                const unsigned offset =
+                    static_cast<unsigned>(frame.data[1]) |
+                    (static_cast<unsigned>(frame.data[2]) << 8U) |
+                    (static_cast<unsigned>(frame.data[3]) << 16U);
+                stream << L" block_offset=" << offset;
+            }
+            if (frame.id == f13_boot::kResponseId) {
+                const std::uint32_t value =
+                    static_cast<std::uint32_t>(frame.data[4]) |
+                    (static_cast<std::uint32_t>(frame.data[5]) << 8U) |
+                    (static_cast<std::uint32_t>(frame.data[6]) << 16U) |
+                    (static_cast<std::uint32_t>(frame.data[7]) << 24U);
+                stream << L" value=" << Hex32(value);
+            }
+        }
+    } else if ((frame.id == f13_transfer::kRequestId ||
+                frame.id == f13_transfer::kResponseId) &&
+               frame.data.size() == f13_transfer::kFrameSize) {
+        const bool crc_ok = f13_transfer::Crc8Atm(
+                                frame.data.data(),
+                                f13_transfer::kFrameSize - 1U) ==
+                            frame.data[f13_transfer::kFrameSize - 1U];
+        stream << L" decoded=CUSTOM_TRANSFER sequence="
+               << static_cast<unsigned>(frame.data[2])
+               << L" command=0x" << std::hex << std::setw(2)
+               << static_cast<unsigned>(frame.data[3]) << std::dec
+               << L" crc=" << (crc_ok ? L"OK" : L"BAD");
+        if (frame.data[3] == static_cast<std::uint8_t>(
+                                  f13_transfer::Command::ErrorResponse)) {
+            stream << L" rejected_command=0x" << std::hex << std::setw(2)
+                   << static_cast<unsigned>(frame.data[4]) << std::dec
+                   << L" status=" << static_cast<unsigned>(frame.data[5])
+                   << L" detail=" << static_cast<unsigned>(frame.data[6]);
+        }
+    }
+    PostLog(stream.str());
+}
+
+void WorkerSession::PostProgress(int progress, const std::wstring& text) {
+    WorkerEvent event;
+    event.kind = WorkerEventKind::Progress;
+    event.progress = (std::max)(0, (std::min)(progress, 100));
+    event.text = text;
+    QueueEvent(std::move(event));
+}
+
+void WorkerSession::PostCompletion(bool success, const std::wstring& text) {
+    WorkerEvent event;
+    event.kind = WorkerEventKind::OperationComplete;
+    event.success = success;
+    event.text = text;
+    QueueEvent(std::move(event));
+}
+
+void WorkerSession::QueueEvent(WorkerEvent event) {
+    HWND notify_window;
+    UINT notify_message;
+    {
+        std::lock_guard<std::mutex> lock(event_mutex_);
+        if (events_.size() >= kMaximumQueuedEvents) {
+            const auto log = std::find_if(events_.begin(), events_.end(),
+                [](const WorkerEvent& pending) { return pending.kind == WorkerEventKind::Log; });
+            if (log != events_.end()) events_.erase(log);
+            else events_.pop_front();
+            ++dropped_ui_events_;
+        }
+        events_.push_back(std::move(event));
+    }
+    {
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        notify_window = notify_window_;
+        notify_message = notify_message_;
+    }
+    if (notify_window != nullptr && notify_message >= WM_APP) {
+        PostMessageW(notify_window, notify_message, 0U, 0);
+    }
+}
+
+} // namespace firmware_upgrade::ui
