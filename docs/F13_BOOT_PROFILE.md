@@ -59,7 +59,7 @@ format-6 core is at image offset `0x100` within a256-byte metadata region; CRC32
 four bytes. The manifest contains the identity, layout and CAN fields listed
 above. The exact field table is maintained in the paired target protocol:
 
-- `D:\SourceCode\_Avery_Renesas\CS+\RL78_F13_Boot_loader_CAN\CAN_BOOT_PROTOCOL.md`
+- [F13 CAN Boot protocol](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/CAN_BOOT_PROTOCOL.md)
 
 An image with only a trailing checksum cannot safely tell the tool its MCU,
 application address, flash bounds, protocol, or CAN settings. Therefore every

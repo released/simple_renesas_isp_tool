@@ -1,7 +1,8 @@
 param([string]$WebRoot='', [switch]$CheckOnly)
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
-if (!$WebRoot) { $WebRoot=Join-Path (Split-Path -Parent (Split-Path -Parent $repo)) '_Avery_Markdown\web' }
+. (Join-Path $PSScriptRoot 'workspace_paths.ps1')
+$WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
 $begin='<!-- RL78_PORTING_BEGIN -->'; $end='<!-- RL78_PORTING_END -->'
 $pattern='(?s)'+[regex]::Escape($begin)+'.*?'+[regex]::Escape($end)
 $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md'))

@@ -6,6 +6,9 @@
 Do not print multiline marker
 -->
 
+<a id="downloads"></a>
+<a name='legacy-anchor'></a>
+
 #### Fourth-level heading
 
 Visible body text.

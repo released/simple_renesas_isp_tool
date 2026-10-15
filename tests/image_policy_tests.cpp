@@ -8,9 +8,9 @@
 /* Execute the exact C90 metadata/CRC routines linked into the F13 boot. */
 #define __far
 #define F13_CRC_HOST_TEST
-#include "../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/can_boot_transport.h"
-#include "../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/sw_crc32.c"
-#include "../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/can_boot_metadata.inc"
+#include "can_boot_transport.h"
+#include "sw_crc32.c"
+#include "can_boot_metadata.inc"
 #undef __far
 
 int TestImagePolicy() {

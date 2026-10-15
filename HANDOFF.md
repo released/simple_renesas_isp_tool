@@ -16,6 +16,51 @@ Last updated: 2026-10-15
 
 ## Current status
 
+### Public downloads, six workflows and source portability (2026-10-15)
+
+Both web guides now start with a canonical download/workflow index from
+docs/MULTIBUS_TOOL_GUIDE_zh-TW.md PUBLIC_RESOURCES. New sync_public_resources.ps1
+validates both targets before writing and supports CheckOnly. Downloads distinguish
+Tool, initial F24 Boot MOT/F13 combined HEX and subsequent Host/Device App BINs.
+Six stable links cover Tool/F24 responsibilities, F13 boot decision, Tool operation,
+Misc Host App update, CAN Device App update and Boot/App porting; each links the
+actual public Tool docs. Root web navigation links the download index. Removed
+private workspace source links and corrected the remaining web core96 statement.
+Both web READMEs document canonical maintenance. Local changes are NOT deployed.
+
+GitHub audit: public main Transfer/Boot/App source/library/project trees match
+local after Git line-ending normalization:48/49/39 files (136total); all registered
+paths35/29/28 exist. App depends on the sibling Boot project, now explicitly
+documented with clone/ZIP/build instructions. App BIN SHA/CRC match public;
+Boot/combined HEX normalized content matches. F13 READMEs/IRQ guides now use
+real public cross-repository links; App README_BOOTLOADER now describes format6.
+
+Tool build/test portability: workspace_paths helpers default to sibling F13 repos
+and Tool-parent web roots with explicit/environment overrides. Removed personal
+F13 includes and source registration from tests; missing source has a clear
+MSBuild error. Normal solution Build excludes the explicit integration-test
+project. No PC runtime/firmware code changed or version bumped. Main Debug
+one-click and Release direct solution builds without F13 env PASS; test Debug/
+Release builds/suites PASS; neutral relocated sibling build/run PASS. All builds
+0warnings/errors, six measured delivery hashes unchanged. Fresh CC-RL not run.
+
+PDF renderer now hides standalone web anchors (fixture regression test), PDFs
+30/10/13/10 pages with20/5/7/2 diagrams rendered with Poppler and all contact
+sheets plus changed full-size pages visually reviewed. Git treats PDFs binary.
+Guide/public/path15, canonical5, web198refs/anchors/URLs, HTTP preview and clean24
+PASS. Full Python discovery35:34PASS/1optionalSKIP plus missing-map F13 IRQ class
+setupERROR; do not turn this gap into a pass. Actual browser surfaces unavailable,
+so browser/DPI/GUI screenshots NOT RUN; no hardware probe/flash performed.
+
+Unused tmp/generated diagrams/quality reports/private F24 IDE/cache state moved
+recoverably outside the project; current sources/libraries/images/EXE/user photos
+preserved. Restore root: D:\SourceCode\_Codex_Recovery\simple_renesas_isp_tool_20261015_192414.
+Generated SC/project-wizard provenance still uses local output paths and must
+be relocated by existing prepare scripts after checkout/SC; these are not the
+removed external compilation dependencies. No Git staging/commit/push. User
+must upload the Tool, two slides/root navigation and three F13 documentation
+updates. Detailed changed files/check commands: tmp/internal/public_portability/VERIFICATION.md.
+
 ### Evergreen web navigation and copy (2026-10-15)
 
 User requested removing draft/unpublished wording and prominent release /

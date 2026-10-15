@@ -4,15 +4,63 @@ import re
 import subprocess
 import tempfile
 import unittest
+from workspace_paths import companion_path
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT.parents[1] / '_Avery_Markdown/web'
+WEB = companion_path('Web')
 ISP = WEB / 'slide_isp_tool_for_RL78'
 BOOT = WEB / 'slide_boot_loader_for_RL78'
 NAV = WEB / 'released.github.io/README.md'
 
 
 class PublicWebGuides(unittest.TestCase):
+    def test_public_resources_downloads_anchors_and_sync(self):
+        pattern = re.compile(r'<!-- PUBLIC_RESOURCES_BEGIN -->.*?<!-- PUBLIC_RESOURCES_END -->', re.S)
+        source = (ROOT / 'docs/MULTIBUS_TOOL_GUIDE_zh-TW.md').read_text(encoding='utf-8-sig')
+        block, = pattern.findall(source)
+        for path in [ISP / 'index.md', BOOT / 'index.md']:
+            text = path.read_text(encoding='utf-8-sig')
+            self.assertEqual(pattern.findall(text), [block])
+            self.assertNotRegex(text, r'_Avery|[A-Z]:[\\/]|\.\./\.\./python|SourceCode')
+            self.assertNotIn('有效core長度仍為96', text)
+        for filename in ['FirmwareUpgradeTool.exe', 'RL78_F24_Bridge_boot.mot',
+                         'RL78_F24_Bridge_app_bridge_update.bin', 'boot0000_1FFF.hex',
+                         'boot_app.hex', 'RL78_F13_Boot_loader_CAN_app_update.bin']:
+            self.assertIn('https://raw.githubusercontent.com/released/', block)
+            self.assertIn('/' + filename + ')', block)
+        anchors = [('slide_isp_tool_for_RL78', name) for name in
+                   ['tool-bridge-flow', 'f13-boot-flow', 'tool-operation',
+                    'host-bridge-firmware', 'f13-device-update']]
+        anchors.append(('slide_boot_loader_for_RL78', 'boot-app-porting'))
+        for site, anchor in anchors:
+            target = (WEB / site / 'index.md').read_text(encoding='utf-8-sig')
+            self.assertEqual(target.count('<a id="' + anchor + '"></a>'), 1)
+            self.assertIn('https://released.github.io/' + site + '/#' + anchor, block)
+
+    def test_resource_sync_is_atomic_and_check_only_is_read_only(self):
+        script = ROOT / 'scripts/sync_public_resources.ps1'
+        with tempfile.TemporaryDirectory(prefix='public_sync_') as folder:
+            web = Path(folder)
+            pages = [web / site / 'index.md' for site in
+                     ['slide_isp_tool_for_RL78', 'slide_boot_loader_for_RL78']]
+            for page in pages:
+                page.parent.mkdir()
+                page.write_text('prefix\n<!-- PUBLIC_RESOURCES_BEGIN -->stale<!-- PUBLIC_RESOURCES_END -->\nsuffix', encoding='utf-8')
+            command = ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+                       '-File', str(script), '-WebRoot', folder]
+            before = [page.read_bytes() for page in pages]
+            self.assertNotEqual(subprocess.run(command + ['-CheckOnly'], capture_output=True).returncode, 0)
+            self.assertEqual([page.read_bytes() for page in pages], before)
+            pages[1].write_text('missing marker', encoding='utf-8')
+            self.assertNotEqual(subprocess.run(command, capture_output=True).returncode, 0)
+            self.assertEqual(pages[0].read_bytes(), before[0])
+            pages[1].write_bytes(before[1])
+            self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
+            self.assertEqual(subprocess.run(command + ['-CheckOnly'], capture_output=True).returncode, 0)
+            for page in pages:
+                self.assertTrue(page.read_text(encoding='utf-8').startswith('prefix\n'))
+                self.assertTrue(page.read_text(encoding='utf-8').endswith('\nsuffix'))
+
     def test_navigation_has_canonical_links_and_function_descriptions(self):
         text = NAV.read_text(encoding='utf-8-sig')
         entries = re.findall(r'(?m)^\| \[RL78 (?:ISP Tool|Bootloader)\].*$', text)

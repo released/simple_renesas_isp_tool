@@ -6,13 +6,9 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$sourceRoot = Split-Path -Parent (Split-Path -Parent $repoRoot)
-if ([string]::IsNullOrWhiteSpace($BootProject)) {
-    $BootProject = Join-Path $sourceRoot '_Avery_Renesas\CS+\RL78_F13_Boot_loader_CAN'
-}
-if ([string]::IsNullOrWhiteSpace($AppProject)) {
-    $AppProject = Join-Path $sourceRoot '_Avery_Renesas\CS+\RL78_F13_Boot_loader_CAN_app'
-}
+. (Join-Path $PSScriptRoot 'workspace_paths.ps1')
+$BootProject = Get-CompanionPath -Kind F13Boot -ExplicitPath $BootProject
+$AppProject = Get-CompanionPath -Kind F13App -ExplicitPath $AppProject
 
 $bootMap = Join-Path $BootProject 'DefaultBuild\RL78_F13_Boot_loader_CAN.map'
 $bootHex = Join-Path $BootProject 'DefaultBuild\boot0000_1FFF.hex'

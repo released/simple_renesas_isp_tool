@@ -154,8 +154,8 @@ interrupt pragma 且無 vect=，函式定義為 void handler(void)，以 RETI �
 4. 登錄各 app 自己的 ISR、修改 mapping／app_image.json 後，只執行：
 
 ```powershell
-.\scripts\build_f24_bridge.ps1 -Kind app -AppProject "D:\MyApps\ProjectA"
-.\scripts\build_f24_bridge.ps1 -Kind app -AppProject "D:\MyApps\ProjectB"
+.\scripts\build_f24_bridge.ps1 -Kind app -AppProject ".\ProjectA"
+.\scripts\build_f24_bridge.ps1 -Kind app -AppProject ".\ProjectB"
 ```
 
 也可從 CS+ clean rebuild，hook 會自動執行。只驗證產物是否最新使用

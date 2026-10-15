@@ -12,10 +12,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from workspace_paths import companion_path
 
-SOURCE = Path(__file__).resolve().parents[3]
-BOOT = SOURCE / '_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN'
-APP = BOOT.with_name(BOOT.name + '_app')
+BOOT = companion_path('F13Boot')
+APP = companion_path('F13App')
 OPTIONS = argparse.ArgumentParser(add_help=False)
 OPTIONS.add_argument('--boot-project', type=Path, default=BOOT)
 OPTIONS.add_argument('--app-project', type=Path, default=APP)

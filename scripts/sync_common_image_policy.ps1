@@ -1,7 +1,8 @@
 param([string]$WebRoot='', [switch]$CheckOnly)
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
-if (!$WebRoot) { $WebRoot=Join-Path (Split-Path -Parent (Split-Path -Parent $repo)) '_Avery_Markdown\web' }
+. (Join-Path $PSScriptRoot 'workspace_paths.ps1')
+$WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
 $pattern='(?s)<!-- COMMON_IMAGE_POLICY_BEGIN -->.*?<!-- COMMON_IMAGE_POLICY_END -->'
 $source=Get-Content (Join-Path $repo 'docs\COMMON_IMAGE_METADATA.md') -Raw -Encoding UTF8
 $block=[regex]::Match($source,$pattern).Value

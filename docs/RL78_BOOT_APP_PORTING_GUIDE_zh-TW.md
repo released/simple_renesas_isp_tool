@@ -21,18 +21,44 @@ protocol，或另行開發 PC target adapter；不能只修改 BIN 的 MCU 名�
 
 ### 1. 選定目前的參考專案
 
-下列路徑以工作區的 SourceCode 與 simple_renesas_isp_tool 為基準，非固定安裝路徑。
+F13與F24範例皆可由下列GitHub連結取得，不需要開發者的本機工作區。
+F24 Boot／App位於同一Tool repository的firmware目錄，應下載完整repository，
+不能只下載個別資料夾而省略共用driver、SC、library與scripts。
 
 | 項目 | F13 Device | F24 Host Bridge |
 | --- | --- | --- |
-| Boot 專案 | `_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN` | `firmware/RL78_F24_Bridge_boot` |
-| App 專案 | `_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN_app` | `firmware/RL78_F24_Bridge_app` |
+| CAN通訊測試 | [RL78_F13_CAN_Transfer](https://github.com/released/RL78_F13_CAN_Transfer)；不擦寫Flash | 搭配同一通用bridge；不是Host App更新映像 |
+| Boot 專案 | [RL78_F13_Boot_loader_CAN](https://github.com/released/RL78_F13_Boot_loader_CAN) | [RL78_F24_Bridge_boot](https://github.com/released/simple_renesas_isp_tool/tree/main/firmware/RL78_F24_Bridge_boot) |
+| App 專案 | [RL78_F13_Boot_loader_CAN_app](https://github.com/released/RL78_F13_Boot_loader_CAN_app) | [RL78_F24_Bridge_app](https://github.com/released/simple_renesas_isp_tool/tree/main/firmware/RL78_F24_Bridge_app) |
 | MCU | R5F10BMG，128 KiB Flash | R7F124FLJ3xFB，256 KiB Flash |
 | 更新契約 | image format6、CAN protocol5、IRQ ABI F1V1；需matching Boot/App | BUR1 contract3、IRQ ABI F2V1；需matching Boot/App |
 | 更新入口 | CAN 500K，standard ID 0x700／0x701 | PC UART，Host Boot 固定115200；Tool 的 Misc |
 | Flash library | F13 FSL | F24 RFD Type02，programming-mode 路徑在 RAM 執行 |
 
-F13_CAN_Transfer 是通訊 benchmark，不是 Boot/App 移植模板。
+F13_CAN_Transfer 是通訊 benchmark，不是 Boot/App 移植模板。先使用Transfer
+確認傳輸，再依需要安裝Boot/App；Transfer與Boot/App是不同的device韌體。
+
+下載Boot與App時，必須保留以下相鄰目錄及名稱。App會引用Boot的共用board來源、
+CAN設定及產表腳本；只下載App，或保留ZIP解壓後的-main尾碼，不能直接重建。
+
+```text
+examples/
+  RL78_F13_CAN_Transfer/
+  RL78_F13_Boot_loader_CAN/
+  RL78_F13_Boot_loader_CAN_app/
+```
+
+可在同一空目錄依序執行：
+
+```powershell
+git clone https://github.com/released/RL78_F13_CAN_Transfer.git
+git clone https://github.com/released/RL78_F13_Boot_loader_CAN.git
+git clone https://github.com/released/RL78_F13_Boot_loader_CAN_app.git
+```
+
+若使用Download ZIP，解壓後將目錄改成上方名稱。首次先build Boot，再build App
+產生matching boot_app.hex；後續更新使用App產生的_update.bin。不能把兩種檔案互換。
+
 舊 F24_Boot_loader_UART／I2C／CRC 教材可參考原理，不可把其 callback ISR、
 固定 CRC 位址或舊封裝流程混入現行固定完整 RETI 向量與 metadata 契約。
 G16 新版 I2C Boot/App 尚未開發；舊範例不代表已具備相同安全條件。
@@ -184,8 +210,8 @@ MTPJ 與 checker 的檔名假設，再重新驗證。這不需要為 ISR 名稱�
 5. 在 Tool root 建置自己的 App，例如：
 
 ```powershell
-.\scripts\build_f24_bridge.ps1 -Kind app -AppProject "D:\MyApps\ProjectA"
-.\scripts\build_f24_bridge.ps1 -Kind app -AppProject "D:\MyApps\ProjectB"
+.\scripts\build_f24_bridge.ps1 -Kind app -AppProject ".\ProjectA"
+.\scripts\build_f24_bridge.ps1 -Kind app -AppProject ".\ProjectB"
 ```
 
 上述路徑是使用者自訂位置的例子。搬移時必須先修正所有來源與 build hook 路徑。
@@ -285,9 +311,9 @@ F13 Transfer benchmark 只證明當時通訊；不代表目前 Boot/App 完整�
 
 ## 相關文件與來源入口
 
-- [F13 向量詳細指南](../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/INTERRUPT_VECTOR_GUIDE_zh-TW.md)
-- [F13 Boot 專案與來源索引](../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/README.md)
-- [F13 App 建置與除錯](../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN_app/README.md)
+- [F13 向量詳細指南](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/INTERRUPT_VECTOR_GUIDE_zh-TW.md)
+- [F13 Boot 專案與來源索引](https://github.com/released/RL78_F13_Boot_loader_CAN)
+- [F13 App 建置與除錯](https://github.com/released/RL78_F13_Boot_loader_CAN_app)
 - [F13 boot decision、ENTER、timeout 與更新流程](F13_BOOT_UPDATE_FLOW_zh-TW.md)
 - [F24 各 App 獨立產表與 Bridge 指南](SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md)
 - [共用 image policy 與 Metadata](COMMON_IMAGE_METADATA.md)

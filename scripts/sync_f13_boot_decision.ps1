@@ -1,10 +1,8 @@
 param([string]$WebRoot = '', [switch]$CheckOnly)
 $ErrorActionPreference = 'Stop'
 $toolRoot = Split-Path -Parent $PSScriptRoot
-if (-not $WebRoot) {
-    $sourceRoot = Split-Path -Parent (Split-Path -Parent $toolRoot)
-    $WebRoot = Join-Path $sourceRoot '_Avery_Markdown\web'
-}
+. (Join-Path $PSScriptRoot 'workspace_paths.ps1')
+$WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
 $begin = '<!-- F13_BOOT_DECISION_BEGIN -->'
 $end = '<!-- F13_BOOT_DECISION_END -->'
 $pattern = '(?s)' + [regex]::Escape($begin) + '.*?' + [regex]::Escape($end)

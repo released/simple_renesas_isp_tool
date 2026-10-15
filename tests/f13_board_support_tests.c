@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "f13_board_mock.h"
-#include "../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/f13_board_support.h"
+#include "f13_board_support.h"
 
 volatile f13_mock_reg8_t f13_pllctl, f13_ckc;
 volatile unsigned char CMC, MSTOP, HIOSTOP, SELLOSC, MDIV, XTSTOP;

@@ -265,6 +265,10 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
                     raise ValueError("Unterminated Markdown HTML comment")
             index += 1
             continue
+        if re.fullmatch(r'<a\s+(?:id|name)=["\'][^"\']+["\']\s*></a>', stripped):
+            flush_paragraph()
+            index += 1
+            continue
         if stripped.startswith("```"):
             flush_paragraph()
             code_lines = []

@@ -5,6 +5,23 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-15 public download/flow index and checkout portability: six verified
+download URLs, F13 Transfer/Boot/App repositories and six stable workflow links
+are canonical in MULTIBUS_TOOL_GUIDE PUBLIC_RESOURCES, synchronized to both
+web guides. Corrected cross-repository README links and stale metadata text.
+Normal solution builds exclude integration tests; explicit F13 tests use
+sibling checkouts or configured paths, not personal workspace includes.
+Tool and test Debug/Release builds0warnings/errors; both actual-image test
+suites and neutral relocated sibling build/run PASS. Guide/public/path tests15,
+canonical sync5, web198refs, HTTP routes and safe-clean24 PASS. Four PDFs
+30/10/13/10 pages,20/5/7/2 diagrams rendered/reviewed. PDF binary Git attributes
+preserve bytes. Six delivery hashes unchanged; no version bump/firmware rebuild.
+Full Python discovery35 ran:34PASS/1optionalSKIP, plus F13 map-dependent class
+setupERROR because maps were cleaned. No new COM/flash/browser/DPI acceptance.
+Unused generated assets/reports/private IDE state moved to recoverable archive;
+no permanent deletion, staging, commit, push or site deployment performed.
+Detailed evidence and restore location: tmp/internal/public_portability/VERIFICATION.md.
+
 2026-10-15 public web copy: canonical linked RL78 ISP Tool entry; remove draft/
 publication and delivery-build/snapshot wording from navigation/intros and
 shared operating blocks. Preserve protocol/metadata/IRQ and unverified limits;

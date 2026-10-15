@@ -7,6 +7,28 @@ solution/project, executable and settings remain `FirmwareUpgradeTool` /
 Native Windows tool and MCU-bridge firmware for CAN/CAN FD transfer testing,
 target firmware updates and staged I2C master communication.
 
+## Downloads and operating guides
+
+Start with the [public download and workflow index](https://released.github.io/slide_isp_tool_for_RL78/#downloads):
+Tool EXE, F24 Host Boot/App, F13 Device Boot/App, six operating/flowchart entries
+and the [Boot/App porting guide](https://released.github.io/slide_boot_loader_for_RL78/#boot-app-porting).
+The matching offline source is [the multi-bus guide](docs/MULTIBUS_TOOL_GUIDE_zh-TW.md#downloads).
+Initial Boot installation uses a programmer; Misc updates the Host App only,
+while CAN Upgrade updates the external Device App. These images are not interchangeable.
+
+Download this complete repository for F24 firmware; its Boot/App projects share
+board, driver, SC, library and packaging sources. F13 integration tests use the
+separate [Boot](https://github.com/released/RL78_F13_Boot_loader_CAN) and
+[App](https://github.com/released/RL78_F13_Boot_loader_CAN_app) repositories.
+Place them beside this checkout using their original names (remove `-main`
+after ZIP extraction). Normal solution/one-click builds compile the PC Tool
+only; explicitly build `tests/HostLinkProtocolTests.vcxproj` for integration tests.
+For non-sibling checkouts, configure machine-local `FIRMWARE_F13_BOOT_PROJECT`,
+`FIRMWARE_F13_APP_PROJECT` and `FIRMWARE_WEB_ROOT`; the C++ test project also
+accepts `/p:F13BootProject=<checkout>`. No personal workspace layout is required.
+After relocating/regenerating F24 SC output, use the documented projection
+preparation in the [shared-console guide](docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md).
+
 The first supported path is:
 
 ```text

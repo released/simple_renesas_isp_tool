@@ -15,10 +15,10 @@
 namespace block_target {
 #define __far
 #define F13_CRC_HOST_TEST
-#include "../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/can_boot_transport.h"
-#include "../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/sw_crc32.c"
-#include "../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/can_boot_metadata.inc"
-#include "../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/can_boot_block.inc"
+#include "can_boot_transport.h"
+#include "sw_crc32.c"
+#include "can_boot_metadata.inc"
+#include "can_boot_block.inc"
 #undef __far
 }
 

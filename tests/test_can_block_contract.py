@@ -2,9 +2,10 @@
 from pathlib import Path
 import re
 import unittest
+from workspace_paths import companion_path
 
 ROOT = Path(__file__).resolve().parents[1]
-F13 = ROOT.parents[1] / "_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN"
+F13 = companion_path('F13Boot')
 
 
 class CanBlockContract(unittest.TestCase):

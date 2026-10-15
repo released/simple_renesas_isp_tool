@@ -4,11 +4,13 @@ import re
 import subprocess
 import tempfile
 import unittest
+from urllib.parse import urlsplit
+from workspace_paths import companion_path
 
 from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT.parents[1] / "_Avery_Markdown/web"
+WEB = companion_path('Web')
 DOC = ROOT / "docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md"
 SCRIPT = ROOT / "scripts/sync_rl78_porting_guide.ps1"
 PATTERN = re.compile(r"<!-- RL78_PORTING_BEGIN -->.*?<!-- RL78_PORTING_END -->", re.S)
@@ -39,8 +41,11 @@ class PortingGuideTests(unittest.TestCase):
         self.assertEqual(len(re.findall(r"(?m)^```", text)) % 2, 0)
         self.assertEqual(text.count("```mermaid"), 2)
         for link in re.findall(r"\]\(([^)]+)\)", text):
-            self.assertTrue((DOC.parent / link.split("#")[0]).exists(), link)
-        config = (ROOT.parents[1] / "_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/can_boot_config.h").read_text()
+            if link.startswith('https://'):
+                self.assertIn(urlsplit(link).hostname, ['github.com', 'released.github.io'])
+            else:
+                self.assertTrue((DOC.parent / link.split("#")[0]).exists(), link)
+        config = (companion_path('F13Boot') / 'can_boot_config.h').read_text()
         self.assertRegex(config, r"CAN_BOOT_IMAGE_FORMAT_VERSION\s+\(0x06U\)")
         self.assertRegex(config, r"CAN_BOOT_MANIFEST_SIZE\s+\(128U\)")
         f24_vectors = (ROOT / "firmware/RL78_F24_Bridge_boot/bridge_vectors.asm").read_text()
@@ -76,7 +81,7 @@ class PortingGuideTests(unittest.TestCase):
 
     def test_offline_pdf_has_content_and_both_diagrams(self):
         reader = PdfReader(DOC.with_suffix(".pdf"))
-        self.assertEqual(len(reader.pages), 9)
+        self.assertEqual(len(reader.pages), 10)
         text = "\n".join(page.extract_text() for page in reader.pages)
         for phrase in ["移植指南", "F1V1", "F2V1", "0x2100..0x217F",
                        "115200", "AppProject", "尚未啟用"]:

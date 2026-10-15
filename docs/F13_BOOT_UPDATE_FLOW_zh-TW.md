@@ -809,7 +809,7 @@ Markdown source 與 PDF 必須在同一 release 一起更新。
 - [CAN Upgrade v5 Contract and F13 Baseline](./F13_BOOT_PROFILE.md)
 - [F13 CRC Post-build](./F13_CRC_POST_BUILD.md)
 - [F13 Transfer Protocol](./F13_TRANSFER_PROTOCOL.md)
-- [F13 Boot/App 共用中斷向量指南](../../../_Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/INTERRUPT_VECTOR_GUIDE_zh-TW.md)
+- [F13 Boot/App 共用中斷向量指南](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/INTERRUPT_VECTOR_GUIDE_zh-TW.md)
 - [Host Link Protocol v2](./HOST_LINK_PROTOCOL_V2.md)
 - [F24 Bring-up](./F24_BRINGUP.md)
 - [Diagnostics and Logging](./DIAGNOSTICS.md)

@@ -64,15 +64,17 @@ F24為20MHz，不能交換clock或Flash driver設定。
 原始碼一起上傳時，保留完整MTPJ、SC設定、產表／封裝腳本、JSON、board／driver
 及必要library。F13 App直接引用相鄰Boot的f13_board_support及CAN設定，不能只給
 App資料夾就宣稱可獨立重建；初次須先build Boot，再build App產生combined HEX。
-目前文件相對連結沿用以下工作區結構，分成不同repository下載時也須保留或明確調整：
+公開原始碼建議採同層checkout；不需要原開發者的工作區目錄：
 
 ```text
-SourceCode/
-  python/simple_renesas_isp_tool/
-  _Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN/
-  _Avery_Renesas/CS+/RL78_F13_Boot_loader_CAN_app/
+projects/
+  simple_renesas_isp_tool/
+  RL78_F13_Boot_loader_CAN/
+  RL78_F13_Boot_loader_CAN_app/
 ```
 
+自訂目錄可使用FIRMWARE_F13_BOOT_PROJECT／FIRMWARE_F13_APP_PROJECT；
+整合測試仍執行真實F13來源，不以複本替代。一般Tool建置不要求這些測試依賴。
 不要上傳個人INI／COM歷史、未去識別的log／截圖、tmp、obj、PDB、舊EXE或IDE私有設定。
 所需Flash library須依原授權條款散布；此文件不代表已完成第三方授權審核。
 一般clean不是發佈清洗器，會保留delivery與runtime資料，不能依賴clean自動排除個資。

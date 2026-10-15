@@ -14,7 +14,8 @@ For the full integration workflow rather than CRC packaging alone, read the
 
 The active embedded-CRC example is:
 
-`D:\SourceCode\_Avery_Renesas\CS+\RL78_F24_Boot_loader_app_CRC`
+[RL78/F24 CRC Boot/App reference](https://released.github.io/slide_boot_loader_for_RL78/)
+(the historical `RL78_F24_Boot_loader_app_CRC` sample).
 
 - `RL78_F24_Boot_loader_app.mtpj` runs `boot_flash.bat` after a successful
   build.

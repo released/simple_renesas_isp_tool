@@ -24,8 +24,8 @@ design or its target-specific bridge commands.
 
 Functional changes must update the relevant protocol/design document,
 `DEVELOPMENT_CHECKLIST.md`, `HANDOFF.md`, and `SELF_CHECK.md` in the same change.
-Also synchronize the affected local web guide in
-`D:\SourceCode\_Avery_Markdown\web\slide_isp_tool_for_RL78`; update
+Also synchronize the affected web guide under `FIRMWARE_WEB_ROOT` (default:
+the Tool checkout's parent), in `slide_isp_tool_for_RL78`; update
 `slide_boot_loader_for_RL78` and `released.github.io` navigation when affected.
 Keep features, protocol contracts, status/steps and screenshot gates consistent with MD.
 Public web navigation/intros use evergreen function descriptions, not product
@@ -233,6 +233,12 @@ verification report to docs; keep detailed internal evidence in tmp.
 Firmware porting entry: docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md. Its marked
 RL78_PORTING block is canonical for the boot web guide; run
 scripts/sync_rl78_porting_guide.ps1 and -CheckOnly after related changes.
+Public downloads and six workflow entries are canonical in the PUBLIC_RESOURCES
+block of docs/MULTIBUS_TOOL_GUIDE_zh-TW.md; sync_public_resources.ps1 updates both
+web guides. Keep actual source/download URLs and stable section anchors tested.
+Companion F13 checkouts default to siblings; workspace_paths helpers support
+explicit paths and machine-local environment overrides, never personal fallbacks.
+Normal solution builds exclude the explicit F13 integration-test project.
 
 `README.md` must not contain local absolute paths, temporary debug conclusions,
 or personal IDE settings. Detailed engineering state belongs in `HANDOFF.md`.

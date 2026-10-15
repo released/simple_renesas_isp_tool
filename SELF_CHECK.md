@@ -1,5 +1,30 @@
 # Host Link v2 Self-Check
 
+## Public resources and portable checkout (2026-10-15)
+
+- [x] Tool EXE, F24 Boot MOT/App BIN, F13 Boot HEX/combined HEX/App BIN
+  all HTTP200. Both web guides expose downloads and six workflow/document
+  entries; public Markdown has no private workspace paths or release pins.
+- [x] README/porting guides explain full F24 checkout and sibling F13 Boot/App,
+  ZIP renaming, build order and initial-programmer vs App-only installation.
+  Public F13 source/library/project comparison136matches; registered paths
+  Boot29/App28/Transfer35 exist. Downloaded App BIN CRC/hash matches local;
+  HEX differences are Git line endings, normalized content matches.
+- [x] Normal Tool Debug/Release solution builds without F13 configuration and
+  explicit test Debug/Release builds all0warnings/errors. Both actual-BIN suites
+  PASS; copied neutral sibling test build/run PASS, missing dependency fails
+  with actionable diagnostics. Runtime/firmware code and six artifact hashes unchanged.
+- [x] Guide/public/path tests15 PASS; canonical5/web198refs/six anchors and
+  six URLs/preview HTTP/safe-clean24 PASS. Four PDFs30/10/13/10 pages rendered
+  with20/5/7/2 diagrams and visually reviewed; HTML anchors no longer print.
+- [x] Removed unused generated diagrams, quality reports and private IDE/cache
+  files by recoverable moves; .gitignore excludes regeneration. PDF Git binary
+  attributes prevent text conversion; no Git stage/commit/push/deployment.
+- [ ] Full Python35:34PASS/1optionalSKIP plus F13 IRQ class setupERROR, missing
+  linker maps. Fresh CC-RL/map audit and hardware/browser/DPI NOT RUN.
+  Generated SC/project-wizard provenance can still contain local paths;
+  prepare_f24_bridge_projects relocates those, actual source paths are relative.
+
 ## Evergreen public web copy (2026-10-15)
 
 - [x] Linked RL78 ISP Tool canonical URL; Bootloader navigation/intros use

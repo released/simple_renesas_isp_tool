@@ -15,6 +15,12 @@ tmp/
 *.ipdb
 *.tlog
 *.lastbuildstate
+__pycache__/
+*.pyc
+*.mtud
+QualityReport*.txt
+policy_boot_diagrams/
+policy_isp_diagrams/
 
 build/obj/
 build/tests/

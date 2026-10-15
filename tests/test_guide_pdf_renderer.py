@@ -28,7 +28,7 @@ class GuideMarkdownTests(unittest.TestCase):
         version = (ROOT / "src/build_version.txt").read_text(encoding="ascii").strip()
         expected = {
             "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": 10,
-            "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": 11,
+            "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": 13,
             "F13_CAN_Bootloader_Update_Guide_zh-TW.pdf": 30,
         }
         for name, pages in expected.items():
@@ -39,6 +39,8 @@ class GuideMarkdownTests(unittest.TestCase):
                 self.assertNotIn("F13_BOOT_DECISION_", text)
                 self.assertNotIn("F24_APP_IRQ_", text)
                 self.assertNotIn("COMMON_IMAGE_POLICY_", text)
+                self.assertNotIn("PUBLIC_RESOURCES_", text)
+                self.assertNotIn('<a id=', text)
                 self.assertIn("UPD1",text)
                 self.assertIn("921600",text)
                 self.assertIn("device_uart_baud",text)
@@ -49,6 +51,10 @@ class GuideMarkdownTests(unittest.TestCase):
                 if name.startswith('FirmwareUpgradeTool_Shared'):
                     self.assertIn('f24_board', text)
                     self.assertNotIn('RL78_F24_CAN_host_upgrade', text)
+                if name.startswith('FirmwareUpgradeTool_MultiBus'):
+                    self.assertIn('下載與操作總覽', text)
+                    self.assertIn('六個操作與流程圖入口', text)
+                    self.assertEqual(sum(len(page.images) for page in reader.pages), 7)
 
 
 if __name__ == "__main__":

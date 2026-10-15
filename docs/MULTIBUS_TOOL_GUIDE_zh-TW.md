@@ -7,6 +7,58 @@
 Misc為HOST APP UART更新：先分段STAGE256 bytes並驗證，BEGIN才可擦除；Read Info及
 更新read-back以四次READ_METADATA讀完整區域。首次須燒錄matching新boot/app。
 
+<!-- PUBLIC_RESOURCES_BEGIN -->
+<a id="downloads"></a>
+
+## 下載與操作總覽
+
+以下連結提供Tool、Host board與Device board的公開來源；不用原開發者的本機路徑。
+首次安裝Boot使用燒錄器，之後更新App才使用對應的Tool流程；不可把Host與Device映像互換。
+
+| 項目 | 下載／原始碼 | 適用方式 |
+| --- | --- | --- |
+| PC Tool | [Windows EXE](https://raw.githubusercontent.com/released/simple_renesas_isp_tool/main/build/FirmwareUpgradeTool.exe)／[完整原始碼](https://github.com/released/simple_renesas_isp_tool) | Windows x64；先安裝實際VCOM所需driver，再選COM並Probe Host |
+| F24 Host Boot | [Boot專案](https://github.com/released/simple_renesas_isp_tool/tree/main/firmware/RL78_F24_Bridge_boot)／[Boot MOT](https://raw.githubusercontent.com/released/simple_renesas_isp_tool/main/firmware/RL78_F24_Bridge_boot/DefaultBuild/RL78_F24_Bridge_boot.mot) | 首次以燒錄器安裝；Misc不更新Boot |
+| F24 Host App | [App專案](https://github.com/released/simple_renesas_isp_tool/tree/main/firmware/RL78_F24_Bridge_app)／[Host App BIN](https://raw.githubusercontent.com/released/simple_renesas_isp_tool/main/firmware/RL78_F24_Bridge_app/DefaultBuild/RL78_F24_Bridge_app_bridge_update.bin) | Misc／UART115200；完成後明確Run Validated Bridge App |
+| F13 Device Boot | [Boot專案](https://github.com/released/RL78_F13_Boot_loader_CAN)／[Boot HEX](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN/main/DefaultBuild/boot0000_1FFF.hex) | 首次以燒錄器安裝matching Boot/App；不要保留不相容舊App |
+| F13 Device App | [App專案](https://github.com/released/RL78_F13_Boot_loader_CAN_app)／[初裝合併HEX](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN_app/main/boot_app.hex)／[CAN更新BIN](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN_app/main/DefaultBuild/RL78_F13_Boot_loader_CAN_app_update.bin) | 合併HEX供燒錄器初裝；CAN TAB載入_update.bin更新Device App |
+| F13 CAN通訊測試 | [Transfer範例](https://github.com/released/RL78_F13_CAN_Transfer) | Custom Transfer，不擦寫Flash；不是Boot/App更新映像 |
+
+F24 firmware需下載完整Tool repository，保留firmware共用來源與scripts，不能只取Boot/App子目錄。
+F13 Boot與App需以原repository名稱放在同一父目錄，App會引用相鄰Boot；Download ZIP
+解壓後請移除-main尾碼。先build Boot，再build App；版本、metadata、IRQ ABI與CRC仍須相容。
+
+### 六個操作與流程圖入口
+
+| 想了解的動作 | 網站操作／流程圖 | Tool docs中的詳細說明 |
+| --- | --- | --- |
+| Tool／F24整體流程與責任 | [Tool與bridge動作圖](https://released.github.io/slide_isp_tool_for_RL78/#tool-bridge-flow) | [多介面架構與流程](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/MULTIBUS_TOOL_GUIDE_zh-TW.md) |
+| F13 Boot啟動、ENTER與逾時 | [F13 Boot→App完整條件圖](https://released.github.io/slide_isp_tool_for_RL78/#f13-boot-flow) | [Boot decision與更新流程](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/F13_BOOT_UPDATE_FLOW_zh-TW.md) |
+| Tool operation | [COM／Host識別與操作起點](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation) | [共用畫面與操作指南](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md) |
+| 更新F24 bridge App | [Misc：Host App更新圖與RUN](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware) | [F24 UART自更新協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/BRIDGE_SELF_UPDATE_PROTOCOL.md) |
+| 更新F13 Device App | [CAN：驗證、Enter Boot、更新與確認](https://released.github.io/slide_isp_tool_for_RL78/#f13-device-update) | [CAN區塊更新及保護](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_BLOCK_TRANSFER_V5_zh-TW.md) |
+| Boot code如何移植 | [Boot/App移植與向量工程](https://released.github.io/slide_boot_loader_for_RL78/#boot-app-porting) | [完整移植指南](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md) |
+
+<a id="tool-bridge-flow"></a>
+
+### Tool／F24／F13動作分工
+
+```mermaid
+flowchart TD
+    IMAGE["Tool：載入BIN，檢查metadata與CRC"] --> HOST["Probe Host：核對身分、port與能力"]
+    HOST --> GATE["Tool：比對live target、更新政策與layout"]
+    GATE --> DEST{"更新目的地？"}
+    DEST -->|"外部Device／CAN"| BRIDGE["F24 App：只轉送CAN frame／等待回覆"]
+    BRIDGE --> F13["F13 Boot：驗證metadata、區塊CRC並寫App Flash"]
+    F13 --> CHECK["END CRC後reset；Boot再驗證App；重新確認執行"]
+    DEST -->|"Host自身／Misc"| F24["F24 Boot：固定UART，驗證並更新Host App"]
+    F24 --> RUN["END成功仍留Boot；明確RUN後重新Probe"]
+```
+
+錯映像或不相容條件先封鎖，不送START／BEGIN。完整故障、斷電與高速可靠性仍須實板驗證；
+CRC是完整性檢查，不是簽章。F13正常更新完成不等於已看到reset後App執行；兩者應分別留證。
+<!-- PUBLIC_RESOURCES_END -->
+
 ## 1. 本版完成範圍
 
 0082的CAN Upgrade v5改為64-byte區塊／一次ACK，raw CAN frame使用完整8-byte資料。
