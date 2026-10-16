@@ -104,4 +104,4 @@ tick換回、RX溢位；PC測試正反路徑及SET／confirm不重送。這些�
 MCU實體高速波形證明。實板仍須三組速度PING／大封包／完整CAN更新，確認
 CRC、timeout、RX overrun與lost counters，並測Reset、Close、拔線及Misc ENTER。
 0082保留F13 CAN timing、metadata staging與IRQ契約，Flash仍按4-byte word寫入；
-傳輸改為完整RAM區塊通過CRC後才寫。G16新版仍延後。
+完整 RAM 區塊通過 CRC 後，才進行 Flash 寫入。

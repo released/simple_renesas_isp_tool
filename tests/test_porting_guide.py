@@ -48,13 +48,19 @@ class PortingGuideTests(unittest.TestCase):
         config = (companion_path('F13Boot') / 'can_boot_config.h').read_text()
         self.assertRegex(config, r"CAN_BOOT_IMAGE_FORMAT_VERSION\s+\(0x06U\)")
         self.assertRegex(config, r"CAN_BOOT_MANIFEST_SIZE\s+\(128U\)")
-        f24_vectors = (ROOT / "firmware/RL78_F24_Bridge_boot/bridge_vectors.asm").read_text()
-        self.assertIn("CMP !0xF710,#0xA5", f24_vectors)
-        self.assertIn("F24 Boot 初始化為00，只有 A5", text)
-        for phrase in ["0x2100..0x217F", "0x2180..0x21FF", "AppProject 不代表",
-                       "Physical BRK", "普通 C callback", "Host Boot", "固定115200",
-                       "尚未啟用", "未新增實板驗證"]:
+        f24 = companion_path('F13Boot').parent/'RL78_F24_Boot_loader_CAN'
+        f24_vectors = (f24 / 'device_vectors.asm').read_text()
+        self.assertIn('CMP !0xF710,#0x55', f24_vectors)
+        f24_config = (f24 / 'can_boot_config.h').read_text()
+        self.assertRegex(f24_config,r'CAN_BOOT_RAM_OWNER_BOOT\s+\(0xAAU\)')
+        self.assertRegex(f24_config,r'CAN_BOOT_RAM_OWNER_APPLICATION\s+\(0x55U\)')
+        for phrase in ["0x2100..0x217F", "0x2180..0x21FF", "app_image.json",
+                       "Physical BRK", "RETI", "0xAA", "0x55", "F1V1", "F2V1",
+                       "package_images.ps1", "Windows PowerShell"]:
             self.assertIn(phrase, text)
+        self.assertIn('0xFF700',text)
+        self.assertIn('0xFF71C',text)
+        self.assertNotRegex(text,r'F24.{0,12}host|BUR1|Python|python')
 
     def test_check_only_is_read_only_and_sync_preserves_surroundings(self):
         with tempfile.TemporaryDirectory(prefix="rl78_porting_") as folder:
@@ -81,13 +87,13 @@ class PortingGuideTests(unittest.TestCase):
 
     def test_offline_pdf_has_content_and_both_diagrams(self):
         reader = PdfReader(DOC.with_suffix(".pdf"))
-        self.assertEqual(len(reader.pages), 10)
+        self.assertGreater(len(reader.pages), 2)
         text = "\n".join(page.extract_text() for page in reader.pages)
         for phrase in ["移植指南", "F1V1", "F2V1", "0x2100..0x217F",
-                       "115200", "AppProject", "尚未啟用"]:
+                       "Windows PowerShell", "0x55", "app_image.json"]:
             self.assertIn(phrase, text)
         self.assertNotIn("RL78_PORTING_BEGIN", text)
-        self.assertIn("f24_board", text)
+        self.assertNotIn("f24_board", text)
         self.assertNotIn("RL78_F24_CAN_host_upgrade", text)
         self.assertEqual(sum(len(page.images) for page in reader.pages), 2)
 

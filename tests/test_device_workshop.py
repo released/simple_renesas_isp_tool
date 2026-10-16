@@ -3,8 +3,8 @@
 Never rebuild firmware, open COM, overwrite actual images or publish a site.
 """
 import binascii
+import base64
 import hashlib
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -55,9 +55,8 @@ class DeviceWorkshop(unittest.TestCase):
         self.assertGreaterEqual(len(re.findall(r'(?m)^\| --- \|',self.text)),7)
         self.assertEqual(self.text.count('```')%2,0)
         self.assertNotRegex(self.text,r'[A-Z]:[\\/]|_Avery|尚未發布')
-        for phrase in ('F13 (MCU CAN device)','F24 (MCU CAN device)','不調整 F24 host',
-                       '不會初始化或啟用 INTP1','不是已在板上啟用新 INTP1','CheckOnly',
-                       '舊 BIN','不應手動修補','minimum Boot','匹配','不完整更新'):
+        for phrase in ('F13 (MCU CAN device)','F24 (MCU CAN device)',
+                       '不會初始化或啟用 INTP1','CheckOnly','minimum Boot','匹配','更新中斷後'):
             if phrase == '匹配':
                 self.assertIn('matching',self.text)
             else:
@@ -140,15 +139,16 @@ class DeviceWorkshop(unittest.TestCase):
                 shutil.copyfile(F24_APP/name,project/name)
             shutil.copytree(F24_APP/'src/smc_gen',project/'src/smc_gen')
             (project/'app_image.json').write_text(json.dumps(self.examples[3]),encoding='utf-8')
-            args=[sys.executable,str(F24/'tools/prepare_projects.py'),'--kind','app','--project',str(project)]
+            args=['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',
+                  str(F24/'tools/prepare_projects.ps1'),'-Kind','app','-Project',str(project)]
             command(args)
             files=[project/'device_vectors.asm',project/'app_identity.generated.h',
                    project/'generated_projection/cstart.asm',next(project.glob('*.mtpj')),
                    project/'app_metadata.generated.inc',project/'app_metadata.generated.asm']
             snapshot=hashed(files)
-            command(args+['--check'])
+            command(args+['-CheckOnly'])
             self.assertEqual(snapshot,hashed(files))
-            command(args+['--artifacts-only'])
+            command(args+['-ArtifactsOnly'])
             self.assertEqual(snapshot,hashed(files))
             self.assertIn('BR !!_app_aux_irq ; vector 0A',files[0].read_text())
             self.assertIn('DEVICE_APP_VERSION (65537UL)',files[1].read_text())
@@ -160,7 +160,7 @@ class DeviceWorkshop(unittest.TestCase):
             self.reject_invalid_json(args,project,self.examples[3],files)
             files[4].write_text(files[4].read_text()+'; tampered\n')
             tampered=hashed(files)
-            self.assertNotEqual(subprocess.run(args+['--check'],capture_output=True).returncode,0)
+            self.assertNotEqual(subprocess.run(args+['-CheckOnly'],capture_output=True).returncode,0)
             self.assertEqual(tampered,hashed(files))
             command(args)
         self.assertEqual(before,hashed(protected))
@@ -191,27 +191,28 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertEqual(image[384:512],b'\xff'*128)
             self.assertEqual(binascii.crc32(image[:-4]),struct.unpack_from('<I',image,len(image)-4)[0])
             self.assertEqual(before,hashed([image_path]))
-        sys.path.insert(0,str(F24/'tools'))
-        try:
-            spec=importlib.util.spec_from_file_location('workshop_pack',F24/'tools/package_images.py')
-            module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-            with tempfile.TemporaryDirectory(prefix='device_workshop_meta_') as folder:
-                project=Path(folder)
-                (project/'app_image.json').write_text(json.dumps(self.examples[3]),encoding='utf-8')
-                region=module.metadata(project,516)
-                self.assertEqual(region[16:20],bytes.fromhex('01 00 01 00'))
-                self.assertEqual(struct.unpack_from('<I',region,20)[0],20261016)
-                self.assertEqual(region[128:],b'\xff'*128)
-                invalid=dict(self.examples[3]); invalid['transport']='I2C'
-                (project/'app_image.json').write_text(json.dumps(invalid),encoding='utf-8')
-                with self.assertRaises(ValueError): module.metadata(project,516)
-                (project/'app_image.json').write_text(json.dumps(self.examples[3]),encoding='utf-8')
-                memory=module.read_srec(F24_APP/'DefaultBuild'/f'{F24_APP.name}.mot')
-                sections,symbols=module.read_map(F24_APP/'DefaultBuild'/f'{F24_APP.name}.map')
-                with self.assertRaisesRegex(ValueError,'Compiled metadata differs'):
-                    module.package_app(project,memory,sections,symbols)
-        finally:
-            sys.path.pop(0)
+        with tempfile.TemporaryDirectory(prefix='device_workshop_meta_') as folder:
+            project=Path(folder)
+            (project/'app_image.json').write_text(json.dumps(self.examples[3]),encoding='utf-8')
+            snippet=f". '{F24/'tools/device_common.ps1'}'; $meta=Get-DeviceMetadata '{project}' 516; [Convert]::ToBase64String($meta)"
+            args=['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-Command',snippet]
+            region=base64.b64decode(command(args).stdout.strip())
+            self.assertEqual(region[16:20],bytes.fromhex('01 00 01 00'))
+            self.assertEqual(struct.unpack_from('<I',region,20)[0],20261016)
+            self.assertEqual(region[128:],b'\xff'*128)
+            invalid=dict(self.examples[3]); invalid['transport']='I2C'
+            (project/'app_image.json').write_text(json.dumps(invalid),encoding='utf-8')
+            self.assertNotEqual(subprocess.run(args,capture_output=True).returncode,0)
+            (project/'app_image.json').write_text(json.dumps(self.examples[3]),encoding='utf-8')
+            shutil.copyfile(next(F24_APP.glob('*.mtpj')),project/'sample.mtpj')
+            build=project/'DefaultBuild'; build.mkdir()
+            for suffix in ('.mot','.map'):
+                shutil.copyfile(F24_APP/'DefaultBuild'/(F24_APP.name+suffix),build/('sample'+suffix))
+            result=subprocess.run(['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',
+                str(F24/'tools/package_images.ps1'),'-Kind','app','-Project',str(project)],capture_output=True)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn(b'Compiled metadata differs',result.stdout+result.stderr)
+            self.assertFalse(list(build.glob('*_update.bin')))
 
     def test_f13_post_build_rejects_stale_compiled_metadata(self):
         with tempfile.TemporaryDirectory(prefix='device_workshop_stale_') as folder:
@@ -249,7 +250,12 @@ class DeviceWorkshop(unittest.TestCase):
     def test_both_web_copies_and_bounded_read_only_sync(self):
         for name in ('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78'):
             text=(WEB/name/'index.md').read_text(encoding='utf-8-sig')
-            self.assertEqual(PATTERN.findall(text),PATTERN.findall(self.text))
+            block, = PATTERN.findall(text)
+            if name == 'slide_boot_loader_for_RL78':
+                self.assertEqual([block],PATTERN.findall(self.text))
+            else:
+                self.assertLess(len(block),800)
+                self.assertIn('https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-vector-workshop',block)
             self.assertEqual(text.count('<a id="device-metadata-vector-workshop"></a>'),1)
         with tempfile.TemporaryDirectory(prefix='device_workshop_web_') as folder:
             web=Path(folder); pages=[]
@@ -262,6 +268,7 @@ class DeviceWorkshop(unittest.TestCase):
             before=hashed(pages)
             self.assertNotEqual(subprocess.run(args+['-CheckOnly'],capture_output=True).returncode,0)
             self.assertEqual(before,hashed(pages))
+
             command(args); command(args+['-CheckOnly'])
             for page in pages:
                 text=page.read_text(encoding='utf-8-sig')
@@ -270,6 +277,17 @@ class DeviceWorkshop(unittest.TestCase):
             before=hashed(pages)
             self.assertNotEqual(subprocess.run(args,capture_output=True).returncode,0)
             self.assertEqual(before,hashed(pages))
+
+    def test_irq_keys_are_attributed_to_hardware_sources(self):
+        for key,symbol in [('0x08','INTP0'),('0x0A','INTP1'),('0x16','INTST0'),
+                           ('0x18','INTSR0'),('0x1E','INTTRJ0')]:
+            self.assertIn(key,self.text)
+            self.assertIn(symbol,self.text)
+            source=(F13_APP/'iodefine.h').read_text(encoding='utf-8-sig')
+            self.assertRegex(source,rf'#define\s+{symbol}\s+0x00{key[2:]}\b')
+        self.assertIn('iodefine.h',self.text)
+        self.assertIn('Interrupt',self.text)
+        self.assertIn('r_cg_serial_user.c',self.text)
 
     def test_pdf_diagrams_text_and_page_bounds(self):
         path=DOC.with_suffix('.pdf')

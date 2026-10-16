@@ -1,5 +1,39 @@
 # Development Handoff
 
+## Public guide organization and F24 device workflow (2026-10-16)
+
+Public reader guides/pages now describe current operation, not developer
+questions, legacy-format migration or G16 replacement planning.
+Device JSON/vector/porting/address chapters compare F13/F24 CAN devices only.
+Host engineering and Custom Transfer live under ISP Tool; device engineering
+lives under Bootloader. web_guide_sections.json and web_guide_projection.ps1
+keep one full owner section and short navigation projections elsewhere.
+CheckOnly stays read-only; all target markers are validated before writes.
+
+IRQ keys are attributed to each App's iodefine.h, hardware Interrupt table
+and ISR source; CAN3 is explained as image magic only in byte-format references.
+Address tables now compare real F13/F24 device BINs, not host BUR1 geometry.
+F13 analyzer INFO protocol byte corrected04->05. Distinct ENTER locations
+are documented: F13 FF700, F24 device FF71C; owner/handoff regionFF710..1F.
+PDF links are clickable, including local chapter destinations; a renderer
+fixture covers destinations and excludes visible HTML anchors.
+
+F24 device production build/helpers/tests were ported to Windows PowerShell
+and .NET; no Python runtime requirement. Boot ownerAA/App55 clean rebuilt.
+Python-free PATH all3 builds PASS; nine PS checks + production C RAM block/
+metadata/CRC and PC BIN parser/policy PASS. Boot ROM1DFD/spare514.
+Baseline HEX content differs only at303/337 A5->55; App/Transfer HEX content
+and App BIN unchanged. Frozen Tool EXE, F24 host images, F13 Boot/App/combined
+HEX hashes unchanged. No PC product rebuild/version bump was performed.
+
+Verification and temporary before-state archives/logs/renderings:
+tmp/internal/public_editorial. Seven guide PDFs regenerated; final visual
+QA and regression totals are recorded in SELF_CHECK below.
+No COM/flashing, Git commit/push, website publication or new hardware evidence.
+Browser/DPI appearance NOT RUN; F24 device CAN/RFD/IRQ hardware acceptance
+remains open. Full F13 Boot map audit remains unavailable (missing baseline
+map/clnk); F13 source/image was not rebuilt.
+
 Last updated: 2026-10-16
 
 ## Device Metadata / App vector workshop

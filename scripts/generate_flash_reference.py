@@ -16,7 +16,7 @@ POLICY = [
     (0x74, 12, 'reserved_zero', 'UPD1 policy'), (0x80, 128, 'reserved_FF', 'reserved region'),
 ]
 F13 = [
-    (0x00, 4, 'CAN3 magic', 'IMAGE_MANIFEST_MAGIC'),
+    (0x00, 4, 'image_magic (ASCII CAN3)', 'IMAGE_MANIFEST_MAGIC'),
     (0x04, 1, 'image_format', 'IMAGE_MANIFEST_FORMAT_INFO'),
     (0x05, 1, 'core_length', 'IMAGE_MANIFEST_FORMAT_INFO'),
     (0x06, 2, 'flags', 'IMAGE_MANIFEST_FORMAT_INFO'),
@@ -38,26 +38,11 @@ F13 = [
     (0x50, 12, 'mcu_family ASCII', 'MCU_FAMILY_0..1 / zero padding'),
     (0x5C, 4, 'minimum_size', 'MINIMUM_IMAGE_SIZE'),
 ] + POLICY
-F24 = [
-    (0x00, 4, 'BUR1 magic', 'Put32 0'), (0x04, 1, 'contract_version', 'image[0x104]'),
-    (0x05, 1, 'core_length', 'image[0x105]'), (0x06, 1, 'image_role', 'image[0x106]'),
-    (0x07, 1, 'checksum_type', 'image[0x107]'), (0x08, 2, 'board_id', 'BOARD_ID / image[0x108]'),
-    (0x0A, 2, 'contract_id', 'image[0x10A] / zero padding'),
-    (0x0C, 4, 'image_size', 'Put32 12 / linker-derived size'),
-    (0x10, 4, 'app_version', 'app_image.json / Put32 16'),
-    (0x14, 4, 'app_build', 'app_image.json / Put32 20'),
-    (0x18, 4, 'app_start', 'APP_START / Put32 24'),
-    (0x1C, 4, 'app_capacity', 'APP_LIMIT - APP_START / Put32 28'),
-    (0x20, 4, 'flash_size', 'FLASH_SIZE / Put32 32'),
-    (0x24, 4, 'boot_size', 'APP_START / Put32 36'),
-    (0x28, 4, 'erase_size', 'ERASE_SIZE / Put32 40'),
-    (0x2C, 4, 'minimum_size', 'MINIMUM_SIZE / Put32 44'),
-    (0x30, 4, 'boot_uart_baud', 'UART_BAUD / Put32 48'),
-    (0x34, 12, 'mcu_family ASCII', 'ASCII CopyTo image[0x134]'),
-    (0x40, 16, 'mcu_part ASCII', 'ASCII CopyTo image[0x140]'),
-    (0x50, 4, 'minimum_boot_copy', 'BOOT_VERSION / Put32 80'),
-    (0x54, 12, 'reserved_zero', 'core initialized zero'),
-] + POLICY
+F24 = [(offset, size, name,
+        'app_image.json' if name in ('app_version', 'app_build') else
+        'post-build / map' if name == 'image_size' else
+        'can_boot_config.h / Get-DeviceMetadata')
+       for offset, size, name, origin in F13]
 
 
 def byte_fields(schema):
@@ -78,12 +63,13 @@ def read_image(path, kind):
     if len(data) < 516 or len(data) % 4:
         raise ValueError('Example image must be at least 516 bytes and aligned4')
     meta = data[0x100:0x200]
-    expected = b'CAN3' if kind == 'F13' else b'BUR1'
-    if meta[:4] != expected or meta[5] != 128 or meta[128:] != b'\xff' * 128:
+    if kind not in ('F13','F24'):
+        raise ValueError('Select a CAN device example')
+    if meta[:4] != b'CAN3' or meta[5] != 128 or meta[128:] != b'\xff' * 128:
         raise ValueError('Unsupported metadata header/reserved region')
-    if (kind == 'F13' and (meta[4] != 6 or meta[10] != 5)) or (kind == 'F24' and meta[4] != 3):
+    if meta[4] != 6 or meta[10] != 5 or int.from_bytes(meta[12:14], 'little') != {'F13':0xF13B,'F24':0xF24B}[kind]:
         raise ValueError('Unsupported example image contract')
-    size_offset, start_offset = (0x18, 0x1C) if kind == 'F13' else (0x0C, 0x18)
+    size_offset, start_offset = 0x18, 0x1C
     size = int.from_bytes(meta[size_offset:size_offset + 4], 'little')
     start = int.from_bytes(meta[start_offset:start_offset + 4], 'little')
     crc = binascii.crc32(data[:-4])
@@ -102,26 +88,26 @@ def schema_table(schema):
 
 def render_tables(f13, f24):
     lines = ['<!-- METADATA_BYTES_BEGIN -->',
-             '### F13 (MCU CAN device)：CAN3 欄位與產生端', schema_table(F13),
-             '### F24 (MCU CAN host)：BUR1 欄位與產生端', schema_table(F24),
+             '### MCU CAN device：Metadata 欄位與產生端', schema_table(F13),
+             'F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.ps1 的 Get-DeviceMetadata 依 App JSON／Boot config 產生。',
              '### 逐 byte 實體位址與範例值',
              '方括號是欄位內byte索引；LE數值的[0]是最低有效byte。ASCII依字元順序，reserved依原始順序。',
              '範例值取配套BIN，不是所有專案的固定值；每個metadata byte皆各列一行，包含128個reserved FF。']
     a, b = byte_fields(F13), byte_fields(F24)
     for begin in range(0, 256, 32):
         lines += [f'#### Metadata 0x{begin:02X}..0x{begin + 31:02X}',
-                  '| offset | F13 address | value | F13欄位[byte] | F24 host address | value | F24欄位[byte] |',
+                  '| offset | F13 device address | value | F13欄位[byte] | F24 device address | value | F24欄位[byte] |',
                   '| --- | --- | --- | --- | --- | --- | --- |']
         for offset in range(begin, begin + 32):
             lines.append(f'| 0x{offset:02X} | 0x{f13["start"] + 0x100 + offset:05X} | {f13["meta"][offset]:02X} | {a[offset][0]} | 0x{f24["start"] + 0x100 + offset:05X} | {f24["meta"][offset]:02X} | {b[offset][0]} |')
     lines += ['### 本表範例BIN與CRC位置',
-              '| 項目 | F13 (MCU CAN device) | F24 (MCU CAN host) |', '| --- | --- | --- |']
+              '| 項目 | F13 (MCU CAN device) | F24 (MCU CAN device) |', '| --- | --- | --- |']
     for label, values in [('image_size', [f'0x{x["size"]:X}' for x in (f13, f24)]),
                           ('stored image CRC32', [f'0x{x["crc"]:08X}' for x in (f13, f24)]),
                           ('CRC32 Flash address', [f'0x{x["start"] + x["size"] - 4:05X}..0x{x["start"] + x["size"] - 1:05X}' for x in (f13, f24)]),
                           ('metadata staging CRC32', [f'0x{x["metadata_crc"]:08X}' for x in (f13, f24)])]:
         lines.append(f'| {label} | {values[0]} | {values[1]} |')
-    for name, item in [('F13', f13), ('F24 host', f24)]:
+    for name, item in [('F13 device', f13), ('F24 device', f24)]:
         lines.append(f'{name} 範例BIN SHA-256：`{item["sha"]}`。')
     lines.append('<!-- METADATA_BYTES_END -->')
     return '\n\n'.join(lines[:1]) + '\n' + '\n\n'.join(lines[1:5]) + '\n\n' + '\n'.join(lines[5:])

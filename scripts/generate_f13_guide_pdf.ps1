@@ -2,7 +2,7 @@
 param(
     [string]$Source = "docs\F13_BOOT_UPDATE_FLOW_zh-TW.md",
     [string]$Output = "docs\F13_CAN_Bootloader_Update_Guide_zh-TW.pdf",
-    [int]$ExpectedDiagramCount = 20,
+    [int]$ExpectedDiagramCount = 10,
     [string]$Title = "RL78/F13 CAN Boot Loader and Firmware Update Guide (zh-TW)",
     [string]$Footer = "RL78/F13 CAN Boot Loader and Firmware Update"
 )

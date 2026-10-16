@@ -157,7 +157,7 @@ Keep8KiB ROM and512-byte spare guards; G16 new boot/app development is deferred.
 - Target profiles in the PC tool encode and decode target-specific CAN frames.
 - F13 boot decision documentation is canonical in the marked section of
   docs/F13_BOOT_UPDATE_FLOW_zh-TW.md. Run scripts/sync_f13_boot_decision.ps1 to
-  synchronize both local web guides; retain exact timer/ENTER/error semantics.
+  synchronize its full Bootloader section and ISP jump link; retain exact timer/ENTER/error semantics.
 - G16 I2C reference discovery/geometry and CRC16 are PC responsibilities.
   Its supplied slave lacks active READ/auth and safe boot CRC gating; do not
   enable erase/write/app jump or treat its label as authenticated MCU identity.
@@ -235,7 +235,7 @@ or write the copied legacy INI filename.
 
 F13/F24 CAN device editing tutorial is canonical in
 docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md (DEVICE_WORKSHOP block).
-sync_device_workshop.ps1 synchronizes both web guides; keep source JSON/inc,
+sync_device_workshop.ps1 projects the full workshop only to the Bootloader page and a link on ISP; keep source JSON/inc,
 generated outputs, App-only commands and verification boundaries distinct.
 Do not use host BUR1/Misc or host IRQ scripts for F24 CAN device examples.
 Both devices now use the same five-field app_image.json plus app_irq_handlers.json.
@@ -255,16 +255,17 @@ RL78_PORTING block is canonical for the boot web guide; run
 scripts/sync_rl78_porting_guide.ps1 and -CheckOnly after related changes.
 Public downloads and six workflow entries are canonical in the PUBLIC_RESOURCES
 block of docs/MULTIBUS_TOOL_GUIDE_zh-TW.md; sync_public_resources.ps1 updates both
-web guides. Keep actual source/download URLs and stable section anchors tested.
+web guides. Keep actual source/download URLs and stable section anchors tested. web_guide_sections.json
+owns topic placement; non-owner pages contain short links, never full duplicates.
 Companion F13 checkouts default to siblings; workspace_paths helpers support
 explicit paths and machine-local environment overrides, never personal fallbacks.
 Normal solution builds exclude the explicit F13 integration-test project.
 Per-byte Flash/metadata and CAN payload reference is canonical in
 docs/FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md (FLASH_REFERENCE block).
 generate_flash_reference.py derives all256 example byte rows from explicitly
-selected real CAN3/BUR1 BINs without writing them; sync_flash_reference.ps1
-updates the boot web guide. Keep relative-vs-absolute addresses, two manifest
-layouts, CRC scopes, source links and C90 examples distinct and verified.
+selected real F13/F24 CAN device BINs without writing them; sync_flash_reference.ps1
+updates the boot web guide. Keep relative-vs-absolute addresses, device manifest
+layout, CRC scopes, source links and C90 examples distinct and verified.
 
 Cross-layer teaching is canonical in docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md
 (CAN_WALKTHROUGH block); sync_can_update_walkthrough.ps1 updates the ISP web.

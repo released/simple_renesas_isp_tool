@@ -20,10 +20,10 @@ class CanUpdateWalkthrough(unittest.TestCase):
         self.assertEqual(text.count('```mermaid\n'), 9)
         self.assertEqual(len(re.findall(r'(?m)^\|(?: --- \|){3,5}$', text)), 15)
         self.assertEqual(len(re.findall(r'(?m)^### [A-M]\. ', text)), 13)
-        for phrase in ['F24 (MCU CAN host)', 'F13 (MCU CAN device)',
+        for phrase in ['MCU CAN host', 'MCU CAN device',
                        'Discover 不會讀回完整 256-byte', '不是 read-back CRC',
                        'Metadata Status = VALID', 'CRC Result = MATCH',
-                       'START ACK 不是「已擦除完成」', '不解析 CAN3',
+                       'START ACK 不是「已擦除完成」', '轉送 CAN frames',
                        '外層 status OK', '128 core + 128 reserved',
                        '不是 CAN FD frame', '不是斷線續傳功能',
                        '不是 rollback', 'FLASH_ERROR', '另收 App log',

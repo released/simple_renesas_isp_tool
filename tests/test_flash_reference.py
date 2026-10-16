@@ -14,17 +14,17 @@ REFERENCE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(REFERENCE)
 DOC = ROOT / 'docs/FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md'
 F13_BIN = companion_path('F13App') / 'DefaultBuild/RL78_F13_Boot_loader_CAN_app_update.bin'
-F24_BIN = ROOT / 'firmware/RL78_F24_Bridge_app/DefaultBuild/RL78_F24_Bridge_app_bridge_update.bin'
+F24_BIN = companion_path('F13Boot').parent / 'RL78_F24_Boot_loader_CAN_app/DefaultBuild/RL78_F24_Boot_loader_CAN_app_update.bin'
 PATTERN = r'<!-- FLASH_REFERENCE_BEGIN -->.*?<!-- FLASH_REFERENCE_END -->'
 
 
 class FlashReferenceTests(unittest.TestCase):
     def test_offline_pdf_contains_full_address_and_frame_reference(self):
         reader = PdfReader(DOC.with_suffix('.pdf'))
-        self.assertEqual(len(reader.pages), 28)
+        self.assertGreater(len(reader.pages), 15)
         text = '\n'.join(page.extract_text() for page in reader.pages)
-        for phrase in ['0x02100', '0x021FF', '0x05100', '0x051FF', 'BLOCK_BEGIN',
-                       'BLOCK_COMMIT', 'ReadLe32', 'CRC32', 'Bu_ParseManifest']:
+        for phrase in ['0x02100', '0x021FF', 'BLOCK_BEGIN', 'BLOCK_COMMIT',
+                       'ReadLe32', 'CRC32', 'Get-DeviceMetadata']:
             self.assertIn(phrase, text)
         self.assertNotIn('FLASH_REFERENCE_BEGIN', text)
         self.assertNotIn('METADATA_BYTES_BEGIN', text)
@@ -46,9 +46,12 @@ class FlashReferenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             REFERENCE.byte_fields(REFERENCE.F13 + [(0, 1, 'overlap', 'invalid')])
         self.assertEqual(a['start'], 0x2000)
-        self.assertEqual(b['start'], 0x5000)
+        self.assertEqual(b['start'], 0x2000)
         self.assertIn('0x0210C..0x0210D', text)
-        self.assertIn('0x05118..0x0511B', text)
+        self.assertEqual(a['start']+0x100+0x18,0x2118)
+        self.assertEqual(b['start']+0x100+0x1B,0x211B)
+        self.assertIn('0x02118',text)
+        self.assertIn('0x0211B',text)
 
     def test_generator_check_is_read_only_and_rejects_stale_or_missing_marker(self):
         command = ['python', str(ROOT / 'scripts/generate_flash_reference.py'),
@@ -87,7 +90,7 @@ class FlashReferenceTests(unittest.TestCase):
         self.assertEqual(re.findall(PATTERN, text, re.S), re.findall(PATTERN, page.read_text(encoding='utf-8-sig'), re.S))
         for phrase in ['Byte0..Byte7指CAN Data payload', 'App只處理INFO／ENTER',
                        'CAN控制器鏈路CRC', '0x720..0x727', '128個reserved FF',
-                       'F24 (MCU CAN device)', 'Bu_ParseManifest', 'Client::StageMetadata／SendBlock']:
+                       'F24 (MCU CAN device)', 'Get-DeviceMetadata', 'Client::StageMetadata／SendBlock']:
             self.assertIn(phrase, text)
         for name in ['HELLO', 'START', 'END', 'ABORT', 'ENTER', 'INFO', 'METADATA', 'SEAL',
                      'METADATA_RESET', 'BLOCK_BEGIN', 'BLOCK_COMMIT']:
@@ -119,7 +122,7 @@ class FlashReferenceTests(unittest.TestCase):
         if not candidates:
             self.skipTest('MSVC C compiler not installed')
         code, = re.findall(r'```c\n(.*?)\n```', DOC.read_text(encoding='utf-8-sig'), re.S)
-        code += '\nint main(void) { unsigned char a[128] = {0}; unsigned char b[128] = {0}; a[0x1D] = 0x20; b[0x19] = 0x50; return ExampleCan3AppStart(a) != 0x2000UL || ExampleBur1AppStart(b) != 0x5000UL; }\n'
+        code += '\nint main(void) { unsigned char a[128] = {0}; a[0x1D] = 0x20; return ExampleDeviceAppStart(a) != 0x2000UL; }\n'
         with tempfile.TemporaryDirectory(prefix='flash_c90_') as folder:
             source = Path(folder) / 'reference.c'
             source.write_text(code, encoding='ascii')

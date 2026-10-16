@@ -68,7 +68,7 @@ def inline_markup(value: str) -> str:
     escaped = html.escape(value.strip())
     escaped = re.sub(
         r"\[([^\]]+)\]\(([^)]+)\)",
-        r'<u><font color="#175A9C">\1</font></u>',
+        r'<link href="\2" color="#175A9C"><u>\1</u></link>',
         escaped,
     )
     escaped = re.sub(
@@ -237,15 +237,21 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
     portrait_height = PORTRAIT_PAGE[1] - TOP_MARGIN - BOTTOM_MARGIN - 8 * mm
     story = []
     paragraph_lines: list[str] = []
+    pending_anchors: list[str] = []
     last_heading_index: int | None = None
     last_heading_text = ""
     last_heading_style = styles["h3"]
     index = 0
 
+    def anchor_markup() -> str:
+        value = ''.join(f'<a name="{html.escape(name, quote=True)}"/>' for name in pending_anchors)
+        pending_anchors.clear()
+        return value
+
     def flush_paragraph() -> None:
         if paragraph_lines:
             story.append(Paragraph(
-                inline_markup(" ".join(part.strip() for part in paragraph_lines)),
+                anchor_markup() + inline_markup(" ".join(part.strip() for part in paragraph_lines)),
                 styles["body"],
             ))
             paragraph_lines.clear()
@@ -265,8 +271,10 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
                     raise ValueError("Unterminated Markdown HTML comment")
             index += 1
             continue
-        if re.fullmatch(r'<a\s+(?:id|name)=["\'][^"\']+["\']\s*></a>', stripped):
+        anchor_match = re.fullmatch(r'<a\s+(?:id|name)=["\']([^"\']+)["\']\s*></a>', stripped)
+        if anchor_match:
             flush_paragraph()
+            pending_anchors.append(anchor_match.group(1))
             index += 1
             continue
         if stripped.startswith("```"):
@@ -363,7 +371,7 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
             last_heading_index = len(story)
             last_heading_text = heading.group(2)
             last_heading_style = styles[style_name]
-            story.append(Paragraph(inline_markup(heading.group(2)), styles[style_name]))
+            story.append(Paragraph(anchor_markup() + inline_markup(heading.group(2)), styles[style_name]))
             index += 1
             continue
         if stripped.startswith(">"):

@@ -1,9 +1,9 @@
-# CAN 更新教學：由 Tool 操作對照到 F24／F13 程式碼
+# CAN 更新逐層導讀：Tool、MCU CAN host 與 MCU CAN device
 
 <!-- CAN_WALKTHROUGH_BEGIN -->
 <a id="can-update-walkthrough"></a>
 
-## CAN 更新逐層導讀：Tool → F24 (MCU CAN host) → F13 (MCU CAN device)
+## CAN 更新逐層導讀：Tool → MCU CAN host → MCU CAN device
 
 本篇用同一條更新路徑，把「使用者按什麼、傳什麼、哪個函式處理、何時改到 Flash」對起來。
 先讀本篇理解流程，再查[Flash／metadata 全部 byte 位址與 CAN 格式](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
@@ -11,35 +11,35 @@
 [可下載 PDF](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.pdf)可供離線對照。
 
 本篇只描述現有 CAN Upgrade：Classical CAN、控制 ID `0x700/0x701`、raw data IDs `0x720..0x727`，
-F13 App 起點 `0x2000`、metadata 位於 image offset `0x100..0x1FF`。這些是此範例契約，不是所有 MCU 的固定值。
-F24 自身 App 更新走 Misc／UART；I2C／未來 Device UART 不可直接沿用本篇的 CAN wire 格式。
+範例 App 起點 `0x2000`、metadata 位於 image offset `0x100..0x1FF`。這些是此範例契約，不是所有 MCU 的固定值。
+Host 自身 App 的更新操作見 [Misc／UART](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware)。
 
 ### A. 先分清三層責任與三種資訊
 
 | 層 | 輸入與輸出 | 負責判斷 | 不負責的事 |
 | --- | --- | --- | --- |
-| PC Tool | BIN／UI → Host Link UART commands | 離線 BIN、更新政策、live target 相容性；建立 CAN 更新封包 | 不直接操作 F13 Flash register |
-| F24 (MCU CAN host) App | Host Link → CAN TX；CAN RX → Host Link response | UART framing／CRC16、generic CAN record、傳送完成與等待條件 | 不解析 CAN3、不知道 F13 App 起點、不決定 F13 擦寫 |
-| F13 (MCU CAN device) Boot | CAN command／raw data → ACK | metadata 契約、RAM 區塊、CRC、Flash 邊界、完整映像及 Boot→App | 不解析 PC Host Link、不需要知道 COM 名稱 |
-| F13 (MCU CAN device) App | CAN INFO／ENTER | 回報 App／Boot 摘要；明確要求重進 Boot | 不在正常 App 中處理 Boot 的區塊擦寫流程 |
+| PC Tool | BIN／UI → Host Link UART commands | 離線 BIN、更新政策、live target 相容性；建立 CAN 更新封包 | 不直接操作 device Flash register |
+| MCU CAN host App | Host Link → CAN TX；CAN RX → Host Link response | UART framing／CRC16、generic CAN record、傳送完成與等待條件 | 轉送 CAN frames；App metadata 與擦寫由 device 處理 |
+| MCU CAN device Boot | CAN command／raw data → ACK | metadata 契約、RAM 區塊、CRC、Flash 邊界、完整映像及 Boot→App | 不解析 PC Host Link、不需要知道 COM 名稱 |
+| MCU CAN device App | CAN INFO／ENTER | 回報 App／Boot 摘要；明確要求重進 Boot | 不在正常 App 中處理 Boot 的區塊擦寫流程 |
 
 #### 三層資料往返
 
 ```mermaid
 flowchart TD
     U["User：選 CAN／載入 Device App BIN"] --> T["Tool：離線驗證，再比對 live target"]
-    T --> H["F24 (MCU CAN host) App<br/>解 Host Link，轉送 generic CAN frames"]
-    H --> D["F13 (MCU CAN device) Boot<br/>解 CAN，暫存 RAM，驗證後寫 Flash"]
-    D --> R["F13 ACK → F24 UART response → Tool 檢查"]
+    T --> H["MCU CAN host App<br/>解 Host Link，轉送 generic CAN frames"]
+    H --> D["MCU CAN device Boot<br/>解 CAN，暫存 RAM，驗證後寫 Flash"]
+    D --> R["MCU CAN device ACK → MCU CAN host UART response → Tool 檢查"]
     R --> E["END 成功後 reset；Boot 再驗證，另確認 App 執行"]
-    X["Misc／UART：更新 F24 自身 App<br/>是另一條流程，不經 F13"] -.-> H
+    X["Misc／UART：更新 MCU CAN host 自身 App<br/>是另一條流程，不經 MCU CAN device"] -.-> H
 ```
 
 | UI／通訊中看到的資料 | 來自哪裡 | 代表什麼 | 不代表什麼 |
 | --- | --- | --- | --- |
-| LOADED APP BIN／共用 metadata | PC 上載入的檔案 | 即將寫入的離線映像；CAN3／UPD1 | 不是板上已安裝的內容 |
-| DEVICE TARGET／BOOT CODE／INSTALLED APP | F13 的 CAN INFO pages | live 韌體回報的身分、layout、版本、容量及政策摘要 | Discover 不會讀回完整 256-byte Flash metadata；也不是 read-back CRC |
-| HOST BRIDGE／Host descriptor | F24 的 Host Link 身分與自身 BUR1 metadata | 哪塊 bridge、支援哪些 port／commands、Host 自身 App 資訊 | 不是外部 F13 的 CAN3，也不是要下載給 F13 的 metadata |
+| LOADED APP BIN／共用 metadata | PC 上載入的檔案 | 即將寫入的離線映像與更新政策 | 不是板上已安裝的內容 |
+| DEVICE TARGET／BOOT CODE／INSTALLED APP | MCU CAN device 的 CAN INFO pages | live 韌體回報的身分、layout、版本、容量及政策摘要 | Discover 不會讀回完整 256-byte Flash metadata；也不是 read-back CRC |
+| HOST BRIDGE／Host descriptor | MCU CAN host 的 Host Link 身分與自身 metadata | 哪塊 bridge、支援哪些 port／commands、Host 自身 App 資訊 | 與外部 device 的 App BIN 分開顯示 |
 
 ### B. 使用者操作與內部動作對照
 
@@ -75,7 +75,7 @@ flowchart TD
 | 驗證關卡 | 檢查的 byte／資料 | 拒絕範例 | UI／程式判定 |
 | --- | --- | --- | --- |
 | 最小結構 | entry／vector 預留、0x100 起 256-byte metadata、尾端 CRC4；至少 516 bytes、4-byte 對齊 | 空檔、截斷、只給原始 App code | `ParseMetadata`；entry 不得為 FFFFFFFF |
-| 格式與識別 | CAN3 magic、image format、core length、flags、protocol、checksum；MCU 字串與 padding | BUR1 Host BIN 放在 CAN TAB、壞 magic／字串 | Metadata Status 與 Update Policy；不是只看副檔名 |
+| 格式與識別 | image magic、image format、core length、flags、protocol、checksum；MCU 字串與 padding | BUR1 Host BIN 放在 CAN TAB、壞 magic／字串 | Metadata Status 與 Update Policy；不是只看副檔名 |
 | 幾何與容量 | image_size 等於檔案長度；start／capacity／Flash／Boot／erase／minimum | 超出 Flash、start 未對齊 erase | `ParseMetadata` 的 bounds checks |
 | 保留區 | metadata offset 0x80..0xFF 共 128 bytes 必須 FF | 不相容擴充欄位卻未更新契約 | reserved 檢查；不是任意填零區 |
 | 完整性 | 檔案前 N-4 bytes 的 CRC32 對比最後 4 bytes LE32 | metadata 正確但程式區損壞 | CRC Result MATCH；`ValidateImage` 才要求相等 |
@@ -90,8 +90,8 @@ flowchart TD
 sequenceDiagram
     participant U as User／Tool UI
     participant W as Tool worker／target profile
-    participant H as F24 MCU CAN host
-    participant D as F13 MCU CAN device
+    participant H as MCU CAN host
+    participant D as MCU CAN device
     U->>W: Discover Target
     W->>H: generic TX_WAIT_RX（內含 INFO page）
     H->>D: CAN ID700：07 page
@@ -100,10 +100,10 @@ sequenceDiagram
     W-->>U: 顯示 live state／layout／Boot／App
     opt target 正在 App，使用者按 Enter Boot
         W->>H: generic request（內含 ENTER06）
-        H->>D: ENTER；ACK 後 F13 reset
+        H->>D: ENTER；ACK 後 MCU CAN device reset
         W->>H: 再次 INFO／HELLO
         H->>D: 確認 Bootloader
-        D-->>W: 經 F24 回報 Boot 能力
+        D-->>W: 經 MCU CAN host 回報 Boot 能力
     end
     W-->>U: 比對 BIN 與 live target；全部相容才 Ready
 ```
@@ -135,11 +135,11 @@ sequenceDiagram
 flowchart TD
     B["BIN：擷取最多64 bytes<br/>image_offset，計算 block CRC32"] --> C["Tool Client::SendBlock<br/>BEGIN + raw segments + COMMIT"]
     C --> U["UART cmd22 generic burst<br/>滿區塊10 frames／payload122 bytes"]
-    U --> H["F24：依序送10個 Classical CAN frames<br/>不是一個 CAN FD frame"]
-    H --> R["F13：BEGIN 清 bitmap<br/>raw ID720..727 寫64-byte RAM"]
+    U --> H["MCU CAN host：依序送10個 Classical CAN frames<br/>不是一個 CAN FD frame"]
+    H --> R["MCU CAN device：BEGIN 清 bitmap<br/>raw ID720..727 寫64-byte RAM"]
     R --> V["COMMIT：bitmap／offset／CRC／metadata 比對"]
     V --> F["通過才進 Flash write；回一個 ACK"]
-    F --> A["F24 包回 UART；Tool 核對 block index／next address"]
+    F --> A["MCU CAN host 包回 UART；Tool 核對 block index／next address"]
 ```
 
 ### F. F24 (MCU CAN host) 的接收與轉送流程
@@ -192,7 +192,7 @@ flowchart TD
 | BLOCK_COMMIT0C | offset／CRC 與 BEGIN 一致 | started、DLC8、bitmap 全、區塊 CRC 相等 | 通過後才比對 metadata／寫 Flash；回 block ACK |
 | END04／ABORT05 | DB0 | END 要求完整 size／Flash metadata／全 image CRC；ABORT 終止 session | END 成功後 reset；ABORT 不等於回復舊映像 |
 
-### H. 先送完整 metadata，為什麼還要 SEAL／START？
+### H. 完整 metadata、SEAL 與 START
 
 ```mermaid
 flowchart TD
@@ -200,7 +200,7 @@ flowchart TD
     C --> S["SEAL09：完整256 bytes？<br/>MetadataValid 契約＋metadata CRC32"]
     S -->|失敗| X["拒絕 START；目前尚未擦 Flash"]
     S -->|通過| P["sealed＝1；仍只在 RAM"]
-    P --> A["START02：protocol／target／size<br/>與 sealed metadata／FSL 狀態一致？"]
+    P --> A["START02：protocol／target／size<br/>與 sealed metadata／Flash driver 狀態一致？"]
     A -->|否| X
     A -->|是| B["started＝1；expected offset＝0<br/>下一步才可接收 image block"]
 ```
@@ -261,7 +261,7 @@ flowchart TD
 | metadata 正式資料與 SEAL 不同 | image offset0x100..0x1FF 的 words 比對 staging RAM | 該 block 不寫；此前 blocks 可能已改變 | BAD_IMAGE，終止；不是 rollback |
 | 本次正常 block | offset＝expected；大小不超 image／Flash 範圍 | 在 erase 邊界擦除，再逐4 bytes寫入 | ACK index／next address 正確才前進 |
 | 上一已提交 block replay | offset 比 expected 少64，RAM／Flash CRC 均相符 | 不重寫、不再次擦除 | 可回相同 next address ACK；不是任意位置續傳 |
-| FSL erase／write 失敗 | Flash library 回傳錯誤 | 可能部分寫入，不能宣稱原子性 | FLASH_ERROR，不以一般 CRC retry 掩蓋 |
+| FSL erase／write 失敗 | Flash library 回傳錯誤 | 回報部分寫入狀態並保留 Boot recovery | FLASH_ERROR，不以一般 CRC retry 掩蓋 |
 
 目前 `Client::SendBlock` 對 bridge TIMEOUT 或 F13 BAD_SEQUENCE／CRC_ERROR 有界重送整區塊；
 它仍要核對 ACK 的 block index 與 next address。這不是斷線續傳功能。
@@ -277,7 +277,7 @@ flowchart TD
     M -->|否| X
     M -->|是| C["計算 Flash 的 N-4 bytes CRC32<br/>對比 Flash 尾端 stored CRC"]
     C -->|不符| X
-    C -->|相符| A["END ACK 回 CRC；Tool 核對<br/>F13 記錄完成狀態並 reset"]
+    C -->|相符| A["END ACK 回 CRC；Tool 核對<br/>MCU CAN device 記錄完成狀態並 reset"]
     A --> B["Boot 啟動時再跑 boot decision／映像驗證"]
     B --> V["符合完整條件才跳 App<br/>另收 App log／INFO／功能證據"]
 ```
@@ -316,7 +316,7 @@ flowchart TD
 | --- | --- | --- |
 | 載入檔案與 UI metadata | [main_frame_image.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_image.cpp) | `LoadBinaryFromPath`／`ValidateLoadedFirmwareImage`／`UpdateFirmwareImageInfoText` |
 | Ready／Missing 與 Start 按鈕 | [main_frame_workflow.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_workflow.cpp) | `UpdateUi`／`OnBnClickedStartFirmwareUpdate` |
-| CAN3 離線驗證 | [firmware_update_profile.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/core/firmware_update_profile.cpp) | `ParseMetadata`／`InspectImage`／`ValidateImage` |
+| App metadata 離線驗證 | [firmware_update_profile.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/core/firmware_update_profile.cpp) | `ParseMetadata`／`InspectImage`／`ValidateImage` |
 | worker 二次檢查／流程 | [worker_can_workflows.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/worker_can_workflows.cpp) | `ProcessDiscoverF13Boot`／`ValidateF13BootTarget`／`ProcessProgramF13Boot` |
 | BIN 對 live target | [worker_format.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/worker_format.cpp) | `ImageMatchesTarget` |
 | 更新狀態機 | [f13_boot_update.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/core/f13_boot_update.cpp) | `RunUpdate`／`AbortAfterStart` |

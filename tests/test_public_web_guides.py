@@ -1,5 +1,6 @@
 """Keep public navigation linked and independent of delivery milestones."""
 from pathlib import Path
+import json
 import re
 import subprocess
 import tempfile
@@ -18,16 +19,13 @@ class PublicWebGuides(unittest.TestCase):
         for page in [ISP / 'index.md', BOOT / 'index.md']:
             text = page.read_text(encoding='utf-8-sig')
             for phrase in ['F24 (MCU CAN host)', 'F13 (MCU CAN device)',
-                           'F24 (MCU CAN device)', '角色由專案與metadata決定',
-                           'RL78_F24_Bridge_boot', 'RL78_F24_Bridge_app',
-                           'RL78_F13_Boot_loader_CAN_app', 'Misc／UART']:
+                           'F24 (MCU CAN device)', 'Misc']:
                 self.assertIn(phrase, text)
             self.assertNotRegex(text, r'https?://[^\s\n]*\(MCU')
-            for label in ['| F24 (MCU CAN host) Boot |', '| F24 (MCU CAN host) App |',
-                          '| F13 (MCU CAN device) Boot |', '| F13 (MCU CAN device) App |']:
-                self.assertIn(label, text)
-        boot = (BOOT / 'index.md').read_text(encoding='utf-8-sig')
-        self.assertIn('不能把舊UART／I2C教材中的F24一律當成CAN host', boot)
+        isp = (ISP / 'index.md').read_text(encoding='utf-8-sig')
+        for label in ['| F24 (MCU CAN host) Boot |', '| F24 (MCU CAN host) App |',
+                      '| F13 (MCU CAN device) Boot |', '| F13 (MCU CAN device) App |']:
+            self.assertIn(label, isp)
 
     def test_public_resources_downloads_anchors_and_sync(self):
         pattern = re.compile(r'<!-- PUBLIC_RESOURCES_BEGIN -->.*?<!-- PUBLIC_RESOURCES_END -->', re.S)
@@ -35,7 +33,13 @@ class PublicWebGuides(unittest.TestCase):
         block, = pattern.findall(source)
         for path in [ISP / 'index.md', BOOT / 'index.md']:
             text = path.read_text(encoding='utf-8-sig')
-            self.assertEqual(pattern.findall(text), [block])
+            actual, = pattern.findall(text)
+            if path.parent == ISP:
+                self.assertEqual(actual, block)
+            else:
+                self.assertNotEqual(actual, block)
+                self.assertIn('https://released.github.io/slide_isp_tool_for_RL78/#downloads', actual)
+                self.assertNotIn('raw.githubusercontent', actual)
             self.assertNotRegex(text, r'_Avery|[A-Z]:[\\/]|\.\./\.\./python|SourceCode')
             self.assertNotIn('有效core長度仍為96', text)
         for filename in ['FirmwareUpgradeTool.exe', 'RL78_F24_Bridge_boot.mot',
@@ -44,9 +48,10 @@ class PublicWebGuides(unittest.TestCase):
             self.assertIn('https://raw.githubusercontent.com/released/', block)
             self.assertIn('/' + filename + ')', block)
         anchors = [('slide_isp_tool_for_RL78', name) for name in
-                   ['tool-bridge-flow', 'f13-boot-flow', 'tool-operation',
+                   ['tool-bridge-flow', 'tool-operation', 'custom-transfer',
                     'host-bridge-firmware', 'f13-device-update']]
         anchors.append(('slide_boot_loader_for_RL78', 'boot-app-porting'))
+        anchors.append(('slide_boot_loader_for_RL78', 'f13-boot-decision'))
         for site, anchor in anchors:
             target = (WEB / site / 'index.md').read_text(encoding='utf-8-sig')
             self.assertEqual(target.count('<a id="' + anchor + '"></a>'), 1)
@@ -97,9 +102,49 @@ class PublicWebGuides(unittest.TestCase):
 
     def test_technical_contracts_and_unverified_boundaries_remain(self):
         text = (ISP / 'index.md').read_text(encoding='utf-8-sig')
-        for phrase in ['最低boot版本', 'image format6', 'contract3', 'F1V1', 'F2V1',
-                       'G16', '完整故障矩陣', 'CRC提供完整性', '尚未開放']:
+        for phrase in ['最低 Boot 版本', 'IRQ ABI',
+                       'G16', 'CRC提供完整性', 'BLOCKED']:
             self.assertIn(phrase, text)
+
+    def test_single_owner_sections_and_generic_diagram_roles(self):
+        catalog = json.loads((ROOT/'scripts/web_guide_sections.json').read_text(encoding='utf-8-sig'))
+        sources = {'DEVICE_WORKSHOP':'DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md',
+                   'F24_DEVICE':'F24_CAN_DEVICE_DESIGN_zh-TW.md',
+                   'F13_BOOT_DECISION':'F13_BOOT_UPDATE_FLOW_zh-TW.md',
+                   'F24_APP_IRQ':'SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md',
+                   'COMMON_IMAGE_POLICY':'COMMON_IMAGE_METADATA.md',
+                   'PUBLIC_RESOURCES':'MULTIBUS_TOOL_GUIDE_zh-TW.md'}
+        pages = {p.parent.name:p.read_text(encoding='utf-8-sig')
+                 for p in (ISP/'index.md',BOOT/'index.md')}
+        for section, config in catalog.items():
+            pattern = rf'<!-- {section}_BEGIN -->.*?<!-- {section}_END -->'
+            canonical, = re.findall(pattern,(ROOT/'docs'/sources[section]).read_text(encoding='utf-8-sig'),re.S)
+            for folder, text in pages.items():
+                block, = re.findall(pattern,text,re.S)
+                if folder == config['owner']:
+                    self.assertEqual(block,canonical)
+                else:
+                    self.assertLess(len(block),800)
+                    self.assertNotIn('```',block)
+                    self.assertIn(f"https://released.github.io/{config['owner']}/#{config['anchor']}",block)
+        for text in pages.values():
+            for diagram in re.findall(r'```mermaid\n(.*?)\n```',text,re.S):
+                self.assertNotRegex(diagram,r'\bF(?:13|24)\b')
+                self.assertNotRegex(diagram,r'MCU CAN (?:host|device) MCU CAN')
+        boot = pages[BOOT.name]
+        for section in ('DEVICE_WORKSHOP','RL78_PORTING','F24_DEVICE','FLASH_REFERENCE'):
+            block, = re.findall(rf'<!-- {section}_BEGIN -->.*?<!-- {section}_END -->',boot,re.S)
+            self.assertNotRegex(block,r'F24.{0,15}(?:host|HOST)|BUR1|Bridge_boot')
+        self.assertIn('<a id="custom-transfer"></a>',pages[ISP.name])
+
+    def test_reader_pages_exclude_development_conversation(self):
+        paths = [ISP/'index.md',BOOT/'index.md'] + [ROOT/'docs'/name for name in
+            ('DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md','F24_CAN_DEVICE_DESIGN_zh-TW.md',
+             'RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md','FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md',
+             'MULTIBUS_TOOL_GUIDE_zh-TW.md','SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md')]
+        for path in paths:
+            text = path.read_text(encoding='utf-8-sig')
+            self.assertNotRegex(text,r'G16\s*新版|新版\s*I2C|依使用者要求延後|本輪|本次未執行|native pipe|舊\s*format4|舊版 UART|較容易修改|為什麼 F24 device|不能把 F13')
 
     def test_verifier_accepts_future_product_version_without_page_update(self):
         with tempfile.TemporaryDirectory(prefix='isp_public_guide_') as folder:

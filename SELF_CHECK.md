@@ -1,5 +1,29 @@
 # Host Link v2 Self-Check
 
+## Current public guides / F24 device PowerShell workflow (2026-10-16)
+
+- [x] Current reader MD/web/PDF omit G16 replacement planning, old-format
+  migration dialogue and development questions. Device chapters contain only
+  F13/F24 CAN device comparisons; host engineering/Custom Transfer belong to ISP.
+- [x] Single-owner section catalog and jump-link projections; bounded sync,
+  read-only checks, generic MCU CAN device diagrams and explicit source anchors.
+- [x] JSON vector keys traced to iodefine.h/manual/ISR; actual F13/F24 device
+  BINs supply all256 byte-address rows. No host BUR1 address table in device guide.
+- [x] F24 device clean rebuild with Python absent from PATH: all3 Error0;
+  original license/device-file warnings remain. OwnerAA/55, Boot1DFD/spare514.
+  Nine PS checks + C RAM fault/CRC/block + production PC parser/policy PASS.
+- [x] Baseline: only Boot HEX bytes303/337 A5->55; App/Transfer HEX byte content
+  and App update BIN unchanged. Tool EXE/host images/F13 images unchanged.
+- [x] Seven PDFs regenerated with clickable URLs/local chapter destinations;
+  rendered and visually inspected:13/6/26/18/20/7/9 pages,31 total diagrams.
+  No blank pages or text outside page bounds. PDF navigation fixtures PASS.
+- [x] 37 focused regression tests PASS; nine canonical checks,194 local refs,
+  all cross-page anchors and256 real-BIN rows PASS;24 safe-clean audit PASS.
+- [ ] Browser/DPI visual acceptance and F24 device CAN/RFD/IRQ/power-fault
+  hardware acceptance NOT RUN. No COM/device writes/Git push/site publication.
+- [ ] F13 complete Boot map/clnk audit remains unavailable; existing files are
+  missing and F13 Boot was not rebuilt. App/source/HEX hashes stay unchanged.
+
 ## Device Metadata / vector editing workshop
 
 - [x] Dedicated F13/F24 CAN device chapter with before/after metadata and IRQ

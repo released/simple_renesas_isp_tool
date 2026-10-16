@@ -5,6 +5,19 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-16 public-guide organization / F24 device PowerShell workflow:
+single-owner web topics with jump links, current-operation wording, device-only
+JSON/vector/porting comparisons and exact IRQ/address sources. Seven PDFs
+regenerated/rendered/visually checked; clickable URL/chapter navigation verified.
+F24 device prepare/package/test require PowerShell5.1/.NET, not Python.
+Python-free PATH clean builds all3 PASS; ownerAA/55, Boot spare514, App BIN
+unchanged. Nine PS checks + C/PC models PASS;37 focused regressions, nine
+canonical checks,194 refs/anchors/256 byte rows and24 safe-clean scripts PASS.
+No frozen Tool/host/F13 delivery-byte changes; no device writes/publication.
+Physical F24 CAN/RFD/IRQ/fault and browser/DPI checks remain NOT RUN.
+
+Historical status slices below describe their own verification points.
+
 2026-10-16 device JSON authoring/workshop: F13/F24 CAN devices both use strict
 app_image.json + app_irq_handlers.json; generators own metadata INC/identity/
 vectors, with no manual INC fallback. Reject stale linked metadata/IRQ tables.

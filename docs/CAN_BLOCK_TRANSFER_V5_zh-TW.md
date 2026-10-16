@@ -100,4 +100,4 @@ F13 block staging／CRC；涵蓋16種尾段長度、缺段、壞CRC、衝突重�
 reset後新版App啟動與E2 Lite／IRQ runtime仍待驗證。
 同一v5 BIN、CAN500K，先Host115200／相同trace，再trace-off與460800／921600各至少3次。
 保存summary bytes／blocks／ms／B/s、CRC、UART overflow、CAN lost/error與reset後App log。
-沒有wire trace時不得把PC「TX意圖」log當成已量測的CAN成功傳送。G16新版I2C仍延後。
+CAN 傳送結果以 wire trace 及 device 回覆核對；PC TX log 記錄的是傳送要求。

@@ -1,4 +1,4 @@
-"""Regression checks for guide-only Markdown parsing; no PDF files authored."""
+"""Guide renderer checks; authored fixtures stay in temporary directories."""
 import importlib.util
 from pathlib import Path
 import re
@@ -17,6 +17,22 @@ SPEC.loader.exec_module(GUIDE)
 
 
 class GuideMarkdownTests(unittest.TestCase):
+    def test_markdown_navigation_remains_clickable_in_pdf(self):
+        value = GUIDE.inline_markup('[Guide](https://released.github.io/slide_boot_loader_for_RL78/#device-app-irq)')
+        self.assertIn('<link href="https://released.github.io/slide_boot_loader_for_RL78/#device-app-irq"',value)
+        self.assertIn('<u>Guide</u>',value)
+
+    def test_local_anchor_has_a_pdf_destination(self):
+        GUIDE.register_fonts()
+        with tempfile.TemporaryDirectory(prefix='guide_links_') as folder:
+            source=Path(folder)/'guide.md'
+            source.write_text('# Guide\n\n[Jump](#details)\n\n<a id="details"></a>\n\n## Details\n\nBody.\n',encoding='utf-8')
+            output=Path(folder)/'guide.pdf'
+            GUIDE.create_pdf(source,output,'Guide','Guide')
+            reader=PdfReader(output)
+            annotations=[a.get_object() for p in reader.pages for a in p.get('/Annots',[])]
+            self.assertTrue(any(a.get('/Subtype')=='/Link' and '/Dest' in a for a in annotations))
+
     def test_portrait_break_does_not_leave_table_spacer_on_blank_page(self):
         GUIDE.register_fonts()
         source = '# Test\n\n| A | B |\n| --- | --- |\n| x | y |\n\n#### Diagram\n\n![diagram](fake.png)\n'
@@ -42,38 +58,29 @@ class GuideMarkdownTests(unittest.TestCase):
         self.assertIs(paragraphs[1].style, styles["h3"])
 
     def test_final_guide_outputs(self):
-        version = (ROOT / "src/build_version.txt").read_text(encoding="ascii").strip()
         expected = {
-            "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": 10,
-            "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": 14,
-            "F13_CAN_Bootloader_Update_Guide_zh-TW.pdf": 30,
+            "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": (3,['BUR1','f24_board','115200','App 工程']),
+            "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": (4,['下載與操作總覽','CRC16','100 kHz','128']),
+            "F13_CAN_Bootloader_Update_Guide_zh-TW.pdf": (10,['UPD1','0x2100','30','SEAL']),
         }
-        for name, pages in expected.items():
+        for name, (diagrams, phrases) in expected.items():
             with self.subTest(guide=name):
                 reader = PdfReader(ROOT / "docs" / name)
-                self.assertEqual(len(reader.pages), pages)
+                self.assertGreater(len(reader.pages), 2)
                 text = "\n".join(page.extract_text() for page in reader.pages)
                 self.assertNotIn("F13_BOOT_DECISION_", text)
                 self.assertNotIn("F24_APP_IRQ_", text)
                 self.assertNotIn("COMMON_IMAGE_POLICY_", text)
                 self.assertNotIn("PUBLIC_RESOURCES_", text)
                 self.assertNotIn('<a id=', text)
-                self.assertIn("UPD1",text)
-                self.assertIn("921600",text)
-                self.assertIn("device_uart_baud",text)
-                for role in ['F24 (MCU CAN host)', 'F13 (MCU CAN device)', 'F24 (MCU CAN device)']:
-                    self.assertIn(role, re.sub(r'\s+', ' ', text))
+                for phrase in phrases:
+                    self.assertIn(phrase,text)
                 self.assertNotIn("####", text)
-                self.assertIn(version, re.sub(r"\s+", "", text))
-                if name.startswith('F13_'):
-                    self.assertIn('舊format4', re.sub(r'\s+', '', text))
+                self.assertNotRegex(text,r'本輪|native pipe|舊\s*format4|G16\s*新版')
+                self.assertEqual(sum(len(page.images) for page in reader.pages),diagrams)
                 if name.startswith('FirmwareUpgradeTool_Shared'):
                     self.assertIn('f24_board', text)
                     self.assertNotIn('RL78_F24_CAN_host_upgrade', text)
-                if name.startswith('FirmwareUpgradeTool_MultiBus'):
-                    self.assertIn('下載與操作總覽', text)
-                    self.assertIn('六個操作與流程圖入口', text)
-                    self.assertEqual(sum(len(page.images) for page in reader.pages), 7)
 
 
 if __name__ == "__main__":

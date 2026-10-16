@@ -27,7 +27,7 @@ command. See HOST_LINK_BAUD_zh-TW.md for baseline and physical A/B limits.
 from target protocol and port rates. Upper Host Baud selects115200/460800/
 921600; boot self-update stays at its fixed descriptor rate. DEVICE UART
 policy version2 fixes its separate UART baud at compile time; no UART target
-driver/update adapter or G16 replacement was enabled. See HOST_LINK_BAUD_zh-TW.md.
+driver/update adapter is enabled. See HOST_LINK_BAUD_zh-TW.md.
 
 Host Link now uses shared128-byte payload/142-byte frame limits;96-byte hosts
 are explicitly incompatible. Metadata Flash extent is256 bytes, independent

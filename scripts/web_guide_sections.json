@@ -1,0 +1,38 @@
+{
+  "DEVICE_WORKSHOP": {
+    "owner": "slide_boot_loader_for_RL78",
+    "anchor": "device-metadata-vector-workshop",
+    "title": "Device App：Metadata 與 IRQ 設定",
+    "description": "F13 與 F24 CAN device 使用兩份 JSON 管理映像資訊與中斷對應。完整範例、產生命令及驗證步驟集中於 Bootloader 頁。"
+  },
+  "F24_DEVICE": {
+    "owner": "slide_boot_loader_for_RL78",
+    "anchor": "f24-can-device",
+    "title": "F24 (MCU CAN device)：工程配置",
+    "description": "F24 CAN device 提供 Transfer、Boot 與 App 工程。板端時鐘、Flash 配置與 RFD 說明集中於 Bootloader 頁；GitHub 來源將於實板驗證後提供。"
+  },
+  "F13_BOOT_DECISION": {
+    "owner": "slide_boot_loader_for_RL78",
+    "anchor": "f13-boot-decision",
+    "title": "F13 (MCU CAN device)：Boot 啟動與更新狀態",
+    "description": "Boot 啟動檢查、ENTER marker、30 秒 inactivity 與更新完成後的啟動路徑集中於 Bootloader 頁。"
+  },
+  "F24_APP_IRQ": {
+    "owner": "slide_isp_tool_for_RL78",
+    "anchor": "host-app-engineering",
+    "title": "F24 (MCU CAN host)：App 工程與向量設定",
+    "description": "Host App 的工程來源、獨立產表、建置方式與 Misc 操作集中於 ISP Tool 頁。"
+  },
+  "COMMON_IMAGE_POLICY": {
+    "owner": "slide_isp_tool_for_RL78",
+    "anchor": "image-update-policy",
+    "title": "更新政策與通訊速度",
+    "description": "BIN 的更新目的地、允許介面、Boot／IRQ ABI 與 Host Link 速度，集中於 ISP Tool 的更新政策章節。"
+  },
+  "PUBLIC_RESOURCES": {
+    "owner": "slide_isp_tool_for_RL78",
+    "anchor": "downloads",
+    "title": "下載與操作入口",
+    "description": "Tool、host／device firmware 的來源與下載檔案集中於 ISP Tool 頁。F13、F24 CAN device 的工程配置則由各自的章節說明。"
+  }
+}
