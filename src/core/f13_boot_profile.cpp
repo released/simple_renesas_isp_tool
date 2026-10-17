@@ -42,7 +42,7 @@ bool Fail(const wchar_t* text, std::wstring* error) {
 }
 
 bool IsKnownStatus(std::uint8_t value) {
-    return value <= static_cast<std::uint8_t>(Status::BadImage);
+    return value <= static_cast<std::uint8_t>(Status::Version);
 }
 
 const wchar_t* StatusText(Status status) {
@@ -57,6 +57,11 @@ const wchar_t* StatusText(Status status) {
         case Status::BadProtocol: return L"BAD_PROTOCOL";
         case Status::BadTarget: return L"BAD_TARGET";
         case Status::BadImage: return L"BAD_IMAGE";
+        case Status::Metadata: return L"METADATA (manifest field or reserved bytes)";
+        case Status::Policy: return L"UPDATE_POLICY (role / allowed transport)";
+        case Status::IrqAbi: return L"IRQ_ABI";
+        case Status::Layout: return L"FLASH_LAYOUT";
+        case Status::Version: return L"VERSION_DOWNGRADE (installed App policy rejects this older version)";
         default: return L"UNKNOWN";
     }
 }
@@ -162,7 +167,7 @@ bool BuildInfoRequest(InfoPage page,
                       can_host::Frame* frame,
                       std::wstring* error) {
     if (static_cast<std::uint8_t>(page) >
-        static_cast<std::uint8_t>(InfoPage::Block)) {
+        static_cast<std::uint8_t>(InfoPage::VersionPolicy)) {
         return Fail(L"F13 identity page is invalid.", error);
     }
     return BuildRequest(
@@ -188,7 +193,7 @@ bool BuildStartRequest(const ImageInfo& image,
 
     std::vector<std::uint8_t> data;
     data.reserve(8U);
-    data.push_back(static_cast<std::uint8_t>(Command::Start));
+    data.push_back(static_cast<std::uint8_t>(image.force_old_version ? Command::ForceStart : Command::Start));
     data.push_back(image.protocol_version);
     PutLe16(&data, image.target_id);
     PutLe32(&data, image.image_size);
@@ -458,6 +463,7 @@ bool Client::GetTargetInfo(TargetInfo* info, std::wstring* error) {
         InfoPage::UpdatePolicy,
         InfoPage::IrqAbi,
         InfoPage::Block,
+        InfoPage::VersionPolicy,
     };
     for (InfoPage page : pages) {
         if (!BuildInfoRequest(page, &request, error) ||
@@ -549,8 +555,9 @@ bool Client::GetTargetInfo(TargetInfo* info, std::wstring* error) {
                     parsed.minimum_image_size = value;
                     break;
                 case InfoPage::UpdatePolicy:
-                    if ((value&0xFFFFU)!=(IP_VERSION|(IP_SIZE<<8U)))
+                    if ((value&0xFFFFU)!=(IP_DEVICE_VERSION|(IP_SIZE<<8U)))
                         return Fail(L"Unsupported live update policy descriptor.",error);
+                    parsed.policy.version=IP_DEVICE_VERSION;
                     parsed.policy.role=static_cast<std::uint8_t>(value>>16U);
                     parsed.policy.transports=static_cast<std::uint8_t>(value>>24U);
                     break;
@@ -561,7 +568,14 @@ bool Client::GetTargetInfo(TargetInfo* info, std::wstring* error) {
                     parsed.block_bytes = static_cast<std::uint16_t>(value);
                     parsed.block_data_id = static_cast<std::uint16_t>(value >> 16U);
                     break;
+                case InfoPage::VersionPolicy:
+                    if(value>3U || value==2U) return Fail(L"Invalid installed version policy.",error);
+                    parsed.version_policy=value;
+                    parsed.policy.version_control=(value>>1U)&1U;
+                    break;
                 case InfoPage::Core:
+                case InfoPage::Health:
+                case InfoPage::Diagnostics:
                     break;
             }
         }
@@ -571,6 +585,7 @@ bool Client::GetTargetInfo(TargetInfo* info, std::wstring* error) {
         (parsed.policy.transports&~IP_ALL) || !parsed.policy.irq_abi || parsed.policy.irq_abi==0xFFFFFFFFU)
         return Fail(L"Live device update policy / IRQ ABI is incompatible.",error);
     if (parsed.target_id == 0U ||
+        ((parsed.version_policy&1U) && parsed.app_version>0xFFFFFFU) ||
         parsed.protocol_version != kProtocolVersion ||
         parsed.image_format != kImageFormatVersion ||
         parsed.boot_version == 0xFFFFFFFFU ||
@@ -627,6 +642,30 @@ bool Client::EnterBootloader(std::wstring* error) {
            RequireOk(ack, error);
 }
 
+bool Client::GetAppHealth(std::uint32_t* health, std::wstring* error) {
+    can_host::Frame request, response;
+    DeviceState state;
+    const auto page=InfoPage::Health;
+    return health && BuildInfoRequest(page,&request,error) &&
+        Exchange(request,8U,normal_timeout_ms_,&response,error) &&
+        ParseInfoResponse(page,response,&state,health,error) && state==DeviceState::Application;
+}
+
+bool Client::VerifyInstalled(Ack* ack, std::wstring* error) {
+    can_host::Frame request, response;
+    return ack && BuildRequest({static_cast<std::uint8_t>(Command::Verify)},&request,error) &&
+        Exchange(request,8U,end_timeout_ms_,&response,error) &&
+        ParseAckResponse(Command::Verify,response,ack,error) && RequireOk(*ack,error) && ack->sequence==0U;
+}
+
+bool Client::GetDiagnostics(std::uint32_t* flags,std::wstring* error) {
+    can_host::Frame request,response;
+    DeviceState state;
+    return flags && BuildInfoRequest(InfoPage::Diagnostics,&request,error) &&
+        Exchange(request,8U,normal_timeout_ms_,&response,error) &&
+        ParseInfoResponse(InfoPage::Diagnostics,response,&state,flags,error);
+}
+
 bool Client::StageMetadata(const std::vector<std::uint8_t>& image,
     const std::function<bool()>& cancelled, std::wstring* error) {
     firmware_update::ImageInfo parsed;
@@ -679,7 +718,7 @@ bool Client::Start(const ImageInfo& image,
     }
     if (!BuildStartRequest(image, &request, error) ||
         !Exchange(request, 8U, normal_timeout_ms_, &response, error) ||
-        !ParseAckResponse(Command::Start, response, ack, error) ||
+        !ParseAckResponse(image.force_old_version ? Command::ForceStart : Command::Start, response, ack, error) ||
         !RequireOk(*ack, error)) {
         return false;
     }

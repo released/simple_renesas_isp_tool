@@ -12,8 +12,17 @@ are checked; F24 device hardware acceptance is still required.
 For editing device image metadata or adding App interrupts, use the
 [F13/F24 CAN device workshop](docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md):
 editable versus generated fields, before/after examples, App-only commands
-and BIN/vector verification. Both devices use app_image.json and
-app_irq_handlers.json; generators own INC/header/vector outputs.
+and BIN/vector verification. Both devices use app_image_config.h and
+app_irq_handlers.h; generators own INC/identity/vector outputs.
+Each App post-build also produces DefaultBuild/app_build_report.html with the
+actual BIN identity, metadata byte addresses, CRC/SHA-256 and complete vector
+table. See the [build-summary guide](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build-report).
+
+Device App version control is disabled by default in app_image_config.h.
+When enabled, normal updates allow the same/newer version. The separate
+force upgrade old version firmware action confirms one downgrade with a
+public maintenance password; all identity/layout/CRC checks remain active.
+See the [operation and password](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version).
 
 Start with the [public download and workflow index](https://released.github.io/slide_isp_tool_for_RL78/#downloads):
 Tool EXE, F24 Host Boot/App, F13 Device Boot/App, six operating/flowchart entries
@@ -45,17 +54,20 @@ accepts `/p:F13BootProject=<checkout>`. No personal workspace layout is required
 After relocating/regenerating F24 SC output, use the documented projection
 preparation in the [shared-console guide](docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md).
 
-The first supported path is:
+One supported CAN update path is:
 
 ```text
 Windows PC Tool -> UART/USB VCOM -> F24 (MCU CAN host) -> CAN -> F13 (MCU CAN device)
 ```
 
-Future host implementations are planned for RL78/F14, RA2L1 and RA6 while keeping the
-same Host Link protocol and PC target-profile interfaces.
+The PC Tool selects bridge ports from the connected host's advertised capabilities.
 F13 and F24 CAN devices each maintain independent Transfer/Boot/App projects.
 
 ## Operation and firmware development
+
+[Update confirmation and validation](docs/UPDATE_VALIDATION_zh-TW.md) covers
+automatic App checks, metadata differences, staged progress, independent Cancel,
+automatic JSON reports, diagnostics and the hardware acceptance matrix.
 
 The Tool provides one shared image/metadata/log console. CAN and I2C settings
 occupy the left TAB area; Misc updates the host's own App over UART115200.
@@ -67,10 +79,12 @@ occupy the left TAB area; Misc updates the host's own App over UART115200.
 - Device images:256-byte metadata,128-byte core, reserved128FF, UPD1 policy,
   fixed complete IRQ forwarding and trailing CRC32.
 
-Device App users edit two JSON files. Both F13 and F24 device pre-build and
+Device App users edit two C headers. Both F13 and F24 device pre-build and
 packaging use Windows PowerShell and CS+/CC-RL. See the
 [device workshop](docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md) for metadata,
 IRQ-key sources, App-local generation and binary checks.
+Both independent device projects are [golden samples](docs/DEVICE_GOLDEN_SAMPLE_zh-TW.md)
+for future MCU authoring/build/validation flows. No Python is needed for firmware builds.
 
 Host firmware users can install Boot once with a programmer and update App
 through Misc. See the [Host App guide](docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md).
@@ -79,6 +93,14 @@ Communication rates, image route and live identity are validated independently.
 Measured versions, hashes and hardware results are kept in the
 [delivery record](docs/FIRST_DELIVERY_20261015_zh-TW.md).
 Software checks and physical CAN/Flash/IRQ/fault acceptance are recorded separately.
+
+## Documentation maintenance
+
+The common `/web` root owns the [public-content guidelines](docs/PUBLIC_CONTENT_GUIDELINES_zh-TW.md),
+whose generated copy here defines
+neutral wording, topic ownership, technical sources and release checks for
+MD/web/PDF/README. The root policy is product-neutral and reusable by future
+sites; both slide repositories include a synchronized local copy.
 
 `docs` contains guides/specifications; `build` contains delivery/runtime files.
 Reproducible intermediates and diagnostic evidence are kept under `tmp/internal`.
@@ -167,14 +189,24 @@ as `build\FirmwareUpgradeTool.exe`.
 Do not interpret a successful PC build as protocol or hardware verification.
 See `DEVELOPMENT_CHECKLIST.md` for the complete release criteria.
 
-The Host Link v2 codec tests can also be built and run independently:
+The Host Link v2 codec tests can also be built and run independently from the
+installed Visual Studio Developer PowerShell, in this repository's root:
 
 ```powershell
-& 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' `
+MSBuild `
   'tests\HostLinkProtocolTests.vcxproj' /t:Build `
   /p:Configuration=Release /p:Platform=x64
 & '.\tmp\internal\build\tests\x64\Release\HostLinkProtocolTests.exe'
 ```
+
+## GitHub source / delivery publication
+
+Double-click `github_push.bat` to review, archive non-delivery DefaultBuild
+outputs and commit/push the F13 Boot, F13 App and Tool repositories in order.
+The Tool includes F24 CAN host Bridge Boot/App. Type PUSH to confirm; no force
+push, automatic merge, build or web deployment. Local tmp/INI/log/report data
+are excluded. For a read-only preview run scripts/push_github.ps1 without flags.
+See the [publication and recovery guide (zh-TW)](./docs/GITHUB_PUBLISH_zh-TW.md).
 
 ## Documentation
 

@@ -8,7 +8,7 @@
 本節對照 **F13 (MCU CAN device)** 與 **F24 (MCU CAN device)** 的 App metadata、Flash 位址與 CAN 封包。
 兩者各自有獨立的 Boot／App 工程，共用欄位格式與更新流程概念。
 
-映像識別碼為 ASCII `CAN3`（數值 `0x334E4143`，bytes `43 41 4E 33`）。
+映像識別碼為 ASCII `CAN\0`（數值 `0x004E4143`，bytes `43 41 4E 00`）。
 這是檔案格式的 magic，與 CAN0／CAN1 等通道編號無關。
 CAN channel 與 pin 由各 MCU 工程設定，bridge port 由 Tool 選擇。
 
@@ -38,7 +38,7 @@ crc_bin_offset = image_size - 4
 | 額外保留 | debug trace RAM | Flash 0x3FC00..0x3FFFF |
 | Image CRC32 | 實際 BIN 最後4 bytes | 實際 BIN 最後4 bytes |
 
-### 不同CRC不要混淆
+### CRC 類型、計算範圍與用途
 
 | 名稱 | 存放／傳送位置 | 計算範圍 |
 | --- | --- | --- |
@@ -56,16 +56,16 @@ CRC提供完整性，不是簽章、認證或防回滾。image_size隨linker結�
 ## 2. 每個metadata byte：address、範例值與來源
 
 下表所有offset均相對metadata_base；address／offset以0x標示，value欄是兩位十六進位byte，bytes欄長度為十進位。
-「產生端來源」對照下一節可點選的真正範例程式；欄位後[0]／[1]等表示該欄位內的byte。
-F13 的產生來源為 `ftable.inc`／`ftable_RL78_F13.asm`；F24 為 `device_common.ps1`／`app_metadata.generated.inc`。
-兩者的 App 身分由各自的 JSON 提供，固定欄位來自各自 Boot 契約。
+「產生端來源」對照下一節的範例程式連結；欄位後[0]／[1]等表示該欄位內的byte。
+產生來源為各 App 的 `ftable.inc`；F13 由 `ftable_RL78_F13.asm` 組譯，F24 由 `ftable_RL78_F24.asm` 組譯。
+兩者的 App 身分由各自的 C header 提供，固定欄位來自各自 Boot 契約。
 
 <!-- METADATA_BYTES_BEGIN -->
 ### MCU CAN device：Metadata 欄位與產生端
 
 | Metadata offset | bytes | 欄位 | 產生端來源符號／位置 |
 | --- | --- | --- | --- |
-| 0x00..0x03 | 4 | image_magic (ASCII CAN3) | IMAGE_MANIFEST_MAGIC |
+| 0x00..0x03 | 4 | image_magic (ASCII CAN\0) | IMAGE_MANIFEST_MAGIC |
 | 0x04..0x04 | 1 | image_format | IMAGE_MANIFEST_FORMAT_INFO |
 | 0x05..0x05 | 1 | core_length | IMAGE_MANIFEST_FORMAT_INFO |
 | 0x06..0x07 | 2 | flags | IMAGE_MANIFEST_FORMAT_INFO |
@@ -98,10 +98,11 @@ F13 的產生來源為 `ftable.inc`／`ftable_RL78_F13.asm`；F24 為 `device_co
 | 0x68..0x6B | 4 | irq_abi | UPD1 policy |
 | 0x6C..0x6F | 4 | minimum_boot | UPD1 policy |
 | 0x70..0x73 | 4 | device_uart_baud | UPD1 policy |
-| 0x74..0x7F | 12 | reserved_zero | UPD1 policy |
+| 0x74..0x77 | 4 | version_control | APP_IMAGE_VERSION_CONTROL |
+| 0x78..0x7F | 8 | reserved_zero | UPD1 policy |
 | 0x80..0xFF | 128 | reserved_FF | reserved region |
 
-F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.ps1 的 Get-DeviceMetadata 依 App JSON／Boot config 產生。
+F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.ps1 的 Get-DeviceMetadata 依 App C header／Boot config 產生。
 
 ### 逐 byte 實體位址與範例值
 
@@ -110,10 +111,10 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 #### Metadata 0x00..0x1F
 | offset | F13 device address | value | F13欄位[byte] | F24 device address | value | F24欄位[byte] |
 | --- | --- | --- | --- | --- | --- | --- |
-| 0x00 | 0x02100 | 43 | image_magic (ASCII CAN3)[0] | 0x02100 | 43 | image_magic (ASCII CAN3)[0] |
-| 0x01 | 0x02101 | 41 | image_magic (ASCII CAN3)[1] | 0x02101 | 41 | image_magic (ASCII CAN3)[1] |
-| 0x02 | 0x02102 | 4E | image_magic (ASCII CAN3)[2] | 0x02102 | 4E | image_magic (ASCII CAN3)[2] |
-| 0x03 | 0x02103 | 33 | image_magic (ASCII CAN3)[3] | 0x02103 | 33 | image_magic (ASCII CAN3)[3] |
+| 0x00 | 0x02100 | 43 | image_magic (ASCII CAN\0)[0] | 0x02100 | 43 | image_magic (ASCII CAN\0)[0] |
+| 0x01 | 0x02101 | 41 | image_magic (ASCII CAN\0)[1] | 0x02101 | 41 | image_magic (ASCII CAN\0)[1] |
+| 0x02 | 0x02102 | 4E | image_magic (ASCII CAN\0)[2] | 0x02102 | 4E | image_magic (ASCII CAN\0)[2] |
+| 0x03 | 0x02103 | 00 | image_magic (ASCII CAN\0)[3] | 0x02103 | 00 | image_magic (ASCII CAN\0)[3] |
 | 0x04 | 0x02104 | 06 | image_format[0] | 0x02104 | 06 | image_format[0] |
 | 0x05 | 0x02105 | 80 | core_length[0] | 0x02105 | 80 | core_length[0] |
 | 0x06 | 0x02106 | 03 | flags[0] | 0x02106 | 03 | flags[0] |
@@ -126,16 +127,16 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 | 0x0D | 0x0210D | F1 | target_id[1] | 0x0210D | F2 | target_id[1] |
 | 0x0E | 0x0210E | 01 | can_mode_mask[0] | 0x0210E | 01 | can_mode_mask[0] |
 | 0x0F | 0x0210F | 00 | can_id_format[0] | 0x0210F | 00 | can_id_format[0] |
-| 0x10 | 0x02110 | 00 | app_version[0] | 0x02110 | 00 | app_version[0] |
-| 0x11 | 0x02111 | 05 | app_version[1] | 0x02111 | 00 | app_version[1] |
+| 0x10 | 0x02110 | 01 | app_version[0] | 0x02110 | 02 | app_version[0] |
+| 0x11 | 0x02111 | 06 | app_version[1] | 0x02111 | 00 | app_version[1] |
 | 0x12 | 0x02112 | 01 | app_version[2] | 0x02112 | 01 | app_version[2] |
 | 0x13 | 0x02113 | 00 | app_version[3] | 0x02113 | 00 | app_version[3] |
-| 0x14 | 0x02114 | 97 | app_build[0] | 0x02114 | 97 | app_build[0] |
+| 0x14 | 0x02114 | 99 | app_build[0] | 0x02114 | 99 | app_build[0] |
 | 0x15 | 0x02115 | 28 | app_build[1] | 0x02115 | 28 | app_build[1] |
 | 0x16 | 0x02116 | 35 | app_build[2] | 0x02116 | 35 | app_build[2] |
 | 0x17 | 0x02117 | 01 | app_build[3] | 0x02117 | 01 | app_build[3] |
-| 0x18 | 0x02118 | 2C | image_size[0] | 0x02118 | 24 | image_size[0] |
-| 0x19 | 0x02119 | 4B | image_size[1] | 0x02119 | 0F | image_size[1] |
+| 0x18 | 0x02118 | 30 | image_size[0] | 0x02118 | 94 | image_size[0] |
+| 0x19 | 0x02119 | 4C | image_size[1] | 0x02119 | 0F | image_size[1] |
 | 0x1A | 0x0211A | 00 | image_size[2] | 0x0211A | 00 | image_size[2] |
 | 0x1B | 0x0211B | 00 | image_size[3] | 0x0211B | 00 | image_size[3] |
 | 0x1C | 0x0211C | 00 | app_start[0] | 0x0211C | 00 | app_start[0] |
@@ -219,7 +220,7 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 | 0x61 | 0x02161 | 50 | UPD1 magic[1] | 0x02161 | 50 | UPD1 magic[1] |
 | 0x62 | 0x02162 | 44 | UPD1 magic[2] | 0x02162 | 44 | UPD1 magic[2] |
 | 0x63 | 0x02163 | 31 | UPD1 magic[3] | 0x02163 | 31 | UPD1 magic[3] |
-| 0x64 | 0x02164 | 01 | policy_version[0] | 0x02164 | 01 | policy_version[0] |
+| 0x64 | 0x02164 | 03 | policy_version[0] | 0x02164 | 03 | policy_version[0] |
 | 0x65 | 0x02165 | 20 | policy_size[0] | 0x02165 | 20 | policy_size[0] |
 | 0x66 | 0x02166 | 01 | image_role[0] | 0x02166 | 01 | image_role[0] |
 | 0x67 | 0x02167 | 01 | update_transports[0] | 0x02167 | 01 | update_transports[0] |
@@ -228,25 +229,25 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 | 0x6A | 0x0216A | 56 | irq_abi[2] | 0x0216A | 56 | irq_abi[2] |
 | 0x6B | 0x0216B | 31 | irq_abi[3] | 0x0216B | 31 | irq_abi[3] |
 | 0x6C | 0x0216C | 00 | minimum_boot[0] | 0x0216C | 00 | minimum_boot[0] |
-| 0x6D | 0x0216D | 05 | minimum_boot[1] | 0x0216D | 00 | minimum_boot[1] |
+| 0x6D | 0x0216D | 07 | minimum_boot[1] | 0x0216D | 01 | minimum_boot[1] |
 | 0x6E | 0x0216E | 01 | minimum_boot[2] | 0x0216E | 01 | minimum_boot[2] |
 | 0x6F | 0x0216F | 00 | minimum_boot[3] | 0x0216F | 00 | minimum_boot[3] |
 | 0x70 | 0x02170 | 00 | device_uart_baud[0] | 0x02170 | 00 | device_uart_baud[0] |
 | 0x71 | 0x02171 | 00 | device_uart_baud[1] | 0x02171 | 00 | device_uart_baud[1] |
 | 0x72 | 0x02172 | 00 | device_uart_baud[2] | 0x02172 | 00 | device_uart_baud[2] |
 | 0x73 | 0x02173 | 00 | device_uart_baud[3] | 0x02173 | 00 | device_uart_baud[3] |
-| 0x74 | 0x02174 | 00 | reserved_zero[0] | 0x02174 | 00 | reserved_zero[0] |
-| 0x75 | 0x02175 | 00 | reserved_zero[1] | 0x02175 | 00 | reserved_zero[1] |
-| 0x76 | 0x02176 | 00 | reserved_zero[2] | 0x02176 | 00 | reserved_zero[2] |
-| 0x77 | 0x02177 | 00 | reserved_zero[3] | 0x02177 | 00 | reserved_zero[3] |
-| 0x78 | 0x02178 | 00 | reserved_zero[4] | 0x02178 | 00 | reserved_zero[4] |
-| 0x79 | 0x02179 | 00 | reserved_zero[5] | 0x02179 | 00 | reserved_zero[5] |
-| 0x7A | 0x0217A | 00 | reserved_zero[6] | 0x0217A | 00 | reserved_zero[6] |
-| 0x7B | 0x0217B | 00 | reserved_zero[7] | 0x0217B | 00 | reserved_zero[7] |
-| 0x7C | 0x0217C | 00 | reserved_zero[8] | 0x0217C | 00 | reserved_zero[8] |
-| 0x7D | 0x0217D | 00 | reserved_zero[9] | 0x0217D | 00 | reserved_zero[9] |
-| 0x7E | 0x0217E | 00 | reserved_zero[10] | 0x0217E | 00 | reserved_zero[10] |
-| 0x7F | 0x0217F | 00 | reserved_zero[11] | 0x0217F | 00 | reserved_zero[11] |
+| 0x74 | 0x02174 | 00 | version_control[0] | 0x02174 | 00 | version_control[0] |
+| 0x75 | 0x02175 | 00 | version_control[1] | 0x02175 | 00 | version_control[1] |
+| 0x76 | 0x02176 | 00 | version_control[2] | 0x02176 | 00 | version_control[2] |
+| 0x77 | 0x02177 | 00 | version_control[3] | 0x02177 | 00 | version_control[3] |
+| 0x78 | 0x02178 | 00 | reserved_zero[0] | 0x02178 | 00 | reserved_zero[0] |
+| 0x79 | 0x02179 | 00 | reserved_zero[1] | 0x02179 | 00 | reserved_zero[1] |
+| 0x7A | 0x0217A | 00 | reserved_zero[2] | 0x0217A | 00 | reserved_zero[2] |
+| 0x7B | 0x0217B | 00 | reserved_zero[3] | 0x0217B | 00 | reserved_zero[3] |
+| 0x7C | 0x0217C | 00 | reserved_zero[4] | 0x0217C | 00 | reserved_zero[4] |
+| 0x7D | 0x0217D | 00 | reserved_zero[5] | 0x0217D | 00 | reserved_zero[5] |
+| 0x7E | 0x0217E | 00 | reserved_zero[6] | 0x0217E | 00 | reserved_zero[6] |
+| 0x7F | 0x0217F | 00 | reserved_zero[7] | 0x0217F | 00 | reserved_zero[7] |
 #### Metadata 0x80..0x9F
 | offset | F13 device address | value | F13欄位[byte] | F24 device address | value | F24欄位[byte] |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -390,32 +391,35 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 ### 本表範例BIN與CRC位置
 | 項目 | F13 (MCU CAN device) | F24 (MCU CAN device) |
 | --- | --- | --- |
-| image_size | 0x4B2C | 0xF24 |
-| stored image CRC32 | 0xCA0DF55C | 0xB4BEBC0C |
-| CRC32 Flash address | 0x06B28..0x06B2B | 0x02F20..0x02F23 |
-| metadata staging CRC32 | 0x15CBDE8C | 0x9E075CB7 |
-F13 device 範例BIN SHA-256：`2C8C405A04A86F8C0B8E8CAC6AB834379BD43707C6600EA9F3666699ECED36B1`。
-F24 device 範例BIN SHA-256：`88ECCC46E15549E9616DB90C30DAB4504C0339DC1D03C424561EDF0427686774`。
+| image_size | 0x4C30 | 0xF94 |
+| stored image CRC32 | 0xC5CCBE1F | 0x00110089 |
+| CRC32 Flash address | 0x06C2C..0x06C2F | 0x02F90..0x02F93 |
+| metadata staging CRC32 | 0x8FB583FA | 0x21812950 |
+F13 device 範例BIN SHA-256：`3884DF62AED505B4D39F2FD145EEDEEFC45D3B141E15BC8C08217A15D43BA7E3`。
+F24 device 範例BIN SHA-256：`9B1D668EEB60E4D4101B6FD8743BF4646077FC6908991B4923FDDC7AC49093A2`。
 <!-- METADATA_BYTES_END -->
 
 ### 欄位的語意與修改限制
 
-- core_length=128，不是整區256；0x80..0xFF目前必須全部FF，不能直接塞自訂欄位。
-- flags=0x0003、protocol ID／version、checksum type及magic是契約，不是任意使用者標籤。
-  目前flags按完整0x0003比對，不能自行把其中bit當作新的可選功能開關。
+- core_length=128，metadata 整區為256 bytes；0x80..0xFF 為保留區，依契約全部填FF。
+- flags=0x0003、protocol ID／version、checksum type及magic屬於固定契約。
+  flags 以完整0x0003比對；調整位元定義時同步產生端與驗證端。
 - CAN mode mask的bit0代表Classical；目前F13 id_format=0代表standard。nominal_rate_mask的bit2表示500K，mask不是十進位500000。
 - target_id／board_id是邏輯識別；MCU part／family是零結尾、其餘零填補ASCII，不是Flash address。
-- image_size是實際封裝BIN含最後4-byte CRC的長度；app_capacity是最大容量，不能混用。
-- app_version為0x00MMmmpp，app_build為32-bit建置識別；不是字串。image_size／CRC由post-build產生，勿手填規劃容量。
+- image_size是實際封裝BIN含最後4-byte CRC的長度；app_capacity是分區允許的最大容量。
+- app_version為0x00MMmmpp，app_build為32-bit建置識別。
+  image_size／CRC由post-build依實際建置結果產生。
 - UPD1 image_role：1=DEVICE_APP、2=HOST_BRIDGE_APP；update_transports：bit0 CAN、bit1 I2C、bit2 UART。
 - irq_abi是固定向量介面的識別，minimum_boot是最低相容Boot版本，不是App最低版本。
-- CAN 的 policy_version=1，device_uart_baud 及 reserved_zero 均為0。
+- CAN device 的 policy_version=3，device_uart_baud 為0；`version_control` 位於 `0x74..0x77`，其後 `0x78..0x7F` 為0。
+  `version_control` 由 App header 產生；`0` 允許任意版本，`1` 由 Boot 在一般 START 限制為同版／新版。
+  操作與維護確認見 [Tool 版本政策](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version)。
 
-## 3. 對應的真正範例程式與修改位置
+## 3. 範例程式、產生端與修改位置
 
 | 用途 | 原始碼／位置 | 要如何閱讀或修改 |
 | --- | --- | --- |
-| F13 metadata生成常數 | [ftable.inc](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/ftable.inc) | 此檔現為生成檔；編輯App的app_image.json，由App-mode generator結合Boot contract產生常數；不可手改.inc |
+| F13 metadata生成常數 | [ftable.inc](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/ftable.inc) | 此檔現為生成檔；編輯App的app_image_config.h，由App-mode generator結合Boot contract產生常數；不可手改.inc |
 | F13 byte排列／policy | [ftable_RL78_F13.asm](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/ftable_RL78_F13.asm) | .appmeta從APP_MANIFEST_TABLE開始，.DB4依LE放4 bytes；尾128 bytes填FF |
 | F13實際size／CRC封裝 | [generate_update_image.ps1](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/generate_update_image.ps1) | 依map決定結尾、patch image_size、計算尾CRC；ExpectedTargetId等驗證亦須與新專案一致 |
 | F13 Boot驗證契約 | [can_boot_config.h](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_config.h)／[can_boot_metadata.inc](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_metadata.inc) | g_manifest_contract／MetadataValid核對欄位；不能只改App產生端 |
@@ -474,6 +478,7 @@ Byte0..Byte7指CAN Data payload，不含ID、DLC、CAN硬體CRC／ACK。不是�
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | HELLO | 1 | 01 | - | - | - | - | - | - | - |
 | START | 8 | 02 | protocol | target0 | target1 | size0 | size1 | size2 | size3 |
+| FORCE_START | 8 | 0E | protocol | target0 | target1 | size0 | size1 | size2 | size3 |
 | END | 1 | 04 | - | - | - | - | - | - | - |
 | ABORT | 1 | 05 | - | - | - | - | - | - | - |
 | ENTER | 1 | 06 | - | - | - | - | - | - | - |
@@ -558,7 +563,7 @@ Self Test不是更新協定，也沒有Byte7 CRC；需CAN analyzer觀察實際bu
 1. 先選定 MCU CAN device 工程，確認硬體手冊的 Flash／RAM 範圍、CAN clock 與實體向量位址。
 2. 在 Boot 的 `can_boot_config.h` 設定分區、target ID、CAN IDs、rate 與 IRQ ABI。
    Linker 的 App 起點及向量表／metadata 配置對應同一分區。
-3. 在 App 編輯 `app_image.json` 與 `app_irq_handlers.json`。
+3. 在 App 編輯 `app_image_config.h` 與 `app_irq_handlers.h`。
    F13 由 PowerShell 產生 `ftable.inc`；F24 由 `Get-DeviceMetadata` 產生 metadata INC，兩者皆由 App-local pre-build 產表。
 4. 建置後核對 map、封裝 BIN 的 metadata／CRC 及所有 BR 目的地。
    App 起點是 link 設定；Tool 的 App Start Override 用於比對，不會重定位 BIN。

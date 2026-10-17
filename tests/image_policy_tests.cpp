@@ -1,5 +1,6 @@
 #include "firmware_update_profile.h"
 #include "bridge_update_profile.h"
+#include "device_version_policy.h"
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -11,6 +12,7 @@
 #include "can_boot_transport.h"
 #include "sw_crc32.c"
 #include "can_boot_metadata.inc"
+#include "can_boot_verify.inc"
 #undef __far
 
 int TestImagePolicy() {
@@ -53,6 +55,20 @@ int TestImagePolicy() {
     }
     firmware_update::ImageInfo info;
     check(firmware_update::ValidateImage(firmware_update::Profile::CanUpgrade,image,&info,&error),"shared parser accepts current F13 contract");
+    unsigned long verified_size=0, verified_crc=0;
+    const auto before_verify=image;
+    check(VerifyImage(reinterpret_cast<const unsigned long*>(image.data()),&verified_size,&verified_crc)==CAN_BOOT_STATUS_OK &&
+        verified_size==image.size() && verified_crc==info.stored_crc32 && image==before_verify,
+        "production read-only VERIFY range/CRC and no image mutation");
+    auto corrupt=image;corrupt[520]^=1U;
+    check(VerifyImage(reinterpret_cast<const unsigned long*>(corrupt.data()),&verified_size,&verified_crc)==CAN_BOOT_STATUS_CRC_ERROR,
+        "production VERIFY detects flash corruption");
+    for(const auto mismatch:{std::pair<unsigned,unsigned>{28U,CAN_BOOT_STATUS_LAYOUT},
+        {100U,CAN_BOOT_STATUS_POLICY},{104U,CAN_BOOT_STATUS_IRQ_ABI},{128U,CAN_BOOT_STATUS_METADATA}}) {
+        corrupt=image;corrupt[256U+mismatch.first]^=0x80U;
+        check(VerifyImage(reinterpret_cast<const unsigned long*>(corrupt.data()),&verified_size,&verified_crc)==mismatch.second,
+            "production diagnostic categories before CRC / Flash");
+    }
     for (const auto route:{IP_I2C,IP_UART}) {
         auto wrong=image; wrong[256+103]=static_cast<std::uint8_t>(route);
         if (route==IP_UART) { wrong[256+100]=IP_DEVICE_UART_VERSION; Bu_Write32(wrong.data()+256+112,460800U); }
@@ -118,6 +134,27 @@ int TestImagePolicy() {
         const bool valid=MetadataValid(reinterpret_cast<const unsigned long*>(flash.data()+256)) &&
             F13_Crc32Bytes(flash.data(),static_cast<unsigned long>(flash.size()-4))==Bu_Read32(flash.data()+flash.size()-4);
         check(valid==(at+4==image.size()),"mixed old/new app fails boot CRC until complete");
+    }
+    for (unsigned policy : {0U,1U,3U}) for (unsigned version : {0x10500U,0x10600U,0x10700U}) {
+        g_metadata_words[4]=version;
+        check(VersionAllowed(policy,0x10600UL,CAN_BOOT_CMD_START)==(policy!=3U || version>=0x10600U),
+            "real Boot version matrix: invalid recovery/disabled/same/newer/older");
+        check(VersionAllowed(policy,0x10600UL,CAN_BOOT_CMD_FORCE_START),"force START is request-local version override");
+    }
+    auto enabled=image;
+    Bu_Write32(enabled.data()+0x174U,1U);
+    check(MetadataValid(reinterpret_cast<const unsigned long*>(enabled.data()+256)),"version control1 accepted");
+    Bu_Write32(enabled.data()+0x174U,2U);
+    check(!MetadataValid(reinterpret_cast<const unsigned long*>(enabled.data()+256)),"unknown version policy rejected");
+    check(device_version::PasswordMatches(L"3036") && !device_version::PasswordMatches(L"") &&
+        !device_version::PasswordMatches(L"3036 ") && !device_version::PasswordMatches(L"03036"),"exact public maintenance password gate");
+    f13_boot::TargetInfo version_target;
+    version_target.app_version=0x10600U;
+    for(unsigned policy:{0U,1U,3U}) for(unsigned version:{0x10500U,0x10600U,0x10700U}) {
+        version_target.version_policy=policy; info.version=version;
+        const bool blocked=policy==3U && version<version_target.app_version;
+        check(device_version::Check(info,version_target,false,&error)==!blocked,"Tool normal version matrix");
+        check(device_version::Check(info,version_target,true,&error)==blocked,"Tool force only for an actual blocked downgrade");
     }
     std::cout<<"Common policy / real F13 metadata / retry / reset / "<<cuts<<" simulated power cuts: "<<(failures?"FAIL":"PASS")<<'\n';
     return failures;

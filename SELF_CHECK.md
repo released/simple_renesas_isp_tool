@@ -1,5 +1,114 @@
 # Host Link v2 Self-Check
 
+## GitHub publication entry (2026-10-17)
+
+- [x] Exact three-repository catalog and five required firmware deliveries;
+  Tool EXE retained, F24 CAN device repositories excluded.
+- [x] Read-only plan, confirmation/explicit -Yes, safe local path config,
+  no reparse escape, keeper/hash/bounds and staged-index checks.
+- [x] Eleven integration scenarios with local bare remotes; no GitHub access
+  from tests. Includes no-op, remote-ahead refusal and partial-push stop.
+- [x] tmp/local config/INI/log/report exclusion and exact DefaultBuild index
+  guard. Other outputs are recoverably archived, never permanently deleted.
+- [x] README/MD/local web sync and194refs; MultiBus PDF9pages/4diagrams has
+  all-page content/bounds checks and changed-page visual inspection.
+- [x] Workspace safe-clean audit24 PASS. No normal clean or firmware/runtime
+  code changes; product rebuild/version bump is N/A.
+- [x] Production script verifies the remote commit SHA after each push and
+  records per-run results in its transcript; isolated tests are not evidence
+  that a production repository has already been pushed.
+- [ ] Hardware/UI testing N/A for this script-only task; no COM writes or web
+  deployment. Archive deletion is a separate explicit user operation.
+
+## Device version policy / one-update downgrade (2026-10-17)
+
+- [x] Six C-header fields with documented values/examples; flags0/1 at0x74,
+  policy3 and CAN+NUL magic agree across both producers/Boots/Apps/Tool.
+- [x] Valid installed-App policy controls ordinary START; same/newer allowed,
+  older rejected when enabled. Invalid-App recovery has no persisted floor.
+- [x] Force command bypasses only ordering for its transaction. Models reject
+  wrong target/layout/IRQ/minimum Boot and CRC even with force. Cancel/retry
+  and subsequent ordinary START retain no override.
+- [x] Public3036 confirmation, fresh worker live version/policy, no INI/log
+  password state; report carries force and installed policy only.
+- [x] Tool Release/Debug0warnings/errors. Device clean builds F13 Boot0/4,
+  App0/3; F24 Boot0/2, App0/5. Actual map spare890/514 >= unchanged512.
+- [x] Native Debug/Release suites and63 Python tests PASS (74.019s); F24 nine
+  PS checks/C-PC models PASS. App A/B policy1/0 and distinct IRQ builds pass
+  for both devices without changing each original Boot HEX SHA256.
+- [x] Eleven canonical web checks plus local reader/report mirror checks,
+  194 local refs/anchors/256 byte rows and24 workspace safe-clean audit PASS.
+- [x] Five affected PDFs85pages/23diagrams rendered; all-page content/bounds
+  and representative visual review PASS. MD/web/password operation synced.
+- [ ] Hardware NOT RUN: no boards for flash/IRQ/CAN/high-speed/power acceptance.
+- [ ] Current UI startup/password/dialog/DPI visual checks NOT RUN: Computer
+  Use native pipe os error2 after retry/reset. No COM writes/publication.
+
+## Device comments and HTML build report (2026-10-17)
+
+- [x] Both App metadata/IRQ headers explain edit conditions and exact IRQ
+  sources. Identical PS5.1 standalone report helpers and post-build hooks.
+- [x] Both real BINs: all256 metadata bytes/64slots, SHA256/CRC, HTML escaping,
+  malformed BIN/reserved bytes and stale header rejection;17 focused tests PASS.
+- [x] Final58 regression tests PASS (62.743s); seven Tool/host/device image
+  SHA256 values match baseline. Scoped diff whitespace check has no errors.
+- [x] Both App clean builds Error0/Warning3 and5; App BIN/Boot HEX hashes
+  unchanged. Tool EXE and host firmware runtime not modified/rebuilt.
+- [x] Workshop MD/web/PDF synchronized;194 refs/public policy checks and24
+  clean audit PASS. PDF15pages/3diagrams rendered/bounds/affected-page review.
+- [ ] HTML browser visual QA: no browser surfaces available. Hardware and
+  DPI NOT RUN; version checkbox/Boot downgrade policy not yet implemented.
+
+## Generic web root and device C-header authoring (2026-10-17)
+
+- [x] /web root AGENTS and canonical writing policy are product-neutral;
+  Tool/slide mirrors and a future-site fixture pass generic sync checks.
+- [x] F13/F24 are joint golden samples; local identical C-header readers,
+  MTPJ-visible input headers, generation and stale compiled-image guards.
+- [x] Four header inputs compile as strict C90; both App clean builds PASS
+  with Python absent from PATH (Error0/Warning3 and5). Boot runtime unchanged.
+- [x] All54 regression tests, F24 nine PS checks and production C/PC models PASS.
+- [x] Both families' separate App A/B clean builds pass; original Boot hashes
+  and all seven delivery hashes unchanged. No device JSON input/fallback.
+- [x] Four PDFs64 pages/15 diagrams content/bounds/render checks and
+  representative visual review PASS; ten canonical checks,194 refs/anchors,
+  256 actual-BIN byte rows and24 safe-clean audit PASS.
+- [ ] Hardware, browser and DPI acceptance NOT RUN. No commit/push/deployment.
+
+## Public-content guidelines (2026-10-17)
+
+- [x] Canonical public-writing guidelines, standalone slide copies and local
+  AGENTS/README entry points; single-owner reader sections retained.
+- [x] Eight reader MDs use neutral headings/current-state descriptions while
+  preserving technical contracts, safety gates, code and byte reference data.
+- [x] Focused regression52 PASS; mirror/content checks,194 local references,
+  anchors,256 byte rows and ten canonical web checks PASS.
+- [x] Seven Tool/host/device delivery SHA-256 values unchanged.
+- [x] Seven PDFs rendered:99 pages/31 diagrams; code/flow blocks and256 byte
+  rows unchanged. Bounds/diagram checks and representative visual review PASS.
+- [x] Final52 regressions PASS (46.809s);24 safe-clean audit and diff checks PASS.
+- [ ] Browser/DPI appearance NOT RUN; no runtime changes or physical tests.
+
+## Update observability (2026-10-17)
+
+- [x] Final PC Debug/Release compile0warnings/errors; F24 host Boot/App and
+  F13 Boot/App clean builds pass. F13 Boot budget962 spare with minimum512.
+- [x] Production C90 metadata/CRC/block/VERIFY models and PC image/update
+  models cover fault/replay/cancel/disconnect/simulated power interruption.
+- [x] Final App A/B clean compile/link/package for both device families;
+  original Boot HEX SHA-256 unchanged. Actual IRQ execution NOT RUN.
+- [x] Native Debug/Release protocol/model suites PASS with current images;
+  47 Python regressions PASS. F24 device nine PowerShell checks PASS.
+- [x] Eight PDFs rendered; all-page bounds/diagram checks and representative
+  visual contact-sheet review PASS. Ten web canonical checks PASS.
+- [x] Isolated Debug/Release process startup and normal shutdown PASS;
+  no COM connection. Reproducible CS+ intermediates excluded from Git.
+- [x] Workspace safe-clean audit24 PASS; no clean scripts modified.
+- [ ] Boards unavailable: physical115200/460800/921600 updates, unplug, bus-off,
+  power/reset/SW1 and App functional acceptance NOT RUN.
+- [ ] Native UI/DPI visual acceptance NOT RUN: Computer Use pipe unavailable
+  after retry/reset. Process startup is not a visual acceptance substitute.
+
 ## Current public guides / F24 device PowerShell workflow (2026-10-16)
 
 - [x] Current reader MD/web/PDF omit G16 replacement planning, old-format

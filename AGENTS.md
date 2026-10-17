@@ -41,6 +41,14 @@ not authorize Git commit/push, publishing, or fabricated UI/hardware evidence.
 
 ## Product boundaries
 
+Update observability owns bounded CAN APP_READY/live-image confirmation and
+explicit Misc RUN same-COM115200 revalidation. Never repeat erase/RUN to resolve
+an unknown result. Keep independent Cancel worker-owned with ABORT/stop cleanup;
+automatic reports include failed/canceled outcomes, phase durations and honest
+counter reset/saturation/peak scope. Query live diagnostic capabilities rather
+than guessing from model/version. No hardware evidence is implied by models.
+See docs/UPDATE_VALIDATION_zh-TW.md; sync_update_evidence.ps1 owns its web block.
+
 First engineering delivery is frozen at Tool0082/F24 Boot1.2.0-App1.5.0/F13
 Boot-App1.5.0. User182253 verifies one normal115200/500K v5 update/END, not
 post-reset App execution or full fault acceptance. See docs/FIRST_DELIVERY_20261015_zh-TW.md;
@@ -61,6 +69,16 @@ CRC/bitmap/metadata checks precede Flash. Last committed block replay never
 rewrites. Generic bridge22/bit12 has no target-specific interpretation. Require
 bit12 in UI/worker; do not restore v4 DATA03. Expose bounded log queue drops.
 Keep8KiB ROM and512-byte spare guards; G16 new boot/app development is deferred.
+CAN device UPD1 policy3 stores APP_IMAGE_VERSION_CONTROL at metadata116/0x74.
+The valid installed App controls normal START:0 permits any version,1 permits
+same/newer. Compare packed major/minor/patch, never build or Boot version.
+Invalid-App recovery has no persistent version floor. INFO1D returns0/1/3.
+FORCE_START0E bypasses only ordering for its own transaction; never arm or
+persist an unlock. Tool's force upgrade old version firmware requires public
+confirmation password3036, fresh live policy/version and normal metadata gates.
+Do not log/store the password or advertise authentication. The maintenance
+operation is canonical in docs/UPDATE_VALIDATION_zh-TW.md#force-old-version.
+Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 
 ### PC tool
 
@@ -212,6 +230,18 @@ logic outside generated files except in preserved user-code sections.
 
 ## Build and verification
 
+- github_push.bat / scripts/push_github.ps1 is the explicit maintainer publish
+  entry. Plain invocation is read-only; -Execute requires PUSH or -Yes.
+  Catalog only F13 Boot, F13 App and Tool, including its F24 CAN host projects.
+  Do not add F24 CAN device repositories without explicit request.
+- DefaultBuild release pruning is a recoverable move to ignored tmp/internal/
+  github_publish, never normal clean/build. Preserve the exact five delivery
+  files in the catalog; validate bounds/reparse points, remote ancestry and
+  index before commit/push. Never force push, auto-merge or publish web sites.
+  Read docs/GITHUB_PUBLISH_zh-TW.md and run verify_github_publish.ps1 plus the
+  workspace safe-clean audit after changing this workflow. No product rebuild
+  or version bump for publication-script-only changes.
+
 - PC: Visual Studio 2022 with MFC, x64 Release is the release target.
 - F24/F13: CS+ with the project-selected CC-RL toolchain.
 - Do not treat old build artifacts as verification after generated source or
@@ -233,14 +263,30 @@ or write the copied legacy INI filename.
 
 ## Public documentation
 
+The canonical public-writing policy is /web/PUBLIC_CONTENT_GUIDELINES_zh-TW.md,
+entered through the common /web/AGENTS.md. Keep it generic for every present
+and future slide; MCU/project conventions belong here, never in root policy.
+docs/PUBLIC_CONTENT_GUIDELINES_zh-TW.md is a generated standalone copy.
+sync_public_content_guidelines.ps1 supplies identical Tool/slide copies;
+run -CheckOnly and verify_public_content.ps1 after changes. Mechanical checks
+do not replace contextual review or permit removing technical safety limits.
+
 F13/F24 CAN device editing tutorial is canonical in
 docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md (DEVICE_WORKSHOP block).
-sync_device_workshop.ps1 projects the full workshop only to the Bootloader page and a link on ISP; keep source JSON/inc,
+sync_device_workshop.ps1 projects the full workshop only to the Bootloader page and a link on ISP; keep source C headers,
 generated outputs, App-only commands and verification boundaries distinct.
 Do not use host BUR1/Misc or host IRQ scripts for F24 CAN device examples.
-Both devices now use the same five-field app_image.json plus app_irq_handlers.json.
-F13 ftable.inc and F24 device app_metadata.generated.inc are generated, not
-manual inputs. No INC fallback; preserve strict JSON/contract and stale linked
+F13/F24 device Boot/App are joint golden samples (docs/DEVICE_GOLDEN_SAMPLE_zh-TW.md).
+Future MCUs/common changes start from both samples. Both devices use the same
+six-field app_image_config.h plus app_irq_handlers.h X-macro; local identical
+app_config.ps1 readers are mirrored from scripts/device_app_config.ps1.
+Use sync_device_app_config.ps1 -CheckOnly. No device JSON input/fallback.
+The same sync also owns identical local app_build_report.ps1 copies from
+scripts/device_app_report.ps1. App post-build emits app_build_report.html only
+after linked-image checks; report actual BIN bytes/hash, not predicted identity
+or live hardware. Keep compile reports distinct from Tool operation JSON.
+Both devices' ftable.inc / app_identity.h / app_irq_table.inc are generated, not
+manual inputs. No INC fallback; preserve strict C-header/contract and stale linked
 metadata checks before packaging. App-mode generation must not rebuild Boot.
 
 Keep current user/developer guides and authoritative specifications in docs;

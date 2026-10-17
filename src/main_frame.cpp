@@ -92,6 +92,9 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_BN_CLICKED(ID_TOP_OPEN_COM_BTN, &CMainFrame::OnBnClickedOpenCom)
     ON_BN_CLICKED(ID_TOP_CLOSE_COM_BTN, &CMainFrame::OnBnClickedCloseCom)
     ON_BN_CLICKED(ID_TOP_RESET_HOST_BTN, &CMainFrame::OnBnClickedResetHost)
+    ON_BN_CLICKED(ID_CANCEL_OPERATION, &CMainFrame::OnCancelOperation)
+    ON_BN_CLICKED(ID_COMPARE_METADATA, &CMainFrame::OnCompareMetadata)
+    ON_BN_CLICKED(ID_FORCE_OLD_FIRMWARE, &CMainFrame::OnForceOldFirmware)
     ON_BN_CLICKED(ID_FILE_LOAD_BTN, &CMainFrame::OnBnClickedLoadBinary)
     ON_BN_CLICKED(ID_FLOW_ENTER_BOOT_BTN, &CMainFrame::OnBnClickedConnectTarget)
     ON_BN_CLICKED(ID_FLOW_EXPLICIT_ENTER_BTN,
@@ -210,6 +213,14 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
     if (!create_or_fail(build_info_label_.Create(
             L"", WS_CHILD | WS_VISIBLE | SS_RIGHT, CRect(), this,
             ID_BUILD_INFO_LABEL), L"Build info label")) return -1;
+    if (!create_or_fail(cancel_btn_.Create(L"Cancel",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,
+        CRect(),this,ID_CANCEL_OPERATION),L"Cancel button")) return -1;
+    if (!create_or_fail(compare_metadata_btn_.Create(L"Compare Metadata",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,
+        CRect(),this,ID_COMPARE_METADATA),L"Compare metadata button")) return -1;
+    cancel_btn_.SetFont(&ui_font_); compare_metadata_btn_.SetFont(&ui_font_);
+    if (!create_or_fail(force_old_firmware_btn_.Create(L"force upgrade old version firmware",
+        WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,CRect(),this,ID_FORCE_OLD_FIRMWARE),L"Force older firmware button")) return -1;
+    force_old_firmware_btn_.SetFont(&ui_font_);
 
     if (!create_or_fail(host_info_label_.Create(
             L"Host: not connected", WS_CHILD | WS_VISIBLE | SS_PATHELLIPSIS,
@@ -349,7 +360,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
         L"App Version", L"Build", L"Target", L"Protocol / Format",
         L"App Range", L"Image / Capacity", L"Flash / Boot",
         L"Minimum / Erase", L"Interface / Rate", L"Routing / IDs",
-        L"Update Policy", L"Boot / IRQ ABI"
+        L"Update Policy", L"Boot / IRQ ABI", L"BIN Version Policy", L"Installed Policy"
     };
     for (std::size_t index = 0U; index < kFirmwareFieldCount; ++index) {
         if (!create_or_fail(firmware_field_labels_[index].Create(
@@ -791,6 +802,9 @@ void CMainFrame::ApplyWorkerEvent(
             break;
         case WorkerEventKind::Progress:
             SetProgress(event.progress, event.text);
+            break;
+        case WorkerEventKind::UpdateReport:
+            SaveUpdateReport(event.text);
             break;
         case WorkerEventKind::OperationComplete:
             worker_command_pending_ = false;

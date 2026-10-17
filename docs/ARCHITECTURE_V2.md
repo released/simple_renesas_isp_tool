@@ -2,6 +2,14 @@
 
 Status: implementation baseline
 
+Update completion now distinguishes END acceptance from post-reset APP_READY
+and matching live identity/version/build/size. Misc END remains Boot; only an
+explicit RUN triggers bounded same-COM115200 automatic App confirmation.
+Independent Cancel retains worker COM ownership and bounded cleanup. Shared
+metadata differences, stage progress, phase timing and automatic JSON reports
+are PC responsibilities; host telemetry/stay reasons remain generic.
+See UPDATE_VALIDATION_zh-TW.md. Device Boot8KiB/512spare and IRQ ABI are preserved.
+
 F24 MCU CAN device now has separate Transfer/Boot/App source/build/model
 projects. It is not the F24 host backend:4MHz X1,8KiB Boot/App2000,targetF24B,
 F2V1 IRQ ABI,RFD and protected final1KiB. It reuses CAN protocol5/image6 with
@@ -54,10 +62,10 @@ is no reparenting, duplicate BIN storage or change to bus/update contracts.
 ## 1. Objective
 
 CAN device App authoring (F13 and F24 device, not F24 host) uses the same
-five-field app_image.json plus App-local app_irq_handlers.json. Pre-build owns
+six-field app_image_config.h plus App-local app_irq_handlers.h. Pre-build owns
 generated metadata INC/identity/vectors; post-build rejects stale linked
 metadata and verifies compiled IRQ destinations before packaging. Contract
-fields remain Boot-owned; changing user JSON cannot change device geometry,
+fields remain Boot-owned; changing App headers cannot change device geometry,
 transport or IRQ ABI. See DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md.
 
 F24 app IRQ generation is now app-local: app_irq_handlers.json selects the
@@ -428,8 +436,10 @@ ERROR > TRANSFER_ACTIVE > TRANSFER_START > HOST_CONNECTED > IDLE
 - Exact button actions beyond diagnostic input reporting.
 - Error-indication clearing policy after reconnect/reset behavior is tested.
 
-The accepted first-release security boundary is CRC32 integrity only. Firmware
-authentication, digital signatures, and anti-rollback are explicitly out of
-scope; the F13 bootloader still requires valid identity, manifest, and full
+The security boundary is CRC32 integrity without firmware authentication or
+digital signatures. Device policy3 optionally rejects lower App versions;
+Tool confirms a request-local FORCE_START with a public maintenance password,
+not a persistent unlock or authentication. See UPDATE_VALIDATION_zh-TW.md.
+The device bootloader still requires valid identity, manifest, and full
 image CRC before entering the application.
 

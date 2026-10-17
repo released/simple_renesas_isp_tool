@@ -172,6 +172,7 @@
     <ClCompile Include="src\core\serial_port_catalog.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\main_frame.cpp" />
+    <ClCompile Include="src\main_frame_evidence.cpp" />
     <ClCompile Include="src\worker_bus.cpp" />
     <ClCompile Include="src\main_frame_bus.cpp" />
     <ClCompile Include="src\main_frame_status.cpp" />
@@ -203,6 +204,7 @@
     <ClInclude Include="src\core\f13_boot_update.h" />
     <ClInclude Include="src\core\f13_transfer_profile.h" />
     <ClInclude Include="src\core\firmware_update_profile.h" />
+    <ClInclude Include="src\core\device_version_policy.h" />
     <ClInclude Include="src\core\host_link_client.h" />
     <ClInclude Include="src\core\host_link_protocol.h" />
     <ClInclude Include="src\core\host_link_transport.h" />

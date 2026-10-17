@@ -25,6 +25,9 @@ void main(void) {
     /* SW1 forces recovery. No valid CRC => always stay in boot. */
     if ((g_engine.info.flags&BU_FLAG_VALID_APP) && request!=F24_BRIDGE_BOOT_COOKIE && (P3&0x04U))
         F24Bridge_Jump();
+    if (g_engine.info.flags&BU_FLAG_VALID_APP)
+        g_engine.hold_reason=((P3&0x04U)==0U) ? BU_HOLD_RECOVERY : BU_HOLD_ENTER;
+    if (!ready) g_engine.hold_reason=BU_HOLD_FLASH;
     P1|=0x04U; PM1&=0xFBU; /* CAN transceiver standby. */
     P8=(uint8_t)((P8&0xF8U)|0x01U); PM8&=0xF8U;
     HostLinkUart_Init(); Bu_LinkInit(&g_link,&g_engine);

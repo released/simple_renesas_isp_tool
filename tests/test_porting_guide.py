@@ -49,12 +49,12 @@ class PortingGuideTests(unittest.TestCase):
         self.assertRegex(config, r"CAN_BOOT_IMAGE_FORMAT_VERSION\s+\(0x06U\)")
         self.assertRegex(config, r"CAN_BOOT_MANIFEST_SIZE\s+\(128U\)")
         f24 = companion_path('F13Boot').parent/'RL78_F24_Boot_loader_CAN'
-        f24_vectors = (f24 / 'device_vectors.asm').read_text()
+        f24_vectors = (f24 / 'f24_boot_vectors.asm').read_text()
         self.assertIn('CMP !0xF710,#0x55', f24_vectors)
         f24_config = (f24 / 'can_boot_config.h').read_text()
         self.assertRegex(f24_config,r'CAN_BOOT_RAM_OWNER_BOOT\s+\(0xAAU\)')
         self.assertRegex(f24_config,r'CAN_BOOT_RAM_OWNER_APPLICATION\s+\(0x55U\)')
-        for phrase in ["0x2100..0x217F", "0x2180..0x21FF", "app_image.json",
+        for phrase in ["0x2100..0x217F", "0x2180..0x21FF", "app_image_config.h",
                        "Physical BRK", "RETI", "0xAA", "0x55", "F1V1", "F2V1",
                        "package_images.ps1", "Windows PowerShell"]:
             self.assertIn(phrase, text)
@@ -90,7 +90,7 @@ class PortingGuideTests(unittest.TestCase):
         self.assertGreater(len(reader.pages), 2)
         text = "\n".join(page.extract_text() for page in reader.pages)
         for phrase in ["移植指南", "F1V1", "F2V1", "0x2100..0x217F",
-                       "Windows PowerShell", "0x55", "app_image.json"]:
+                       "Windows PowerShell", "0x55", "app_image_config.h"]:
             self.assertIn(phrase, text)
         self.assertNotIn("RL78_PORTING_BEGIN", text)
         self.assertNotIn("f24_board", text)

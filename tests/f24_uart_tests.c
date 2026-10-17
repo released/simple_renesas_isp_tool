@@ -57,6 +57,7 @@ int TestF24Uart(void)
     for (i=0U;i<255U;++i) HostLinkUart_RxByteFromIsr((uint8_t)i);
     HostLinkUart_RxByteFromIsr(0U);
     check(g_uart_stats.rx_overflow_count==1U,"bounded RX pressure records overflow");
+    check(g_uart_stats.rx_high_water==255U,"actual UART RX high-water includes full usable ring");
     for (i=0U;i<255U;++i) { check(HostLinkUart_Read(&byte,1U)==1U && byte==(uint8_t)i,"RX ordering"); }
     printf("F24 real UART baud/ACK/rollback/wrap/queue tests: %s\n",failures?"FAIL":"PASS");
     return failures;

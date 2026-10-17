@@ -57,7 +57,7 @@ own a duplicate `0x2000` app start, `0x1E000` capacity, or target-ID rule. It:
    HEX span nor the last non-`0xFF` byte is used as the logical image size.
 4. Aligns the CRC address upward to four bytes and derives exact image size as
    `CRC address + 4 - application start`.
-5. Validates the256-byte `CAN3` region (128-byte core with UPD1 policy and
+5. Validates the256-byte `CAN\0` region (128-byte core with UPD1 policy and
    128 reservedFF bytes) at image offset `0x100`, then patches its exact
    image-size field.
 6. Fills gaps inside the derived image with `0xFF` and calculates reflected
@@ -96,9 +96,10 @@ and the build fails if that size exceeds the declared capacity or flash end.
 
 ## Security boundary
 
-The first release uses CRC-only integrity checking. Digital signatures,
-authentication, and anti-rollback are not implemented. CRC protects against
-corruption and interrupted transfer, not a maliciously modified image.
+CRC protects integrity, not authenticity. Optional installed-App version
+control and the explicit one-update force operation are described in
+[Tool operation](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version).
+Digital signatures, authentication and a persistent version floor are not provided.
 
 ## Verification
 

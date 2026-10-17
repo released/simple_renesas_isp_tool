@@ -13,10 +13,11 @@ POLICY = [
     (0x65, 1, 'policy_size', 'UPD1 policy'), (0x66, 1, 'image_role', 'UPD1 policy'),
     (0x67, 1, 'update_transports', 'UPD1 policy'), (0x68, 4, 'irq_abi', 'UPD1 policy'),
     (0x6C, 4, 'minimum_boot', 'UPD1 policy'), (0x70, 4, 'device_uart_baud', 'UPD1 policy'),
-    (0x74, 12, 'reserved_zero', 'UPD1 policy'), (0x80, 128, 'reserved_FF', 'reserved region'),
+    (0x74, 4, 'version_control', 'APP_IMAGE_VERSION_CONTROL'),
+    (0x78, 8, 'reserved_zero', 'UPD1 policy'), (0x80, 128, 'reserved_FF', 'reserved region'),
 ]
 F13 = [
-    (0x00, 4, 'image_magic (ASCII CAN3)', 'IMAGE_MANIFEST_MAGIC'),
+    (0x00, 4, r'image_magic (ASCII CAN\0)', 'IMAGE_MANIFEST_MAGIC'),
     (0x04, 1, 'image_format', 'IMAGE_MANIFEST_FORMAT_INFO'),
     (0x05, 1, 'core_length', 'IMAGE_MANIFEST_FORMAT_INFO'),
     (0x06, 2, 'flags', 'IMAGE_MANIFEST_FORMAT_INFO'),
@@ -39,7 +40,7 @@ F13 = [
     (0x5C, 4, 'minimum_size', 'MINIMUM_IMAGE_SIZE'),
 ] + POLICY
 F24 = [(offset, size, name,
-        'app_image.json' if name in ('app_version', 'app_build') else
+        'app_image_config.h' if name in ('app_version', 'app_build') else
         'post-build / map' if name == 'image_size' else
         'can_boot_config.h / Get-DeviceMetadata')
        for offset, size, name, origin in F13]
@@ -65,7 +66,7 @@ def read_image(path, kind):
     meta = data[0x100:0x200]
     if kind not in ('F13','F24'):
         raise ValueError('Select a CAN device example')
-    if meta[:4] != b'CAN3' or meta[5] != 128 or meta[128:] != b'\xff' * 128:
+    if meta[:4] != b'CAN\0' or meta[5] != 128 or meta[128:] != b'\xff' * 128:
         raise ValueError('Unsupported metadata header/reserved region')
     if meta[4] != 6 or meta[10] != 5 or int.from_bytes(meta[12:14], 'little') != {'F13':0xF13B,'F24':0xF24B}[kind]:
         raise ValueError('Unsupported example image contract')
@@ -89,7 +90,7 @@ def schema_table(schema):
 def render_tables(f13, f24):
     lines = ['<!-- METADATA_BYTES_BEGIN -->',
              '### MCU CAN device：Metadata 欄位與產生端', schema_table(F13),
-             'F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.ps1 的 Get-DeviceMetadata 依 App JSON／Boot config 產生。',
+             'F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.ps1 的 Get-DeviceMetadata 依 App C header／Boot config 產生。',
              '### 逐 byte 實體位址與範例值',
              '方括號是欄位內byte索引；LE數值的[0]是最低有效byte。ASCII依字元順序，reserved依原始順序。',
              '範例值取配套BIN，不是所有專案的固定值；每個metadata byte皆各列一行，包含128個reserved FF。']

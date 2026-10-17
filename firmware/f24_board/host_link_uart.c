@@ -152,6 +152,8 @@ void HostLinkUart_Init(void)
     g_uart_stats.rx_hardware_overrun_count = 0U;
     g_uart_stats.tx_overflow_count = 0U;
     g_uart_stats.tx_start_error_count = 0U;
+    g_uart_stats.rx_high_water = 0U;
+    g_uart_stats.tx_high_water = 0U;
 }
 
 void HostLinkUart_Process(void)
@@ -245,6 +247,8 @@ uint8_t HostLinkUart_Write(const uint8_t *source, uint16_t length)
         head++;
     }
     g_tx_head = head;
+    free_count=ring_count(g_tx_head,g_tx_tail);
+    if (free_count>g_uart_stats.tx_high_water) g_uart_stats.tx_high_water=free_count;
 
     return 1U;
 }
@@ -281,6 +285,8 @@ void HostLinkUart_GetStats(host_link_uart_stats_t *stats)
     stats->rx_hardware_overrun_count = g_uart_stats.rx_hardware_overrun_count;
     stats->tx_overflow_count = g_uart_stats.tx_overflow_count;
     stats->tx_start_error_count = g_uart_stats.tx_start_error_count;
+    stats->rx_high_water = g_uart_stats.rx_high_water;
+    stats->tx_high_water = g_uart_stats.tx_high_water;
     BSP_EI();
 }
 
@@ -293,12 +299,15 @@ void HostLinkUart_ClearStats(void)
     g_uart_stats.rx_hardware_overrun_count = 0U;
     g_uart_stats.tx_overflow_count = 0U;
     g_uart_stats.tx_start_error_count = 0U;
+    g_uart_stats.rx_high_water = ring_count(g_rx_head,g_rx_tail);
+    g_uart_stats.tx_high_water = ring_count(g_tx_head,g_tx_tail);
     BSP_EI();
 }
 
 void HostLinkUart_RxByteFromIsr(uint8_t data)
 {
     uint8_t next;
+    uint16_t used;
 
     next = (uint8_t)(g_rx_head + 1U);
     if (next == g_rx_tail)
@@ -309,6 +318,8 @@ void HostLinkUart_RxByteFromIsr(uint8_t data)
     {
         g_rx_buffer[g_rx_head] = data;
         g_rx_head = next;
+        used=ring_count(g_rx_head,g_rx_tail);
+        if (used>g_uart_stats.rx_high_water) g_uart_stats.rx_high_water=used;
     }
 }
 

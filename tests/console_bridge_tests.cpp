@@ -1,5 +1,7 @@
 #include "../src/ui/console_geometry.h"
 #include "../src/core/bridge_update_profile.h"
+#include "../src/core/update_evidence.h"
+#include "../src/core/update_report_store.h"
 #include <iostream>
 #include <cstring>
 #include <algorithm>
@@ -10,6 +12,48 @@ int TestConsoleBridge() {
     int failures=0;
     const auto check=[&](bool ok,const char* name) { if (!ok) { ++failures; std::cerr<<"FAIL: "<<name<<'\n'; } };
     namespace c=firmware_upgrade::console;
+    namespace ev=firmware_upgrade::evidence;
+    {
+    firmware_upgrade::firmware_update::ImageInfo image;
+    firmware_upgrade::f13_boot::TargetInfo live;
+    image.version=live.app_version=0x10600U;image.build=live.app_build=20261017U;
+    image.image_size=live.installed_app_size=19456U;
+    image.policy.transports=live.policy.transports=IP_CAN;
+    live.state=firmware_upgrade::f13_boot::DeviceState::Application;
+    live.version_policy=1U;
+    check(ev::ConfirmApp(image,live,0x00030701U),"matching APP_READY and live App identity confirmed");
+    check(ev::ConfirmApp(image,live,0x00030F01U),"additional App self-test bits do not change the fixed health interface");
+    check(!ev::ConfirmApp(image,live,0x700U),"INFO or init-only health is not APP_READY");
+    ++live.app_build;check(!ev::ConfirmApp(image,live,0x701U),"wrong build rejects post-update confirmation");--live.app_build;
+    ++live.app_version;check(!ev::ConfirmApp(image,live,0x701U),"wrong version rejects confirmation");--live.app_version;
+    ++live.installed_app_size;check(!ev::ConfirmApp(image,live,0x701U),"wrong installed size rejects confirmation");--live.installed_app_size;
+    live.state=firmware_upgrade::f13_boot::DeviceState::Bootloader;
+    check(!ev::ConfirmApp(image,live,0x701U),"Boot response cannot confirm App");
+    live.state=firmware_upgrade::f13_boot::DeviceState::Application;
+    ++live.policy.irq_abi;check(!ev::ConfirmApp(image,live,0x701U),"ABI mismatch rejects confirmation");
+    check(ev::Delta(10U,13U)==L"3" && ev::Delta(10U,0U).find(L"reset")!=std::wstring::npos &&
+        ev::Delta(10U,0xFFFFFFFFU).find(L"saturated")!=std::wstring::npos,"counter deltas never silently wrap");
+    check(ev::JsonString(L"a\"\\\r\n\tb")==L"\"a\\\"\\\\\\r\\n\\tb\"","automatic JSON report escaping");
+    wchar_t folder[MAX_PATH]={};GetTempPathW(MAX_PATH,folder);
+    const std::wstring report_path=std::wstring(folder)+L"firmware_report_test_"+std::to_wstring(GetCurrentProcessId())+
+        L"_"+std::to_wstring(GetTickCount64())+L".json";
+    std::wstring report_error;
+    check(ev::WriteReport(report_path,L"{\"result\":\"PASS\",\"text\":\"\u6e2c\u8a66\"}",&report_error),"production UTF-8 automatic report store");
+    HANDLE stored=CreateFileW(report_path.c_str(),GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);
+    char recorded[128]={};DWORD recorded_size=0;
+    const bool readable=stored!=INVALID_HANDLE_VALUE && ReadFile(stored,recorded,sizeof(recorded),&recorded_size,nullptr);
+    if(stored!=INVALID_HANDLE_VALUE) CloseHandle(stored);
+    check(readable && std::string(recorded,recorded_size)==u8"{\"result\":\"PASS\",\"text\":\"\u6e2c\u8a66\"}","automatic report contains exact UTF-8 JSON bytes");
+    check(!ev::WriteReport(report_path,L"overwrite",&report_error),"automatic report never overwrites an existing file");
+    DeleteFileW(report_path.c_str());
+    bu_info_t boot={},app={}; app.mode=BU_MODE_APP;app.flags=BU_FLAG_VALID_APP;
+    boot.board_id=app.board_id=0x101U;boot.app_version=app.app_version=0x10600U;
+    check(ev::ConfirmBridgeApp(boot,app),"Misc RUN confirms same live App descriptor after complete metadata inspection");
+    ++app.board_id;check(!ev::ConfirmBridgeApp(boot,app),"Misc RUN rejects a different host");--app.board_id;
+    ++app.app_version;check(!ev::ConfirmBridgeApp(boot,app),"Misc RUN rejects a different app version");--app.app_version;
+    ++app.app_start;check(!ev::ConfirmBridgeApp(boot,app),"Misc RUN rejects a changed live geometry");--app.app_start;
+    app.mode=BU_MODE_BOOT;check(!ev::ConfirmBridgeApp(boot,app),"Misc RUN returning to Boot is not success");
+    }
     for (const auto size:{std::pair<int,int>{1350,690},{1260,625},{1904,990}}) {
         const auto r=c::Calculate(size.first,size.second,16);
         check(r.fits,"console body fits at 1366 desktop / minimum / large");

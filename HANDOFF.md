@@ -1,5 +1,192 @@
 # Development Handoff
 
+## Three-repository publication workflow (2026-10-17)
+
+github_push.bat delegates to scripts/push_github.ps1. Default PS invocation is
+read-only; -Execute asks PUSH unless -Yes. Fixed released/main order is F13
+Boot, F13 App, Tool. Tool includes its F24 CAN host Boot/App; no F24 CAN device
+checkout or web repository is included. All current unignored changes are
+committed; preserve caller-owned staged work by refusing a pre-existing index.
+Machine paths live in ignored github_push.local.psd1, never public scripts.
+
+Publication-only DefaultBuild pruning moves other outputs to ignored local
+tmp/internal/github_publish/<session>/{f13_boot,f13_app,bridge_boot,bridge_app}.
+Exact keepers: F13 boot0000_1FFF.hex; F13 App *_update.bin; F24 host Boot .mot;
+F24 host App *_bridge_update.bin and *_flash.mot. No permanent deletion and no
+normal clean/build change. Root/bounds/reparse/keeper/hash/remote/branch/index/
+ancestry guards precede push. No auto merge, force, tags or submodule pushes.
+Partial failure stops without rolling back earlier remote successes; commits,
+local archives and transcript remain available. Three pushes are not atomic.
+
+Eleven isolated integration scenarios exercise local bare remotes only: normal
+publish/archive/ignore/quoting, no-op, missing keeper, staged changes, wrong
+remote/mirror/branch, junction escape, remote advance, changed approval and partial
+push rejection. Current source and run results are in tmp/internal/
+github_publish_acceptance.log. Source README/MD and local web resource link
+synchronized; affected MultiBus PDF9pages/4diagrams rendered/bounds checked,
+changed pages visually reviewed. Workspace24 safe-clean scripts pass.
+
+User explicitly authorized the real three-repository commit/push. Its actual
+commit IDs, outcome and recovery directory are recorded by publish.log and Git
+history, not predicted here. Tool EXE/firmware bytes and product versions are
+not rebuilt by this task. No COM/hardware actions or web deployment.
+
+## Device version policy and maintenance downgrade (2026-10-17)
+
+This entry supersedes the earlier not-implemented version-policy proposal.
+Both device Apps use six commented C-header fields; APP_IMAGE_VERSION_CONTROL
+defaults0. Metadata0x74/Flash2174 is LE32 flags0/1, UPD1 policy3, magic CAN+NUL
+0x004E4143. Boot/App release identities remain independent; build is not used
+for ordering. Only a valid installed App supplies the version baseline. There
+is no stored floor once the App is invalid; ABORT/session failure re-entry
+revalidates the installed image. Ordinary START compares App major/minor/patch.
+
+Tool exposes read-only BIN/Installed policy and an independent maintenance
+button, force upgrade old version firmware. Masked public password3036 and a
+second image/installed-version confirmation authorize only that worker command.
+Worker re-reads live policy/version and rejects a stale approved version.
+FORCE_START0E skips only ordering; it does not arm or persist permission.
+No password in INI/log/reports. Target/layout/CRC/IRQ/minimum Boot gates remain.
+Normal/force START reject before erase/program; reports record force and policy.
+No host firmware changes were needed: generic frame forwarding is sufficient.
+
+Final Tool0088 Debug/Release compile0warnings/errors. Both device Boot/App
+clean builds pass: F13 Boot Error0/Warning4, App0/3; F24 Boot0/2, App0/5.
+F13 Boot1.7.0 end1C85/spare890; App1.6.1 BIN19504/CRC C5CCBE1F.
+F24 Boot1.1.0 end1DFD/spare514; App1.0.2 BIN3988/CRC00110089.
+The unchanged8KiB/min512 guard passes. Map group comparison explains F24
+extent+376 via CAN/Flash/startup/object differences, not App metadata reserve.
+See tmp/internal/version_policy/BOOT_SIZE_COMPARISON.md for exact attribution.
+
+Native Debug/Release protocol/C models PASS including version/force negatives,
+cancel and no persistent override.63 Python regressions PASS (74.019s), F24
+nine PS checks/C-PC models PASS; both independent App A/B builds (policy1/0,
+different IRQs) pass and original Boot SHA unchanged. Eleven web sync checks,
+local identical reader/report checks,194refs and24 clean audit PASS.
+Five affected PDFs85pages/23diagrams pass content/bounds/render checks and
+representative visual inspection. Public operation password is in the single
+UPDATE_VALIDATION owner section; other chapters link to it.
+
+No boards: physical CAN/Flash/IRQ/high-speed/power tests NOT RUN. Computer Use
+native pipe fails os error2 after retry/reset; current UI startup/dialog/DPI
+visual acceptance NOT RUN. Layout/GDI models are not a visual substitute.
+No COM writes, Git commit/push or website publication. Source backups, logs
+and exact delivery hashes live in tmp/internal/version_policy.
+
+## Device header comments and compile HTML (2026-10-17)
+
+Both device App input headers now explain field encoding/edit conditions and
+each mapped IRQ's iodefine.h source/peripheral/ISR responsibilities. Values,
+metadata layout, Boot runtime and all firmware image bytes are unchanged.
+Post-package app_build_report.html uses actual BIN identity/CRC/SHA256, field
+sources,256 byte addresses and64 decoded vector slots. Canonical ASCII PS5.1
+helper is scripts/device_app_report.ps1; sync_device_app_config.ps1 maintains
+identical standalone app_build_report.ps1 copies in both Boot repositories.
+F13 generate_update_image and F24 package_images invoke it after existing
+linked-header/map/BR/ISR guards. Build failures may leave earlier artifacts;
+report date/hash and successful-build precondition are explicit.
+
+Both App clean builds PASS Error0/Warning3 and5; two BIN/two Boot hashes match
+baseline.17 focused authoring/report/workshop/IRQ tests and final58 regressions
+PASS (62.743s).194 web refs, public policy and24 clean audit
+PASS. Workshop MD/web/PDF synchronized; PDF15pages/3diagrams rendered, all-page
+bounds checked and affected pages visually reviewed. No browser surface was
+available for HTML visual QA; browser/hardware/DPI NOT RUN.
+
+Version policy is NOT implemented. Latest proposal minimizes user decisions:
+metadata is the sole switch; Tool displays read-only policy, no second checkbox.
+User selects no persistent Flash store:
+check only while a valid installed App exists, invalid-App recovery has no
+saved version floor. Checkbox/metadata four-case policy remains a design
+discussion; do not add a non-enforced flag or claim downgrade rejection.
+Tool EXE/host firmware untouched; no COM writes, commit, push or publication.
+Evidence/source backups: tmp/internal/device_build_report.
+
+## Common web policy and device C-header golden samples (2026-10-17)
+
+Canonical writing policy now lives at /web/PUBLIC_CONTENT_GUIDELINES_zh-TW.md
+with a common root AGENTS.md. Root rules contain no MCU/product/folder-specific
+conventions. The root generic sync script supports opted-in/future sites;
+Tool/slide policies are identical generated standalone copies. Device-specific
+golden rules stay in local AGENTS and docs/DEVICE_GOLDEN_SAMPLE_zh-TW.md.
+
+F13/F24 CAN device Apps now edit app_image_config.h (five numeric defines) and
+app_irq_handlers.h (APP_IRQ_HANDLERS X-macro). Their local app_config.ps1 copies
+are identical to scripts/device_app_config.ps1, checked by sync_device_app_config.
+Each independent Boot repo contains its own reader; no Tool/Python dependency
+for firmware builds. No device JSON fallback; old inputs are in recoverable
+tmp/internal/c_header_golden source backups. Host App configs and Tool reports
+are outside this device-authoring change and retain their current formats.
+
+Both Apps clean build with Python absent from task PATH; Error0/Warning3 and5.
+Both header pairs compile as strict C90 (/Za /W4 /WX). All54 focused regressions,
+F24 nine PS checks and production C/PC models PASS. Both families' temporary
+independent App A/B clean builds pass and original Boot hashes remain unchanged.
+All seven delivered Tool/host/device image SHA-256 values remain unchanged.
+Four PDFs64 pages/15 diagrams rendered/bounds checked and representative pages
+visually reviewed; ten canonical sync checks,194 local refs/anchors/256 byte
+rows and24 clean audit PASS. Exact evidence in tmp/internal/c_header_golden.
+Hardware/browser/DPI checks NOT RUN. No Git push or website publication.
+
+## Public-content guidelines (2026-10-17)
+
+Canonical docs/PUBLIC_CONTENT_GUIDELINES_zh-TW.md defines neutral sharing tone,
+current-operation wording, one-owner topic links, MCU-role abstraction, source
+attribution and evidence scope. sync_public_content_guidelines.ps1 supplies
+identical standalone copies in both slide repositories; local AGENTS/README
+point to them. verify_public_content.ps1 is read-only and deliberately narrow;
+it does not replace contextual semantic review or weaken safety constraints.
+The ISP verify_local entry runs mirror/content checks when ToolRoot is given.
+
+Eight reader MDs have editorial changes; web blocks and seven PDFs synchronized.
+Final52 regressions PASS; rules/mirrors/content checks,194 local refs, anchors,
+256 byte rows and ten canonical checks PASS. Seven PDFs99 pages/31 diagrams
+rendered with bounds and representative visual checks; fenced code/flows and
+byte rows match before-state. Seven delivery hashes unchanged;24 clean audit PASS.
+Tool/firmware/runtime sources and delivery versions are unchanged in this task.
+Actual checks and remaining visual gaps are recorded in SELF_CHECK and
+tmp/internal/public_content_rules; no Git commit/push/site publication.
+
+## Update observability (2026-10-17)
+
+Current implementation adds CAN post-END APP_READY + complete live identity,
+version/build/size comparison; Misc still requires explicit RUN, then bounded
+same-COM115200 APP descriptor/metadata confirmation. No automatic rewrite or
+RUN retry. Shared Compare Metadata, stage progress, independent Cancel and
+automatic reports now exist. Reports store phase times, update counter deltas
+and host lifetime/CLEAR_STATS peaks with explicit unavailable/reset semantics.
+
+Host App GET_STATS84 adds UART/CAN/transaction high-water and1ms maxima. Host
+Boot59 stay reasons preserve BUI1 descriptor96. F13 Boot0D VERIFY is read-only,
+INFO1C advertises diagnostics;0A..0D classify manifest/policy/ABI/layout errors.
+F13 App health1B reports ready, local clock/CAN/timer, handoff/update and RESF.
+Boot UART logging defaults off. F24 device App also provides health1B; Boot IRQ
+and memory contracts remain unchanged. F13 Boot still8KiB, map highest1C3D,
+962-byte spare before2000, enforced by new post-build budget check.
+
+F24 device generated names align: ftable.inc, app_identity.h, app_irq_table.inc,
+ftable_RL78_F24.asm and f24_boot_vectors.asm. Delivery names align to
+boot0000_1FFF.hex, flash_app_variable_CRC.hex, *_update.bin and boot_app.hex/bin.
+Transfer packaged HEX uses project stem. Obsolete generated names are archived
+under tmp/internal/update_observability, never build inputs.
+
+Engineering A/B script builds independent temporary App projects with different
+IRQ mappings; original Boot HEX SHA-256 stays unchanged. Both devices have
+passed final A/B clean builds. Source/build/model checks and current MD/web/
+PDF verification are recorded in SELF_CHECK; detailed logs/backups stay in
+tmp/internal/update_observability and tmp/internal/app_ab.
+
+Final PC delivery0.1.0.0087 includes Host CRC/readback100% completion progress;
+Debug/Release builds have0warnings/errors. Both native model suites,47 focused
+Python regressions, F24 device nine PowerShell checks, ten canonical web checks
+and eight PDF render/bounds checks PASS. Representative PDF contact sheets
+were visually inspected. CS+ intermediates are ignored independently of clean;
+Boot MOT, App update BIN and App flash MOT remain eligible deliveries.
+
+User confirms no boards available: COM/physical high-speed/unplug/power tests
+NOT RUN. Native Computer Use pipe unavailable after documented retries/reset;
+UI/DPI visual acceptance NOT RUN. No Git commit/push/site publication.
+
 ## Public guide organization and F24 device workflow (2026-10-16)
 
 Public reader guides/pages now describe current operation, not developer

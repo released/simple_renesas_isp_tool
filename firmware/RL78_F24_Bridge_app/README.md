@@ -6,11 +6,16 @@ dispatch and CAN services; canonical hardware/drivers/Smart Configurator
 sources are shared from ../f24_board. That directory is not a third product.
 Portable I2C staging is in ../common; layout/update support in ../f24_bridge_common.
 
-App1.5.0 adds generic CAN_BURST_WAIT_RX22 / feature bit12: up to10 standard
+CAN_BURST_WAIT_RX22 / feature bit12 sends up to10 standard
 Classical frames per128-byte request, one matching reply after the last TX.
 The nonblocking progression is shared with HAL fault tests. No F13 protocol,
-offset, CRC or Flash knowledge exists here. Boot1.2.0 is unchanged; install
-the new App through Misc115200, RUN explicitly and re-Probe. See the v5 guide.
+offset, CRC or Flash knowledge exists here. Install App through Misc115200,
+RUN explicitly, then Tool reconnects and confirms live App identity/metadata.
+
+GET_STATS reports UART/CAN loss/error counters and queue/timing peaks.
+Tool computes per-update counter deltas from fresh before/after snapshots;
+peaks cover boot/CLEAR_STATS lifetime, not only the current update.
+See the [confirmation and report guide](../../docs/UPDATE_VALIDATION_zh-TW.md).
 
 Start with [RL78 Boot/App porting](../../docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md)
 before copying this project or replacing its application functionality.
@@ -59,13 +64,7 @@ INFO reports actual installed flash CRC/manifest; ENTER only arms a reset
 after its binary ACK is successfully queued and physically transmitted.
 The runtime requires BRIDGE_SPLIT_APP; no standalone build/identity fallback
 remains. Install matching Boot once, then use Misc for App-only updates.
-An old standalone bridge must first receive the new Boot using a programmer.
 
 Hardware validation remains pending; see the shared guide and HANDOFF.
-
-App1.4.1 fixes the missing outer Host Link READ_METADATA(0x57) dispatch.
-App1.4.0 may return INFO successfully but fail the subsequent metadata probe.
-Keep the metadata gate: hold physical SW1/P32 LOW during reset/power-up to
-stay in existing Boot1.2.0, release after recovery starts, then use Misc115200
-to load the fixed App BIN, update and explicitly RUN. Reopen/probe to confirm
-App1.4.1. No Boot reflash is needed; this recovery still needs board verification.
+For recovery, hold SW1/P32 LOW during reset/power-up, release after Boot starts,
+then use Misc115200 to update App and explicitly RUN.

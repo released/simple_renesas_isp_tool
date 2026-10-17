@@ -6,7 +6,8 @@
 ## MCU CAN device：Boot 與 App 工程
 
 本節整理 MCU CAN device 的分區、startup、RAM、向量與映像產生方式。
-F13、F24 各自維護獨立的 Boot／App 工程，使用相同的流程概念與 JSON 設定方式。
+F13、F24 各自維護獨立的 Boot／App 工程，使用相同的流程概念與 C header 設定方式。
+兩份工程共同作為後續 MCU 的 [工程基準](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/DEVICE_GOLDEN_SAMPLE_zh-TW.md)。
 
 Metadata 編輯與新增 IRQ 的逐步操作集中於 [Device App 設定](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-vector-workshop)。
 本節著重移植時各項工程設定的關係。
@@ -22,8 +23,6 @@ Metadata 編輯與新增 IRQ 的逐步操作集中於 [Device App 設定](https:
 | Target／IRQ ABI | `0xF13B`／F1V1 | `0xF24B`／F2V1 |
 | 板端時鐘 | X1 4MHz、CPU32／CAN16 | X1 4MHz、PLL80、CPU／CAN40 |
 | 工程配置 | [F13 啟動與更新](https://released.github.io/slide_boot_loader_for_RL78/#f13-boot-decision) | [F24 工程配置](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device) |
-
-F24 device 的 GitHub 來源將於實板驗證後提供。
 
 各 App 引用相鄰 Boot 工程提供的共用來源與建置腳本。
 工程放置方式如下，F13 與 F24 可依需要分別使用：
@@ -90,7 +89,7 @@ flowchart TD
     IRQ["MCU CAN device 硬體 IRQ"] --> BOOT["Boot 固定向量與 owner 分流"]
     BOOT -->|Boot owner| BISR["Boot ISR 或 default"]
     BOOT -->|App owner| SLOT["App slot = app start + vector address × 2"]
-    CONFIG["App IRQ JSON 與 ISR 來源"] --> GEN["App pre-build 產表"]
+    CONFIG["App IRQ header 與 ISR 來源"] --> GEN["App pre-build 產表"]
     GEN --> SLOT
     SLOT --> ISR["App ISR；RETI 返回"]
 ```
@@ -101,14 +100,14 @@ App table 具有64個4-byte slot。
 一般 ISR 使用無 `vect=` 的 interrupt pragma，Boot 擁有實體向量。
 Reset entry 經 App startup；Physical BRK 的保留 slot 使用 RETB。
 
-JSON key 的查找來源、C 函式寫法與生成表的檢查，集中於 [IRQ 設定與來源對照](https://released.github.io/slide_boot_loader_for_RL78/#device-app-irq)。
+vector ? 的查找來源、C 函式寫法與生成表的檢查，集中於 [IRQ 設定與來源對照](https://released.github.io/slide_boot_loader_for_RL78/#device-app-irq)。
 
 ### 5. 設定檔與建置
 
 | 內容 | F13 device | F24 device |
 | --- | --- | --- |
-| App 資訊 | `app_image.json` | `app_image.json` |
-| IRQ mapping | `app_irq_handlers.json` | `app_irq_handlers.json` |
+| App 資訊 | `app_image_config.h` | `app_image_config.h` |
+| IRQ mapping | `app_irq_handlers.h` | `app_irq_handlers.h` |
 | pre-build | `generate_irq_contract.ps1 -Mode App` | `prepare_projects.ps1 -Kind app` |
 | post-build | `generate_update_image.ps1` | `package_images.ps1 -Kind app` |
 | App-only 更新 | App update BIN | App update BIN |
@@ -121,7 +120,7 @@ JSON key 的查找來源、C 函式寫法與生成表的檢查，集中於 [IRQ 
 
 | 用途 | F13 device | F24 device |
 | --- | --- | --- |
-| 燒錄器初裝 | App 根目錄 `boot_app.hex` | Boot `boot0000_1FFF.hex`＋App `*_flash.hex` |
+| 燒錄器初裝 | App 根目錄 `boot_app.hex` | App 根目錄 `boot_app.hex`，或 Boot `boot0000_1FFF.hex`＋App `flash_app_variable_CRC.hex` |
 | CAN 更新 App | `DefaultBuild/*_update.bin` | `DefaultBuild/*_update.bin` |
 | 除錯檢查 | 保留 Boot 實體向量，載入 App symbols | 保留 Boot 實體向量，載入 App symbols |
 
@@ -151,7 +150,7 @@ F24 的狀態路徑見 [F24 device 工程配置](https://released.github.io/slid
 
 | 變更 | 檢查範圍 |
 | --- | --- |
-| App 功能、版本、一般 IRQ | App 來源、JSON、初始化、生成表與更新 BIN |
+| App 功能、版本、一般 IRQ | App 來源、C header、初始化、生成表與更新 BIN |
 | MCU、Flash 分區、RAM、IRQ ABI | Boot／App 共同契約、linker 與封裝 |
 | 更新介面、CAN IDs／speed | Boot／App 通訊、metadata 與 Tool target adapter |
 

@@ -106,7 +106,7 @@ bool ParseMetadata(const std::vector<std::uint8_t>& image,
         return Fail(L"CAN Upgrade image metadata format, protocol, or "
                     L"checksum contract is incompatible.", error);
     }
-    if (parsed.target_id == 0U || parsed.version == 0xFFFFFFFFU ||
+    if (parsed.target_id == 0U || parsed.version > 0xFFFFFFU ||
         parsed.build == 0xFFFFFFFFU) {
         return Fail(L"Firmware target, version, or build metadata is not "
                     L"initialized.", error);
@@ -250,6 +250,8 @@ bool ValidateImage(Profile profile,
                     L"CRC32.", error);
     }
     if (!image_policy::Allows(parsed.policy, IP_ROLE_DEVICE_APP, IP_CAN, error)) return false;
+    if(parsed.policy.version!=IP_DEVICE_VERSION)
+        return Fail(L"CAN device image requires the version-control policy descriptor.",error);
     if (info == nullptr) {
         return Fail(L"Firmware image information output is null.", error);
     }

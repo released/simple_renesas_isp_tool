@@ -1,15 +1,21 @@
 {
+  "UPDATE_EVIDENCE": {
+    "owner": "slide_isp_tool_for_RL78",
+    "anchor": "update-confirmation",
+    "title": "更新確認與驗證紀錄",
+    "description": "App 確認、metadata 差異表、階段進度、取消、報告與實板測試表集中於 ISP Tool。"
+  },
   "DEVICE_WORKSHOP": {
     "owner": "slide_boot_loader_for_RL78",
     "anchor": "device-metadata-vector-workshop",
     "title": "Device App：Metadata 與 IRQ 設定",
-    "description": "F13 與 F24 CAN device 使用兩份 JSON 管理映像資訊與中斷對應。完整範例、產生命令及驗證步驟集中於 Bootloader 頁。"
+    "description": "F13 與 F24 CAN device 使用兩份 C header 管理映像資訊與中斷對應，並共同作為後續 MCU 的工程基準。完整範例、產生命令及驗證步驟集中於 Bootloader 頁。"
   },
   "F24_DEVICE": {
     "owner": "slide_boot_loader_for_RL78",
     "anchor": "f24-can-device",
     "title": "F24 (MCU CAN device)：工程配置",
-    "description": "F24 CAN device 提供 Transfer、Boot 與 App 工程。板端時鐘、Flash 配置與 RFD 說明集中於 Bootloader 頁；GitHub 來源將於實板驗證後提供。"
+    "description": "F24 CAN device 提供 Transfer、Boot 與 App 工程。板端時鐘、Flash 配置與 RFD 說明集中於 Bootloader 頁。"
   },
   "F13_BOOT_DECISION": {
     "owner": "slide_boot_loader_for_RL78",

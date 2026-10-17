@@ -66,6 +66,9 @@ struct HostStats {
     std::uint32_t can_bus_off_entries = 0U;
     std::uint32_t can_recovery_count = 0U;
     std::uint32_t host_command_errors = 0U;
+    bool telemetry_available = false;
+    std::uint32_t uart_rx_high_water=0U, uart_tx_high_water=0U, can_rx_high_water=0U;
+    std::uint32_t transaction_queue_high_water=0U, queue_wait_max_ms=0U, transaction_max_ms=0U, process_max_ms=0U;
 };
 
 struct Response {

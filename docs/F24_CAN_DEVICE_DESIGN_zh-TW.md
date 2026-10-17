@@ -6,7 +6,7 @@
 ## F24 (MCU CAN device)：Boot／App 工程配置
 
 F24 CAN device 使用獨立的 Transfer、Boot 與 App 工程。
-板端為 RL78/F24 Target Board R7F124FPJ5xFB，GitHub 來源將於實板驗證後提供。
+板端為 RL78/F24 Target Board R7F124FPJ5xFB。
 
 ### 板端與更新設定
 
@@ -50,7 +50,7 @@ flowchart TD
     CHECK -->|是| APP["設定 App owner / handoff<br/>執行 App startup"]
     CHECK -->|否| WAIT["Boot 接收 CAN 更新"]
     WAIT --> META["完整 metadata 暫存 / SEAL"]
-    META --> BLOCK["START / 收齊區塊 / CRC 檢查"]
+    META --> BLOCK["START 版本政策 / 收齊區塊 / CRC 檢查"]
     BLOCK --> FLASH["Flash driver 寫入 App"]
     FLASH --> END{"END 全映像驗證通過？"}
     END -->|是| RESET
@@ -79,8 +79,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\test.ps1
 日常建置使用 Windows PowerShell、CS+／CC-RL。
 CS+ hooks 依序執行產表與封裝；map、ROM／RAM、向量、metadata 與 CRC 由腳本核對。
 
-JSON 編輯、ISR 與 App-only 命令集中於 [Device App 設定與建置](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build)。
-初裝檔為 Boot `boot0000_1FFF.hex`＋App `*_flash.hex`，CAN 更新使用 App `*_update.bin`。
+C header 編輯、ISR 與 App-only 命令集中於 [Device App 設定與建置](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build)。
+初裝檔為 Boot `boot0000_1FFF.hex`＋App `flash_app_variable_CRC.hex`，或 App 根目錄 `boot_app.hex`。
+CAN 更新使用 App `*_update.bin`。App 產表為 `ftable.inc`、`app_identity.h`、`app_irq_table.inc`，
+由 `ftable_RL78_F24.asm` 組譯；兩份 C header 仍是編輯入口。
 
 ### 驗證項目
 

@@ -33,12 +33,12 @@ class CanUpdateWalkthrough(unittest.TestCase):
 
     def test_wire_examples_and_address_units(self):
         text = DOC.read_text(encoding='utf-8-sig')
-        meta = bytes.fromhex('08 00 00 00 43 41 4E 33')
+        meta = bytes.fromhex('08 00 00 00 43 41 4E 00')
         ack = bytes.fromhex('08 00 04 00 00 01 00 00')
         commit = bytes.fromhex('0C 00 00 00 40 20 00 00')
         for data in [meta, ack, commit]:
             self.assertIn(data.hex(' ').upper(), text)
-        self.assertEqual(meta[4:], b'CAN3')
+        self.assertEqual(meta[4:], b'CAN\0')
         self.assertEqual((int.from_bytes(ack[2:4], 'little'), int.from_bytes(ack[4:], 'little')), (4, 256))
         self.assertEqual(int.from_bytes(commit[4:], 'little'), 0x2000 + 64)
         self.assertEqual(12 + 10 * (2 + 1 + 8), 122)

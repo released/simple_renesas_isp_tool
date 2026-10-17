@@ -134,6 +134,7 @@ void CAN_HostDiscardRxQueue(void);
 uint8_t CAN_RxQueuePop(st_can_rx_frame_t *frame, can_length_t *length);
 void CAN_GetHostStats(can_host_stats_t *stats);
 void CAN_ClearHostStats(void);
+uint8_t CAN_HostGetRxHighWater(void);
 uint8_t CAN_HostTakeErrorEvent(can_host_error_event_t *event);
 
 extern void my_can_glb_rxfifo_callback(uint16_t arg);

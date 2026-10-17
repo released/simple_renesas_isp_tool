@@ -5,16 +5,16 @@
 
 ## CAN 更新逐層導讀：Tool → MCU CAN host → MCU CAN device
 
-本篇用同一條更新路徑，把「使用者按什麼、傳什麼、哪個函式處理、何時改到 Flash」對起來。
-先讀本篇理解流程，再查[Flash／metadata 全部 byte 位址與 CAN 格式](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
-[教學原稿](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md)與
+本篇以同一條更新路徑，對照 Tool 操作、傳輸資料、處理函式及 Flash 寫入時點。
+完整 byte 規格見 [Flash／metadata 全部 byte 位址與 CAN 格式](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
+[MD 原稿](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md)與
 [可下載 PDF](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.pdf)可供離線對照。
 
 本篇只描述現有 CAN Upgrade：Classical CAN、控制 ID `0x700/0x701`、raw data IDs `0x720..0x727`，
 範例 App 起點 `0x2000`、metadata 位於 image offset `0x100..0x1FF`。這些是此範例契約，不是所有 MCU 的固定值。
 Host 自身 App 的更新操作見 [Misc／UART](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware)。
 
-### A. 先分清三層責任與三種資訊
+### A. 三層責任與資訊來源
 
 | 層 | 輸入與輸出 | 負責判斷 | 不負責的事 |
 | --- | --- | --- | --- |
@@ -52,7 +52,7 @@ flowchart TD
 | 5. Enter Boot（若仍在 App） | DEVICE TARGET 改為 Bootloader | `ProcessEnterF13Bootloader` → ENTER ACK → 等待 reset → INFO + HELLO | 否 |
 | 6. 檢查 Ready／Missing | 中央先決條件不得有缺項 | `CMainFrame::UpdateUi`；檔案、route、bit12、Boot ready、live layout 全部相容 | 否 |
 | 7. Start Device Update | progress／shared log | worker 再驗證 → metadata RESET／stage／SEAL → START → blocks → END | 到有效 COMMIT 才開始 |
-| 8. 確認結果 | END ACK 與後續 App 證據分開看 | Tool 核對 END CRC；F13 reset 後 Boot 再檢查；以 App log／INFO／功能確認真正執行 | 更新流程已寫入 |
+| 8. 確認結果 | END ACK 與 App confirmed 分開記錄 | Tool 等待 APP_READY，再比對 live INFO 與載入 BIN 的身分／版本／build／大小；自動保存報告 | 更新流程已寫入 |
 
 載入 BIN 與 Probe 的先後可以互換；但 Start 前必須全部通過。Transfer Test／Bridge Self Test
 只能用來排查通訊，不會替代 CAN Upgrade 的映像驗證。完整操作見[Tool operation](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation)。
@@ -79,7 +79,7 @@ flowchart TD
 | 幾何與容量 | image_size 等於檔案長度；start／capacity／Flash／Boot／erase／minimum | 超出 Flash、start 未對齊 erase | `ParseMetadata` 的 bounds checks |
 | 保留區 | metadata offset 0x80..0xFF 共 128 bytes 必須 FF | 不相容擴充欄位卻未更新契約 | reserved 檢查；不是任意填零區 |
 | 完整性 | 檔案前 N-4 bytes 的 CRC32 對比最後 4 bytes LE32 | metadata 正確但程式區損壞 | CRC Result MATCH；`ValidateImage` 才要求相等 |
-| 更新政策 | UPD1 role／allowed transports／IRQ ABI／minimum boot | CAN-only Device App 改選 I2C；Host App 放入 CAN | `image_policy::Allows`；不能靠切 TAB 繞過 |
+| 更新政策 | UPD1 role／allowed transports／IRQ ABI／minimum boot | CAN-only Device App 改選 I2C；Host App 放入 CAN | `image_policy::Allows`；切換 TAB 後重新核對更新政策 |
 
 `InspectImage` 的「Metadata Status = VALID」與「CRC Result = MATCH」是兩個獨立結果，
 兩者都通過也只是離線成立。CRC提供完整性，不是簽章或身分認證。
@@ -111,16 +111,16 @@ sequenceDiagram
 | 比對群組 | BIN metadata | live INFO／Host 能力 | 失敗後處理 |
 | --- | --- | --- | --- |
 | 身分 | target_id、mcu_family、mcu_part | target INFO 相同欄位 | 不以 USB-UART 描述或載入檔案推測身分 |
-| 協定 | image format、protocol ID／version、checksum | live format／protocol／checksum | 不退回舊 DATA03 流程 |
+| 協定 | image format、protocol ID／version、checksum | live format／protocol／checksum | 使用 BEGIN／raw data／COMMIT 區塊流程 |
 | Flash | start、capacity、Flash size、Boot reserve、erase、minimum | live layout 各項相等 | 不只比較 image 是否小於 capacity |
 | CAN | mode／ID format／nominal mask／data mask／request／response | live 契約相同；選定設定也要被支援 | 改 bridge 速度不會改 F13 固定速度 |
-| 政策 | DEVICE_APP、CAN allowed、固定 IRQ ABI、minimum boot | live role／CAN allowed／IRQ ABI；boot_version 足夠 | worker `ImageMatchesTarget` 再做一次，不能只依賴 UI |
+| 政策 | DEVICE_APP、CAN allowed、固定 IRQ ABI、minimum boot | live role／CAN allowed／IRQ ABI；boot_version 足夠 | UI 與 worker `ImageMatchesTarget` 分別核對 |
 | 傳輸能力 | 本路徑需要 generic burst | Host Link v2／128-byte payload／bit12；F13 block INFO | 缺 bit12 先經 Misc 更新 Host App，不直接開始 |
 | 執行狀態 | 檔案有效且 App Start Override 相容 | 已確認 Bootloader；HELLO target／capacity 與 INFO 相符 | App 狀態須先 ENTER；未開 COM／busy 都不可更新 |
 
 ### E. 一個 BIN 區塊如何穿過 UART 與 CAN
 
-| 名詞／單位 | 大小 | 本路徑的用途 | 不要混淆 |
+| 名詞／單位 | 大小 | 本路徑的用途 | 範圍與差異 |
 | --- | --- | --- | --- |
 | metadata region | 256 bytes | image offset 0x100..0x1FF；128 core + 128 reserved | 不是 Host Link 單包大小 |
 | metadata staging chunk | 4 bytes | METADATA08 每次攜帶 4 個 metadata bytes，總共 64 次 | 不是目前 raw App data 的有效長度 |
@@ -194,6 +194,9 @@ flowchart TD
 
 ### H. 完整 metadata、SEAL 與 START
 
+一般 START 另檢查目前有效 App 的版本政策；`FORCE_START 0E` 只略過本次版本排序。
+其餘契約／CRC／Flash 檢查相同；維護確認與密碼見 [force 降版操作](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version)。
+
 ```mermaid
 flowchart TD
     R["METADATA_RESET0A<br/>staged＝0；sealed＝0"] --> C["64次 METADATA08<br/>offset 0000、0004 … 00FC"]
@@ -202,7 +205,9 @@ flowchart TD
     S -->|通過| P["sealed＝1；仍只在 RAM"]
     P --> A["START02：protocol／target／size<br/>與 sealed metadata／Flash driver 狀態一致？"]
     A -->|否| X
-    A -->|是| B["started＝1；expected offset＝0<br/>下一步才可接收 image block"]
+    A -->|是| V{"一般 START：已安裝政策允許版本？<br/>或此次為明確 FORCE_START"}
+    V -->|否| X
+    V -->|是| B["started＝1；expected offset＝0<br/>下一步才可接收 image block"]
 ```
 
 | 階段 | Tool 函式／資料 | F13 函式／判斷 | 不可誤解的保證 |
@@ -222,7 +227,7 @@ flowchart TD
 | --- | --- | --- | --- |
 | 只讀 INFO page0 | TX700／2 | `07 00` | command INFO、page0 |
 | Boot INFO 回覆 | RX701／8 | `07 00 00 02 3B F1 05 06` | INFO／OK／page0／Bootloader；target F13B、protocol5、image format6 |
-| 第一個 metadata chunk | TX700／8 | `08 00 00 00 43 41 4E 33` | METADATA；meta offset0000；reserved00；4 bytes 是 ASCII CAN3 |
+| 第一個 metadata chunk | TX700／8 | `08 00 00 00 43 41 4E 00` | METADATA；meta offset0000；reserved00；4 bytes 是 ASCII CAN\0 |
 | metadata chunk ACK | RX701／8 | `08 00 04 00 00 01 00 00` | OK；detail0004＝下一 metadata offset；value00000100＝256 bytes |
 | 第一個 block 提交成功 ACK | RX701／8 | `0C 00 00 00 40 20 00 00` | COMMIT OK；block index0；下一絕對 Flash address2040；不是 metadata offset |
 
@@ -297,18 +302,18 @@ flowchart TD
 | END ACK＋matching CRC32 | F13 對寫入 Flash 的完整映像驗證成功 | reset 後是否真正跳 App 尚需獨立證據 |
 | 新 App UART log／重新 INFO／實際功能 | 可觀察的 App 執行與版本／功能 | 不等於所有 IRQ／斷電／高速可靠性都已驗收 |
 
-### L. 故障時先看哪一層
+### L. 故障現象與分層診斷
 
-| 現象 | 優先核對 | 對應流程 | 不應採取的捷徑 |
+| 現象 | 優先核對 | 對應流程 | 處理原則 |
 | --- | --- | --- | --- |
-| Tool Metadata VALID 但 CRC MISMATCH | 檔案截斷／post-build／尾端 CRC | C：離線驗證 | 不跳過 CRC 強制 Start |
-| CRC MATCH 卻 Update blocked | DEVICE_APP／CAN allowed、IRQ／minimum boot、live layout、bit12 | D：在線相容性 | 不因 MCU 名稱相近就接受 |
-| Probe timeout | COM 是否選對、binary UART／Host baud、F24 是否在 App／Boot | B／F：Host Link | 不自動 Probe 所有 COM |
-| F24 TX error／bus error | 供電、CANH/L、共地、終端、各節點 bitrate／clock；F13 transceiver 5V | F／G：實體與 transport | 不先修改 F13 metadata 解碼 |
-| 有700但沒有701 | F13 state／RX filter／ID／DLC、transceiver；分清 Transfer710與Boot700 | G：接收分類 | 不把 Transfer 協定封包送給 Boot |
-| SEAL BAD_IMAGE／CRC_ERROR | 64 chunks 是否完整、固定契約／保留FF、metadata CRC | H：metadata RAM | 不先擦 Flash 測運氣 |
-| COMMIT BAD_SEQUENCE／CRC_ERROR | BEGIN offset／raw IDs／DLC／bitmap／CRC、有限重送紀錄 | J：block RAM | 不把所有錯誤無限重試 |
-| END 成功但沒有新 App log | reset／boot decision／vector／startup／App IRQ與板級初始化 | K：啟動驗證 | 不把100%當作已執行 App |
+| Tool Metadata VALID 但 CRC MISMATCH | 檔案截斷／post-build／尾端 CRC | C：離線驗證 | CRC 通過後才可開始更新 |
+| CRC MATCH 卻 Update blocked | DEVICE_APP／CAN allowed、IRQ／minimum boot、live layout、bit12 | D：在線相容性 | 依實際不符欄位核對映像與 live target |
+| Probe timeout | COM 是否選對、binary UART／Host baud、F24 是否在 App／Boot | B／F：Host Link | 僅對明確選定的 COM 執行 Probe |
+| F24 TX error／bus error | 供電、CANH/L、共地、終端、各節點 bitrate／clock；F13 transceiver 5V | F／G：實體與 transport | 先確認實體層及傳輸，再核對協定解碼 |
+| 有700但沒有701 | F13 state／RX filter／ID／DLC、transceiver；Transfer710與Boot700 | G：接收分類 | 使用目前模式對應的 ID／協定 |
+| SEAL BAD_IMAGE／CRC_ERROR | 64 chunks 是否完整、固定契約／保留FF、metadata CRC | H：metadata RAM | metadata 通過 SEAL 後才進入後續更新流程 |
+| COMMIT BAD_SEQUENCE／CRC_ERROR | BEGIN offset／raw IDs／DLC／bitmap／CRC、有限重送紀錄 | J：block RAM | 依錯誤分類及重試上限處理 |
+| END 成功但沒有新 App log | reset／boot decision／vector／startup／App IRQ與板級初始化 | K：啟動驗證 | 另核對 APP_READY／live INFO 與功能執行 |
 
 ### M. 開原始碼時的閱讀順序
 
@@ -339,3 +344,6 @@ flowchart TD
 本篇是現行程式的導讀，不是新一輪板測報告。實體斷線／斷電、完整故障矩陣、高速長時間可靠性，
 以及各自訂 App 的 IRQ／啟動，仍須在對應硬體上留存驗證紀錄。
 <!-- CAN_WALKTHROUGH_END -->
+
+APP_READY／Verify Installed 的 CAN 格式、metadata 差異表、階段進度、取消與報告欄位，
+請見[更新確認與驗證紀錄](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。

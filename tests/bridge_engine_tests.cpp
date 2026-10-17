@@ -30,7 +30,7 @@ struct Memory {
 };
 bu_info_t Info() {
     bu_info_t d={}; d.mode=BU_MODE_BOOT; d.max_data=64; d.flags=BU_FLAG_FLASH_READY;
-    d.board_id=0x0101; d.boot_version=0x10200; d.boot_build=20261015;
+    d.board_id=0x0101; d.boot_version=0x10300; d.boot_build=20261017;
     d.app_start=0x5000; d.boot_size=0x5000; d.capacity=0x3FC00-0x5000;
     d.flash_size=0x40000; d.erase_size=1024; d.minimum_size=516; d.uart_baud=115200; d.irq_abi=IP_F24_IRQ_ABI;
     std::memcpy(d.part,"R7F124FLJ3xFB",14); std::memcpy(d.family,"RL78/F24",9); return d;
@@ -92,6 +92,7 @@ int TestBridgeEngine() {
     const auto check=[&](bool ok,const char* name){ if(!ok){++failures; std::cerr<<"FAIL: "<<name<<'\n';}};
     auto bytes=Image(3072); auto info=Info(); Memory memory; auto flash=memory.Backend(); bu_engine_t engine={};
     check(Bu_EngineInit(&engine,&info,&flash) && !Bu_ValidateInstalled(&engine),"erased app stays in recovery");
+    check(engine.hold_reason==BU_HOLD_NO_APP,"erased App stay reason");
     auto manifest=std::vector<uint8_t>(bytes.begin()+256,bytes.begin()+512);
     uint8_t begin_request[6]; Bu_Write16(begin_request,256);
     Bu_Write32(begin_request+2,firmware_update::Crc32(manifest.data(),256));
@@ -134,6 +135,7 @@ int TestBridgeEngine() {
     check(Bu_End(&engine,bytes.data()+bytes.size()-4,4)==BU_OK && Bu_ValidateInstalled(&engine),"END CRC and commit / actual readback");
     check(std::equal(bytes.begin(),bytes.end(),memory.bytes.begin()+0x5000),"every flashed byte equals PC image");
     memory.bytes[0x5600]^=1; check(!Bu_ValidateInstalled(&engine),"startup detects post-commit corruption");
+    check(engine.hold_reason==BU_HOLD_CRC,"installed CRC stay reason");
     check(Begin(&engine,manifest.data())==BU_OK,"new update restarts at zero");
     Bu_Write32(chunk.data(),4); check(Bu_Data(&engine,chunk.data(),68)==BU_SEQUENCE_ERROR,"future offset rejected");
     Bu_Write32(chunk.data(),0); std::copy_n(bytes.data(),64,chunk.data()+4); memory.fail_write=true;

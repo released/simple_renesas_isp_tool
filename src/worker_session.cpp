@@ -3,6 +3,7 @@
 
 #include "core/firmware_update_profile.h"
 #include "core/host_link_baud.h"
+#include "core/update_evidence.h"
 
 #include <algorithm>
 #include <array>
@@ -130,10 +131,13 @@ bool WorkerSession::EnterF13Bootloader(const CanSettings& settings) {
 }
 
 bool WorkerSession::ProgramF13Boot(
-    const std::vector<std::uint8_t>& image) {
+    const std::vector<std::uint8_t>& image,bool force_old_version,
+    std::uint32_t approved_installed_version) {
     Command command;
     command.type = CommandType::ProgramF13Boot;
     command.image = image;
+    command.force_old_version=force_old_version;
+    command.approved_installed_version=approved_installed_version;
     return Submit(std::move(command));
 }
 
@@ -173,6 +177,18 @@ bool WorkerSession::RequestDisconnect() {
     }
     command_ready_.notify_one();
     return true;
+}
+
+bool WorkerSession::RequestCancel() {
+    std::lock_guard<std::mutex> lock(command_mutex_);
+    if (!started_ || stopping_ || !command_pending_or_busy_) return false;
+    cancel_requested_=true;
+    can_tx_test_stop_requested_=true;
+    return true; // The worker retains ownership of COM and performs bounded cleanup.
+}
+
+bool WorkerSession::VerifyInstalled() {
+    return Submit(Command{CommandType::VerifyInstalled,L"",0U});
 }
 
 void WorkerSession::SetDetailedTrace(bool enabled) {
@@ -242,6 +258,21 @@ void WorkerSession::ThreadMain() {
         PostState();
         std::wstring error;
         bool success = false;
+        const bool report_update=command.type==CommandType::ProgramF13Boot ||
+            command.type==CommandType::BridgeProgram || command.type==CommandType::BridgeRun;
+        const auto report_started=std::chrono::steady_clock::now();
+        const auto report_port=state_.port_name;
+        const auto report_baud=state_.baudrate;
+        const auto report_board=state_.host_info.board_id;
+        if(report_update) RefreshHostStatsBestEffort();
+        const bool stats_before_valid=state_.f24_stats_valid;
+        const auto stats_before=state_.f24_stats;
+        const auto client_before=host_link_client_.Stats();
+        update_details_.clear();
+        update_timings_.clear();
+        const auto report_host=state_.host_summary;
+        const auto report_target=state_.target_summary;
+        const auto report_can=state_.can_summary;
 
         try {
             switch (command.type) {
@@ -266,6 +297,17 @@ void WorkerSession::ThreadMain() {
                 case CommandType::ProgramF13Boot:
                     success = ProcessProgramF13Boot(command, &error);
                     break;
+                case CommandType::VerifyInstalled: {
+                    f13_boot::Ack ack;
+                    const auto diagnostic_flags=state_.target_metadata.diagnostics;
+                    success=state_.f13_bootloader_ready && (state_.target_metadata.diagnostics&2U) &&
+                        boot_client_.GetTargetInfo(&state_.target_metadata,&error) && boot_client_.VerifyInstalled(&ack,&error);
+                    state_.target_metadata.diagnostics=diagnostic_flags;
+                    if(success) PostLog(L"Read-only VERIFY PASS: range start="+evidence::Hex(state_.target_metadata.application_start)+
+                        L", installed bytes="+std::to_wstring(state_.target_metadata.installed_app_size)+
+                        L", recalculated CRC32="+evidence::Hex(ack.value)+L". No erase/write.");
+                    break;
+                }
                 case CommandType::CanTxTest:
                     success = ProcessCanTxTest(command, &error);
                     break;
@@ -297,7 +339,63 @@ void WorkerSession::ThreadMain() {
             success = false;
         }
 
+        if(!success && IsCancelRequested()) error=L"Operation canceled. "+error;
         state_.busy = false;
+        if(report_update) {
+            const bool old_cleanup=cleanup_in_progress_; cleanup_in_progress_=true;
+            RefreshHostStatsBestEffort(); cleanup_in_progress_=old_cleanup;
+            const auto elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now()-report_started).count();
+            const auto& after=state_.f24_stats;
+            const bool comparable=stats_before_valid && state_.f24_stats_valid &&
+                command.type==CommandType::ProgramF13Boot;
+            const auto delta=[&](std::uint32_t a,std::uint32_t b) {
+                return comparable ? evidence::Delta(a,b) : L"unavailable (snapshot missing or host reset)";
+            };
+            const std::wstring counters=L"UART overflow="+(stats_before.uart_rx_overflows>=65535U || after.uart_rx_overflows>=65535U ?
+                L"unavailable (16-bit saturated)":delta(stats_before.uart_rx_overflows,after.uart_rx_overflows))+
+                L"; CAN lost="+delta(stats_before.can_rx_lost_frames,after.can_rx_lost_frames)+
+                L"; CAN bus-off="+delta(stats_before.can_bus_off_entries,after.can_bus_off_entries)+
+                L"; CAN recovery="+delta(stats_before.can_recovery_count,after.can_recovery_count)+
+                L"; CAN TX failure="+delta(stats_before.can_tx_failures,after.can_tx_failures);
+            PostLog(L"Update counter deltas: "+counters);
+            const std::wstring peaks=state_.f24_stats_valid && after.telemetry_available ?
+                L"since host boot/CLEAR_STATS: UART RX bytes="+std::to_wstring(after.uart_rx_high_water)+
+                L"; UART TX bytes="+std::to_wstring(after.uart_tx_high_water)+
+                L"; CAN RX frames="+std::to_wstring(after.can_rx_high_water)+
+                L"; pending transactions="+std::to_wstring(after.transaction_queue_high_water)+
+                L"; max queue wait ms="+std::to_wstring(after.queue_wait_max_ms)+
+                L"; max transaction ms="+std::to_wstring(after.transaction_max_ms)+
+                L"; max dispatcher call ms="+std::to_wstring(after.process_max_ms):L"unavailable";
+            PostLog(L"Host high-water / latency: "+peaks);
+            WorkerEvent report; report.kind=WorkerEventKind::UpdateReport;
+            std::wstring phases=L"{";
+            for(const auto& phase:update_timings_) {
+                if(phases.size()>1U) phases+=L",";
+                phases+=evidence::JsonString(phase.first)+L":"+std::to_wstring(phase.second);
+            }
+            phases+=L"}";
+            report.text=L"{\n  \"schema\": 1,\n  \"operation\": "+evidence::JsonString(
+                command.type==CommandType::ProgramF13Boot ? L"CAN device update" :
+                command.type==CommandType::BridgeRun ? L"Host explicit RUN confirmation" : L"Host app update")+
+                L",\n  \"result\": "+evidence::JsonString(success?L"PASS":IsCancelRequested()?L"CANCELED":L"FAIL")+
+                L",\n  \"message\": "+evidence::JsonString(error)+
+                L",\n  \"port\": "+evidence::JsonString(report_port)+L",\n  \"host_board\": "+std::to_wstring(report_board)+
+                L",\n  \"host_baud\": "+std::to_wstring(report_baud)+
+                L",\n  \"host\": "+evidence::JsonString(report_host)+
+                L",\n  \"target_before\": "+evidence::JsonString(report_target)+
+                L",\n  \"can\": "+evidence::JsonString(report_can)+
+                L",\n  \"elapsed_ms\": "+std::to_wstring(elapsed)+
+                L",\n  \"input_bytes\": "+std::to_wstring(command.image.size())+
+                L",\n  \"phases_ms\": "+phases+
+                L",\n  \"details\": "+evidence::JsonString(update_details_)+
+                L",\n  \"host_deltas\": "+evidence::JsonString(counters)+
+                L",\n  \"host_peaks\": "+evidence::JsonString(peaks)+
+                L",\n  \"link_retries\": "+(command.type==CommandType::BridgeRun ||
+                    host_link_client_.Stats().retries<client_before.retries ? std::wstring(L"null") :
+                    std::to_wstring(host_link_client_.Stats().retries-client_before.retries))+L"\n}\n";
+            QueueEvent(std::move(report));
+        }
         PostState();
         if (command.type != CommandType::Disconnect) {
             if (!success && error.empty()) {
@@ -309,6 +407,7 @@ void WorkerSession::ThreadMain() {
         {
             std::lock_guard<std::mutex> lock(command_mutex_);
             command_pending_or_busy_ = !commands_.empty();
+            if (commands_.empty()) cancel_requested_=false;
         }
     }
 
@@ -506,6 +605,7 @@ void WorkerSession::RefreshHostStatsBestEffort() {
     host_link::HostStats stats;
     std::wstring error;
 
+    state_.f24_stats_valid=false;
     if (!state_.host_validated || !serial_port_.IsOpen()) {
         return;
     }

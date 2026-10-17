@@ -6,25 +6,32 @@
 
 namespace firmware_upgrade::image_policy {
 struct Policy {
+    std::uint8_t version=0;
     std::uint8_t role=0, transports=0;
     std::uint32_t irq_abi=0, minimum_boot_version=0;
     std::uint32_t device_uart_baud=0;
+    std::uint32_t version_control=0;
 };
 inline std::uint32_t Read32(const std::uint8_t* p) {
     return p[0] | (std::uint32_t(p[1])<<8) | (std::uint32_t(p[2])<<16) | (std::uint32_t(p[3])<<24);
 }
 inline bool Parse(const std::uint8_t* metadata, Policy* policy) {
     const auto* p=metadata+IP_OFFSET;
-    if (Read32(p)!=IP_MAGIC || (p[4]!=IP_VERSION && p[4]!=IP_DEVICE_UART_VERSION) || p[5]!=IP_SIZE ||
+    if (Read32(p)!=IP_MAGIC || (p[4]!=IP_VERSION && p[4]!=IP_DEVICE_UART_VERSION && p[4]!=IP_DEVICE_VERSION) || p[5]!=IP_SIZE ||
         (p[6]!=IP_ROLE_DEVICE_APP && p[6]!=IP_ROLE_BRIDGE_APP) ||
         !p[7] || (p[7]&~IP_ALL) || !Read32(p+8) || Read32(p+8)==0xFFFFFFFFU ||
         Read32(p+12)==0xFFFFFFFFU) return false;
     const auto uart=Read32(p+16);
     const bool device_uart=p[6]==IP_ROLE_DEVICE_APP && (p[7]&IP_UART);
-    if (p[4]==IP_DEVICE_UART_VERSION) {
+    if (p[4]==IP_DEVICE_UART_VERSION || (p[4]==IP_DEVICE_VERSION && device_uart)) {
         if (!device_uart || !uart || uart==0xFFFFFFFFU) return false;
     } else if (device_uart || uart) return false;
-    for (std::size_t i=20; i<IP_SIZE; ++i) if (p[i]) return false;
+    const auto version_control=Read32(p+20);
+    if(p[4]==IP_DEVICE_VERSION) {
+        if(p[6]!=IP_ROLE_DEVICE_APP || version_control>1U) return false;
+    } else if(version_control) return false;
+    for (std::size_t i=24; i<IP_SIZE; ++i) if (p[i]) return false;
+    policy->version=p[4]; policy->version_control=version_control;
     policy->role=p[6]; policy->transports=p[7];
     policy->irq_abi=Read32(p+8); policy->minimum_boot_version=Read32(p+12);
     policy->device_uart_baud=uart;

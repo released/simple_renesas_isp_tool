@@ -37,11 +37,14 @@ protected:
     afx_msg void OnBnClickedTransferTest();
     afx_msg void OnBnClickedCanTxTest();
     afx_msg void OnBnClickedStartFirmwareUpdate();
+    afx_msg void OnForceOldFirmware();
     afx_msg void OnBnClickedDisconnect();
     afx_msg void OnBnClickedClearLog();
     afx_msg void OnBnClickedStartLog();
     afx_msg void OnBnClickedStopLog();
     afx_msg void OnBnClickedExportSummary();
+    afx_msg void OnCancelOperation();
+    afx_msg void OnCompareMetadata();
     afx_msg void OnBnClickedDetailedTrace();
     afx_msg void OnCbnSelChangeCom();
     afx_msg void OnCbnSelChangeBaud();
@@ -82,6 +85,8 @@ private:
         kFirmwareFieldCanIds,
         kFirmwareFieldUpdatePolicy,
         kFirmwareFieldBootAbi,
+        kFirmwareFieldVersionControl,
+        kFirmwareFieldInstalledVersionPolicy,
         kFirmwareFieldCount
     };
 
@@ -91,6 +96,8 @@ private:
     void QueueDisconnect();
     void AppendLog(const std::wstring& text);
     void UpdateUi();
+    void StartDeviceUpdate(bool force_old_version);
+    bool ConfirmForceOldFirmware();
     bool InitializeBusUi();
     bool IsI2cTab() const;
     bool IsMiscTab() const;
@@ -134,6 +141,7 @@ private:
     void StopLogRecording(bool emit_log);
     void ExportSessionSummary();
     std::wstring BuildSessionSummary() const;
+    void SaveUpdateReport(const std::wstring& json);
     bool LoadBinaryFromPath(const std::wstring& path, bool silent);
     void ValidateLoadedFirmwareImage(bool emit_log);
     void UpdateFirmwareImageInfoText();
@@ -154,6 +162,8 @@ private:
     CButton open_com_btn_;
     CButton close_com_btn_;
     CButton reset_host_btn_;
+    CButton cancel_btn_;
+    CButton compare_metadata_btn_;
     CStatic build_info_label_;
 
     CStatusCard host_info_label_;
@@ -198,6 +208,7 @@ private:
     CStatic operation_timer_label_;
 
     CButton start_firmware_update_btn_;
+    CButton force_old_firmware_btn_;
     CStatusCard firmware_prerequisites_label_;
     CStatusCard operation_status_card_;
     CTabCtrl bus_tabs_;

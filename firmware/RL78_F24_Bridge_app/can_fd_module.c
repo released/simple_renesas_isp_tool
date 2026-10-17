@@ -35,6 +35,7 @@ st_can_rx_frame_t rx_frame;
 #define CAN_RAM_WINDOW_PAGE1                  (0xC401U)
 
 static st_can_rx_frame_t g_can_rx_queue[CAN_RX_QUEUE_STORAGE_DEPTH];
+static volatile uint8_t g_can_rx_high_water;
 static can_length_t g_can_rx_lengths[CAN_RX_QUEUE_STORAGE_DEPTH];
 static st_can_rx_frame_t g_can_discard_frame;
 static volatile uint8_t g_can_rx_head = 0U;
@@ -647,10 +648,13 @@ void CAN_ClearHostStats(void)
 {
     BSP_DI();
     memset((void *)&g_can_stats, 0, sizeof(g_can_stats));
+    g_can_rx_high_water=0U;
     g_can_pending_global_errors = 0U;
     g_can_pending_channel_errors = 0U;
     BSP_EI();
 }
+
+uint8_t CAN_HostGetRxHighWater(void) { return g_can_rx_high_water; }
 
 uint8_t CAN_HostTakeErrorEvent(can_host_error_event_t *event)
 {
@@ -686,6 +690,7 @@ uint8_t CAN_HostTakeErrorEvent(can_host_error_event_t *event)
 static void CAN_RxQueuePushFromIsr(uint16_t source)
 {
     uint8_t head;
+    uint8_t used;
     uint8_t next;
     st_can_rx_frame_t *destination;
     can_length_t length;
@@ -719,6 +724,9 @@ static void CAN_RxQueuePushFromIsr(uint16_t source)
         {
             g_can_rx_lengths[head] = length;
             g_can_rx_head = next;
+            used=(next>=g_can_rx_tail) ? (uint8_t)(next-g_can_rx_tail) :
+                (uint8_t)(CAN_RX_QUEUE_STORAGE_DEPTH-g_can_rx_tail+next);
+            if (used>g_can_rx_high_water) g_can_rx_high_water=used;
             can_increment_counter(&g_can_stats.rx_frames);
         }
     }

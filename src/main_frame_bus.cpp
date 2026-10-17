@@ -125,7 +125,7 @@ void CMainFrame::UpdateBusUi() {
     const bool host = session_state_.host_validated;
     const bool i2c_current = IsI2cSelectionCurrent();
     if (busy)
-        CardText(operation_status_card_, L"[WORKING] Operation active - wait, or cancel with Close COM", Tone::Working);
+        CardText(operation_status_card_, L"[WORKING] Cancel stops safely; Close COM also disconnects", Tone::Working);
     else if (!last_operation_error_.empty())
         CardText(operation_status_card_, L"[ERROR] " + last_operation_error_, Tone::Error);
     else

@@ -22,6 +22,8 @@ typedef struct
     uint16_t rx_hardware_overrun_count;
     uint16_t tx_overflow_count;
     uint16_t tx_start_error_count;
+    uint16_t rx_high_water;
+    uint16_t tx_high_water;
 } host_link_uart_stats_t;
 
 void HostLinkUart_Init(void);

@@ -249,8 +249,8 @@ Feature flags:
 I2C-only bridges may advertise max-CAN-data0; enabled CAN bridges retain
 8/64-byte CAN limits. Port descriptors constrain selectable per-port rates and
 transfer sizes. F24 reports one CAN0 (flags5) and one IICA0 (flags3),512-byte
-I2C TX/RX limits and100kHz only. GET_STATS retains its56-byte UART/CAN layout;
-this extension does not invent I2C statistics fields.
+I2C TX/RX limits and100kHz only. GET_STATS retains the UART/CAN counter prefix;
+the App telemetry extension is defined in section10.2. No I2C counters are implied.
 
 Nominal bitrate-mask bits:
 
@@ -572,7 +572,22 @@ Response payload is fourteen `uint32` counters in this order:
 
 Counters saturate at `0xFFFFFFFF`; they do not wrap silently.
 
-### 10.2 `CLEAR_STATS`
+### 10.2 Host telemetry extension
+
+The App GET_STATS response is84 bytes: the original fourteen counters at0..55
+followed by seven LE32 values. Offset56 UART RX high-water(bytes),60 UART TX
+high-water(bytes),64 CAN RX high-water(frames),68 pending CAN queue high-water,
+72 max queue wait(ms),76 max complete CAN transaction(ms),80 max HostLink_Process
+call(ms). Resolution is1ms;0 can mean below resolution. Peaks are since boot or
+CLEAR_STATS, not per-update interval maxima. Transaction time includes generic
+TX/RX waiting; it is not physical Flash time. Tick deltas handle60000ms wrap.
+The fixed Boot returns56 counter bytes without telemetry. PC accepts exactly56
+or84, marks absence, and never fabricates peaks. UART driver overflow saturates
+at65535; other wire counters saturate atFFFFFFFF. A reset/saturation/missing
+snapshot makes interval deltas unavailable. Do not poll while a bus transaction
+is active or clear counters implicitly during an update.
+
+### 10.3 `CLEAR_STATS`
 
 Request and response payloads are empty. Clear does not change CAN
 configuration, filters, controller state, or the duplicate-response cache.

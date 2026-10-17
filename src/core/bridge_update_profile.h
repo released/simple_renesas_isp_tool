@@ -20,5 +20,6 @@ bool Program(host_link::Client& link, const bu_info_t& device,
              const std::vector<std::uint8_t>& bytes,
              const std::function<bool()>& cancelled,
              const std::function<void(int)>& progress,
-             const std::function<void()>& abort_transaction, std::wstring* error);
+             const std::function<void()>& abort_transaction, std::wstring* error,
+             const std::function<void(unsigned)>& stage = {});
 } // namespace firmware_upgrade::bridge_update

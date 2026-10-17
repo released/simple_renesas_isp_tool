@@ -18,10 +18,15 @@ enum class UpdateResult {
     Canceled,
 };
 
+enum class UpdateStage { Metadata, Start, Transfer, End };
+
 struct UpdateCallbacks {
+    bool force_old_version = false;
     std::function<bool()> is_canceled;
     std::function<void(std::uint32_t completed,
                        std::uint32_t total)> progress;
+    std::function<void(UpdateStage)> stage;
+    std::function<bool(Ack*, std::wstring*)> abort;
 };
 
 struct UpdateReport {
@@ -31,6 +36,10 @@ struct UpdateReport {
     bool start_acknowledged = false;
     bool abort_attempted = false;
     bool abort_acknowledged = false;
+    std::uint64_t metadata_ms = 0U;
+    std::uint64_t start_ms = 0U;
+    std::uint64_t transfer_ms = 0U;
+    std::uint64_t end_ms = 0U;
 };
 
 bool RunUpdate(UpdateClient* client,

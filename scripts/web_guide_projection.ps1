@@ -7,7 +7,8 @@ function Get-WebGuideProjection {
     $config = $entry.Value
     if ($Folder -ceq $config.owner) { return $Canonical }
     $url = 'https://released.github.io/'+$config.owner+'/#'+$config.anchor
-    return "<!-- ${Section}_BEGIN -->`n<a id=`"$($config.anchor)`"></a>`n`n## $($config.title)`n`n$($config.description)`n[閱讀完整章節]($url)`n<!-- ${Section}_END -->"
+    $linkText=[regex]::Unescape('\u95B1\u8B80\u5B8C\u6574\u7AE0\u7BC0')
+    return "<!-- ${Section}_BEGIN -->`n<a id=`"$($config.anchor)`"></a>`n`n## $($config.title)`n`n$($config.description)`n[$linkText]($url)`n<!-- ${Section}_END -->"
 }
 
 function Sync-WebGuideSection {

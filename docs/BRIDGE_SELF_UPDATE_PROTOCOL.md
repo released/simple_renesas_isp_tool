@@ -112,3 +112,20 @@ same descriptor/command contract with their own protected backend.
 
 Physical supply, UART/flash timing, IRQ return, power failure, reset recovery
 and analyzer evidence remain manual. See SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md.
+
+## Stay-reason diagnostics and explicit RUN confirmation
+
+59 DIAGNOSTICS takes an empty request and returns8 bytes: U8 version1, U8
+hold reason, U8 reserved0, U8 current flags, LE32 accepted next offset.
+Reasons0 valid/no hold,1 no App marker,2 malformed metadata,3 contract mismatch,
+4 CRC mismatch,5 SW1 recovery,6 Flash init/erase/write failure,7 ENTER,
+8 END complete awaiting explicit RUN. This does not change the96-byte descriptor.
+App owns59 as read-only inspection; Boot owns all erase/write/RUN commands.
+
+END remains in Boot. Explicit RUN is sent once, then Tool closes/reopens the
+same COM at115200 within a finite retry/time window. Recheck board identity,
+APP mode, CRC-valid installed descriptor and all256 metadata bytes, plus exact
+version/build/size captured before RUN. Lost ACK can be resolved by this read-only
+confirmation, never by automatically repeating RUN or a flash operation.
+Cancel stops confirmation without undoing a completed RUN. See
+UPDATE_VALIDATION_zh-TW.md for reports and manual test acceptance.

@@ -1,6 +1,7 @@
 #include "main_frame.h"
 
 #include "core/firmware_update_profile.h"
+#include "core/device_version_policy.h"
 
 #include <afxdlgs.h>
 
@@ -370,7 +371,7 @@ void CMainFrame::UpdateUi() {
     connect_target_btn_.SetWindowTextW(
         boot_profile ? L"Discover Target" : L"Discover Test Target");
     enter_bootloader_btn_.SetWindowTextW(L"Enter Boot");
-    transfer_test_btn_.SetWindowTextW(L"Transfer Test");
+    transfer_test_btn_.SetWindowTextW(boot_profile?L"Verify Installed":L"Transfer Test");
     start_firmware_update_btn_.SetWindowTextW(L"Start Device Update");
     open_com_btn_.EnableWindow(!busy && !port_open);
     close_com_btn_.EnableWindow(port_open || busy);
@@ -378,6 +379,11 @@ void CMainFrame::UpdateUi() {
     refresh_com_btn_.EnableWindow(!busy && !port_open);
     com_combo_.EnableWindow(!busy && !port_open);
     baud_combo_.EnableWindow(!busy && !port_open);
+    cancel_btn_.EnableWindow(busy);
+    compare_metadata_btn_.EnableWindow(!busy && !binary_data_.empty() &&
+        (IsMiscTab()?session_state_.bridge_info_valid:!IsI2cTab() && target_ready));
+    force_old_firmware_btn_.ShowWindow(!IsMiscTab() && !IsI2cTab() ? SW_SHOW : SW_HIDE);
+    force_old_firmware_btn_.EnableWindow(FALSE);
     if (IsMiscTab()) {
         load_binary_btn_.EnableWindow(!busy);
         start_log_btn_.EnableWindow(!log_recording_);
@@ -415,9 +421,9 @@ void CMainFrame::UpdateUi() {
          (can_started && target_ready &&
           !session_state_.f13_bootloader_ready)));
     transfer_test_btn_.EnableWindow(
-        !busy && transfer_profile && target_ready &&
-        session_state_.target_profile ==
-            firmware_upgrade::ui::TargetProfile::F13Transfer);
+        !busy && target_ready && ((boot_profile && session_state_.f13_bootloader_ready &&
+            (session_state_.target_metadata.diagnostics&2U)) ||
+        (transfer_profile && session_state_.target_profile == firmware_upgrade::ui::TargetProfile::F13Transfer)));
 
     std::vector<std::wstring> missing;
     if (boot_profile) {
@@ -462,6 +468,10 @@ void CMainFrame::UpdateUi() {
             missing.push_back(L"image metadata does not match the target");
         }
 
+        const bool version_blocked=image_matches_target && binary_image_valid_ &&
+            firmware_upgrade::device_version::IsBlocked(binary_inspection_.metadata,session_state_.target_metadata);
+        force_old_firmware_btn_.EnableWindow(missing.empty() && version_blocked);
+        if(version_blocked) missing.push_back(L"older version blocked; use force upgrade old version firmware for this update only");
         start_firmware_update_btn_.EnableWindow(missing.empty());
         if (missing.empty()) {
             firmware_prerequisites_label_.SetWindowTextW(
@@ -584,6 +594,12 @@ void CMainFrame::OnBnClickedEnterBootloader() {
 void CMainFrame::OnBnClickedTransferTest() {
     if (IsMiscTab()) { OnBridgeAction(3U); return; }
     if (IsI2cTab()) return;
+    if(SelectedProfile()==L"CAN Upgrade") {
+        if(session_state_.f13_bootloader_ready && worker_session_.VerifyInstalled()) {
+            worker_command_pending_=true; StartOperationElapsedTimer(); UpdateUi();
+        }
+        return;
+    }
     if (SelectedProfile() != L"Custom Transfer" ||
         !session_state_.target_validated ||
         session_state_.target_profile !=
@@ -642,6 +658,11 @@ void CMainFrame::OnBnClickedCanTxTest() {
 void CMainFrame::OnBnClickedStartFirmwareUpdate() {
     if (IsMiscTab()) { OnBridgeAction(2U); return; }
     if (IsI2cTab()) return;
+    StartDeviceUpdate(false);
+}
+
+void CMainFrame::StartDeviceUpdate(bool force_old_version) {
+    if(worker_command_pending_ || session_state_.busy) return;
     const firmware_upgrade::firmware_update::Profile profile =
         firmware_upgrade::firmware_update::FromDisplayName(SelectedProfile());
     if (profile != firmware_upgrade::firmware_update::Profile::CanUpgrade ||
@@ -690,12 +711,22 @@ void CMainFrame::OnBnClickedStartFirmwareUpdate() {
         return;
     }
 
+    if(!firmware_upgrade::device_version::Check(image_info,session_state_.target_metadata,force_old_version,&error)) {
+        AppendLog(L"Firmware update blocked: "+error);
+        MessageBoxW(error.c_str(),L"Version policy",MB_ICONWARNING|MB_OK); return;
+    }
+    if(force_old_version && !ConfirmForceOldFirmware()) {
+        AppendLog(L"Force older firmware canceled before START; no permission retained."); return;
+    }
+    const auto approved_version=session_state_.target_metadata.app_version;
     std::wstringstream confirmation;
     confirmation << L"Program the validated " << image_info.mcu_family
                  << L" / " << image_info.mcu_part << L" image?\n\n"
                  << L"File: " << binary_path_ << L"\n"
                  << L"Workflow: " << image_info.profile_name << L"\n"
-                 << L"Target: 0x" << std::hex << std::uppercase
+                 << L"Installed version: " << VersionText(approved_version)
+                 << L"\nOperation: " << (force_old_version ? L"force upgrade old version firmware (this update only)" : L"Normal update")
+                 << L"\nTarget: 0x" << std::hex << std::uppercase
                  << std::setfill(L'0') << std::setw(4)
                  << image_info.target_id << L"\nVersion: "
                  << VersionText(image_info.version) << L"\nBuild: "
@@ -714,7 +745,7 @@ void CMainFrame::OnBnClickedStartFirmwareUpdate() {
         AppendLog(L"Firmware update canceled before START.");
         return;
     }
-    if (!worker_session_.ProgramF13Boot(binary_data_)) {
+    if (!worker_session_.ProgramF13Boot(binary_data_,force_old_version,approved_version)) {
         AppendLog(L"Firmware update blocked: another operation is active.");
         return;
     }

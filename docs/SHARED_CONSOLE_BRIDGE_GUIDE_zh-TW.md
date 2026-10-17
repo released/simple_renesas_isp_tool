@@ -4,11 +4,14 @@
 
 ## 1. 一個畫面，三個工作區
 
-以1366×768單畫面為目標：上方識別卡、左側介面設定、中間共用BIN／metadata／checksum、右側共用log、底部progress／elapsed。主視窗沒有上下捲軸，只有log歷史與下拉清單可捲動。五張卡於小畫面同列、大畫面分兩列，hover可讀全文。
+畫面以1366×768為最低配置：上方識別卡、左側介面設定、中間共用BIN／metadata／checksum、右側共用log、底部progress／elapsed。
+主視窗沒有上下捲軸，log歷史與下拉清單可捲動。
+五張卡於小畫面同列、大畫面分兩列，hover可讀全文。
 
-BIN、檔案路徑、18個metadata欄位與log只有一份，不是每個TAB各建一套。
+BIN、檔案路徑、18個metadata欄位與log由各TAB共用。
 
-CAN 與 I2C TAB 只改變 port、speed、ID／mask 或 slave address 等介面參數與適用的 image contract。日後 UART device 也應加入同一層 adapter，不得另建 BIN／metadata／log console。最後一個 TAB 是 Misc，目的地為 host bridge，而不是外部 device。
+CAN 與 I2C TAB 提供 port、speed、ID／mask 或 slave address 等介面參數及適用的 image contract。
+最後一個 TAB 是 Misc，更新目的地為 host bridge。
 
 CAN／I2C／Misc TAB 位於左側 INTERFACE SETTINGS。
 中欄 SHARED IMAGE / METADATA 與右欄 SHARED LOG 固定獨立，切換 TAB 時保留共用資料。
@@ -19,11 +22,13 @@ CAN／I2C／Misc TAB 位於左側 INTERFACE SETTINGS。
 | 藍色 OFFLINE／WORKING | 本地 BIN 資訊或執行中 |
 | 黃色 REQUIRED／REFERENCE | 等待必要條件或僅為範例回報資訊 |
 | 紅色 ERROR／BLOCKED | 錯誤、CRC 不符或不允許操作 |
-| 灰色 N/A | 尚未取得或該協定未提供，不以 BIN 填入假裝是 live 資訊 |
+| 灰色 N/A | 尚未取得或該協定未提供；離線 BIN 資料與 live 資訊分開顯示 |
 
-## 2. 先分清楚 Host、Device 與 BIN
+## 2. Host、Device 與 BIN 的資訊來源
 
-COM 清單的 USB friendly name 只用於辨識轉接器。必須 Open + Probe Host 後，才能知道實際 bridge board 的 board ID、韌體版本、能力與可選 port。UI 不預設一定是 F24，也不從 MCU 名稱推測 RA6 的 port 數量。F14／RA6 仍須實作並宣告相同 Host Link／backend contract，才能使用對應功能。
+COM 清單的 USB friendly name 用於辨識轉接器。
+`Open + Probe Host` 取得實際 bridge board 的 board ID、韌體版本、能力與可選 port。
+UI 依 Host Link／backend 回報的能力顯示功能與 port。
 
 CAN／I2C 模式的 BOOT／INSTALLED APP 卡來自外部 device 的 live INFO；LOADED BIN 是離線檔案。Custom Transfer 不提供 boot/app metadata，所以顯示 N/A。G16 範例回報的版本是常數，使用黃色；其 erase/write/jump 仍封鎖。
 
@@ -31,7 +36,8 @@ Misc 的 BOOT／APP 卡改為 host bridge 自己的資訊，且目的地卡明�
 
 ## 3. Misc：PC 透過 UART 更新 Host App
 
-此流程不經 CAN，不經 I2C，也不是使用 500K CAN 發送切換命令。UART 連線與 CAN bitrate 相互獨立。
+Misc 透過 PC ↔ host 的 UART 更新 Host App。
+UART baud rate 與 CAN bitrate 分別設定。
 
 ```mermaid
 flowchart TD
@@ -61,12 +67,15 @@ flowchart TD
     Q -->|是| S[最後寫入有效標記；再檢查 flash CRC]
     S --> L[停留在 boot；不自動 RUN]
     L --> M[使用者明確按 Run Validated Bridge App]
-    M --> N[COM 關閉；重新 Open + Probe Host 確認 app]
+    M --> N[Tool 自動以同 COM／115200 重連並確認 App metadata]
 ```
 
 開始寫入前，確認視窗會列出目的地 HOST BRIDGE、COM、MCU part、檔案、app start 與大小。預設選 No。TAB 切換、載入檔案、Read Info 都不會擦寫。STAGE只有RAM暫存，缺段、衝突、總長／CRC／身分不符均不擦Flash。Read Info在有有效app時以相同READ_METADATA command、offset0/64/128/192讀回完整metadata並核對descriptor。更新完成也分段read-back核對；成功後仍需明確RUN。Close COM可取消，tool嘗試ABORT清除staging再關閉；BEGIN前取消不改舊app，BEGIN後不保證舊app仍在。
 
-舊的 standalone bridge firmware 不宣告 self-update bit，所以 Misc 顯示不支援且不開放寫入；不會猜測位址或降級成 raw BIN。
+未宣告 self-update 能力的 bridge 不開放 Misc 寫入，不推測位址或接受 raw BIN。
+
+更新後確認、Compare Metadata、分階段進度、Cancel 與自動報告，集中於
+[更新確認與驗證紀錄](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
 
 ## 4. F24 (MCU CAN host) 分區與建置
 
@@ -90,7 +99,13 @@ flowchart TD
 
 App 的 `DefaultBuild/*_bridge_update.bin` 是 Misc 要載入的檔案；`*_flash.mot` 是已加入 metadata／CRC 且排除低位向量、option、debug 區的初次 app 燒錄產物。不要把原始 app `.mot`／`.abs` 當成獨立可啟動韌體：device file 會產生未綁定的低位向量 placeholder。
 
-首次安裝 Boot 仍需 debugger／programmer。可同時安裝 boot `.mot`＋matching app `_flash.mot`；也可只安裝 Boot，沒有有效 App 就留在 recovery，再於 Misc／115200 載入 matching `_bridge_update.bin`，驗證、更新後明確按 Run Validated Bridge App。Misc 不會更新 Boot。調整分區時必須重新安裝 matching boot，不能只換 app。
+首次安裝 Boot 使用 debugger／programmer，可採下列方式：
+
+- 同時安裝 Boot `.mot` 與 matching App `_flash.mot`。
+- 只安裝 Boot，沒有有效 App 時停留 recovery；再於 Misc／115200 載入 matching `_bridge_update.bin`，驗證及更新後執行 `Run Validated Bridge App`。
+
+Misc 僅更新 Host App。
+調整分區時，Boot 與 App 的配置須一致，並以燒錄器重新安裝對應 Boot。
 
 <!-- F24_APP_IRQ_BEGIN -->
 <a id="host-app-engineering"></a>
@@ -166,5 +181,5 @@ CAN analyzer self test 的資料為 standard ID 0x123、DLC8、`11 22 33 44 55 6
 ## 更新政策與通訊速度
 
 BIN 的更新目的地、允許介面、Boot／IRQ ABI 與 Host Link 速度，集中於 ISP Tool 的更新政策章節。
-[?梯?摰蝡?](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)
+[閱讀完整章節](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)
 <!-- COMMON_IMAGE_POLICY_END -->

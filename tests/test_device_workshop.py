@@ -5,7 +5,6 @@ Never rebuild firmware, open COM, overwrite actual images or publish a site.
 import binascii
 import base64
 import hashlib
-import json
 import os
 from pathlib import Path
 import re
@@ -18,6 +17,7 @@ import unittest
 import xml.etree.ElementTree as ET
 
 from workspace_paths import companion_path
+from app_config_fixtures import image_header, irq_header, read_irq_header, image_examples
 from pypdf import PdfReader
 import pdfplumber
 
@@ -46,8 +46,9 @@ class DeviceWorkshop(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.text = DOC.read_text(encoding='utf-8-sig')
-        cls.examples = [json.loads(value) for value in re.findall(r'```json\n(.*?)\n```',cls.text,re.S)]
-        cls.irq_c = re.findall(r'```c\n(.*?)\n```',cls.text,re.S)[0]
+        blocks = re.findall(r'```c\n(.*?)\n```',cls.text,re.S)
+        cls.examples = image_examples(cls.text) + [read_irq_header(value) for value in blocks if '#ifndef APP_IRQ_HANDLERS_H' in value]
+        cls.irq_c = next(value for value in blocks if '#pragma interrupt app_aux_irq' in value)
 
     def test_scope_structure_source_links_and_examples(self):
         self.assertEqual(self.text.count('```mermaid'),3)
@@ -95,7 +96,8 @@ class DeviceWorkshop(unittest.TestCase):
         ET.SubElement(node,'RelativePath').text='app_extra_irq.c'
         tree.write(destination/project.name,encoding='utf-8')
         (destination/'app_extra_irq.c').write_text(self.irq_c,encoding='utf-8')
-        (destination/'app_irq_handlers.json').write_text(json.dumps(irq),encoding='utf-8')
+        (destination/'app_irq_handlers.h').write_text(irq_header(irq),encoding='utf-8')
+        shutil.copyfile(source/'iodefine.h', destination/'iodefine.h')
 
     def test_f13_actual_generator_with_documented_metadata_and_irq(self):
         protected=list(F13.glob('*.asm'))+[F13/'can_boot_config.h',F13/f'{F13.name}.mtpj']
@@ -103,7 +105,7 @@ class DeviceWorkshop(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='device_workshop_f13_') as folder:
             project=Path(folder)
             self.temp_project(F13_APP,project,self.examples[5])
-            (project/'app_image.json').write_text(json.dumps(self.examples[1]),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(self.examples[1]),encoding='utf-8')
             args=['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',
                   str(F13/'generate_irq_contract.ps1'),'-Mode','App','-AppProject',str(project)]
             command(args)
@@ -117,7 +119,7 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertIn('CAN_BOOT_APP_FIRMWARE_BUILD (20261016UL)',files[1].read_text())
             self.assertRegex(files[2].read_text(),r'APP_IMAGE_VERSION\s+\.EQU 0x00010501')
             self.assertIn('Do not edit',files[2].read_text())
-            self.reject_invalid_json(args,project,self.examples[1],files)
+            self.reject_invalid_config(args,project,self.examples[1],files)
             files[2].write_text(files[2].read_text()+'; tampered\n')
             tampered=hashed(files)
             self.assertNotEqual(subprocess.run(args+['-CheckOnly'],capture_output=True).returncode,0)
@@ -125,7 +127,7 @@ class DeviceWorkshop(unittest.TestCase):
             command(args)
         self.assertEqual(before,hashed(protected))
 
-    def test_f24_actual_app_prepare_with_documented_json_and_irq(self):
+    def test_f24_actual_app_prepare_with_documented_header_and_irq(self):
         if not F24.exists(): self.skipTest('Select F24 device checkout for production generator tests')
         protected=list(F24.glob('*.asm'))+[F24/'can_boot_config.h',F24/f'{F24.name}.mtpj']
         before=hashed(protected)
@@ -138,13 +140,13 @@ class DeviceWorkshop(unittest.TestCase):
             for name in ('app_main.c','iodefine.h'):
                 shutil.copyfile(F24_APP/name,project/name)
             shutil.copytree(F24_APP/'src/smc_gen',project/'src/smc_gen')
-            (project/'app_image.json').write_text(json.dumps(self.examples[3]),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(self.examples[3]),encoding='utf-8')
             args=['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',
                   str(F24/'tools/prepare_projects.ps1'),'-Kind','app','-Project',str(project)]
             command(args)
-            files=[project/'device_vectors.asm',project/'app_identity.generated.h',
+            files=[project/'app_irq_table.inc',project/'app_identity.h',
                    project/'generated_projection/cstart.asm',next(project.glob('*.mtpj')),
-                   project/'app_metadata.generated.inc',project/'app_metadata.generated.asm']
+                   project/'ftable.inc',project/'ftable_RL78_F24.asm']
             snapshot=hashed(files)
             command(args+['-CheckOnly'])
             self.assertEqual(snapshot,hashed(files))
@@ -157,7 +159,7 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertEqual(len(words),64)
             self.assertEqual(words[4:7],[0x10001,20261016,0xFFFFFFFF])
             self.assertEqual(words[32:],[0xFFFFFFFF]*32)
-            self.reject_invalid_json(args,project,self.examples[3],files)
+            self.reject_invalid_config(args,project,self.examples[3],files)
             files[4].write_text(files[4].read_text()+'; tampered\n')
             tampered=hashed(files)
             self.assertNotEqual(subprocess.run(args+['-CheckOnly'],capture_output=True).returncode,0)
@@ -165,26 +167,26 @@ class DeviceWorkshop(unittest.TestCase):
             command(args)
         self.assertEqual(before,hashed(protected))
 
-    def reject_invalid_json(self,args,project,valid,files):
+    def reject_invalid_config(self,args,project,valid,files):
         snapshot=hashed(files)
-        cases=[dict(valid,version=1),dict(valid,version='0xFFFFFFFF'),dict(valid,build='20261016'),
+        cases=[dict(valid,version='1+2'),dict(valid,version='0xFFFFFFFF'),dict(valid,build='20261016'),
                dict(valid,build=1.5),dict(valid,build=True),dict(valid,build=-1),
                dict(valid,build=4294967295),dict(valid,role='BRIDGE_APP'),
                dict(valid,transport='I2C'),dict(valid,target='0x1234'),dict(valid,unknown=1)]
         missing=dict(valid); del missing['version']; cases.append(missing)
         for invalid in cases:
             with self.subTest(invalid=invalid):
-                (project/'app_image.json').write_text(json.dumps(invalid),encoding='utf-8')
+                (project/'app_image_config.h').write_text(image_header(invalid),encoding='utf-8')
                 self.assertNotEqual(subprocess.run(args,capture_output=True).returncode,0)
                 self.assertEqual(snapshot,hashed(files))
-        (project/'app_image.json').write_text(json.dumps(valid),encoding='utf-8')
+        (project/'app_image_config.h').write_text(image_header(valid),encoding='utf-8')
 
     def test_actual_bins_and_f24_metadata_producer_without_output_writes(self):
         for app,target,abi in ((F13_APP,0xF13B,0x31563146),(F24_APP,0xF24B,0x31563246)):
             image_path=app/'DefaultBuild'/f'{app.name}_update.bin'
             image=image_path.read_bytes()
             before=hashed([image_path])
-            self.assertEqual(image[256:260],b'CAN3')
+            self.assertEqual(image[256:260],b'CAN\0')
             self.assertEqual(struct.unpack_from('<H',image,268)[0],target)
             self.assertEqual(struct.unpack_from('<I',image,280)[0],len(image))
             self.assertEqual(struct.unpack_from('<I',image,360)[0],abi)
@@ -193,7 +195,7 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertEqual(before,hashed([image_path]))
         with tempfile.TemporaryDirectory(prefix='device_workshop_meta_') as folder:
             project=Path(folder)
-            (project/'app_image.json').write_text(json.dumps(self.examples[3]),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(self.examples[3]),encoding='utf-8')
             snippet=f". '{F24/'tools/device_common.ps1'}'; $meta=Get-DeviceMetadata '{project}' 516; [Convert]::ToBase64String($meta)"
             args=['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-Command',snippet]
             region=base64.b64decode(command(args).stdout.strip())
@@ -201,9 +203,9 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertEqual(struct.unpack_from('<I',region,20)[0],20261016)
             self.assertEqual(region[128:],b'\xff'*128)
             invalid=dict(self.examples[3]); invalid['transport']='I2C'
-            (project/'app_image.json').write_text(json.dumps(invalid),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(invalid),encoding='utf-8')
             self.assertNotEqual(subprocess.run(args,capture_output=True).returncode,0)
-            (project/'app_image.json').write_text(json.dumps(self.examples[3]),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(self.examples[3]),encoding='utf-8')
             shutil.copyfile(next(F24_APP.glob('*.mtpj')),project/'sample.mtpj')
             build=project/'DefaultBuild'; build.mkdir()
             for suffix in ('.mot','.map'):
@@ -219,10 +221,10 @@ class DeviceWorkshop(unittest.TestCase):
             parent=Path(folder)
             boot=parent/F13.name; boot.mkdir()
             project=parent/F13_APP.name; project.mkdir()
-            for name in ('generate_irq_contract.ps1','can_boot_config.h'):
+            for name in ('generate_irq_contract.ps1','app_config.ps1','app_build_report.ps1','can_boot_config.h'):
                 shutil.copyfile(F13/name,boot/name)
             self.temp_project(F13_APP,project,self.examples[5])
-            (project/'app_image.json').write_text(json.dumps(self.examples[1]),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(self.examples[1]),encoding='utf-8')
             command(['powershell.exe','-NoProfile','-File',str(boot/'generate_irq_contract.ps1'),
                      '-Mode','App','-AppProject',str(project)])
             build=project/'DefaultBuild'; build.mkdir()
@@ -235,10 +237,10 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertIn(b'Compiled App metadata is stale',result.stdout+result.stderr)
             self.assertFalse(list(build.glob('*_update.bin')))
             # Fresh generated files must not legitimize an old linked IRQ table.
-            (project/'app_image.json').write_text(json.dumps(self.examples[0]),encoding='utf-8')
-            irq=json.loads((F13_APP/'app_irq_handlers.json').read_text(encoding='utf-8-sig'))
+            (project/'app_image_config.h').write_bytes((F13_APP/'app_image_config.h').read_bytes())
+            irq=read_irq_header((F13_APP/'app_irq_handlers.h').read_text(encoding='utf-8-sig'))
             irq['0x34']='r_intc0_interrupt'
-            (project/'app_irq_handlers.json').write_text(json.dumps(irq),encoding='utf-8')
+            (project/'app_irq_handlers.h').write_text(irq_header(irq),encoding='utf-8')
             command(['powershell.exe','-NoProfile','-File',str(boot/'generate_irq_contract.ps1'),
                      '-Mode','App','-AppProject',str(project)])
             result=subprocess.run(['powershell.exe','-NoProfile','-File',str(project/'generate_update_image.ps1')],
@@ -294,7 +296,7 @@ class DeviceWorkshop(unittest.TestCase):
         reader=PdfReader(path)
         self.assertEqual(sum(len(page.images) for page in reader.pages),3)
         text='\n'.join(page.extract_text() for page in reader.pages)
-        for phrase in ('app_aux_irq','0x2014','ftable.inc','app_image.json','CheckOnly','not raw','0xF24B'):
+        for phrase in ('app_aux_irq','0x2014','ftable.inc','app_image_config.h','CheckOnly','not raw','0xF24B'):
             if phrase == 'not raw': self.assertIn('raw',text)
             else: self.assertIn(phrase,text)
         self.assertNotIn('DEVICE_WORKSHOP_',text)

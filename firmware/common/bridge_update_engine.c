@@ -7,6 +7,7 @@ static void invalidate(bu_engine_t *e) {
     e->info.installed_size=0xFFFFFFFFUL;
 }
 static uint8_t fail_flash(bu_engine_t *e) {
+    e->hold_reason=BU_HOLD_FLASH;
     invalidate(e); e->info.flags &= (uint8_t)(0xFFU ^ (BU_FLAG_ACTIVE|BU_FLAG_FLASH_READY));
     return BU_FLASH_ERROR;
 }
@@ -48,8 +49,15 @@ uint8_t Bu_ValidateInstalled(bu_engine_t *e) {
     invalidate(e);
     for (i=0U; i<BU_METADATA_REGION_SIZE; ++i)
         wire[i]=read_image(e,BU_MANIFEST_OFFSET+i,0U);
-    if (!Bu_ParseMetadataRegion(wire,&image) || !Bu_MatchesDevice(&image,&e->info) ||
-        checksum(e,image.image_size-4UL,0U)!=stored_crc(e,image.image_size)) return 0U;
+    e->hold_reason=BU_HOLD_NO_APP;
+    if (Bu_Read32(wire)==0xFFFFFFFFUL) return 0U;
+    e->hold_reason=BU_HOLD_METADATA;
+    if (!Bu_ParseMetadataRegion(wire,&image)) return 0U;
+    e->hold_reason=BU_HOLD_CONTRACT;
+    if (!Bu_MatchesDevice(&image,&e->info)) return 0U;
+    e->hold_reason=BU_HOLD_CRC;
+    if (checksum(e,image.image_size-4UL,0U)!=stored_crc(e,image.image_size)) return 0U;
+    e->hold_reason=BU_HOLD_NONE;
     e->info.app_version=image.version; e->info.app_build=image.build;
     e->info.installed_size=image.image_size; e->info.flags|=BU_FLAG_VALID_APP;
     return 1U;
@@ -118,11 +126,13 @@ uint8_t Bu_End(bu_engine_t *e, const uint8_t *data, uint16_t length) {
     if (!(e->info.flags&BU_FLAG_ACTIVE) || e->next!=e->image.image_size) return BU_BAD_STATE;
     expected=Bu_Read32(data);
     if (stored_crc(e,e->image.image_size)!=expected || checksum(e,e->image.image_size-4UL,1U)!=expected) {
-        Bu_Abort(e); return BU_CRC_ERROR;
+        Bu_Abort(e); e->hold_reason=BU_HOLD_CRC; return BU_CRC_ERROR;
     }
     if (!e->flash.write4(e->flash.context,e->info.app_start+BU_MANIFEST_OFFSET,e->manifest)) return fail_flash(e);
     e->info.flags &= (uint8_t)(0xFFU ^ BU_FLAG_ACTIVE);
-    return Bu_ValidateInstalled(e) ? BU_OK : fail_flash(e);
+    if (!Bu_ValidateInstalled(e)) return fail_flash(e);
+    e->hold_reason=BU_HOLD_UPDATED;
+    return BU_OK;
 }
 void Bu_Abort(bu_engine_t *e) {
     e->info.flags &= (uint8_t)(0xFFU ^ BU_FLAG_ACTIVE); e->staged=0U;

@@ -12,6 +12,9 @@
  * unchanged. A future UART target packager must emit its compile-time baud. */
 #define IP_DEVICE_UART_VERSION (2U)
 #define IP_DEVICE_UART_BAUD_OFFSET (112U)
+/* Device policy with installed-App version control; UART baud stays at112. */
+#define IP_DEVICE_VERSION (3U)
+#define IP_VERSION_CONTROL_OFFSET (116U)
 #define IP_ROLE_DEVICE_APP (1U)
 #define IP_ROLE_BRIDGE_APP (2U)
 #define IP_CAN (1U)

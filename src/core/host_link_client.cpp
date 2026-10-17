@@ -314,7 +314,7 @@ bool Client::GetStats(HostStats* stats, std::wstring* error) {
     if (!Request(Command::GetStats, {}, &response, error)) {
         return false;
     }
-    if (response.payload.size() != 56U) {
+    if (response.payload.size() != 56U && response.payload.size() != 84U) {
         SetError(error, L"GET_STATS returned an invalid payload.");
         return false;
     }
@@ -333,6 +333,16 @@ bool Client::GetStats(HostStats* stats, std::wstring* error) {
     parsed.can_bus_off_entries = ReadLe32(&response.payload[44U]);
     parsed.can_recovery_count = ReadLe32(&response.payload[48U]);
     parsed.host_command_errors = ReadLe32(&response.payload[52U]);
+    if(response.payload.size()==84U) {
+        parsed.telemetry_available=true;
+        parsed.uart_rx_high_water=ReadLe32(response.payload.data()+56U);
+        parsed.uart_tx_high_water=ReadLe32(response.payload.data()+60U);
+        parsed.can_rx_high_water=ReadLe32(response.payload.data()+64U);
+        parsed.transaction_queue_high_water=ReadLe32(response.payload.data()+68U);
+        parsed.queue_wait_max_ms=ReadLe32(response.payload.data()+72U);
+        parsed.transaction_max_ms=ReadLe32(response.payload.data()+76U);
+        parsed.process_max_ms=ReadLe32(response.payload.data()+80U);
+    }
     *stats = parsed;
     return true;
 }

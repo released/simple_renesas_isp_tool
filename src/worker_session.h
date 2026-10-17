@@ -29,6 +29,7 @@ enum class WorkerEventKind {
     State,
     Progress,
     OperationComplete,
+    UpdateReport,
 };
 
 enum class TargetProfile {
@@ -121,7 +122,8 @@ public:
     bool RunF13TransferTest();
     bool DiscoverF13Boot(const CanSettings& settings);
     bool EnterF13Bootloader(const CanSettings& settings);
-    bool ProgramF13Boot(const std::vector<std::uint8_t>& image);
+    bool ProgramF13Boot(const std::vector<std::uint8_t>& image, bool force_old_version=false,
+                        std::uint32_t approved_installed_version=0U);
     bool StartCanTxTest(const CanSettings& settings);
     bool StopCanTxTest();
     bool ResetHost();
@@ -129,6 +131,8 @@ public:
     bool ProbeI2c(const i2c_host::Configuration& configuration,
                   std::uint8_t address);
     bool RequestDisconnect();
+    bool RequestCancel();
+    bool VerifyInstalled();
     void SetDetailedTrace(bool enabled);
 
     std::vector<WorkerEvent> DrainEvents();
@@ -142,6 +146,7 @@ private:
         DiscoverF13Boot,
         EnterF13Bootloader,
         ProgramF13Boot,
+        VerifyInstalled,
         CanTxTest,
         ResetHost,
         ProbeI2c,
@@ -161,6 +166,8 @@ private:
         std::vector<std::uint8_t> image;
         i2c_host::Configuration i2c_configuration;
         std::uint8_t i2c_address = 0x09U;
+        bool force_old_version = false;
+        std::uint32_t approved_installed_version = 0U;
     };
 
     bool Submit(Command command);
@@ -178,6 +185,7 @@ private:
     bool ProcessEnterF13Bootloader(const Command& command,
                                    std::wstring* error);
     bool ProcessProgramF13Boot(const Command& command, std::wstring* error);
+    bool ConfirmDeviceApp(const firmware_update::ImageInfo& image, std::wstring* error);
     bool ProcessCanTxTest(const Command& command, std::wstring* error);
     bool ProcessResetHost(std::wstring* error);
     bool ProcessProbeI2c(const Command& command, std::wstring* error);
@@ -228,6 +236,8 @@ private:
     std::uint64_t dropped_ui_events_ = 0U;
 
     SessionState state_;
+    std::wstring update_details_;
+    std::vector<std::pair<std::wstring,std::uint64_t>> update_timings_;
     host_link::SerialPort serial_port_;
     host_link::Client host_link_client_;
     can_host::Client can_client_;

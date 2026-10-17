@@ -19,6 +19,17 @@ HBRUSH CMainFrame::OnCtlColor(CDC* dc, CWnd* window, UINT control_type) {
     const bool status_field =
         handle == firmware_field_values_[kFirmwareFieldChecksumResult].GetSafeHwnd() ||
         handle == firmware_field_values_[kFirmwareFieldMetadataStatus].GetSafeHwnd();
+    if(control_type==CTLCOLOR_STATIC &&
+        (handle==firmware_field_values_[kFirmwareFieldVersionControl].GetSafeHwnd() ||
+         handle==firmware_field_values_[kFirmwareFieldInstalledVersionPolicy].GetSafeHwnd())) {
+        CString text; window->GetWindowTextW(text);
+        const auto tone=text.Find(L"ENABLED")==0 ? firmware_upgrade::visual::Tone::Pending :
+            text.Find(L"DISABLED")==0 ? firmware_upgrade::visual::Tone::Ready : firmware_upgrade::visual::Tone::Neutral;
+        const auto palette=firmware_upgrade::visual::Colors(tone);
+        dc->SetTextColor(palette.text); dc->SetBkColor(palette.background);
+        return static_cast<HBRUSH>((tone==firmware_upgrade::visual::Tone::Pending ? pending_background_brush_ :
+            tone==firmware_upgrade::visual::Tone::Ready ? ready_background_brush_ : neutral_background_brush_).GetSafeHandle());
+    }
     const bool policy_field=handle==firmware_field_values_[kFirmwareFieldUpdatePolicy].GetSafeHwnd() ||
         handle==firmware_field_values_[kFirmwareFieldBootAbi].GetSafeHwnd();
     if (policy_field && binary_data_.size()>=0x200U) {

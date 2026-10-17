@@ -1,3 +1,25 @@
 #include "src\\resource.h"
+#include <afxres.h>
 
 IDI_APP_ICON ICON "res\\app_icon.ico"
+
+IDD_METADATA_DIFFERENCE DIALOGEX 0, 0, 520, 310
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Image / Live Metadata - CHANGE is informational, MISMATCH blocks update"
+FONT 9, "Segoe UI"
+BEGIN
+    CONTROL "", ID_METADATA_DIFFERENCE_LIST, "SysListView32", WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER | 0x0001, 6, 6, 508, 279
+    DEFPUSHBUTTON "Close", IDOK, 454, 289, 60, 15
+END
+
+IDD_FORCE_OLD_PASSWORD DIALOGEX 0, 0, 350, 115
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "force upgrade old version firmware"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "Enter the maintenance password for this update only.", -1, 10, 10, 330, 18
+    LTEXT "Identity, layout and CRC checks remain active.", -1, 10, 30, 330, 18
+    EDITTEXT ID_FORCE_OLD_PASSWORD, 10, 52, 330, 18, ES_PASSWORD | ES_AUTOHSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON "Continue", IDOK, 200, 88, 68, 16
+    PUSHBUTTON "Cancel", IDCANCEL, 274, 88, 66, 16
+END

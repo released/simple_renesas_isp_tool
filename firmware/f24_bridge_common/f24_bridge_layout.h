@@ -12,9 +12,9 @@
 #define F24_BRIDGE_MINIMUM_SIZE (516UL)
 #define F24_BRIDGE_UART_BAUD (115200UL)
 #define F24_BRIDGE_BOARD_ID (0x0101U)
-#define F24_BRIDGE_BOOT_VERSION (0x00010200UL)
+#define F24_BRIDGE_BOOT_VERSION (0x00010300UL)
 /* Boot build only. App version/build live in each app's app_image.json. */
-#define F24_BRIDGE_BUILD (20261015UL)
+#define F24_BRIDGE_BUILD (20261017UL)
 #define F24_BRIDGE_BOOT_COOKIE (0xB00724A5UL)
 /* FF700..FF710 is reserved outside all startup-cleared / allocated sections. */
 #define F24_BRIDGE_COOKIE_ADDRESS (0x000FF700UL)

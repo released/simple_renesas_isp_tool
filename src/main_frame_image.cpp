@@ -261,6 +261,12 @@ void CMainFrame::UpdateFirmwareImageInfoText() {
 
     const firmware_upgrade::firmware_update::ImageInfo& image =
         binary_inspection_.metadata;
+    firmware_field_values_[kFirmwareFieldVersionControl].SetWindowTextW(
+        image.policy.version_control ? L"ENABLED | same / newer" : L"DISABLED | any version");
+    firmware_field_values_[kFirmwareFieldInstalledVersionPolicy].SetWindowTextW(
+        session_state_.target_validated && session_state_.target_profile==firmware_upgrade::ui::TargetProfile::CanUpgrade ?
+            (session_state_.target_metadata.version_policy==3U ? L"ENABLED | same / newer" :
+                session_state_.target_metadata.version_policy==1U ? L"DISABLED | any version" : L"RECOVERY | no valid App") : L"Discover Target required");
     firmware_field_values_[kFirmwareFieldUpdatePolicy].SetWindowTextW(
         (std::wstring(image.policy.role==IP_ROLE_DEVICE_APP?L"DEVICE APP | ":L"HOST APP | ")+
             firmware_upgrade::image_policy::Transports(image.policy.transports)+

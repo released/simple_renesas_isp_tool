@@ -155,6 +155,22 @@ Loading the BIN first is recommended for a future device that changes the CAN
 IDs, because its manifest supplies the discovery IDs. Without a BIN, discovery
 uses the current v5 bootstrap defaults `0x700/0x701` at Classical 500K.
 
+## App confirmation and diagnostics
+
+After END CRC succeeds, the worker keeps the same CAN route and waits a bounded
+window for INFO page1B APP_READY, then reads fresh INFO and compares the complete
+identity/layout plus exact version/build/installed size with the loaded BIN.
+No automatic rewrite follows a missing/mismatched App. Health byte0 must be01
+and byte1 bits0..2 must pass (clock/CAN/timer); additional App check bits are
+allowed. High bytes report handoff/update and RESF.
+These local checks are not authentication or application-level acceptance.
+
+Read-only Boot VERIFY0D (DLC1) is allowed only without an active update. Reply
+is `[0D,status,00,00,CRC32LE]`; installed range comes from live INFO.
+Metadata staging/VERIFY distinguish0A metadata,0B policy/minimum boot,0C IRQ ABI,
+0D layout; other image errors retain09. No erase/write is called by VERIFY.
+See UPDATE_VALIDATION_zh-TW.md for UI/report fields and hardware acceptance.
+
 ## Recovery and security boundary
 
 - Target response waits, erase-boundary waits, END verification, retry count,
@@ -170,7 +186,8 @@ uses the current v5 bootstrap defaults `0x700/0x701` at Classical 500K.
 - A partial image, FSL failure, wrong manifest, or bad CRC remains in boot mode.
 - F24 and F13 deliberately do not use WDT.
 - CRC32 provides corruption/interruption detection, not authenticity. Digital
-  signatures, authentication, and anti-rollback remain out of scope.
+  signatures and authentication are not provided. Installed-App version control
+  is optional; force applies only to its START transaction, not a persistent unlock.
 
 Full update, power interruption, shared-ISR runtime, FSL fault, bus-off, filter,
 timing, and recovery tests on physical hardware remain required before release.

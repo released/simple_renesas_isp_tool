@@ -80,11 +80,11 @@ SET僅限CAN停止、無I2C保留／交易；所有判斷在main loop。舊速�
 
 ## 編譯時固定的 device UART policy
 
-UPD1 version1保留現行CAN／HOST映像，bytes112..127仍為0，因此現有F13
-BIN、boot與CAN協議無需重燒。只為未來DEVICE UART新增policy version2：
-role=DEVICE_APP、update mask含UART；metadata112..115是LE32的非零固定
-device_uart_baud，116..127為0。與上方Host Link的三組preset無關，不把
-target可用速度限制成三組。缺少baud／0／FFFFFFFF／錯誤role即拒絕。
+UPD1 的 `device_uart_baud` 位於 metadata112..115，為 LE32 的固定 device UART baud。
+DEVICE UART profile 要求 role=DEVICE_APP、update mask 含 UART，baud 非0且非FFFFFFFF。
+DEVICE policy3 的 version control 位於116..119；CAN device 的 UART baud 欄位為0。
+HOST policy1 的112..127保持0。以上皆獨立於上方 Host Link 的三組 preset；
+欄位格式集中於 [共用政策](COMMON_IMAGE_METADATA.md)。
 
 未來target boot/app應共用該專案的編譯設定，例如uart_update_baud=921600，
 boot用它初始化UART，app產表／封裝用同一設定產生metadata。可在封裝算CRC前

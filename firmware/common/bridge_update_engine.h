@@ -16,6 +16,7 @@ typedef struct {
     bu_manifest_t image;
     uint8_t manifest[BU_METADATA_REGION_SIZE];
     uint16_t staged;
+    uint8_t hold_reason;
     uint32_t next, erased_block;
 } bu_engine_t;
 uint8_t Bu_EngineInit(bu_engine_t *engine, const bu_info_t *info, const bu_flash_t *flash);

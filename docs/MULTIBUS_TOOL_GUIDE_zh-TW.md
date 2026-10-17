@@ -23,12 +23,15 @@ F24 (MCU CAN host) 使用獨立的 Bridge Boot／App，透過 Misc／UART 更新
 | F13 (MCU CAN device) Boot | [Boot專案](https://github.com/released/RL78_F13_Boot_loader_CAN)／[Boot HEX](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN/main/DefaultBuild/boot0000_1FFF.hex) | 燒錄器初裝 Boot／App |
 | F13 (MCU CAN device) App | [App專案](https://github.com/released/RL78_F13_Boot_loader_CAN_app)／[初裝合併HEX](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN_app/main/boot_app.hex)／[CAN更新BIN](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN_app/main/DefaultBuild/RL78_F13_Boot_loader_CAN_app_update.bin) | 合併HEX供燒錄器初裝；CAN TAB載入_update.bin更新Device App |
 | F13 (MCU CAN device) 通訊測試 | [Transfer範例](https://github.com/released/RL78_F13_CAN_Transfer) | Custom Transfer，不擦寫Flash；不是Boot/App更新映像 |
-| F24 (MCU CAN device) Boot／App | [工程配置與建置說明](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device)；GitHub 來源於實板驗證後提供 | 燒錄器初裝 Boot HEX／App flash HEX；CAN 更新使用 App update BIN |
-| F24 (MCU CAN device) 通訊測試 | `RL78_F24_CAN_Transfer`；GitHub 來源於實板驗證後提供 | 獨立 Custom Transfer 工程 |
+| F24 (MCU CAN device) Boot／App | [工程配置與建置說明](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device) | 燒錄器初裝 Boot HEX／App flash HEX；CAN 更新使用 App update BIN |
+| F24 (MCU CAN device) 通訊測試 | [Custom Transfer 操作](https://released.github.io/slide_isp_tool_for_RL78/#custom-transfer) | `RL78_F24_CAN_Transfer` 獨立工程；連結為操作說明 |
 
 F24 host firmware 使用完整 Tool repository，包含 firmware 共用來源與 scripts。
 F13 Boot與App需以原repository名稱放在同一父目錄，App會引用相鄰Boot；Download ZIP
 解壓後請移除-main尾碼。先build Boot，再build App；版本、metadata、IRQ ABI與CRC仍須相容。
+
+原始碼維護可使用 Tool 根目錄的 `github_push.bat`，同步 F13 Boot／App 與 Tool（含 F24 MCU CAN host）。
+保留檔清單、本機 `tmp` 排除、確認與恢復方式見 [GitHub 原始碼與交付檔同步](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/GITHUB_PUBLISH_zh-TW.md)。
 
 ### 操作與工程入口
 
@@ -37,6 +40,7 @@ F13 Boot與App需以原repository名稱放在同一父目錄，App會引用相�
 | Tool／F24 (MCU CAN host) 流程與責任 | [Tool與bridge動作圖](https://released.github.io/slide_isp_tool_for_RL78/#tool-bridge-flow) | [多介面架構與流程](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/MULTIBUS_TOOL_GUIDE_zh-TW.md) |
 | MCU CAN device Boot啟動、ENTER與逾時 | [Boot→App完整條件圖](https://released.github.io/slide_boot_loader_for_RL78/#f13-boot-decision) | [Boot decision與更新流程](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/F13_BOOT_UPDATE_FLOW_zh-TW.md) |
 | Tool operation | [COM／Host識別與操作起點](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation) | [共用畫面與操作指南](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md) |
+| 更新確認／診斷／報告 | [App 確認、差異與驗證表](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation) | [更新確認與驗證紀錄](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/UPDATE_VALIDATION_zh-TW.md) |
 | 更新F24 (MCU CAN host) App | [Misc：Host App更新圖與RUN](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware) | [F24 UART自更新協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/BRIDGE_SELF_UPDATE_PROTOCOL.md) |
 | 更新MCU CAN device App | [CAN：驗證、Enter Boot、更新與確認](https://released.github.io/slide_isp_tool_for_RL78/#f13-device-update) | [CAN區塊更新及保護](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_BLOCK_TRANSFER_V5_zh-TW.md) |
 | Custom Transfer 通訊驗證 | [Custom Transfer 操作](https://released.github.io/slide_isp_tool_for_RL78/#custom-transfer) | [通訊測試協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/F13_TRANSFER_PROTOCOL.md) |
@@ -132,7 +136,7 @@ flowchart TD
     K --> Z["BLOCKED：slave READ / auth / boot CRC 缺口；不能 programming"]
 ```
 
-## 5. 離線 BIN 與在線 metadata 不能混淆
+## 5. 離線 BIN 與 live metadata 的比對
 
 | 項目 | CAN Upgrade image | 配套 G16 raw app BIN |
 | --- | --- | --- |
@@ -144,9 +148,10 @@ flowchart TD
 | 在线資訊 | INFO pages：MCU／boot/app／layout／CAN | signature label／常數 versions／area geometry |
 
 CAN App Start Override=Auto 使用 image metadata 的 start address；手填值是相容性要求，不是任意重定位。
-載入 BIN 後須與 live target metadata 完整匹配，不能只因 CRC MATCH 就認為可燒錄。
+載入 BIN 後，比對 live target metadata 的身分、分區、更新介面與契約。
+CRC MATCH 表示檔案完整性通過；更新仍以全部相容條件符合為前提。
 CAN post-build 依 linked image 的使用末端產生可變長度 CRC32 image；容量／保留區／start 仍由專案設定界定。
-60K、80K、32K 等長度不能越過實際 target geometry；device flash／boot/data 區域不是由 tool 猜測。
+映像長度須在 live target geometry 的允許範圍內；Flash／Boot／data 區域以裝置回報及映像契約核對。
 
 G16 sample 的 reported label RL78_G16_FPB 不是 silicon part number；legacy type02 也不能推論為 RA2。
 其 boot/app version 是範例常數，不是讀取或認證實際 app 的結果。
@@ -197,5 +202,5 @@ timeout、取消與 Close COM 都走 bounded cleanup；ABORT 釋放 open-drain�
 ## 更新政策與通訊速度
 
 BIN 的更新目的地、允許介面、Boot／IRQ ABI 與 Host Link 速度，集中於 ISP Tool 的更新政策章節。
-[?梯?摰蝡?](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)
+[閱讀完整章節](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)
 <!-- COMMON_IMAGE_POLICY_END -->

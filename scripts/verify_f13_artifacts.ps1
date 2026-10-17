@@ -347,9 +347,10 @@ for ($i=$manifestSize; $i -lt $metadataRegionSize; $i++) {
 }
 Require $extensionErased 'All128 reserved metadata extension bytes are0xFF'
 Require ((Read-U32 $image ($manifestOffset+96)) -eq 0x31445055 -and
-    (Read-U32 $image ($manifestOffset+100)) -eq 0x01012001 -and
+    (Read-U32 $image ($manifestOffset+100)) -eq (Get-HexMacro $bootConfigText 'CAN_BOOT_POLICY_WORD') -and
     (Read-U32 $image ($manifestOffset+104)) -eq 0x31563146 -and
-    (Read-U32 $image ($manifestOffset+108)) -le (Get-HexMacro $bootConfigText 'CAN_BOOT_FIRMWARE_VERSION')) `
+    (Read-U32 $image ($manifestOffset+108)) -le (Get-HexMacro $bootConfigText 'CAN_BOOT_FIRMWARE_VERSION') -and
+    (Read-U32 $image ($manifestOffset+116)) -le 1) `
     'UPD1 policy: DEVICE_APP/CAN, fixed F13 IRQ ABI and supported minimum boot'
 $calculatedCrc = Get-Crc32 $image ($image.Length - 4)
 Require ($storedMagic -eq $manifestMagic -and $storedFormat -eq $imageFormat -and

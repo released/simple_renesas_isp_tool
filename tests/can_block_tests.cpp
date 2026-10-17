@@ -1,6 +1,7 @@
 #include "f13_boot_profile.h"
 #include "f13_boot_update.h"
 #include "firmware_update_profile.h"
+#include "device_version_policy.h"
 #include <algorithm>
 #include <cstring>
 #include <deque>
@@ -18,6 +19,7 @@ namespace block_target {
 #include "can_boot_transport.h"
 #include "sw_crc32.c"
 #include "can_boot_metadata.inc"
+#include "can_boot_verify.inc"
 #include "can_boot_block.inc"
 #undef __far
 }
@@ -60,6 +62,7 @@ public:
     std::vector<uint8_t> flash;
     unsigned next=0, writes=0, blocks=0, ends=0, aborts=0, bursts=0, packets=0;
     bool reverse=false, duplicates=false, power_checks=false, opened=true;
+    bool app_mode=false;
     explicit TargetLink(unsigned image_size) : flash(image_size,0xFFU) {
         block_target::MetadataReset(); block_target::g_block_bad=1U;
     }
@@ -78,12 +81,17 @@ public:
         const auto cmd=p[0];
         if (cmd==CAN_BOOT_CMD_INFO) {
             const auto page=p[1]; uint32_t value=0;
-            const uint32_t info[]={0x0605F13BU,0x10500U,20261015U,0xFFFFFFFFU,0xFFFFFFFFU,
+            if(page==0x1BU) return Ack(cmd,0,static_cast<uint16_t>(page|(app_mode?0x0100U:0x0200U)),app_mode?0x30701U:0U);
+            if(page==0x1CU) return Ack(cmd,0,static_cast<uint16_t>(page|(app_mode?0x0100U:0x0200U)),app_mode?1U:7U);
+            const uint32_t info[]={0x0605F13BU,CAN_BOOT_FIRMWARE_VERSION,CAN_BOOT_FIRMWARE_BUILD,0xFFFFFFFFU,0xFFFFFFFFU,
                 0x2000U,0x1E000U,0x20000U,0x2000U,1024U,0x01010001U,4U,0U,0x700U,0x701U,
                 CAN_BOOT_MCU_PART_0,CAN_BOOT_MCU_PART_1,0U,0U,CAN_BOOT_MCU_FAMILY_0,
                 CAN_BOOT_MCU_FAMILY_1,0U,0xFFFFFFFFU,516U,CAN_BOOT_POLICY_WORD,CAN_BOOT_IRQ_ABI,CAN_BOOT_BLOCK_INFO};
-            Check(page < 27U,"INFO page bounds"); if (page < 27U) value=info[page];
-            return Ack(cmd,0,static_cast<uint16_t>(page | 0x0200U),value);
+            if(page==CAN_BOOT_INFO_PAGE_VERSION_POLICY) value=BootValid() ? 1U|(IP_Read32(flash.data()+0x174U)<<1U) : 0U;
+            else { Check(page < 27U,"INFO page bounds"); if (page < 27U) value=info[page]; }
+            if(BootValid() && (page==3U || page==4U || page==22U))
+                value=IP_Read32(flash.data()+256U+(page==3U?16U:page==4U?20U:24U));
+            return Ack(cmd,0,static_cast<uint16_t>(page | (app_mode?0x0100U:0x0200U)),value);
         }
         if (cmd==CAN_BOOT_CMD_METADATA_RESET) { MetadataReset(); return Ack(cmd,0,0,256); }
         if (cmd==CAN_BOOT_CMD_METADATA) {
@@ -91,13 +99,24 @@ public:
             return Ack(cmd,status,g_metadata_staged,256);
         }
         if (cmd==CAN_BOOT_CMD_SEAL) return Ack(cmd,MetadataSeal(IP_Read32(p.data()+4)),g_metadata_staged,256);
-        if (cmd==CAN_BOOT_CMD_START) {
+        if (cmd==CAN_BOOT_CMD_START || cmd==CAN_BOOT_CMD_FORCE_START) {
             const auto requested=IP_Read32(p.data()+4);
             if (!g_metadata_sealed || requested!=g_metadata_words[6]) return Ack(cmd,CAN_BOOT_STATUS_BAD_IMAGE,0,0);
+            if(started) return Ack(cmd,0,0,0x2000);
+            const auto policy=BootValid()?1U|(IP_Read32(flash.data()+0x174U)<<1U):0U;
+            const auto installed=IP_Read32(flash.data()+0x110U);
+            if(!VersionAllowed(policy,installed,cmd)) return Ack(cmd,CAN_BOOT_STATUS_VERSION,0,installed);
             size=requested; started=true; next=0; return Ack(cmd,0,0,0x2000);
         }
-        if (cmd==CAN_BOOT_CMD_END) { ++ends; return Ack(cmd,BootValid()?0U:CAN_BOOT_STATUS_CRC_ERROR,
+        if (cmd==CAN_BOOT_CMD_END) { ++ends; app_mode=BootValid(); started=false;
+            return Ack(cmd,app_mode?0U:CAN_BOOT_STATUS_CRC_ERROR,
             static_cast<uint16_t>(next/4U),block_target::F13_Crc32Bytes(flash.data(),size-4)); }
+        if (cmd==CAN_BOOT_CMD_VERIFY) {
+            if(started || app_mode) return Ack(cmd,CAN_BOOT_STATUS_BAD_STATE,0,0);
+            unsigned long count=0,crc=0;
+            const auto status=VerifyImage(reinterpret_cast<const unsigned long*>(flash.data()),&count,&crc);
+            return Ack(cmd,status,0,crc);
+        }
         if (cmd==CAN_BOOT_CMD_ABORT) { ++aborts; started=false; return Ack(cmd,0,static_cast<uint16_t>(next/4U),0x2000U+next); }
         return Ack(cmd,CAN_BOOT_STATUS_BAD_COMMAND,0,0);
     }
@@ -184,16 +203,38 @@ void Run(const std::vector<uint8_t>& image, Fault fault, bool expected_success,
     link.SetTransport(&target); can.SetHostLinkClient(&link); device.SetCanClient(&can);
     f13_boot::TargetInfo info; std::wstring error;
     Check(device.GetTargetInfo(&info,&error),"v5 live INFO capability validated");
+    uint32_t flags=0;
+    Check(device.GetDiagnostics(&flags,&error) && flags==7U,"live Boot advertises diagnostics; not inferred from MCU/version");
     f13_boot::UpdateReport report; f13_boot::UpdateCallbacks callbacks;
-    if (cancel) callbacks.is_canceled=[&] { return target.blocks>=2U; };
+    std::vector<f13_boot::UpdateStage> stages;
+    callbacks.stage=[&](f13_boot::UpdateStage stage){stages.push_back(stage);};
+    bool cleanup=false;
+    if (cancel) {
+        callbacks.is_canceled=[&] { return target.blocks>=2U; };
+        link.SetCancelCheck([&] { return target.blocks>=2U && !cleanup; });
+        callbacks.abort=[&](f13_boot::Ack* ack,std::wstring* reason) {
+            cleanup=true;const bool result=device.Abort(ack,reason);cleanup=false;return result;
+        };
+    }
     const bool success=f13_boot::RunUpdate(&device,image,callbacks,&report,&error);
     Check(success==expected_success,"end-to-end update outcome");
     if (success) {
+        uint32_t health=0;
+        Check(device.GetAppHealth(&health,&error) && health==0x30701U,"production PC health page and App-state decode");
+        target.app_mode=false;
+        const auto original=target.flash; const auto writes=target.writes;
+        f13_boot::Ack verified;
+        Check(device.VerifyInstalled(&verified,&error) && verified.value==IP_Read32(image.data()+image.size()-4) &&
+            target.flash==original && target.writes==writes,"production PC VERIFY and real read-only device CRC helper");
+        Check(stages==std::vector<f13_boot::UpdateStage>{f13_boot::UpdateStage::Metadata,
+            f13_boot::UpdateStage::Start,f13_boot::UpdateStage::Transfer,f13_boot::UpdateStage::End},
+            "production update stage order and final END");
         Check(target.flash==image && target.BootValid(),"exact image and final boot CRC match");
         Check(target.writes==image.size()/4U,"whole-block retry never rewrites Flash");
         Check(target.blocks==(image.size()+63U)/64U && report.blocks_acked==target.blocks,"block count ceiling");
         Check(target.ends==1U && target.aborts==0U,"only final CRC allows END success");
     } else {
+        if(cancel) Check(report.abort_acknowledged && target.opened,"independent cancel suppresses cancellation only for bounded ABORT; transport remains open");
         Check(!target.BootValid() && target.ends==0U && report.abort_attempted,"fault/cancel retains boot and attempts ABORT");
         if (fault==Fault::AlwaysMissing) Check(target.writes==0U && target.bursts==2U,"bounded retry / no erase-write on missing segment");
     }
@@ -203,6 +244,47 @@ void Run(const std::vector<uint8_t>& image, Fault fault, bool expected_success,
 int TestCanBlock(const char* actual_image) {
     failures=0;
     static_assert(sizeof(unsigned long)==4,"F13 words are32bit");
+    {
+        auto installed=Image(640U), older=installed, still_older=installed;
+        IP_Write32(installed.data()+0x110U,0x10600U); IP_Write32(installed.data()+0x174U,1U);
+        IP_Write32(older.data()+0x110U,0x10500U); IP_Write32(older.data()+0x174U,1U);
+        IP_Write32(still_older.data()+0x110U,0x10400U); IP_Write32(still_older.data()+0x174U,0U);
+        for(auto* image:{&installed,&older,&still_older})
+            IP_Write32(image->data()+image->size()-4,firmware_update::Crc32(image->data(),image->size()-4));
+        TargetLink target(640U); target.flash=installed;
+        host_link::Client link; can_host::Client can; f13_boot::Client device;
+        link.SetTransport(&target);can.SetHostLinkClient(&link);device.SetCanClient(&can);
+        f13_boot::TargetInfo live; std::wstring error;
+        Check(device.GetTargetInfo(&live,&error) && live.version_policy==3U && live.app_version==0x10600U,
+            "live protected installed identity read before force update");
+        f13_boot::UpdateReport report;f13_boot::UpdateCallbacks normal,force;
+        Check(!f13_boot::RunUpdate(&device,older,normal,&report,&error) && target.writes==0U && target.flash==installed,
+            "normal downgrade rejected at START before erase/write");
+        Check(error.find(L"VERSION_DOWNGRADE")!=std::wstring::npos,"Boot downgrade status is decoded by production client");
+        force.force_old_version=true;
+        force.is_canceled=[] {return true;};
+        Check(!f13_boot::RunUpdate(&device,older,force,&report,&error) && target.flash==installed,
+            "canceled force does not arm permission or write Flash");
+        force.is_canceled={};
+        Check(f13_boot::RunUpdate(&device,older,force,&report,&error) && target.flash==older,
+            "request-local force START completes older protected image with all metadata/CRC checks");
+        target.app_mode=false;
+        const auto writes=target.writes;
+        Check(!f13_boot::RunUpdate(&device,still_older,normal,&report,&error) && target.writes==writes && target.flash==older,
+            "next normal update rejects lower disable BIN: force permission never persists");
+        auto corrupt=still_older;corrupt.back()^=1U;
+        Check(!f13_boot::RunUpdate(&device,corrupt,force,&report,&error) && target.writes==writes,
+            "force cannot bypass image CRC check");
+        for(const auto offset:{0x10CU,0x11CU,0x168U,0x16CU}) {
+            auto incompatible=still_older; incompatible[offset]^=0x80U;
+            if(offset==0x16CU) IP_Write32(incompatible.data()+offset,CAN_BOOT_FIRMWARE_VERSION+1U);
+            IP_Write32(incompatible.data()+incompatible.size()-4,
+                firmware_update::Crc32(incompatible.data(),incompatible.size()-4));
+            Check(!f13_boot::RunUpdate(&device,incompatible,force,&report,&error) &&
+                target.writes==writes && target.flash==older,
+                "force cannot bypass target/layout/IRQ ABI/minimum Boot even with correct CRC");
+        }
+    }
     for (unsigned tail=0;tail<64;tail+=4) Run(Image(3072U+tail),Fault::None,true,true,true,tail==4U);
     for (const auto fault : {Fault::Missing,Fault::Crc,Fault::Conflict,Fault::LostAck}) Run(Image(3076),fault,true);
     for (const auto fault : {Fault::WrongAck,Fault::Flash,Fault::Disconnect,Fault::AlwaysMissing}) Run(Image(3076),fault,false);

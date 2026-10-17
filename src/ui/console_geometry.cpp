@@ -46,7 +46,7 @@ Layout Calculate(int width, int height, int text_height) {
     out.log_pane = {log_x, content_y, log_width, content_height};
     out.footer = {margin, y + body_height + gap, content_width, footer_height};
     out.field_row_height = row;
-    out.fits = image_width >= 620 && content_height >= row * 12 + 23 &&
+    out.fits = image_width >= 620 && content_height >= row * 14 + 23 &&
         out.interface_pane.height >= (row + 2) * 10 + row;
     return out;
 }

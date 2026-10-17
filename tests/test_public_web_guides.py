@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -108,7 +109,8 @@ class PublicWebGuides(unittest.TestCase):
 
     def test_single_owner_sections_and_generic_diagram_roles(self):
         catalog = json.loads((ROOT/'scripts/web_guide_sections.json').read_text(encoding='utf-8-sig'))
-        sources = {'DEVICE_WORKSHOP':'DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md',
+        sources = {'UPDATE_EVIDENCE':'UPDATE_VALIDATION_zh-TW.md',
+                   'DEVICE_WORKSHOP':'DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md',
                    'F24_DEVICE':'F24_CAN_DEVICE_DESIGN_zh-TW.md',
                    'F13_BOOT_DECISION':'F13_BOOT_UPDATE_FLOW_zh-TW.md',
                    'F24_APP_IRQ':'SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md',
@@ -152,6 +154,16 @@ class PublicWebGuides(unittest.TestCase):
             source.mkdir()
             (source / 'build_info.generated.h').write_text(
                 '#define FIRMWARE_UPGRADE_TOOL_VERSION L"9.9.9.999"\n', encoding='utf-8')
+            # The verifier now also checks the current reader-copy contracts.
+            for name in ('README.md', 'scripts/workspace_paths.ps1',
+                         'scripts/sync_public_content_guidelines.ps1',
+                         'scripts/verify_public_content.ps1'):
+                target = Path(folder) / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(ROOT / name, target)
+            (Path(folder) / 'docs').mkdir()
+            for guide in (ROOT / 'docs').glob('*.md'):
+                shutil.copy2(guide, Path(folder) / 'docs' / guide.name)
             result = subprocess.run([
                 'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass',
                 '-File', str(ISP / 'scripts/verify_local.ps1'), '-ToolRoot', folder],

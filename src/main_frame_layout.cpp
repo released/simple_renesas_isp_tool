@@ -42,7 +42,7 @@ void CMainFrame::LayoutControls(int width, int height) {
     pair(com_label_, com_combo_, 285);
     com_combo_.SetDroppedWidth((std::max)(420, width - 100));
     pair(baud_label_, baud_combo_, 100);
-    CButton* connection_buttons[] = {&refresh_com_btn_, &open_com_btn_, &close_com_btn_, &reset_host_btn_};
+    CButton* connection_buttons[] = {&refresh_com_btn_, &open_com_btn_, &close_com_btn_, &reset_host_btn_, &cancel_btn_};
     for (auto* button : connection_buttons) {
         const int w = CaptionWidth(*button) + 12;
         Move(*button, {x, top, w, row}); x += w + gap;
@@ -78,6 +78,9 @@ void CMainFrame::LayoutControls(int width, int height) {
     const int address_width = CaptionWidth(app_start_label_);
     Move(app_start_label_, {image.x, address_y + 3, address_width, row});
     Move(app_start_edit_, {image.x + address_width + gap, address_y, 118, row});
+    const int compare_x=image.x+address_width+gap+118+gap;
+    Move(compare_metadata_btn_,{compare_x,address_y,(std::min)(CaptionWidth(compare_metadata_btn_)+12,
+        image.x+image.width-compare_x),row});
     int label_width = 0;
     for (auto& label : firmware_field_labels_) label_width = (std::max)(label_width, CaptionWidth(label));
     const int cell_width = (image.width - gap) / 2;
@@ -93,8 +96,15 @@ void CMainFrame::LayoutControls(int width, int height) {
     const int action_y = fields_y + row * static_cast<int>((kFirmwareFieldCount+1U)/2U) + gap;
     const int start_width = CaptionWidth(start_firmware_update_btn_) + 16;
     Move(start_firmware_update_btn_, {image.x, action_y, start_width, row + 5});
-    Move(firmware_prerequisites_label_, {image.x + start_width + gap, action_y,
-        image.width - start_width - gap, (std::max)(row + 8, image.y + image.height - action_y)});
+    const int force_width=CaptionWidth(force_old_firmware_btn_)+16;
+    const bool show_force=!IsMiscTab() && !IsI2cTab();
+    const bool force_inline=start_width+gap+force_width<=image.width;
+    const int force_y=force_inline?action_y:action_y+row+gap+5;
+    Move(force_old_firmware_btn_,{force_inline?image.x+start_width+gap:image.x,force_y,
+        (std::min)(force_width,image.width),row+5});
+    const int notice_y=(show_force?force_y:action_y)+row+gap+5;
+    Move(firmware_prerequisites_label_, {image.x,notice_y,image.width,
+        (std::max)(0,image.y+image.height-notice_y)});
 
     const Rect log = layout.log_pane;
     CButton* log_buttons[] = {&clear_log_btn_, &start_log_btn_, &stop_log_btn_, &export_summary_btn_};

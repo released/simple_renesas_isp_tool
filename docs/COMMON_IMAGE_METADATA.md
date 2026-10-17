@@ -8,25 +8,29 @@ Their shared32-byte UPD1 policy uses the same offsets and field meanings.
 | Offset | Size | Meaning |
 | --- | --- | --- |
 | 60h | 4 | UPD1 magic31445055h |
-| 64h | 1 | policy version1 CAN/HOST; version2 future DEVICE UART |
+| 64h | 1 | policy version1 HOST; version2 fixed DEVICE UART; version3 DEVICE version control |
 | 65h | 1 | policy size32 |
 | 66h | 1 | image role:1 DEVICE_APP,2 HOST_BRIDGE_APP |
 | 67h | 1 | allowed update transports:bit0 CAN,bit1 I2C,bit2 UART |
 | 68h | 4 | fixed IRQ ABI:F1V1=31563146h,F2V1=31563246h |
 | 6Ch | 4 | minimum compatible boot version00MMmmpp |
-| 70h | 4 | version1 zero; version2 compile-time DEVICE UART baud, nonzero/nonFFFFFFFF |
-| 74h..7Fh | 12 | reserved zero; unknown fields rejected |
+| 70h | 4 | CAN/HOST zero; DEVICE UART compile-time baud, nonzero/nonFFFFFFFF |
+| 74h..77h | 4 | DEVICE policy3 version_control:0 any version,1 same/newer; other profiles zero |
+| 78h..7Fh | 8 | reserved zero; unknown fields rejected |
 | 80h..FFh | 128 | reserved erasedFF |
 
 The complete metadata region stays256 at app offset100h; defined core128.
 Code remains at app offset200h. Policy is image update permission, not the
 app's runtime peripheral inventory, authentication, a pin route or a COM ID.
 CAN fields and live descriptors still establish transport parameters/layout.
-Current F13 producer declares DEVICE_APP/CAN/F1V1/minboot1.5.0. F24 producer
-declares HOST_BRIDGE_APP/UART/F2V1/minboot1.2.0. BUR1 duplicates minimum boot
+CAN device producers declare DEVICE_APP/CAN, their own IRQ ABI and minimum
+compatible Boot version. HOST producers declare HOST_BRIDGE_APP/UART. BUR1 duplicates minimum boot
 at50h and6Ch and requires equality. BUI1 remains96 bytes; descriptor3Ch now
 reports IRQ ABI rather than reserved zero. Its contract3 fixes host/UART role.
-F13 INFO18h packs version/size/role/live boot transport mask; INFO19h IRQ ABI.
+Device INFO18h packs version/size/role/live boot transport mask; INFO19h IRQ ABI.
+INFO1Dh reports installed image policy:0 no valid App,1 valid/unrestricted,
+3 valid/same-or-newer. Boot computes this only after full installed-image checks.
+The incoming policy takes effect after a successful update, never before.
 
 ## CAN protocol5 staging
 
@@ -44,11 +48,15 @@ F13 INFO18h packs version/size/role/live boot transport mask; INFO19h IRQ ABI.
 - START02 keeps its8-byte layout, now version5. It requires sealed metadata
   and matching target/exact image size/FSL-ready. A repeated matching START
   does not reset active block offset. Flash is first touched by a fully validated COMMIT.
+- Normal START rejects a lower version with status0E when the valid installed
+  App enables version control. FORCE_START0E uses the same8-byte request/ACK
+  layout and bypasses only this comparison for that transaction. No armed flag
+  survives cancellation, completion, reset or a subsequent ordinary START.
+  Other validation/Flash guards remain identical. This is not authentication.
 - COMMIT validates a complete64-byte RAM block/CRC and all overlapping metadata
   against the sealed region before writing any word. See CAN_BLOCK_TRANSFER_V5_zh-TW.md.
   END still validates Flash manifest/declared size and full image CRC32.
-  Boot checks manifest and CRC before every app launch. No new F13 persistent
-  commit marker is claimed; F24 retains its existing commit-last magic.
+  MCU CAN device Boot checks manifest and CRC before every App launch.
 - Reset, completed/failed/aborted session clears staging on re-entry. No
   continuation across disconnect/reset: restart complete staging at offset0.
   Existing valid-app ENTER30s inactivity and invalid-app recovery semantics
@@ -68,6 +76,7 @@ Compiler option reference: [Renesas CC-RL link optimization](https://tool-suppor
 ## 更新政策與通訊速度
 
 BIN metadata 提供更新目的地、允許介面、MCU 身分與 Boot 契約。
+版本政策與密碼確認的維護操作集中於 [force 降版](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version)。
 Tool 將這些欄位與目前選定的 port、live device 資訊一併核對。
 
 | UI 資訊 | 來源與作用 |

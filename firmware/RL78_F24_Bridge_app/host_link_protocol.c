@@ -16,6 +16,7 @@
 #include "bridge_i2c.h"
 #include "../common/can_burst.h"
 #include "../common/can_burst.inc"
+#include "../common/diagnostic_clock.h"
 #define BRIDGE_SELF_UPDATE_FEATURE BU_FEATURE
 
 #define HOST_LINK_SOF0                         (0x55U)
@@ -157,6 +158,8 @@ typedef struct
     uint16_t timeout_ms;
     uint16_t phase_started_tick;
     uint16_t tx_timestamp;
+    uint32_t queued_tick;
+    uint32_t started_tick;
     uint32_t expected_id;
     uint32_t expected_id_mask;
     e_can_txb_result_t last_tx_result;
@@ -177,6 +180,9 @@ static host_link_can_transaction_t
 static uint8_t g_can_transaction_queue_head;
 static uint8_t g_can_transaction_queue_tail;
 static uint8_t g_can_transaction_queue_count;
+static uint8_t g_transaction_high_water;
+static uint32_t g_queue_wait_max_ms, g_transaction_max_ms, g_process_max_ms;
+static hl_diagnostic_clock_t g_diagnostic_clock;
 static can_host_error_event_t g_pending_state_event;
 static can_host_error_event_t g_pending_host_error_event;
 static uint8_t g_pending_state_event_valid;
@@ -713,6 +719,8 @@ static void process_can_rx_event(void)
 static void clear_statistics(void)
 {
     memset(&g_stats, 0, sizeof(g_stats));
+    g_transaction_high_water=0U;
+    g_queue_wait_max_ms=0U; g_transaction_max_ms=0U; g_process_max_ms=0U;
     HostLinkUart_ClearStats();
     CAN_ClearHostStats();
 }
@@ -763,10 +771,20 @@ static uint8_t can_result_to_status(can_host_result_t result)
 }
 
 
+static uint32_t diagnostic_now(void)
+{
+    return Hl_DiagnosticNow(&g_diagnostic_clock,(uint16_t)get_tick());
+}
+
 static void next_burst_frame(void);
 static can_host_result_t begin_can_transaction(void)
 {
     can_host_result_t result;
+    uint32_t wait_ms;
+
+    g_can_transaction.started_tick=diagnostic_now();
+    wait_ms=g_can_transaction.started_tick-g_can_transaction.queued_tick;
+    if (wait_ms>g_queue_wait_max_ms) g_queue_wait_max_ms=wait_ms;
 
     CAN_HostDiscardRxQueue();
     if (g_can_transaction.command == CB_COMMAND) next_burst_frame();
@@ -839,10 +857,14 @@ static uint8_t schedule_can_transaction(
             g_can_transaction_queue_tail = 0U;
         }
         g_can_transaction_queue_count++;
+        g_can_transaction_queue[(g_can_transaction_queue_tail==0U) ?
+            HOST_LINK_CAN_TRANSACTION_QUEUE_CAPACITY-1U : g_can_transaction_queue_tail-1U].queued_tick=diagnostic_now();
+        if (g_can_transaction_queue_count>g_transaction_high_water) g_transaction_high_water=g_can_transaction_queue_count;
         return HOST_LINK_STATUS_OK;
     }
 
     memcpy(&g_can_transaction, transaction, sizeof(g_can_transaction));
+    g_can_transaction.queued_tick=diagnostic_now();
     can_result = begin_can_transaction();
     return can_result_to_status(can_result);
 }
@@ -886,6 +908,9 @@ static void finish_can_transaction(uint8_t status,
                                    const uint8_t *payload,
                                    uint16_t payload_length)
 {
+    uint32_t duration;
+    duration=diagnostic_now()-g_can_transaction.started_tick;
+    if (duration>g_transaction_max_ms) g_transaction_max_ms=duration;
     if (status != HOST_LINK_STATUS_OK)
     {
         increment_u32(&g_stats.host_command_errors);
@@ -946,6 +971,13 @@ static void make_statistics(uint8_t *payload)
     {
         write_le32(&payload[(uint16_t)index * 4U], values[index]);
     }
+    write_le32(payload+56U,uart_stats.rx_high_water);
+    write_le32(payload+60U,uart_stats.tx_high_water);
+    write_le32(payload+64U,CAN_HostGetRxHighWater());
+    write_le32(payload+68U,g_transaction_high_water);
+    write_le32(payload+72U,g_queue_wait_max_ms);
+    write_le32(payload+76U,g_transaction_max_ms);
+    write_le32(payload+80U,g_process_max_ms);
 }
 
 static void dispatch_request(void)
@@ -1211,6 +1243,7 @@ static void dispatch_request(void)
             case BU_INFO_COMMAND:
             case BU_ENTER_COMMAND:
             case BU_READ_METADATA_COMMAND:
+            case BU_DIAGNOSTICS_COMMAND:
                 F24Bridge_AppCommand(command, payload, payload_length,
                     response_payload, &response_payload_length, &status);
                 break;
@@ -1459,7 +1492,7 @@ static void dispatch_request(void)
                 else
                 {
                     make_statistics(response_payload);
-                    response_payload_length = 56U;
+                    response_payload_length = 84U;
                 }
                 break;
 
@@ -1674,7 +1707,7 @@ static void process_i2c_transaction(void)
     }
 }
 
-void HostLink_Process(void)
+static void host_link_process_once(void)
 {
     uint8_t bytes[HOST_LINK_READ_CHUNK];
     uint16_t count;
@@ -1722,4 +1755,13 @@ void HostLink_Process(void)
     process_i2c_transaction();
     process_can_error_events();
     process_can_rx_event();
+}
+
+void HostLink_Process(void)
+{
+    uint32_t started, duration;
+    started=diagnostic_now();
+    host_link_process_once();
+    duration=diagnostic_now()-started;
+    if (duration>g_process_max_ms) g_process_max_ms=duration;
 }

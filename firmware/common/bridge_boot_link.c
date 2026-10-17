@@ -57,6 +57,11 @@ static void dispatch(bu_link_t *l) {
         if (n) status=BU_BAD_ARGUMENT;
         else { Bu_EncodeInfo(d,out); size=BU_INFO_SIZE; }
         break;
+    case BU_DIAGNOSTICS_COMMAND:
+        if (n) status=BU_BAD_ARGUMENT;
+        else { out[0]=1U; out[1]=l->engine->hold_reason; out[2]=0U; out[3]=d->flags;
+            Bu_Write32(out+4U,l->engine->next); size=8U; }
+        break;
     case BU_READ_METADATA_COMMAND:
         status=Bu_ReadMetadata(l->engine,p,n,out,&size); break;
     case BU_STAGE_METADATA_COMMAND:

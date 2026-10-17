@@ -42,11 +42,11 @@ flowchart LR
 
 ### 1.1 可變長度 F13 image 的產生與接受條件
 
-post-build 以 linker map 的 loaded section end 決定 image 結尾；不能用
-「最後一個非 `0xFF` byte」推算，因為合法程式資料也可能以 `0xFF` 結尾。
-app 專案不需要、也不應新增「本次要做成 60K／80K／110K」的 image-size
-define。`APP_REGION_SIZE` 是目前 boot/app 分區允許的最大容量；實際長度由
-linker map 自動決定。若某次 build 的實際 image 為 60 KiB，CRC32 會寫在
+post-build 以 linker map 的 loaded section end 決定 image 結尾。
+合法程式資料也可能以 `0xFF` 結尾，因此 image 長度以 map 為依據。
+
+`APP_REGION_SIZE` 是 boot/app 分區允許的最大容量；實際長度由 linker map 自動決定，
+無需另設固定 image-size define。若 build 的實際 image 為 60 KiB，CRC32 會寫在
 該 60 KiB 的最後 4 bytes；下次程式成長為 110 KiB，CRC32 就移到該
 110 KiB 的最後 4 bytes。只要實際長度不超過 metadata capacity、符合 minimum
 與 4-byte alignment，兩者都可由同一個 Tool 更新。
@@ -68,6 +68,10 @@ flowchart LR
 BIN 離線資訊與 live device INFO 的來源，見 [Tool 資訊與驗證](https://released.github.io/slide_isp_tool_for_RL78/#can-update-walkthrough)。
 
 ### 1.3 App UART log 與 boot/update 來源判讀
+
+Tool 會在 END 後等待 APP_READY 並比對 live App 資訊；另提供 Boot 唯讀 VERIFY。
+格式與診斷欄位集中於[更新確認與驗證紀錄](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
+Boot 的診斷 UART 輸出由 `CAN_BOOT_DEBUG_UART` 控制，預設關閉；App UART log 保留。
 
 App 的 `APP_RUNTIME_LOG_TAG` 是 operator 用來快速辨識 image 的短字串。本版
 預設為 `V2`，週期 log 為 `log(timer)-V2:...`。製作刻意可區分的測試 image
@@ -120,13 +124,13 @@ BIN，也不能略過 address／identity 驗證。
   描述同一份實體 flash geometry，且 image range 不可越界或溢位。
 - app manifest 與 boot INFO 必須同步 target、MCU family/part、protocol/format、
   CAN mode/bitrate、ID format、request/response ID；任何一欄不符都禁止 START。
-- 修改 boot size 或 app start 時，需同步修改 boot config、依 App JSON 重產 metadata、
+- 修改 boot size 或 app start 時，需同步修改 boot config、依 App C header 重產 metadata、
   linker section、CS+ divided-output range，重建 boot/app 後再執行 artifact checker。
 
 - Standard/extended ID、Classical/CAN FD、nominal/data bitrate 都必須以 bitmask
   明確宣告；未支援的組合不可由 Tool 猜測或自動降級。
-- CRC32 只能確認資料完整性，不能確認發行者身分；本版本沒有 digital signature、
-  authentication 或 anti-rollback，不可把 CRC 描述成安全簽章。
+- CRC32 只能確認資料完整性，不能確認發行者身分；未提供 digital signature 或
+  authentication。版本政策與維護確認不是安全簽章或永久最低版本儲存。
 
 ## 2. F13 上電與 boot/app 選擇
 
@@ -168,16 +172,16 @@ P12 控制的是 S/silent mode，LOW 才能正常 TX；不是 standby。這塊�
 | 檢查 | 目前 F13 build 必須符合 |
 | --- | --- |
 | Reset entry | `0x2000` 的第一個 DWORD 不為 `0xFFFFFFFF`；只檢查非 erased，沒有完整反組譯／驗證跳轉目的地 |
-| Metadata header | `0x2100` magic=`0x334E4143`；format6、core length128、flags=`0x0003`；protocol ID1／version5、checksum type1（CRC32）、target=`0xF13B`、Classical CAN／standard ID 格式全部匹配 |
+| Metadata header | `0x2100` magic=`0x004E4143`；format6、core length128、flags=`0x0003`；protocol ID1／version5、checksum type1（CRC32）、target=`0xF13B`、Classical CAN／standard ID 格式全部匹配 |
 | Metadata reserved | 整區256 bytes 中後128 bytes（`0x2180..0x21FF`）全部為 `0xFF` |
-| Metadata policy | UPD1 version1／size32、DEVICE_APP、允許CAN、無未知transport bit、F1V1 IRQ ABI；minimum boot不高於目前boot；policy保留16 bytes全0 |
+| Metadata policy | UPD1 version3／size32、DEVICE_APP／CAN、F1V1 IRQ ABI；minimum Boot 不高於目前 Boot；`0x74..0x77` version control 為0或1，UART baud 與其餘保留欄位為0 |
 | Image size | manifest size 含尾端 CRC4 bytes，介於516與122880 bytes，且4-byte aligned |
-| App version | 不可為 `0xFFFFFFFF`；未限制版本遞增；無 anti-rollback 檢查 |
+| App version | `0x00MMmmpp`；啟動時驗證欄位有效。更新版本比較在 START 執行，依目前有效 App 的 version control 判斷；build 不參與比較 |
 | Flash layout | app start=`0x2000`、capacity=`0x1E000`、code Flash=`0x20000`、boot reserve=`0x2000`、erase=`0x400`、minimum=`0x204`，均等於 boot 編譯設定 |
 | CAN contract | nominal mask=`0x04`（500K）、data mask=0、request ID=`0x700`、response ID=`0x701`，均等於 boot 編譯設定 |
 | CRC32 | 對 `[app_start, app_start + image_size - 4)` 計算 CRC32，等於該 image 最後4 bytes 的 LE32 stored CRC |
 
-Boot 現在也直接比對 MCU ASCII family／part，要求 build 已初始化，並檢查
+Boot 直接比對 MCU ASCII family／part，要求 build 已初始化，並檢查
 UPD1更新政策、IRQ ABI與最低boot版本。PC仍須另作image/live device比對。
 CRC是完整性，不是簽章或身分認證；最低boot版本不等於app防回滾。
 
@@ -347,7 +351,7 @@ App 除錯必須先選擇目的：
 stateDiagram-v2
     [*] --> Waiting
     Waiting --> Waiting: INFO / HELLO success
-    Waiting --> Receiving: START after metadata sealed, identity/size/Flash driver pass
+    Waiting --> Receiving: START after sealed metadata, identity/size/Flash/version pass
     Waiting --> BootRetained: START rejected or Flash driver unavailable
     Receiving --> Receiving: full block bitmap and CRC pass, write then ACK
     Receiving --> Receiving: last committed block replay, verify Flash without rewrite
@@ -368,7 +372,8 @@ stateDiagram-v2
 | `HELLO` | FSL init 必須成功；回覆 metadata 宣告的 protocol、format、target、容量 |
 | `INFO` | 以多頁回覆 running state、boot/app version/build、installed size、MCU、layout、CAN 能力與 ID |
 | `METADATA_RESET / METADATA / SEAL` | 先清除舊RAM staging，64次4-byte依序收齊256 bytes，再驗證region CRC與全部metadata；不擦寫 |
-| `START` | DLC 8、protocol 5、target相符、metadata已封存、size等於已驗證metadata且FSL ready；START本身不擦寫 |
+| `START` | DLC 8、protocol 5、target相符、metadata已封存、size等於已驗證metadata且FSL ready；有效已安裝 App 啟用版控時拒絕較舊版本；START本身不擦寫 |
+| `FORCE_START 0E` | 與 START 相同，僅在這次交易略過版本排序；身分、政策、minimum Boot、IRQ ABI、size、分區及 CRC 檢查保留；[維護操作](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version) |
 | `BLOCK_BEGIN / raw / COMMIT` | 已START，offset64對齊，最多64-byte RAM收齊／CRC及metadata重疊驗證後才逐4-byte寫入；最後一次ACK |
 | `END` | 已收到全部資料、address 到達 image end、manifest 與 CRC32 正確 |
 | `ABORT` | 回覆目前 sequence/address，結束 session 並留在 boot |
@@ -474,13 +479,12 @@ flowchart TD
     ABORT --> NEWSESSION
 ```
 
-目前安全邊界是「compatibility + integrity」，不是 authenticity：
+### 映像驗證與復原範圍
 
 - CRC32 正確才允許進入 app，可避免執行 incomplete/corrupted image。
 - 沒有 second bank 或 rollback image；斷電後若 app 無效，必須留在 boot 重刷。
-- 沒有 digital signature、encryption 或 anti-rollback。
-- CRC32 不能防止惡意修改；這是目前已接受的產品範圍，不應把 CRC 描述為
-  firmware authentication。
+- 未提供 digital signature 或 encryption；版本政策與單次 force 為操作規則，不是安全認證或永久最低版本儲存。
+- CRC32 提供資料完整性檢查；發行者身分認證需要 digital signature 等獨立機制。
 
 ## 8. Tool 操作與通訊驗證
 
@@ -526,5 +530,5 @@ flowchart TD
 ## 更新政策與通訊速度
 
 BIN 的更新目的地、允許介面、Boot／IRQ ABI 與 Host Link 速度，集中於 ISP Tool 的更新政策章節。
-[?梯?摰蝡?](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)
+[閱讀完整章節](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)
 <!-- COMMON_IMAGE_POLICY_END -->

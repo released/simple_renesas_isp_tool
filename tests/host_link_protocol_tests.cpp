@@ -376,7 +376,8 @@ void TestClientProbeAndPing() {
     std::wstring error;
 
     std::uint16_t advertised_payload=128U;
-    transport.on_write = [&transport,&advertised_payload](const std::vector<std::uint8_t>& raw,
+    bool telemetry=false;
+    transport.on_write = [&transport,&advertised_payload,&telemetry](const std::vector<std::uint8_t>& raw,
                                        std::size_t) {
         const Frame request = DecodeRequest(raw);
         std::vector<std::uint8_t> payload;
@@ -406,7 +407,7 @@ void TestClientProbeAndPing() {
             PutLe32(&payload, 0U);
         } else if (request.command ==
                    static_cast<std::uint8_t>(Command::GetStats)) {
-            for (std::uint32_t value = 1U; value <= 14U; ++value) {
+            for (std::uint32_t value = 1U; value <= (telemetry?21U:14U); ++value) {
                 PutLe32(&payload, value);
             }
         } else {
@@ -443,6 +444,11 @@ void TestClientProbeAndPing() {
               "client sequences start non-zero and advance");
     }
     Check(client.Ping(std::vector<std::uint8_t>(128U,0xA5),&error),"128-byte client PING round trip");
+    telemetry=true;
+    Check(client.GetStats(&stats,&error) && stats.telemetry_available && stats.uart_rx_high_water==15U &&
+        stats.process_max_ms==21U,"84-byte host telemetry extension parsed without changing counter order");
+    telemetry=false;
+    Check(client.GetStats(&stats,&error) && !stats.telemetry_available,"fixed Boot statistics never inherit App peaks");
     advertised_payload=96U; client.BeginSession();
     Check(!client.Probe(0x0101U,&info,&capabilities,&error) && !client.IsHostValidated(),
           "old96-byte host explicitly rejected");
@@ -1083,7 +1089,7 @@ std::vector<std::uint8_t> MakeValidF13BootImage(
     WriteLe32At(&image, kManifestOffset + 92U, kMinimumUpdateImageSize);
     std::fill_n(image.begin()+kManifestOffset+96U,32U,static_cast<std::uint8_t>(0U));
     WriteLe32At(&image,kManifestOffset+96U,IP_MAGIC);
-    image[kManifestOffset+100U]=IP_VERSION; image[kManifestOffset+101U]=IP_SIZE;
+    image[kManifestOffset+100U]=IP_DEVICE_VERSION; image[kManifestOffset+101U]=IP_SIZE;
     image[kManifestOffset+102U]=IP_ROLE_DEVICE_APP; image[kManifestOffset+103U]=IP_CAN;
     WriteLe32At(&image,kManifestOffset+104U,IP_F13_IRQ_ABI);
     const std::size_t stored_crc_offset = image.size() - 4U;
@@ -1513,11 +1519,13 @@ void TestF13BootClientTransactions() {
                                    InfoPage::InstalledAppSize)) {
                 value = image_info.image_size;
             } else if (page == static_cast<std::uint8_t>(InfoPage::UpdatePolicy)) {
-                value=0x01012001U;
+                value=0x01012003U;
             } else if (page == static_cast<std::uint8_t>(InfoPage::IrqAbi)) {
                 value=IP_F13_IRQ_ABI;
             } else if (page == static_cast<std::uint8_t>(InfoPage::Block)) {
                 value=0x07200040U;
+            } else if (page == static_cast<std::uint8_t>(InfoPage::VersionPolicy)) {
+                value=1U;
             } else if (page == static_cast<std::uint8_t>(
                                    InfoPage::MinimumImageSize)) {
                 value = kMinimumUpdateImageSize;
@@ -1610,17 +1618,17 @@ void TestF13BootClientTransactions() {
           "F13 Boot client END transaction");
     Check(boot_client.Abort(&ack, &error),
           "F13 Boot client ABORT transaction");
-    Check(commands.size() == 100U &&
-              std::count(commands.begin(), commands.end(), 0x07U) == 27 &&
-              commands[27] == 0x01U && commands[28] == 0x06U &&
-              commands[29]==0x0AU && std::count(commands.begin(),commands.end(),0x08U)==64 && commands[94]==0x09U &&
-              commands[95] == 0x02U && commands[96] == 0x0CU &&
-              commands[97] == 0x0CU && commands[98] == 0x04U &&
-              commands[99] == 0x05U,
+    Check(commands.size() == 101U &&
+              std::count(commands.begin(), commands.end(), 0x07U) == 28 &&
+              commands[28] == 0x01U && commands[29] == 0x06U &&
+              commands[30]==0x0AU && std::count(commands.begin(),commands.end(),0x08U)==64 && commands[95]==0x09U &&
+              commands[96] == 0x02U && commands[97] == 0x0CU &&
+              commands[98] == 0x0CU && commands[99] == 0x04U &&
+              commands[100] == 0x05U,
           "F13 Boot client command order");
     Check(timeouts.size() == commands.size() &&
-              timeouts[96] == 3000U && timeouts[97] == 500U &&
-              timeouts[98] == 5000U && timeouts[99] == 500U,
+              timeouts[97] == 3000U && timeouts[98] == 500U &&
+              timeouts[99] == 5000U && timeouts[100] == 500U,
           "F13 Boot client erase and END timeout policy");
 
     corrupt_data_ack = true;

@@ -67,7 +67,7 @@ struct ImageInspection {
 };
 
 constexpr std::uint32_t kManifestOffset = 0x100U;
-constexpr std::uint32_t kManifestMagic = 0x334E4143U;
+constexpr std::uint32_t kManifestMagic = 0x004E4143U; // ASCII CAN + NUL.
 constexpr std::uint8_t kImageFormatVersion = 6U;
 constexpr std::uint8_t kManifestSize = IP_CORE_SIZE;
 constexpr std::size_t kMetadataRegionSize = 256U;

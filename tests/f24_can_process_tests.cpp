@@ -6,6 +6,7 @@
 #include <vector>
 #include "../firmware/common/can_burst.h"
 #include "../firmware/common/can_burst.inc"
+#include "../firmware/common/diagnostic_clock.h"
 
 /* Compile the production nonblocking dispatcher progression. Only HAL, UART
  * capacity and response sinks are mocked; not CAN timing/electrical behavior. */
@@ -112,6 +113,10 @@ void CompleteToLast() {
 
 int TestF24CanProcess() {
     failures=0;
+    hl_diagnostic_clock_t clock={};
+    for(const unsigned tick_value:{0U,30000U,59999U,1U,30000U,59999U,1U})
+        Hl_DiagnosticNow(&clock,static_cast<uint16_t>(tick_value));
+    Check(clock.uptime==120001U,"production diagnostics retain transaction durations across multiple60s tick wraps");
     Prepare(); CompleteToLast();
     for(unsigned i=0;i<10;++i) Check(transmitted[i].Head.Bits.ID==0x700U+i &&
         transmitted[i].Head.Bits.DLC==8 && transmitted[i].Data.DB[7]==i*8U+7U,"exact ID/DLC/data reach HAL");

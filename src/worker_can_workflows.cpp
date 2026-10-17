@@ -1,6 +1,8 @@
 #include "worker_session.h"
 #include "worker_format.h"
 #include "core/firmware_update_profile.h"
+#include "core/update_evidence.h"
+#include "core/device_version_policy.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -365,6 +367,12 @@ bool WorkerSession::ProcessDiscoverF13Boot(const Command& command,
         PostState();
         return false;
     }
+    std::wstring diagnostic_error;
+    if(!boot_client_.GetDiagnostics(&info.diagnostics,&diagnostic_error)) {
+        if(IsCancelRequested()) {*error=L"Target discovery canceled.";return false;}
+        info.diagnostics=0U;
+        PostLog(L"Optional device diagnostics unavailable; VERIFY stays disabled.");
+    }
     state_.target_validated = true;
     state_.target_profile = TargetProfile::CanUpgrade;
     state_.target_metadata = info;
@@ -490,6 +498,11 @@ bool WorkerSession::ValidateF13BootTarget(std::wstring* error) {
     state_.target_validated = true;
     state_.target_profile = TargetProfile::CanUpgrade;
     state_.target_metadata = info;
+    std::wstring diagnostic_error;
+    if(!boot_client_.GetDiagnostics(&state_.target_metadata.diagnostics,&diagnostic_error)) {
+        if(IsCancelRequested()) {*error=L"Boot diagnostics canceled.";return false;}
+        state_.target_metadata.diagnostics=0U;
+    }
     state_.f13_bootloader_ready = true;
     state_.target_summary =
         info.mcu_family + L" " + info.mcu_part +
@@ -523,6 +536,12 @@ bool WorkerSession::ProcessProgramF13Boot(
         return false;
     }
 
+    f13_boot::TargetInfo live;
+    if(!boot_client_.GetTargetInfo(&live,error) || live.state!=f13_boot::DeviceState::Bootloader) {
+        if(error->empty()) *error=L"Device is no longer in Boot; update not started.";
+        return false;
+    }
+    state_.target_metadata=live;
     firmware_update::ImageInfo metadata;
     if ((state_.host_capabilities.feature_flags & host_link::kCanBurstFeature) == 0U) {
         *error = L"CAN Upgrade v5 requires bridge CAN_BURST_WAIT_RX (bit12). Update the bridge App in Misc first.";
@@ -539,6 +558,14 @@ bool WorkerSession::ProcessProgramF13Boot(
         return false;
     }
 
+    if(!device_version::Check(metadata,live,command.force_old_version,error)) return false;
+    if(command.force_old_version && live.app_version!=command.approved_installed_version) {
+        *error=L"Installed version changed after confirmation; force operation canceled before START.";
+        return false;
+    }
+    PostLog(command.force_old_version ?
+        L"force upgrade old version firmware: confirmed for this update only; all identity/layout/CRC checks remain active.":
+        L"Installed App version policy accepted this normal update.");
     f13_boot::ImageInfo image_info;
     if (!f13_boot::ParseUpdateImage(command.image, &image_info, error)) {
         return false;
@@ -560,29 +587,55 @@ bool WorkerSession::ProcessProgramF13Boot(
     PostState();
 
     f13_boot::UpdateCallbacks callbacks;
+    callbacks.force_old_version=command.force_old_version;
     callbacks.is_canceled = [this]() { return IsCancelRequested(); };
+    callbacks.abort=[this](f13_boot::Ack* ack,std::wstring* failure) {
+        const bool old=cleanup_in_progress_; cleanup_in_progress_=true;
+        const bool result=boot_client_.Abort(ack,failure);
+        cleanup_in_progress_=old; return result;
+    };
     callbacks.progress = [this](std::uint32_t completed,
                                 std::uint32_t total) {
         const int percent = static_cast<int>(completed * 100U / total);
-        PostProgress(percent, L"Firmware update");
+        PostProgress(percent, L"3/5 Transfer");
+    };
+    callbacks.stage=[this](f13_boot::UpdateStage stage) {
+        const wchar_t* names[]={L"1/5 Metadata",L"2/5 START",L"3/5 Transfer",L"4/5 END CRC"};
+        const auto name=names[static_cast<unsigned>(stage)];
+        PostProgress(0,name); PostLog(std::wstring(L"Update stage: ")+name);
     };
     f13_boot::UpdateReport report;
     PostProgress(0, L"Firmware update");
     PostLog(L"Staging/sealing full256-byte metadata before START; then64-byte BLOCKs/CRC and END. Device rejects policy/layout mismatch before erase.");
     const auto update_started = std::chrono::steady_clock::now();
-    if (!f13_boot::RunUpdate(
-            &boot_client_, command.image, callbacks, &report, error)) {
+    const bool programmed=f13_boot::RunUpdate(
+            &boot_client_, command.image, callbacks, &report, error);
+    update_timings_={{L"metadata",report.metadata_ms},{L"start",report.start_ms},
+        {L"transfer",report.transfer_ms},{L"end_crc",report.end_ms}};
+    update_details_=L"force_old_version="+std::to_wstring(command.force_old_version)+
+        L"; installed_version_before="+evidence::Hex(live.app_version)+
+        L"; installed_version_policy="+std::to_wstring(live.version_policy)+
+        L"; image_bytes="+std::to_wstring(metadata.image_size)+
+        L"; image_crc32="+evidence::Hex(metadata.calculated_crc32)+
+        L"; app_version="+evidence::Hex(metadata.version)+L"; app_build="+std::to_wstring(metadata.build)+
+        L"; metadata_ms="+std::to_wstring(report.metadata_ms)+L"; start_ms="+std::to_wstring(report.start_ms)+
+        L"; transfer_ms="+std::to_wstring(report.transfer_ms)+L"; end_crc_ms="+std::to_wstring(report.end_ms)+
+        L"; blocks_acked="+std::to_wstring(report.blocks_acked)+
+        L"; abort_attempted="+std::to_wstring(report.abort_attempted)+L"; abort_ack="+std::to_wstring(report.abort_acknowledged);
+    PostLog(L"Phase timings: "+update_details_);
+    if (!programmed) {
         if (report.abort_attempted) {
             PostLog(report.abort_acknowledged ?
                 L"F13 Boot ABORT acknowledged after update failure." :
                 L"F13 Boot ABORT was attempted but not acknowledged.");
         }
-        StopCanBestEffort();
+        const bool old=cleanup_in_progress_; cleanup_in_progress_=true;
+        StopCanBestEffort(); cleanup_in_progress_=old;
         PostState();
         return false;
     }
 
-    PostProgress(100, L"Firmware update");
+    PostProgress(100, L"4/5 END CRC");
     const auto update_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now() - update_started).count();
     PostLog(L"Update summary: " + std::to_wstring(report.image.image_size) + L" bytes, " +
@@ -591,9 +644,52 @@ bool WorkerSession::ProcessProgramF13Boot(
         (static_cast<std::uint64_t>(report.image.image_size) * 1000U / update_ms) : 0U) + L" B/s.");
     PostLog(L"END acknowledged with matching CRC32; target is resetting to "
             L"the application.");
-    StopCanBestEffort();
+    PostProgress(0,L"5/5 Confirm App");
+    state_.f13_bootloader_ready=false;
+    state_.target_validated=false;
+    const auto confirm_started=std::chrono::steady_clock::now();
+    const bool confirmed=ConfirmDeviceApp(metadata,error);
+    update_timings_.push_back({L"app_confirmation",static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now()-confirm_started).count())});
+    update_details_+=L"; app_confirmation="+std::wstring(confirmed?L"PASS":L"NOT CONFIRMED")+
+        L"; confirmation_ms="+std::to_wstring(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now()-confirm_started).count());
+    if(!confirmed) {
+        const bool old=cleanup_in_progress_; cleanup_in_progress_=true;
+        StopCanBestEffort(); cleanup_in_progress_=old;
+    }else PostProgress(100,L"5/5 App confirmed");
     PostState();
-    return true;
+    return confirmed;
+}
+
+bool WorkerSession::ConfirmDeviceApp(const firmware_update::ImageInfo& image,std::wstring* error) {
+    const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(12);
+    while(std::chrono::steady_clock::now()<deadline && !IsCancelRequested()) {
+        std::uint32_t health=0U;
+        std::wstring probe_error;
+        if(boot_client_.GetAppHealth(&health,&probe_error) && (health&0xFFU)==1U) {
+            f13_boot::TargetInfo live;
+            if(!boot_client_.GetTargetInfo(&live,error)) return false;
+            for(const auto& row:evidence::Compare(image,live))
+                update_details_+=L"\n"+row.field+L": image="+row.image+L", live="+row.live+L", "+row.result;
+            if(!evidence::ConfirmApp(image,live,health)) {
+                *error=L"END CRC succeeded, but the running App identity / version / build / size or health differs from the loaded image.";
+                return false;
+            }
+            state_.target_metadata=live; state_.target_validated=true;
+            state_.target_profile=TargetProfile::CanUpgrade;
+            state_.target_summary=live.mcu_family+L" "+live.mcu_part+L" APP_READY; version "+
+                VersionText(live.app_version)+L", build "+std::to_wstring(live.app_build)+
+                L", bytes "+std::to_wstring(live.installed_app_size)+L", health "+evidence::Hex(health);
+            PostLog(L"App confirmation PASS: "+state_.target_summary+
+                L". Health covers local clock/CAN/timer checks, not application-level functional acceptance.");
+            *error=L""; return true;
+        }
+        Sleep(100U);
+    }
+    *error=IsCancelRequested()?L"App confirmation canceled; END had already succeeded. No automatic rewrite.":
+        L"END CRC succeeded, but APP_READY was not confirmed within the bounded reconnect window. No automatic rewrite.";
+    return false;
 }
 
 }

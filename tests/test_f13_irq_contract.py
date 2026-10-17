@@ -3,7 +3,6 @@
 This is a deterministic stack/register model, not an RL78 hardware simulator.
 Instruction/stack semantics: Renesas R01US0015EJ0230, chapters 3, 5 and 6.
 """
-import json
 import argparse
 from pathlib import Path
 import random
@@ -13,6 +12,7 @@ import sys
 import tempfile
 import unittest
 from workspace_paths import companion_path
+from app_config_fixtures import image_header, irq_header, read_irq_header, image_examples
 
 BOOT = companion_path('F13Boot')
 APP = companion_path('F13App')
@@ -49,7 +49,7 @@ class Contract(unittest.TestCase):
         cls.asym = symbols(APP, APP.name)
         cls.rom = hex_memory(BOOT / 'DefaultBuild/boot0000_1FFF.hex')
         cls.image = (APP / 'DefaultBuild' / (APP.name + '_update.bin')).read_bytes()
-        cls.handlers = json.loads((APP / 'app_irq_handlers.json').read_text())
+        cls.handlers = read_irq_header((APP / 'app_irq_handlers.h').read_text())
 
     def test_complete_vectors_and_real_reti_handlers(self):
         for v in range(4, 0x7E, 2):
@@ -171,17 +171,18 @@ class Contract(unittest.TestCase):
             project = re.sub(r'<RelativePath>(.*?)</RelativePath>',
                 lambda m: '<RelativePath>'+str(APP/m[1])+'</RelativePath>', project)
             (dest/'sample.mtpj').write_text(project,encoding='utf-8')
-            identity=json.loads((APP/'app_image.json').read_text())
+            identity=image_examples('```c\n'+(APP/'app_image_config.h').read_text()+'\n```')[0]
             identity['version']='0x00020000'
-            (dest/'app_image.json').write_text(json.dumps(identity),encoding='utf-8')
+            (dest/'app_image_config.h').write_text(image_header(identity),encoding='utf-8')
+            (dest/'iodefine.h').write_bytes((APP/'iodefine.h').read_bytes())
             for invalid in ({'0x7E':'bad'},{'0x35':'bad'},{'0x64':'bad'},{'0x34':'not_a_registered_isr'}):
-                (dest/'app_irq_handlers.json').write_text(json.dumps(invalid))
+                (dest/'app_irq_handlers.h').write_text(irq_header(invalid))
                 result = subprocess.run(['powershell','-NoProfile','-File',str(script),'-Mode','App','-AppProject',temp],capture_output=True)
                 self.assertNotEqual(result.returncode,0)
             mapping = dict(self.handlers)
             # A different app-local mapping uses an existing normal ISR at INTAD.
             mapping['0x34'] = mapping.pop('0x08')
-            (dest/'app_irq_handlers.json').write_text(json.dumps(mapping))
+            (dest/'app_irq_handlers.h').write_text(irq_header(mapping))
             subprocess.run(['powershell','-NoProfile','-File',str(script),'-Mode','App','-AppProject',temp],check=True,capture_output=True)
             self.assertIn('BR !!_r_intc0_interrupt ; vector 0x34', (dest/'app_irq_table.inc').read_text())
             self.assertIn('CAN_BOOT_APP_FIRMWARE_VERSION (0x00020000UL)',

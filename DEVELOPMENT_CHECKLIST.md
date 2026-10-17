@@ -1,9 +1,54 @@
 # Firmware Upgrade Tool Development Checklist
 
+Public documentation follows docs/PUBLIC_CONTENT_GUIDELINES_zh-TW.md.
+This is a generated copy of the generic /web root policy; keep MCU/project
+rules local. F13/F24 CAN device Boot/App are joint golden samples; metadata
+and IRQ input are C headers, with identical standalone readers and no Python
+firmware-build dependency. Verify both App builds/negative cases/A-B flows
+when changing common authoring behavior; see docs/DEVICE_GOLDEN_SAMPLE_zh-TW.md.
+For MD/web/PDF/README changes, sync the standalone slide rules and affected
+canonical sections; run mirror/content checks and review contextual meaning.
+Preserve technical/safety constraints and record actual render/link results.
+
 This document is the ordered implementation and verification checklist for the
 PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
+
+2026-10-17 publication entry: root github_push.bat, explicit Execute/Yes and
+read-only PS preview; fixed F13 Boot/App/Tool catalog includes F24 CAN host
+deliveries. Archive non-delivery DefaultBuild files under ignored tmp before
+stage/commit/push. Exact index, ancestry, staged-work and path/reparse guards;
+no force, tags, submodule or web publication. Eleven isolated local Git scenarios
+and safe-clean audit pass. See docs/GITHUB_PUBLISH_zh-TW.md and run transcripts
+for actual remote results. No product rebuild/bump for this workflow change.
+
+2026-10-17 device version policy: APP_IMAGE_VERSION_CONTROL is the sole switch,
+default0, in the six-field C header; policy3/metadata0x74. Valid installed App
+controls normal ordering; no persisted floor. Independent force upgrade old
+version firmware uses public3036 confirmation and command-local FORCE_START0E
+only. Preserve all other validation gates, fresh live-worker check and no
+password persistence. Magic is CAN+NUL, unrelated to controller port number.
+Boot/App versions are independent. Current verification supersedes the earlier
+proposal below:63 regressions/native Debug-Release/A-B builds PASS, Boot spare
+F13890/F24514. MD/web/five PDFs synchronized; hardware/UI visual NOT RUN.
+
+2026-10-17 device compile summaries: both C-header inputs have field/IRQ
+comments and identical local PowerShell helpers emit app_build_report.html
+after validated packaging. Actual BIN metadata/CRC/hash/all256bytes/64slots;
+Tool operation JSON remains a separate runtime record. Both App clean builds
+retain original BIN/Boot hashes. Verification at top of HANDOFF/SELF_CHECK.
+Version-policy Boot enforcement awaits agreement; latest proposal is one
+metadata switch and read-only Tool display, avoiding two independent switches.
+user chooses valid-installed-App checks only, no persistent Flash floor.
+
+2026-10-17 update observability: CAN automatic App confirmation, explicit Misc
+RUN reconnect, shared metadata differences, stage progress, independent Cancel,
+phase/counter reports, generic host telemetry/stay diagnostics and F13 read-only
+VERIFY/detail statuses. F24 device generation/delivery names align with F13.
+Current implementation/verification: see top of HANDOFF and SELF_CHECK.
+No boards available; all physical high-speed/unplug/power/fault gates remain
+NOT RUN. Do not freeze a hardware acceptance claim from software models.
 
 2026-10-16 public-guide organization / F24 device PowerShell workflow:
 single-owner web topics with jump links, current-operation wording, device-only

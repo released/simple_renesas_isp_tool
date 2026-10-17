@@ -24,7 +24,7 @@ constexpr std::uint32_t kMinimumUpdateImageSize =
     kApplicationHeaderSize + 4U;
 constexpr std::uint32_t kMaximumUpdateImageSize = 0x1E000U;
 constexpr std::uint32_t kManifestOffset = 0x100U;
-constexpr std::uint32_t kManifestMagic = 0x334E4143U;
+constexpr std::uint32_t kManifestMagic = 0x004E4143U; // ASCII CAN + NUL.
 constexpr std::uint8_t kManifestSize = IP_CORE_SIZE;
 constexpr std::uint32_t kDataBytes = 4U; // Flash word / END detail, not CAN block payload.
 constexpr std::uint32_t kBlockBytes = 64U;
@@ -43,6 +43,8 @@ enum class Command : std::uint8_t {
     Metadata = 0x08U,
     Seal = 0x09U,
     MetadataReset = 0x0AU,
+    Verify = 0x0DU,
+    ForceStart = 0x0EU,
 };
 
 enum class DeviceState : std::uint8_t {
@@ -78,6 +80,9 @@ enum class InfoPage : std::uint8_t {
     UpdatePolicy = 0x18U,
     IrqAbi = 0x19U,
     Block = 0x1AU,
+    Health = 0x1BU,
+    Diagnostics = 0x1CU,
+    VersionPolicy = 0x1DU,
 };
 
 enum class Status : std::uint8_t {
@@ -91,9 +96,15 @@ enum class Status : std::uint8_t {
     BadProtocol = 0x07U,
     BadTarget = 0x08U,
     BadImage = 0x09U,
+    Metadata = 0x0AU,
+    Policy = 0x0BU,
+    IrqAbi = 0x0CU,
+    Layout = 0x0DU,
+    Version = 0x0EU,
 };
 
 struct ImageInfo {
+    bool force_old_version = false; // Request-local; never persisted in BIN.
     std::uint8_t format = 0U;
     std::uint8_t protocol_version = 0U;
     std::uint8_t manifest_length = 0U;
@@ -117,6 +128,8 @@ struct HelloInfo {
 };
 
 struct TargetInfo {
+    std::uint32_t version_policy = 0U; // bit0 valid installed App, bit1 enabled.
+    std::uint32_t diagnostics = 0U;
     image_policy::Policy policy;
     DeviceState state = DeviceState::Application;
     std::uint16_t target_id = 0U;
@@ -232,6 +245,9 @@ public:
 
     bool Hello(HelloInfo* info, std::wstring* error);
     bool GetTargetInfo(TargetInfo* info, std::wstring* error);
+    bool GetAppHealth(std::uint32_t* health, std::wstring* error);
+    bool GetDiagnostics(std::uint32_t* flags, std::wstring* error);
+    bool VerifyInstalled(Ack* ack, std::wstring* error);
     bool EnterBootloader(std::wstring* error);
     bool StageMetadata(const std::vector<std::uint8_t>& image,
         const std::function<bool()>& cancelled, std::wstring* error) override;
