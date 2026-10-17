@@ -16,6 +16,8 @@ $bootLink = Join-Path $BootProject 'DefaultBuild\RL78_F13_Boot_loader_CAN.clnk'
 $bootMain = Join-Path $BootProject 'r_main.c'
 $bootUserDef = Join-Path $BootProject 'user_def.h'
 $bootConfig = Join-Path $BootProject 'can_boot_config.h'
+$bootMetadataConfig = Join-Path $BootProject 'image_metadata_config.h'
+$bootHandoff = Join-Path $BootProject 'boot_app_handoff.h'
 $appMap = Join-Path $AppProject 'DefaultBuild\RL78_F13_Boot_loader_CAN_app.map'
 $appHex = Join-Path $AppProject 'DefaultBuild\flash_app_variable_CRC.hex'
 $appBinary = Join-Path $AppProject 'DefaultBuild\RL78_F13_Boot_loader_CAN_app_update.bin'
@@ -31,6 +33,7 @@ $appProjectFile = Join-Path $AppProject 'RL78_F13_Boot_loader_CAN_app.mtpj'
 
 $requiredFiles = @(
     $bootMap, $bootHex, $bootLink, $bootMain, $bootUserDef, $bootConfig,
+    $bootMetadataConfig, $bootHandoff,
     $appMap, $appHex, $appBinary, $appTable, $appTableConfig, $appConfig,
     $appCustomFunc, $appCustomHeader, $boardSource, $appSystemInit,
     $bootProjectFile, $appProjectFile
@@ -205,8 +208,9 @@ function Get-HexMacro([string]$text, [string]$name) {
 }
 
 $bootMapText = [System.IO.File]::ReadAllText($bootMap)
-$bootConfigText = [System.IO.File]::ReadAllText($bootConfig)
-$sharedRamAddress = Get-HexMacro $bootConfigText 'CAN_BOOT_SHARED_RAM_ADDRESS'
+$bootConfigText = (@($bootConfig,$bootMetadataConfig,$bootHandoff) |
+    ForEach-Object { [IO.File]::ReadAllText($_) }) -join "`n"
+$sharedRamAddress = Get-HexMacro $bootConfigText 'BOOT_APP_SHARED_RAM_ADDRESS'
 $bootSections = @('.btext', '.btextf', '.text', '.SLIB', '.textf', '.constf',
                   '.data', 'FSL_FCD', 'FSL_RCD', 'FSL_BCD', 'FSL_BECD')
 $maximumBootEnd = 0
@@ -347,9 +351,9 @@ for ($i=$manifestSize; $i -lt $metadataRegionSize; $i++) {
 }
 Require $extensionErased 'All128 reserved metadata extension bytes are0xFF'
 Require ((Read-U32 $image ($manifestOffset+96)) -eq 0x31445055 -and
-    (Read-U32 $image ($manifestOffset+100)) -eq (Get-HexMacro $bootConfigText 'CAN_BOOT_POLICY_WORD') -and
+    (Read-U32 $image ($manifestOffset+100)) -eq (Get-HexMacro $bootConfigText 'IMAGE_POLICY_WORD') -and
     (Read-U32 $image ($manifestOffset+104)) -eq 0x31563146 -and
-    (Read-U32 $image ($manifestOffset+108)) -le (Get-HexMacro $bootConfigText 'CAN_BOOT_FIRMWARE_VERSION') -and
+    (Read-U32 $image ($manifestOffset+108)) -le (Get-HexMacro $bootConfigText 'IMAGE_BOOT_VERSION') -and
     (Read-U32 $image ($manifestOffset+116)) -le 1) `
     'UPD1 policy: DEVICE_APP/CAN, fixed F13 IRQ ABI and supported minimum boot'
 $calculatedCrc = Get-Crc32 $image ($image.Length - 4)
@@ -385,14 +389,14 @@ Require ($storedCrc -eq $calculatedCrc) `
 $appConfigText = [System.IO.File]::ReadAllText($appConfig)
 $appUsesBootConfig = $appConfigText -match
     '#include\s+"\.\./RL78_F13_Boot_loader_CAN/can_boot_config\.h"'
-$bootTarget = Get-HexMacro $bootConfigText 'CAN_BOOT_TARGET_ID'
+$bootTarget = Get-HexMacro $bootConfigText 'IMAGE_TARGET_ID'
 $bootProtocol = Get-HexMacro $bootConfigText 'CAN_BOOT_PROTOCOL_VERSION'
-$bootImageFormat = Get-HexMacro $bootConfigText 'CAN_BOOT_IMAGE_FORMAT_VERSION'
+$bootImageFormat = Get-HexMacro $bootConfigText 'IMAGE_FORMAT_VERSION'
 $appIdentityText = [System.IO.File]::ReadAllText((Join-Path $AppProject 'app_identity.h'))
 $appTarget = if ($appUsesBootConfig) {
     $bootTarget
 } else {
-    Get-HexMacro $appConfigText 'CAN_BOOT_TARGET_ID'
+    Get-HexMacro $appConfigText 'IMAGE_TARGET_ID'
 }
 $appProtocol = if ($appUsesBootConfig) {
     $bootProtocol
@@ -406,6 +410,9 @@ $appIdentityVersion = if ($appUsesBootConfig) {
 }
 Require $appUsesBootConfig `
     'Application INFO identity includes the authoritative boot configuration'
+Require ([IO.File]::ReadAllText((Join-Path $AppProject 'image_metadata_config.h')) -match
+    '#include\s+"\.\./RL78_F13_Boot_loader_CAN/image_metadata_config\.h"') `
+    'Application metadata includes its paired image contract independently of CAN'
 Require ($bootTarget -eq $targetId -and $appTarget -eq $targetId -and
          $bootProtocol -eq $protocolVersion -and
          $appProtocol -eq $protocolVersion -and
@@ -426,13 +433,13 @@ Require ($bootMainText -match '#pragma interrupt f13_boot_timer_isr' -and
          $bootMainText -notmatch 'APP_INTTRJ0_ENTRY_ADDRESS|vect\s*=\s*INTTRJ0') `
     'Shared timer is a normal boot ISR, not a C-call app callback'
 Require ($bootMainText -match
-             'CAN_BOOT_RAM_HANDOFF_OFFSET[\s\S]*CAN_BOOT_HANDOFF_SIGNATURE' -and
+             'BOOT_APP_RAM_HANDOFF_OFFSET[\s\S]*BOOT_APP_HANDOFF_SIGNATURE' -and
          $bootMainText -match
-             'CAN_BOOT_RAM_UPDATE_OFFSET[\s\S]*CAN_BOOT_UPDATE_COMPLETE_SIGNATURE' -and
-         $appCustomText -match 'AppSharedRead32\(CAN_BOOT_RAM_HANDOFF_OFFSET\)' -and
-         $appCustomText -match 'AppSharedRead32\(CAN_BOOT_RAM_UPDATE_OFFSET\)' -and
-         $appCustomText -match 'AppSharedWrite32\(CAN_BOOT_RAM_HANDOFF_OFFSET, 0UL\)' -and
-         $appCustomText -match 'AppSharedWrite32\(CAN_BOOT_RAM_UPDATE_OFFSET, 0UL\)') `
+             'BOOT_APP_RAM_UPDATE_OFFSET[\s\S]*BOOT_APP_UPDATE_COMPLETE_SIGNATURE' -and
+         $appCustomText -match 'AppSharedRead32\(BOOT_APP_RAM_HANDOFF_OFFSET\)' -and
+         $appCustomText -match 'AppSharedRead32\(BOOT_APP_RAM_UPDATE_OFFSET\)' -and
+         $appCustomText -match 'AppSharedWrite32\(BOOT_APP_RAM_HANDOFF_OFFSET, 0UL\)' -and
+         $appCustomText -match 'AppSharedWrite32\(BOOT_APP_RAM_UPDATE_OFFSET, 0UL\)') `
     'Boot writes and app consumes one-shot handoff/update signatures'
 Require ($appCustomHeaderText -match
              '#define\s+APP_RUNTIME_LOG_TAG\s+"[^"]+"' -and

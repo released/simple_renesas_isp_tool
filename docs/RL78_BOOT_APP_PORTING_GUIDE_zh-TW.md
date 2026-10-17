@@ -59,8 +59,10 @@ git clone https://github.com/released/RL78_F13_Boot_loader_CAN_app.git
 App 前512 bytes 由256-byte向量表與256-byte metadata 組成。
 BIN 的實際長度由 linker map 決定，尾端四位元組對齊並加上 CRC32。
 
-分區來源為各 Boot 的 `can_boot_config.h`，linker、產生器與封裝使用同一契約。
-位址與每個 byte 的欄位對照集中於 [Flash／metadata 參考](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
+各 Boot 的 `image_metadata_config.h` 定義映像契約；`can_boot_config.h` 定義 CAN，`boot_app_handoff.h` 定義 RAM 交接。
+完整編輯分工見 [設定檔與產物](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-vector-workshop)。
+獨立 `image_metadata.c/.h` 搭配工程專用 `image_metadata_profile.c`；API 與移植方式見 [Metadata C 模組](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser)。
+逐 byte 位址見 [Flash／metadata 參考](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
 
 ### 3. Startup、RAM 與中斷交接
 
@@ -100,7 +102,7 @@ App table 具有64個4-byte slot。
 一般 ISR 使用無 `vect=` 的 interrupt pragma，Boot 擁有實體向量。
 Reset entry 經 App startup；Physical BRK 的保留 slot 使用 RETB。
 
-vector ? 的查找來源、C 函式寫法與生成表的檢查，集中於 [IRQ 設定與來源對照](https://released.github.io/slide_boot_loader_for_RL78/#device-app-irq)。
+Vector 位址的查找來源、C 函式寫法與生成表的檢查，集中於 [IRQ 設定與來源對照](https://released.github.io/slide_boot_loader_for_RL78/#device-app-irq)。
 
 ### 5. 設定檔與建置
 

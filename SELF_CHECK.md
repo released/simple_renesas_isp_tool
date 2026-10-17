@@ -1,5 +1,90 @@
 # Host Link v2 Self-Check
 
+## F24 host metadata and C-header inputs (2026-10-17)
+
+- [x] Independent bridge_image_metadata.c/.h with byte extents; command/engine,
+  project config/profile and RAM handoff have separate owners. Portable C90
+  tests and2816 reference mutations preserve accepted format/decoded output.
+- [x] App release/IRQ C headers replace JSON; atomic pre-build validation,
+  compiled five-word release record and all64 linked IRQ/RETI/RETB guards.
+  Strict engineering/handoff readers drive C/ASM/package checks consistently.
+- [x] Final Host Boot/App clean builds0errors/2license-warnings each;20KiB/
+  5000 and final1KiB protected. Boot highest4F42/spare189; App43692/CRC961BBF3E.
+  No wire/image/layout/rate/owner encoding change. ROM growth remains limited.
+- [x] Host metadata4tests, F24 preparation4tests and explicit real App A/B
+  suite6tests PASS, including stale compiled identity and unchanged Boot hash.
+  F24 source/authoring suite12tests PASS with A/B separately exercised.
+- [x] Tool one-click Release|x64 0.1.0.0089 PASS0errors/0warnings; process/idle/
+  main HWND/title and normal-close smoke PASS without COM. Native Debug/Release
+  full models PASS; F13 artifacts/real-HEX IRQ and device mirror checks PASS.
+- [x] Host MD/local web/PDF9pages/3diagrams synchronized and rendered/visually
+  reviewed;17public tests,18file checker,4browser routes/25diagrams,248refs and
+  24workspace safe-clean scripts PASS. No temporary fixture remains in firmware.
+- [ ] Physical UART/Flash/IRQ/power/reset NOT RUN: no board. No device firmware
+  writes/rebuilds, Git commit/push or web publication performed.
+
+## Portable device metadata parser (2026-10-17)
+
+- [x] Identical portable image_metadata.c/.h in both device Boot checkouts;
+  independent per-MCU profile/config and separate Boot/App CS+ C compilation.
+- [x] Boot/END/INFO complete validation and App bounded LE32 reads use the
+  module; CAN staging remains adapter-local. CRC/version-floor/Flash/launch
+  gates preserved; decoder success is not image validation.
+- [x] Four final clean builds PASS; F13 spare894, F24 spare514 with512 guard.
+  App BINs20308/D30CFB79 and4152/6ABF121D; executable changes expected,
+  serialized contract/IRQ ABI/protocol/version unchanged.
+- [x]12 strict C90 combinations, compile-negative cases, source/project/sync
+  guards and54 focused regressions PASS. F13 artifacts/real-HEX IRQ, F24 nine
+  PS checks/production C/Tool models and native Debug/Release PASS.
+- [x] Both final independent App A/B builds PASS without changing Boot SHA256.
+- [x] MD/local web/three PDFs18/6/26pages and6diagrams synchronized; text,
+  glyph, bounds, rendering and visual checks PASS. Four browser routes with
+  25diagrams,248refs and24safe-clean scripts PASS.
+- [ ] Physical CAN/Flash/IRQ/power NOT RUN: no board. F24 host/Tool runtime
+  untouched; no EXE rebuild, COM write, commit/push or website publication.
+
+## Device metadata / CAN header separation (2026-10-17)
+
+- [x] IMAGE_* contract, CAN transport and BOOT_APP_* RAM handoff have separate
+  headers; both Boot/App consumers, strict three-header readers and CS+ entries.
+- [x] All four clean builds PASS; Boot spare F13890/F24514. Both Boot HEX and
+  both App BIN hashes unchanged; no format/layout/protocol/version change.
+- [x] Standalone C90 header compile; missing/duplicate/computed-value rejection,
+  stale linked metadata/IRQ checks and51 focused regressions PASS.
+- [x] F13 artifacts/real-HEX IRQ checks; F24 nine PS checks plus production
+  C/Tool models; native Debug/Release and both App A/B builds PASS.
+- [x] Canonical MD/web and three PDFs16/6/26pages, five diagrams, content/bounds/
+  rendering/visual checks; four local browser routes,248refs and24safe-clean PASS.
+- [ ] Hardware CAN/Flash/IRQ/power NOT RUN; no board. No Tool/host runtime
+  source changes, COM writes, commit/push or website publication.
+
+## Metadata editor portability design (2026-10-17)
+
+- [x] Persistent design MD and README entry; complete five-category field/source/
+  impact catalog, six F13/F24 ISP pairings and F14/F25 platform-port boundaries.
+- [x] All256 metadata bytes covered once;14 relative/anchor references and
+  public-content checks PASS. Three Mermaid diagrams render and were inspected.
+- [x] 17 public-document regressions PASS (11.760s);24 safe-clean scripts PASS.
+- [x] Design separates draft/BIN/live, Boot/App metadata responsibilities,
+  strict current parser gates, future profiles/extensions and architecture IRQ.
+- [ ] Editor/firmware implementation, compile, physical tests and publication
+  are not performed by this documentation-only task.
+
+## Public-guide review fixes (2026-10-17)
+
+- [x] Six review findings addressed in canonical MD, both slides and root
+  navigation MD/HTML; no firmware/runtime/version changes.
+- [x] Separate UART/I2C page;53 preserved fragment links, unique IDs and scoped
+  reference offsets.178 image resources and all nonduplicate code preserved.
+- [x] Public verification includes export HTML/examples and invalid glyphs;
+  17 focused tests PASS with explicit Web root,248 references and ten sync checks.
+- [x] Three PDFs30pages/9diagrams: content/glyph/bounds/Poppler rendering and
+  contact-sheet/changed-page visual review PASS.
+- [x] Four isolated local headless-browser routes, desktop/mobile screenshots,
+  24 rendered diagrams, no page errors/duplicate IDs/broken images/warnings.
+- [x] Workspace safe-clean audit24 PASS. Hardware/product rebuild N/A for
+  documentation-only changes; no COM writes, commit/push or deployment.
+
 ## GitHub publication entry (2026-10-17)
 
 - [x] Exact three-repository catalog and five required firmware deliveries;

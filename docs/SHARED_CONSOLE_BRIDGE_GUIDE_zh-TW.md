@@ -93,7 +93,9 @@ flowchart TD
 
 區域容量256、有效core長度128、UART payload128、metadata chunk64是四個獨立尺寸。8-bit長度欄位表示core128，分段offset／total則使用16-bit。最小image為516 bytes，避免最後CRC覆蓋metadata。Reserved 欄位依契約驗證。
 
-單一分區來源為 `firmware/f24_bridge_common/f24_bridge_layout.h`。唯一兩份 CS+ 產品專案是 `RL78_F24_Bridge_boot` 與 `RL78_F24_Bridge_app`；兩者引用 `firmware/f24_board` 的硬體來源。共用目錄沒有 MTPJ／可燒錄產物；不要在 projection 內另行修改 Smart Configurator 輸出。
+分區與身分來源為 `firmware/f24_bridge_common/image_metadata_config.h`。
+唯一兩份 CS+ 產品專案是 `RL78_F24_Bridge_boot` 與 `RL78_F24_Bridge_app`；兩者引用 `firmware/f24_board` 的硬體來源。
+共用目錄提供來源，projection 由 Smart Configurator 原稿與準備腳本產生。
 
 參考專案硬體設定重新產生後，以 `scripts/prepare_f24_bridge_projects.ps1 -Kind app` 更新 app projection／專案；它保留 app-local mapping，不更新 boot。只有明確修改 boot 自己的設定才使用 `-Kind boot`；省略 Kind 仍表示同時產生兩者，不用於日常 app-only 更新。CS+ app pre-build 會產表，post-build 會檢查並封裝。
 
@@ -121,21 +123,97 @@ Misc 僅更新 Host App。
 | `firmware/f24_board` | 共用 board／driver／SC |
 | `firmware/f24_bridge_common` | Host App 分區與自更新契約 |
 
-Host App 擁有自己的 `app_image.json` 與 `app_irq_handlers.json`。
-Pre-build 產生 `bridge_vectors.asm`／`f24_app_identity.generated.h`，post-build 依 map 封裝更新映像。
+#### 設定、解析與介面分工
+
+Host App 擁有自己的 `app_image_config.h` 與 `app_irq_handlers.h`。
+以 C header 編輯發行資訊與 IRQ mapping，Windows PowerShell／CS+ 負責產表與封裝。
+MCU 建置不需要 Python 或 JSON 設定檔。
+
+| 來源 | 職責 | 修改範圍 |
+| --- | --- | --- |
+| App 的 `app_image_config.h` | 版本、build、board ID、role、允許更新介面 | App 發行設定；身分與介面須符合 Boot 契約 |
+| App 的 `app_irq_handlers.h` | `APP_IRQ_HANDLERS(X)` 對照 vector byte address 與 ISR | App 功能使用的中斷 |
+| `f24_bridge_common/image_metadata_config.h` | MCU 身分、Flash 分區、Boot 版本、IRQ ABI、固定 UART | 工程配置；調整時核對 Boot／App、linker 與 backend |
+| `f24_bridge_common/image_metadata_profile.c/.h` | 將工程配置組成 live descriptor 的預期值 | MCU／board profile，不操作 register |
+| `common/bridge_image_metadata.c/.h` | BUR1／BUI1 欄位解碼、格式驗證及契約比對 | 可移植 C90 模組，不包含更新命令或 Flash driver |
+| `common/bridge_update_contract.h`、`bridge_update_engine.c/.h` | 更新命令、狀態機與 Flash callback | 收包、staging、CRC 與更新時序 |
+| `f24_bridge_common/boot_app_handoff.h` | recovery cookie 與 IRQ owner 的 no-init RAM 位址 | startup／linker／交接設定 |
+
+Pre-build 產生 `bridge_vectors.asm`／`f24_app_identity.generated.h`。
+Post-build 核對實際 linked App 身分、向量目的地及 RETI／RETB，再封裝更新映像。
+單獨重新產生 header 不會改變已編譯映像的身分；不符時需重新建置。
 
 ```mermaid
 flowchart TD
-    CONFIG["Host App JSON 與 ISR 來源"] --> GEN["App-local pre-build"]
+    CONFIG["Host App C headers 與 ISR 來源"] --> GEN["App-local pre-build 驗證"]
     GEN --> TABLE["向量表與 identity"]
     TABLE --> LINK["CC-RL link / map"]
-    LINK --> PACK["封裝 App BIN / flash MOT"]
+    LINK --> CHECK{"linked identity / IRQ 符合設定?"}
+    CHECK -->|否| STOP["停止封裝；檢查設定並重新建置"]
+    CHECK -->|是| PACK["封裝 App BIN / flash MOT"]
     PACK --> UPDATE["Misc 更新 Host App"]
 ```
 
+#### 編輯 App metadata
+
+在 App 專案開啟 `app_image_config.h`；每個 define 的註解包含用途、範例與修改條件。
+
+| Define | 範例 | 判斷方式 |
+| --- | --- | --- |
+| `APP_IMAGE_VERSION` | `0x00010600UL` = 1.6.0 | `0x00MMmmpp`，各一 byte；非日期或十進位字串 |
+| `APP_IMAGE_BUILD` | `20261017UL` | 發行識別，允許 0..0xFFFFFFFE |
+| `APP_IMAGE_TARGET_ID` | `0x0101U` | 等於 Boot 的 board ID；單獨改為 `0xF33BU` 會停止產生 |
+| `APP_IMAGE_ROLE` | `2U` = HOST BRIDGE APP | 本工程使用 2；`5U` 等未定義值會停止產生 |
+| `APP_IMAGE_UPDATE_TRANSPORTS` | `0x04U` = UART | bitmap：CAN=0x01、I2C=0x02、UART=0x04；此契約要求 UART |
+
+例如發行 1.6.1 時，只調整版本與 build，再 clean build App。
+Boot 版本與 App 版本是各自的發行身分，不要求數值相同。
+Host App 的版本用於識別；更新仍依 board／分區／相容性與 CRC 判斷。
+
+Misc 更新 UART 固定 115200，來源是 `image_metadata_config.h`。
+App 執行時的 Host Link 115200／460800／921600、CAN bitrate 與 I2C speed 不會改寫這項更新契約。
+Magic、core／region 長度與 policy 格式由 `bridge_image_metadata.h`／`image_policy.h` 定義；App 發行時維持格式契約。
+
+#### 編輯 App IRQ mapping
+
+在 App 的 `app_irq_handlers.h` 加入 `X(vector, handler)`。
+Vector 是硬體 vector 的 byte address，來源為此專案的 `iodefine.h` 中斷定義及 MCU 硬體手冊的 Interrupt Functions 表。
+例如 `INTST0=0x16` 對應表內的 UART send ISR；slot 位址為 `0x5000 + 0x16 × 2 = 0x502C`。
+
+新增一般中斷時，將 ISR C 檔加入 App MTPJ，再於 X-macro 加入對應項目：
+
+```c
+/* Example INTP0 mapping; initialize its flag/mask/pin separately. */
+X(0x08, app_aux_irq)
+```
+
+ISR 使用 global、無 `vect=` 的 interrupt pragma，並由編譯器產生 RETI。
+Pre-build 檢查合法 vector、重複項目、實際登錄來源與 ISR 定義，產生完整 64-slot 表。
+未列入的正常 IRQ 使用 default ISR；硬體初始化、旗標與 mask 仍由 App 配置。
+固定向量介面內新增 mapping 不需修改 Boot 或 linker 的表長度。
+
+#### 移植 metadata C 模組
+
+| API | 輸入 | 成功表示 |
+| --- | --- | --- |
+| `Bu_ParseManifest(p, length, &manifest)` | 至少 128 bytes 的 BUR1 core | core 欄位及 geometry 格式合法 |
+| `Bu_ParseMetadataRegion(p, length, &manifest)` | 完整 256 bytes | core 合法且後 128 bytes 全為 FF |
+| `Bu_ParseInfo(p, length, &info)` | 至少 96 bytes 的 BUI1 descriptor | live descriptor 格式合法 |
+| `Bu_MatchesDevice(&manifest, &info)` | 已解析的兩份資料 | board、MCU、分區、UART、IRQ ABI 與 minimum Boot 相符 |
+
+Parse API 檢查 null／可用長度並回傳 1 或 0；失敗時不使用 output。
+以 byte buffer 解碼 little-endian 欄位，無需將 wire buffer 強制轉型成 C struct。
+編譯環境需提供 8-bit `uint8_t`、16-bit `uint16_t` 與 32-bit `uint32_t`；現有工程由 toolchain 的 `stdint.h` 提供。
+`Bu_Read16/32`、`Bu_Write16/32` 是已確認 2／4-byte 範圍後使用的低階 helper。
+格式與契約相符不代表完整映像 CRC、簽章或可啟動；完整 CRC 與執行條件由更新引擎及 Boot 檢查。
+
+移植時將 metadata C 檔單獨加入 Boot／App 的編譯來源，保留 `image_policy.h` 格式定義。
+以自己的 config／profile 提供 MCU 契約，再接上更新引擎的 Flash callback、UART 收包及 linker／startup。
+只有 backend 使用該 MCU 的 register／Flash library；metadata parser 不引用這些介面。
+
 #### App-only 建置
 
-1. 建立自己的 App 工程，保留 MTPJ、startup、兩份 JSON 與來源登錄。
+1. 建立自己的 App 工程，保留 MTPJ、startup、兩份 C header 與來源登錄。
 2. Pre-build 使用 `prepare_f24_app_irq.ps1 -AppProject "."`。
 3. Post-build 使用 `package_f24_bridge.ps1 -Kind app -AppProject "."`。
 4. 在 Tool root 執行對應 App 的建置：

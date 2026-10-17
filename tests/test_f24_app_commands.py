@@ -13,7 +13,7 @@ class AppCommands(unittest.TestCase):
         group = re.search(r'((?:\s*case BU_\w+_COMMAND:)+)\s*F24Bridge_AppCommand\(', text)
         self.assertIsNotNone(group)
         self.assertEqual(set(re.findall(r'case (BU_\w+_COMMAND):', group[1])),
-                         {'BU_INFO_COMMAND', 'BU_ENTER_COMMAND', 'BU_READ_METADATA_COMMAND'})
+                         {'BU_INFO_COMMAND', 'BU_ENTER_COMMAND', 'BU_READ_METADATA_COMMAND', 'BU_DIAGNOSTICS_COMMAND'})
 
     def test_readback_is_required_for_valid_installed_app(self):
         text = (ROOT/'src/core/bridge_update_profile.cpp').read_text()

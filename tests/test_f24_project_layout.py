@@ -78,7 +78,7 @@ class F24Layout(unittest.TestCase):
                                 ignore=shutil.ignore_patterns('DefaultBuild', '*.mtud', '*.rcpe'))
             scripts = folder/'scripts'
             scripts.mkdir()
-            for name in ('prepare_f24_bridge_projects.ps1', 'prepare_f24_app_irq.ps1', 'f24_app_contract.ps1'):
+            for name in ('prepare_f24_bridge_projects.ps1', 'prepare_f24_app_irq.ps1', 'f24_app_contract.ps1','device_app_config.ps1'):
                 shutil.copy2(ROOT/'scripts'/name, scripts/name)
 
             def prepare(kind):
@@ -93,8 +93,8 @@ class F24Layout(unittest.TestCase):
             self.assertEqual(before, tree_hashes(folder/'firmware'), 'Preparation is not byte-idempotent')
             boot = tree_hashes(folder/'firmware'/NAMES[0])
             app = folder/'firmware'/NAMES[1]
-            identity = (app/'app_image.json').read_bytes()
-            mapping = (app/'app_irq_handlers.json').read_bytes()
+            identity = (app/'app_image_config.h').read_bytes()
+            mapping = (app/'app_irq_handlers.h').read_bytes()
             project = app/(NAMES[1]+'.mtpj')
             tree = ET.parse(project)
             tree.find('.//COptionD-0').text += '\nAPP_LOCAL_SENTINEL=1\n'
@@ -105,8 +105,8 @@ class F24Layout(unittest.TestCase):
             (extra/'new_driver.h').write_text('void new_driver(void);\n', encoding='ascii')
             prepare('app')
             self.assertEqual(boot, tree_hashes(folder/'firmware'/NAMES[0]))
-            self.assertEqual(identity, (app/'app_image.json').read_bytes())
-            self.assertEqual(mapping, (app/'app_irq_handlers.json').read_bytes())
+            self.assertEqual(identity, (app/'app_image_config.h').read_bytes())
+            self.assertEqual(mapping, (app/'app_irq_handlers.h').read_bytes())
             text = project.read_text()
             self.assertIn('APP_LOCAL_SENTINEL=1', text)
             self.assertIn('fixture_new_driver\\new_driver.c', text)

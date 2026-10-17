@@ -5,6 +5,7 @@ Temporary projects are never flashed; their new IRQs are never enabled.
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -34,6 +35,22 @@ def boot_hashes():
         BOOT/'DefaultBuild/RL78_F24_Bridge_boot.mot')}
 
 
+def mapping_header(mapping):
+    entries=['    X('+key+', '+str(value)+')' for key,value in mapping.items()]
+    return '#ifndef APP_IRQ_HANDLERS_H\n#define APP_IRQ_HANDLERS_H\n#define APP_IRQ_HANDLERS(X) \\\n'+' \\\n'.join(entries)+'\n#endif\n'
+
+
+def read_mapping(folder):
+    return dict(re.findall(r'X\((0x[0-9A-Fa-f]+),\s*(\w+)\)',(folder/'app_irq_handlers.h').read_text()))
+
+
+def identity_header(version,build):
+    return ('#ifndef APP_IMAGE_CONFIG_H\n#define APP_IMAGE_CONFIG_H\n'
+        f'#define APP_IMAGE_VERSION ({version}UL)\n#define APP_IMAGE_BUILD ({build}UL)\n'
+        '#define APP_IMAGE_TARGET_ID (0x0101U)\n#define APP_IMAGE_ROLE (2U)\n'
+        '#define APP_IMAGE_UPDATE_TRANSPORTS (4U)\n#endif\n')
+
+
 class LocalApp(unittest.TestCase):
     def setUp(self):
         self.before = boot_hashes()
@@ -41,8 +58,7 @@ class LocalApp(unittest.TestCase):
         self.folder = Path(self.temp.name).resolve()
         self.assertEqual(self.folder.parent,(ROOT/'firmware').resolve())
         shutil.copytree(APP/'generated_projection',self.folder/'generated_projection')
-        for source in (*APP.glob('*.c'), *APP.glob('*.h'),
-                       APP/'app_irq_handlers.json', APP/'app_image.json'):
+        for source in (*APP.glob('*.c'), *APP.glob('*.h'), *APP.glob('*.inc')):
             shutil.copy2(source,self.folder/source.name)
         tree = ET.parse(APP/'RL78_F24_Bridge_app.mtpj')
         original = tree.getroot().find('.//ProjectGuid').text
@@ -77,10 +93,10 @@ class LocalApp(unittest.TestCase):
         return result
 
     def test_valid_app_local_mapping_identity_and_checkonly(self):
-        mapping=json.loads((self.folder/'app_irq_handlers.json').read_text())
+        mapping=read_mapping(self.folder)
         mapping.update({'0x08':'aaa_irq','0x0A':'bbb_irq'})
-        (self.folder/'app_irq_handlers.json').write_text(json.dumps(mapping))
-        (self.folder/'app_image.json').write_text(json.dumps({'version':'0x00020001','build':20261016}))
+        (self.folder/'app_irq_handlers.h').write_text(mapping_header(mapping))
+        (self.folder/'app_image_config.h').write_text(identity_header('0x00020001',20261016))
         self.generate()
         table=(self.folder/'bridge_vectors.asm').read_text()
         self.assertEqual(table.count('    BR !!'),64)
@@ -101,16 +117,16 @@ class LocalApp(unittest.TestCase):
             {'IRQ_ADC':'aaa_irq'}]
         for mapping in cases:
             with self.subTest(mapping=mapping):
-                (self.folder/'app_irq_handlers.json').write_text(json.dumps(mapping))
+                (self.folder/'app_irq_handlers.h').write_text(mapping_header(mapping))
                 self.generate(False)
                 self.assertEqual((self.folder/'bridge_vectors.asm').read_bytes(),previous)
-        (self.folder/'app_irq_handlers.json').write_text('{"0x08":"aaa_irq","0x08":"bbb_irq"}')
+        (self.folder/'app_irq_handlers.h').write_text(mapping_header({'0x08':'aaa_irq'}).replace('X(0x08, aaa_irq)','X(0x08, aaa_irq) X(0x08, bbb_irq)'))
         self.generate(False)
-        (self.folder/'app_irq_handlers.json').write_text('null')
+        (self.folder/'app_irq_handlers.h').write_text('null')
         self.generate(False)
 
     def test_rejects_ordinary_static_physical_and_unregistered_isrs(self):
-        (self.folder/'app_irq_handlers.json').write_text('{"0x08":"aaa_irq"}')
+        (self.folder/'app_irq_handlers.h').write_text(mapping_header({'0x08':'aaa_irq'}))
         for code in ('void __near aaa_irq(void) {}',
             '#pragma interrupt aaa_irq\nstatic void __near aaa_irq(void) {}',
             '#pragma interrupt aaa_irq(vect=INTP0)\nvoid __near aaa_irq(void) {}',
@@ -126,7 +142,7 @@ class LocalApp(unittest.TestCase):
     def test_identity_and_build_command_guards(self):
         for identity in ({'version':'1.2.0','build':1},{'version':'0xFFFFFFFF','build':1},
             {'version':'0x00010200','build':-1},{'version':'0x00010200','build':4294967295}):
-            (self.folder/'app_image.json').write_text(json.dumps(identity))
+            (self.folder/'app_image_config.h').write_text(identity_header(identity['version'],identity['build']))
             self.generate(False)
         result=ps('build_f24_bridge.ps1','-Kind','app','-Prepare','-AppProject',self.folder)
         self.assertNotEqual(result.returncode,0)
@@ -142,11 +158,26 @@ class LocalApp(unittest.TestCase):
         result=self.generate(False)
         self.assertIn(b'Enable BRIDGE_SPLIT_APP',result.stdout)
 
+    def test_release_fields_and_unknown_definitions_reject_without_outputs(self):
+        self.generate()
+        previous=(self.folder/'f24_app_identity.generated.h').read_bytes()
+        original=(self.folder/'app_image_config.h').read_text()
+        for old,new in (('APP_IMAGE_ROLE (2U)','APP_IMAGE_ROLE (5U)'),
+                ('APP_IMAGE_UPDATE_TRANSPORTS (0x04U)','APP_IMAGE_UPDATE_TRANSPORTS (0x02U)'),
+                ('APP_IMAGE_TARGET_ID (0x0101U)','APP_IMAGE_TARGET_ID (0xF33BU)'),
+                ('#endif','#define APP_IMAGE_BUILD (1UL)\n#endif'),
+                ('#endif','#define APP_IMAGE_UNKNOWN (1U)\n#endif')):
+            with self.subTest(new=new):
+                self.assertIn(old,original)
+                (self.folder/'app_image_config.h').write_text(original.replace(old,new))
+                self.generate(False)
+                self.assertEqual((self.folder/'f24_app_identity.generated.h').read_bytes(),previous)
+
     @unittest.skipUnless(ARGS.build_fixtures,'Real CC-RL fixture builds not requested')
     def test_real_project_a_b_build_and_package_with_same_boot(self):
         evidence=ROOT/'tmp/internal/build/verify/f24_app_irq'
         evidence.mkdir(parents=True,exist_ok=True)
-        original=json.loads((self.folder/'app_irq_handlers.json').read_text())
+        original=read_mapping(self.folder)
         for label,first,second,vectors,version,build in (
             ('A','aaa_irq','bbb_irq',('0x08','0x0A'),'0x00020001',20261016),
             ('B','ccc_irq','ddd_irq',('0x0C','0x0E'),'0x00030002',20261017)):
@@ -156,8 +187,8 @@ class LocalApp(unittest.TestCase):
                 self.project.rename(next_project); self.project=next_project
             self.write_source(first,second)
             mapping=dict(original); mapping.update({vectors[0]:first,vectors[1]:second})
-            (self.folder/'app_irq_handlers.json').write_text(json.dumps(mapping))
-            (self.folder/'app_image.json').write_text(json.dumps({'version':version,'build':build}))
+            (self.folder/'app_irq_handlers.h').write_text(mapping_header(mapping))
+            (self.folder/'app_image_config.h').write_text(identity_header(version,build))
             result=ps('build_f24_bridge.ps1','-Kind','app','-AppProject',self.folder)
             (evidence/(label+'_build.log')).write_bytes(result.stdout)
             self.assertEqual(result.returncode,0,result.stdout.decode(errors='replace'))
@@ -166,9 +197,19 @@ class LocalApp(unittest.TestCase):
             image=(folder/(name+'_bridge_update.bin')).read_bytes()
             self.assertEqual(int.from_bytes(image[0x110:0x114],'little'),int(version,16))
             self.assertEqual(int.from_bytes(image[0x114:0x118],'little'),build)
+            # Regenerated headers cannot relabel an already linked App.
+            identity=(self.folder/'app_image_config.h').read_text()
+            (self.folder/'app_image_config.h').write_text(identity_header(version,build+1))
+            self.generate()
+            stale=ps('package_f24_bridge.ps1','-Kind','app','-AppProject',self.folder)
+            self.assertNotEqual(stale.returncode,0,stale.stdout.decode(errors='replace'))
+            self.assertIn(b'Linked Host App identity differs',stale.stdout)
+            self.assertEqual((folder/(name+'_bridge_update.bin')).read_bytes(),image)
+            (self.folder/'app_image_config.h').write_text(identity)
+            self.generate()
             for extension in ('_bridge_update.bin','_flash.mot','.map'):
                 shutil.copy2(folder/(name+extension),evidence/(name+extension))
-            for local in ('app_irq_handlers.json','app_image.json','bridge_vectors.asm'):
+            for local in ('app_irq_handlers.h','app_image_config.h','bridge_vectors.asm'):
                 shutil.copy2(self.folder/local,evidence/(label+'_'+local))
         (evidence/'boot_hashes.json').write_text(json.dumps(self.before,indent=2),encoding='ascii')
 

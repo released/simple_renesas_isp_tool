@@ -1,5 +1,200 @@
 # Development Handoff
 
+## F24 host metadata / C-header authoring (2026-10-17)
+
+Implemented the requested Host follow-up without modifying device firmware.
+Portable BUR1/BUI1 decoding/validation moved from bridge_update_contract.c
+to common/bridge_image_metadata.c/.h, compiled independently by Tool and both
+Host projects. Commands/statuses remain in bridge_update_contract.h; staging,
+CRC, Flash callbacks and launch checks stay in bridge_update_engine.c/.h.
+Parse APIs now require the available byte extent and reject null/short input;
+low-level byte helpers require validated windows. Full metadata-region parsing
+checks all256 bytes. Format success is not CRC/authentication/launch success.
+
+Host image geometry/identity is in f24_bridge_common/image_metadata_config.h;
+its independently compiled image_metadata_profile.c/.h supplies the expected
+descriptor without register dependencies. boot_app_handoff.h owns no-init RAM
+cookie/owner constants. Preparation and packaging read those exact sources,
+including dispatch ASM/protected RAM ranges; C consumers use the same values.
+App Host Link board identity now uses the shared board ID rather than a second
+literal.20KiB Boot/App5000, final1KiB protection, BUR1/BUI1/UPD1 bytes, fixed
+Misc115200, normal link/bus speeds and existing00/A5 owner values are retained.
+
+App input is app_image_config.h (five documented version/build/board/role/UART
+defines) plus app_irq_handlers.h (X-macro). The two JSON inputs were replaced;
+Git history retains them. No JSON fallback or Python MCU-build dependency.
+Pre-build validates all inputs before publishing generated identity/vectors.
+Post-build verifies all64 destinations/real RETI/RETB and the actual compiled
+five-word App identity record before writing BIN/MOT; regenerating headers
+cannot relabel stale code. CS+ preparation preserves owned settings/App input
+and registers the separate C/profile/header units once.
+
+Final clean builds: Boot0errors/2warnings, App0/2 (existing CC-RL license
+warnings). Boot highest4F42/spare189 bytes within5000; App43692bytes,
+CRC961BBF3E. Initial overflow was resolved with equivalent reserved-zero byte
+loops, not by relaxing checks or enlarging the partition.189bytes is a remaining
+ROM-growth limitation. Tool one-click Release|x64 PASS0warnings/0errors:
+0.1.0.0089,2026-10-17 13:00:53. Startup HWND/title/idle and normal close PASS;
+no COM opened. Delivery EXE/BIN/flash MOT/Boot MOT rebuilt.
+
+Verification PASS: strict C90 portable parser/profile, null/extent/unaligned/
+reserved/role/geometry tests;2816 bit-mutation comparisons against the pre-split
+parser with equal acceptance/decoded output. Host metadata4tests, F24 source/
+authoring/preparation12tests (one default A/B skip), explicit real A/B suite
+6tests PASS. A/B uses different IRQs/versions and tests stale compiled identity
+rejection while preserving prior deliveries and original Boot SHA256. Final
+preparation4tests and metadata4tests PASS after handoff reader alignment.
+Native x64 Debug/Release full rebuild/run PASS, including real C engine/parser,
+PC uploader and mocked fault/replay/power cases. Existing F13 artifact/real-HEX
+IRQ checks and common device-source/reader CheckOnly PASS. Device sources and
+their binaries were not rebuilt/changed by this task.
+
+Host guide MD/ISP full section/Bootloader jump link and9-page/3diagram PDF
+synchronized. All-page contact sheets and detailed changed pages visually
+reviewed; content/glyph/bounds/render checks PASS.17public regressions,
+18file checker, four browser routes/25diagrams,248local refs and24safe-clean
+scripts PASS. Updated Host READMEs/architecture/protocol; corrected a stale
+JSON-input paragraph in the F13 post-build MD only. Detailed evidence remains
+ignored in tmp/internal/host_metadata_split, build/logs, build/verify/f24_app_irq
+and web_review. No physical board: UART/Flash/IRQ/power/debug reset NOT RUN.
+No commit/push/publication. Existing unrelated dirty work is preserved.
+
+## Portable device metadata C module (2026-10-17)
+
+F13/F24 CAN device Boot/App now separately compile image_metadata.c/.h and
+the project-specific image_metadata_profile.c. The common C90 source owns
+bounded LE32 decoding and complete 256-byte metadata validation; it imports
+no CAN header, driver, Flash writer or reset service. The neutral IMAGE_*
+configuration remains in image_metadata_config.h. CAN staging/SEAL and status
+mapping remain in can_boot_metadata.inc; installed-image CRC, version floor,
+Flash and launch decisions remain at their existing Boot/command layers.
+App live metadata reads use ImageMetadataRead32. Reader success alone is not
+validation. Each Boot checkout contains standalone copies; App references its
+sibling Boot source. Tool firmware/common/device_metadata is the maintainer
+master, checked by sync_device_metadata.ps1 with explicit checkout paths.
+Per-MCU profile/config are not copied by that script. Both CS+ project pairs
+register the C units once; no production .c inclusion is used.
+
+Four final clean builds PASS: F13 Boot0errors/4warnings, App0/3;
+F24 Boot0/2, App0/5. F13 end1C81/spare894; F24 end1DFD/spare514
+(minimum512 remains enforced). App deliveries: F1320308bytes/CRC D30CFB79;
+F244152bytes/CRC6ABF121D. The runtime extraction changes executable bytes;
+format/layout/protocol/IRQ ABI/version numbers are unchanged. F13 retains
+detailed failure codes and F24 retains compact BAD_IMAGE with identical checks.
+IMAGE_METADATA_DETAILED_STATUS is nonserialized diagnostic configuration.
+
+Strict C90 tests PASS for12 combinations (three synthetic transport profiles,
+two diagnostic modes and two address models), plus invalid-config compilation
+and source/registration/sync guards. These profiles test the parser, not
+I2C/UART updater implementations.54 focused regressions PASS. F13 artifacts
+and real-HEX IRQ stack checks, F24 nine PS checks and production C/Tool fault
+models, native x64 Debug/Release rebuild/run PASS. Final independent App A/B
+builds PASS for both devices; original Boot SHA256 stays unchanged. Evidence:
+tmp/internal/app_ab/F13_392a83ede27742578e69a6748c16a709 and
+tmp/internal/app_ab/F24_744195faa9dd415c883d3d421934a6f6.
+
+Workshop/porting/Flash reference MD, local web and PDFs are synchronized.
+PDFs18/6/26pages with4/2/0diagrams pass text/glyph/bounds/render and all-page
+visual review. Four local browser routes/25diagrams,248 local references,
+24 workspace safe-clean scripts and common-source/read-helper equality PASS.
+Logs/rendering remain ignored in tmp/internal/metadata_parser and web_review.
+No board: physical CAN/Flash/IRQ/power NOT RUN. F24 host and Tool runtime
+sources/version/EXE untouched. No COM writes, commit/push or web publication.
+Existing unrelated dirty work is preserved; no material files deleted.
+
+## Independent device image metadata headers (2026-10-17)
+
+F13/F24 CAN device Boot now own image_metadata_config.h (neutral IMAGE_*
+format/MCU/Flash/policy/IRQ ABI/Boot identity) and boot_app_handoff.h
+(BOOT_APP_* no-init RAM/owner/signatures). can_boot_config.h owns CAN only.
+All direct consumers and the two explicit three-header PowerShell readers
+are aligned; missing/duplicate/computed numeric values fail generation.
+App release/IRQ headers remain App-local. F13 App metadata forwarding and
+both CS+ trees expose the separated contracts without copied shared values.
+Tool artifact checks, C/C++ fixtures and generator/protection tests follow
+the new ownership. No Tool runtime or F24 host source/version changes.
+
+Four CS+ clean rebuilds PASS: F13 Boot0errors/4warnings and App0/3;
+F24 Boot0/2 and App0/5. Warnings remain license/HEX-record or device-file
+options, not compile errors. F13 highest1C85/spare890; F24 highest1DFD/spare514.
+Both Boot HEX and both App BIN SHA-256 are exactly unchanged from before
+the split. All111 original F13 numeric contract values match their new owners.
+Both standalone image/handoff headers compile as C90 without importing CAN.
+
+21 device +4 porting +3 block +6 flash-reference +17 public-content regressions
+PASS (51 tests). F13 artifact/real-HEX IRQ checks, F24 nine PowerShell checks
+and production C/Tool parser fault models PASS. Native x64 Debug/Release
+model rebuild/run PASS; both independent App A/B clean builds PASS, original
+Boot hashes unchanged. No physical board available: CAN/Flash/IRQ/power NOT RUN.
+
+Workshop, porting and Flash-reference MD/web/PDF synchronized; updated editor
+design/golden sample and README sources. PDFs16/6/26pages with3/2/0diagrams
+pass content/glyph/bounds/render checks; all-page contact sheets and changed
+pages visually reviewed. Isolated local browser checks cover four routes,
+24diagrams, no errors/duplicate IDs/broken images;248 local refs and24 safe-clean
+scripts PASS. Detailed logs/rendering stay in tmp/internal/metadata_header_split
+and app_ab/web_review. Existing dirty documentation changes were preserved.
+No COM writes, Tool EXE rebuild, Git commit/push or web publication.
+
+## Metadata editor portability design (2026-10-17)
+
+Added docs/METADATA_EDITOR_PORTABILITY_DESIGN_zh-TW.md and a README design
+entry. This is a requested persistent design assessment, not editor/updater
+implementation or a temporary implementation log. Five categories cover all
+256 current CAN metadata bytes exactly once, source/edit/impact responsibilities,
+six F13/F24 CAN/I2C/UART pairings and exact-part F14/F25/other architecture ports.
+Boot contract, App manifest and live evidence remain distinct; current strict
+six-define/CAN/reserved-byte gates are explicitly retained as actual behavior.
+The design covers App-only versus paired Boot changes, independent IRQ maps,
+architecture-specific layouts, ISP profiles, schema/ABI/version boundaries,
+product identity, safe export and incomplete-backend refusal.
+
+Public-content checks for the MD/README,14 relative/anchor links,256-byte field
+coverage, six requested scenarios and three rendered/visually checked Mermaid
+flows PASS.17 existing public-document tests PASS (11.760s), workspace safe-clean
+audit24 PASS. Detailed renderer outputs remain in tmp/internal/metadata_editor_design.
+Only this MD, README and these HANDOFF/SELF_CHECK additions belong to this task;
+previous dirty web-review changes are preserved. No runtime/firmware build,
+board operations, PDF/web projection, commit/push or publication was performed.
+
+## Public-guide review fixes (2026-10-17)
+
+Documentation and verification only; no Tool/firmware runtime, image contract,
+delivery binary, version, COM, commit/push or deployment changes.
+Canonical workshop/porting MDs remove five corrupted vector labels. MultiBus
+MD and ISP operation describe bounded APP_READY/live INFO confirmation, with
+manual Discover/UART as supplemental diagnostics and no automatic rewrite.
+The root navigation MD/HTML share current linked RL78 entries; device porting
+is scoped to MCU CAN device, without draft/milestone/version snapshots.
+
+UART/I2C material is now slide_boot_loader_for_RL78/uart_i2c/index.md with its
+own HTML entry and unchanged shared renderer. Main-page links preserve53
+manual/generated fragments, including all former explicit anchors; those
+anchors remain outside collapsed details so initial hash navigation works.
+The examples own one ftable/map explanation and scope App offsets to their
+reference projects, not universal MCU minimum Boot sizes.178 unique images
+remain linked.32 code blocks match the33 originals except one removed exact
+duplicate ftable constant snippet; no firmware source was changed.
+
+verify_public_content.ps1 now includes the public navigation HTML and examples,
+and rejects private-use/replacement glyphs even in code. ISP verify_local.ps1
+also checks unique explicit IDs, single page titles, new resources/routes and
+invalid glyphs. Public-content/web tests cover HTML/MD entry parity, scope,
+fragment preservation, automatic confirmation and invalid-glyph rejection.
+Changed tests: tests/test_public_content_rules.py and test_public_web_guides.py.
+With FIRMWARE_WEB_ROOT explicitly set,17 tests PASS; ten canonical sync checks,
+248 local references and24 workspace safe-clean scripts PASS.
+
+Three affected PDFs (workshop15/porting6/MultiBus9 pages,9 diagrams total) were
+regenerated; all30 pages passed text/glyph/bounds checks and Poppler rendering,
+with contact-sheet and changed-page visual review. Existing Mermaid/Puppeteer
+dependencies provided isolated headless local HTTP QA, not desktop UI control:
+Boot8/ISP15/navigation1 diagrams render; examples have0. All four routes have
+no page errors, duplicate rendered IDs, broken images or render warnings.
+All53 fragment targets are present in both main and example DOMs; desktop and
+mobile screenshots were reviewed. Evidence/scripts remain disposable under
+tmp/internal/web_review. These local results do not publish the website.
+
 ## Three-repository publication workflow (2026-10-17)
 
 github_push.bat delegates to scripts/push_github.ps1. Default PS invocation is

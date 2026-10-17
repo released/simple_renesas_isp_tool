@@ -1,4 +1,5 @@
-#include "bridge_update_contract.h"
+/* Portable C90 image/descriptor operations; no update commands or hardware. */
+#include "bridge_image_metadata.h"
 #include <string.h>
 uint16_t Bu_Read16(const uint8_t *p) { return (uint16_t)(p[0] | ((uint16_t)p[1] << 8)); }
 uint32_t Bu_Read32(const uint8_t *p) { return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24); }
@@ -23,10 +24,14 @@ static uint8_t geometry(uint32_t start, uint32_t capacity, uint32_t flash,
         minimum > capacity || minimum % 4UL) return 0U;
     return 1U;
 }
-uint8_t Bu_ParseManifest(const uint8_t *p, bu_manifest_t *m) {
+uint8_t Bu_ParseManifest(const uint8_t *p, uint16_t length, bu_manifest_t *m) {
+    uint8_t i;
+    if (!p || !m || length < BU_MANIFEST_SIZE) return 0U;
     if (Bu_Read32(p)!=BU_IMAGE_MAGIC || p[4]!=BU_PROTOCOL || p[5]!=BU_MANIFEST_SIZE ||
-        p[6]!=2U || p[7]!=1U || Bu_Read16(p+10)!=2U || Bu_Read32(p+84) ||
-        Bu_Read32(p+88) || Bu_Read32(p+92)) return 0U;
+        p[6]!=2U || p[7]!=1U || Bu_Read16(p+10)!=2U) return 0U;
+    /* These complete byte ranges are reserved zero, including word padding. */
+    for (i=84U; i<96U; ++i) if (p[i]) return 0U;
+    for (i=112U; i<128U; ++i) if (p[i]) return 0U;
     memset(m,0,sizeof(*m));
     m->board_id=Bu_Read16(p+8); m->image_size=Bu_Read32(p+12);
     m->version=Bu_Read32(p+16); m->build=Bu_Read32(p+20);
@@ -36,8 +41,7 @@ uint8_t Bu_ParseManifest(const uint8_t *p, bu_manifest_t *m) {
     m->uart_baud=Bu_Read32(p+48); m->minimum_boot_version=Bu_Read32(p+80);
     if (Bu_Read32(p+96)!=IP_MAGIC || p[100]!=IP_VERSION || p[101]!=IP_SIZE ||
         p[102]!=IP_ROLE_BRIDGE_APP || p[103]!=IP_UART ||
-        !Bu_Read32(p+104) || Bu_Read32(p+104)==0xFFFFFFFFUL || Bu_Read32(p+108)!=m->minimum_boot_version ||
-        Bu_Read32(p+112) || Bu_Read32(p+116) || Bu_Read32(p+120) || Bu_Read32(p+124)) return 0U;
+        !Bu_Read32(p+104) || Bu_Read32(p+104)==0xFFFFFFFFUL || Bu_Read32(p+108)!=m->minimum_boot_version) return 0U;
     m->image_role=p[102]; m->update_transports=p[103]; m->irq_abi=Bu_Read32(p+104);
     return m->board_id && m->board_id!=0xFFFFU && m->uart_baud && m->version!=0xFFFFFFFFUL &&
         m->minimum_boot_version!=0xFFFFFFFFUL &&
@@ -46,7 +50,8 @@ uint8_t Bu_ParseManifest(const uint8_t *p, bu_manifest_t *m) {
         text_field(p+64,16U,m->part) && geometry(m->app_start,m->capacity,
             m->flash_size,m->boot_size,m->erase_size,m->minimum_size);
 }
-uint8_t Bu_ParseInfo(const uint8_t *p, bu_info_t *d) {
+uint8_t Bu_ParseInfo(const uint8_t *p, uint16_t length, bu_info_t *d) {
+    if (!p || !d || length < BU_INFO_SIZE) return 0U;
     if (Bu_Read32(p)!=BU_INFO_MAGIC || p[4]!=BU_PROTOCOL ||
         (p[5]!=BU_MODE_APP && p[5]!=BU_MODE_BOOT) || !p[6] || p[6]>BU_MAX_DATA ||
         p[6]%4U || (p[7]&0xF8U) || Bu_Read16(p+10)!=2U || !Bu_Read32(p+60) ||
@@ -81,9 +86,9 @@ uint8_t Bu_MatchesDevice(const bu_manifest_t *m, const bu_info_t *d) {
         m->image_role==IP_ROLE_BRIDGE_APP && m->update_transports==IP_UART && m->irq_abi==d->irq_abi &&
         m->minimum_boot_version<=d->boot_version && !strcmp(m->family,d->family) && !strcmp(m->part,d->part);
 }
-uint8_t Bu_ParseMetadataRegion(const uint8_t *p, bu_manifest_t *m) {
+uint8_t Bu_ParseMetadataRegion(const uint8_t *p, uint16_t length, bu_manifest_t *m) {
     uint16_t i;
-    if (!Bu_ParseManifest(p,m)) return 0U;
+    if (length < BU_METADATA_REGION_SIZE || !Bu_ParseManifest(p,length,m)) return 0U;
     for (i=BU_MANIFEST_SIZE; i<BU_METADATA_REGION_SIZE; ++i)
         if (p[i]!=0xFFU) return 0U;
     return 1U;

@@ -159,7 +159,7 @@
     <ClCompile Include="src\main_frame_misc.cpp" />
     <ClCompile Include="src\worker_bridge_update.cpp" />
     <ClCompile Include="src\core\bridge_update_profile.cpp" />
-    <ClCompile Include="firmware\common\bridge_update_contract.c" />
+    <ClCompile Include="firmware\common\bridge_image_metadata.c" />
     <ClCompile Include="src\core\can_host_client.cpp" />
     <ClCompile Include="src\core\f13_boot_profile.cpp" />
     <ClCompile Include="src\core\f13_boot_update.cpp" />

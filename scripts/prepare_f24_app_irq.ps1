@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'f24_app_contract.ps1')
 $contract = Get-F24AppContract $AppProject
 $identity = @"
-/* Generated from this app's app_image.json. Do not edit. */
+/* Generated from this app's app_image_config.h. Do not edit. */
 #ifndef F24_APP_IDENTITY_GENERATED_H
 #define F24_APP_IDENTITY_GENERATED_H
 #define F24_APP_IMAGE_VERSION (0x$($contract.Version.ToString('X8'))UL)

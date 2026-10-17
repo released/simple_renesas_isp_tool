@@ -135,8 +135,8 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 | 0x15 | 0x02115 | 28 | app_build[1] | 0x02115 | 28 | app_build[1] |
 | 0x16 | 0x02116 | 35 | app_build[2] | 0x02116 | 35 | app_build[2] |
 | 0x17 | 0x02117 | 01 | app_build[3] | 0x02117 | 01 | app_build[3] |
-| 0x18 | 0x02118 | 30 | image_size[0] | 0x02118 | 94 | image_size[0] |
-| 0x19 | 0x02119 | 4C | image_size[1] | 0x02119 | 0F | image_size[1] |
+| 0x18 | 0x02118 | 54 | image_size[0] | 0x02118 | 38 | image_size[0] |
+| 0x19 | 0x02119 | 4F | image_size[1] | 0x02119 | 10 | image_size[1] |
 | 0x1A | 0x0211A | 00 | image_size[2] | 0x0211A | 00 | image_size[2] |
 | 0x1B | 0x0211B | 00 | image_size[3] | 0x0211B | 00 | image_size[3] |
 | 0x1C | 0x0211C | 00 | app_start[0] | 0x0211C | 00 | app_start[0] |
@@ -391,12 +391,12 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 ### 本表範例BIN與CRC位置
 | 項目 | F13 (MCU CAN device) | F24 (MCU CAN device) |
 | --- | --- | --- |
-| image_size | 0x4C30 | 0xF94 |
-| stored image CRC32 | 0xC5CCBE1F | 0x00110089 |
-| CRC32 Flash address | 0x06C2C..0x06C2F | 0x02F90..0x02F93 |
-| metadata staging CRC32 | 0x8FB583FA | 0x21812950 |
-F13 device 範例BIN SHA-256：`3884DF62AED505B4D39F2FD145EEDEEFC45D3B141E15BC8C08217A15D43BA7E3`。
-F24 device 範例BIN SHA-256：`9B1D668EEB60E4D4101B6FD8743BF4646077FC6908991B4923FDDC7AC49093A2`。
+| image_size | 0x4F54 | 0x1038 |
+| stored image CRC32 | 0xD30CFB79 | 0x6ABF121D |
+| CRC32 Flash address | 0x06F50..0x06F53 | 0x03034..0x03037 |
+| metadata staging CRC32 | 0xAAAC5BDC | 0x3CDCA2BA |
+F13 device 範例BIN SHA-256：`8E46743D2A30389E47519EDADB63CEA34A412E9999121B3730EC65175426E633`。
+F24 device 範例BIN SHA-256：`4690E533111BEA3F709F5011D739917C07D1F920E0294EB89D63AC857B3CBF4C`。
 <!-- METADATA_BYTES_END -->
 
 ### 欄位的語意與修改限制
@@ -422,9 +422,10 @@ F24 device 範例BIN SHA-256：`9B1D668EEB60E4D4101B6FD8743BF4646077FC6908991B49
 | F13 metadata生成常數 | [ftable.inc](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/ftable.inc) | 此檔現為生成檔；編輯App的app_image_config.h，由App-mode generator結合Boot contract產生常數；不可手改.inc |
 | F13 byte排列／policy | [ftable_RL78_F13.asm](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/ftable_RL78_F13.asm) | .appmeta從APP_MANIFEST_TABLE開始，.DB4依LE放4 bytes；尾128 bytes填FF |
 | F13實際size／CRC封裝 | [generate_update_image.ps1](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/generate_update_image.ps1) | 依map決定結尾、patch image_size、計算尾CRC；ExpectedTargetId等驗證亦須與新專案一致 |
-| F13 Boot驗證契約 | [can_boot_config.h](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_config.h)／[can_boot_metadata.inc](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_metadata.inc) | g_manifest_contract／MetadataValid核對欄位；不能只改App產生端 |
+| Device metadata 解碼／驗證 | [Boot 原始碼](https://github.com/released/RL78_F13_Boot_loader_CAN)內的 `image_metadata.c/.h`、`image_metadata_config.h`、`image_metadata_profile.c` | ImageMetadataRead32 解碼 LE32；ImageMetadataValidate 對照 g_image_metadata_contract；完整 API 見 [C 模組移植](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser) |
+| CAN metadata 暫存／SEAL | [can_boot_metadata.inc](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_metadata.inc) | MetadataStage 核對順序／重送；MetadataSeal 呼叫共用驗證並核對 staging CRC，不在 parser 內擦寫 Flash |
 | F13 CAN解碼與回覆 | [can_boot_transport.c](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_transport.c)／[can_boot_block.inc](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_block.inc) | CAN_BootReceive、CAN_BootSend、BlockBegin／Segment／Check |
-| F24 device 契約與封裝 | `can_boot_config.h`、`tools/device_common.ps1`、`tools/package_images.ps1`；[工程入口](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device) | Get-DeviceMetadata 產生欄位，Get-PackagedDeviceApp 核對連結內容與 CRC |
+| F24 device 契約與封裝 | `image_metadata_config.h`、`can_boot_config.h`、`tools/device_common.ps1`、`tools/package_images.ps1`；[工程入口](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device) | Get-DeviceMetadata 結合映像／CAN 設定產生欄位，Get-PackagedDeviceApp 核對連結內容與 CRC |
 | 共用政策常數 | [image_policy.h](https://github.com/released/simple_renesas_isp_tool/blob/main/firmware/common/image_policy.h) | ROLE／CAN／I2C／UART bits、IRQ ABI、core／policy長度 |
 | Tool image解析 | [firmware_update_profile.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/core/firmware_update_profile.cpp) | 檢查BIN、metadata、CRC及目的地 |
 | Tool CAN frame編碼 | [f13_boot_profile.cpp](https://github.com/released/simple_renesas_isp_tool/blob/main/src/core/f13_boot_profile.cpp) | BuildStartRequest、BuildBlockRequest、Client::StageMetadata／SendBlock，與下方逐byte表核對 |
@@ -442,7 +443,7 @@ IMAGE_MANIFEST_TARGET      .EQU 0x0001F13B
 ; metadata 0C..0F = 3B F1 01 00
 ```
 
-例如改target_id要核對F13 Boot的CAN_BOOT_TARGET_ID、App的IMAGE_MANIFEST_TARGET、
+例如改 target_id 要核對 Boot metadata header 的 IMAGE_TARGET_ID、App 的 IMAGE_MANIFEST_TARGET、
 post-build驗證及Tool live INFO，不是只修改0x0210C。改CAN ID還須保持control／response與raw720..727不重疊。
 
 ### C90示例：讀metadata而不依賴struct padding
@@ -561,7 +562,8 @@ Self Test不是更新協定，也沒有Byte7 CRC；需CAN analyzer觀察實際bu
 ## 5. 改成自己的專案：修改順序與驗證
 
 1. 先選定 MCU CAN device 工程，確認硬體手冊的 Flash／RAM 範圍、CAN clock 與實體向量位址。
-2. 在 Boot 的 `can_boot_config.h` 設定分區、target ID、CAN IDs、rate 與 IRQ ABI。
+2. 在 Boot 的 `image_metadata_config.h` 設定分區、target ID 與 IRQ ABI；
+   `can_boot_config.h` 設定 CAN IDs／rate，`boot_app_handoff.h` 設定共用 RAM 交接。
    Linker 的 App 起點及向量表／metadata 配置對應同一分區。
 3. 在 App 編輯 `app_image_config.h` 與 `app_irq_handlers.h`。
    F13 由 PowerShell 產生 `ftable.inc`；F24 由 `Get-DeviceMetadata` 產生 metadata INC，兩者皆由 App-local pre-build 產表。

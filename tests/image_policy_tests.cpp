@@ -25,7 +25,7 @@ int TestImagePolicy() {
     check(F13_Crc32Bytes(reinterpret_cast<const unsigned char*>("123456789"),9)==0xCBF43926UL,"real F13 CRC known vector");
     std::vector<std::uint8_t> image(3072,0xA6);
     std::fill_n(image.data()+256,256,static_cast<std::uint8_t>(0xFF));
-    std::memcpy(image.data()+256,g_manifest_contract,128);
+    std::memcpy(image.data()+256,g_image_metadata_contract,128);
     auto* region=image.data()+256;
     Bu_Write32(region+16,0x10400); Bu_Write32(region+20,20261015); Bu_Write32(region+24,3072);
     Bu_Write32(region+108,0x10400);

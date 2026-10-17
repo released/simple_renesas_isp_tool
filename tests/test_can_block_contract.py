@@ -36,10 +36,11 @@ class CanBlockContract(unittest.TestCase):
         self.assertIn("This log is incomplete", queue)
 
     def test_target_filters_metadata_crc_and_word_bounds_preserved(self):
-        config = (F13 / "can_boot_config.h").read_text()
+        config = ((F13 / "can_boot_config.h").read_text() +
+                  (F13 / "image_metadata_config.h").read_text())
         transport = (F13 / "can_boot_transport.c").read_text()
         rules = (F13 / "RSCANconf/RSCANlite.c").read_text()
-        self.assertRegex(config, r"CAN_BOOT_APPLICATION_START\s+\(0x02000UL\)")
+        self.assertRegex(config, r"IMAGE_APPLICATION_START\s+\(0x02000UL\)")
         self.assertRegex(config, r"CAN_BOOT_PROTOCOL_VERSION\s+\(0x05U\)")
         self.assertIn("CAN_BOOT_BLOCK_DATA_ID, 0x0000U, 0x07F8U, 0xC000U", rules)
         self.assertIn("CAN_BOOT_RX_RULE_MASK_LOW", rules)

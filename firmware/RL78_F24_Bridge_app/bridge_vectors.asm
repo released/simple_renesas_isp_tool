@@ -1,4 +1,4 @@
-; Generated from this app's app_irq_handlers.json by prepare_f24_app_irq.ps1.
+; Generated from this app's app_irq_handlers.h by prepare_f24_app_irq.ps1.
 .PUBLIC _bridge_default_isr
 .EXTERN _start
 .SECTION .app_vectors, TEXT

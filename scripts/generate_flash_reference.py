@@ -42,7 +42,11 @@ F13 = [
 F24 = [(offset, size, name,
         'app_image_config.h' if name in ('app_version', 'app_build') else
         'post-build / map' if name == 'image_size' else
-        'can_boot_config.h / Get-DeviceMetadata')
+        'can_boot_config.h / Get-DeviceMetadata' if name in (
+            'protocol_id', 'protocol_version', 'can_mode_mask', 'can_id_format',
+            'nominal_rate_mask', 'data_rate_mask', 'request_id', 'response_id') else
+        'app_image_config.h' if name == 'version_control' else
+        'image_metadata_config.h / Get-DeviceMetadata')
        for offset, size, name, origin in F13]
 
 

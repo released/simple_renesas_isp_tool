@@ -17,17 +17,19 @@ Tool computes per-update counter deltas from fresh before/after snapshots;
 peaks cover boot/CLEAR_STATS lifetime, not only the current update.
 See the [confirmation and report guide](../../docs/UPDATE_VALIDATION_zh-TW.md).
 
-Start with [RL78 Boot/App porting](../../docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md)
-before copying this project or replacing its application functionality.
+Use [Host App engineering](../../docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md#host-app-engineering)
+for the C-header metadata/IRQ editing steps and portable parser APIs.
 
 App start0x5000, capacity235KiB, last1KiB protected. Only after reference SC
 regeneration run scripts/prepare_f24_bridge_projects.ps1 -Kind app. Routine
 scripts/build_f24_bridge.ps1 -Kind app performs a clean build and artifact
 audit without reference-project preparation. CS+ pre/post-build run automatically.
 
-Each app owns app_irq_handlers.json and app_image.json. Pre-build runs
+Each app owns app_irq_handlers.h and app_image_config.h. Pre-build runs
 scripts/prepare_f24_app_irq.ps1 -AppProject "." to validate registered normal
 ISRs and generate bridge_vectors.asm plus f24_app_identity.generated.h.
+Post-build also compares the actual compiled release-identity record with
+app_image_config.h. Regenerating headers cannot relabel already linked code.
 Never edit generated outputs. App ISR pragmas have no vect=; all return RETI.
 Reserved/BRK vector keys, ordinary/static/unregistered handlers are rejected.
 
@@ -44,8 +46,8 @@ Post-build uses this app's project stem, local identity, slot mapping and real
 RETI/RETB epilogues in addition to existing bounds/CRC/RAM audits.
 
 For reference SC regeneration use prepare_f24_bridge_projects.ps1 -Kind app;
-it retains local JSON, regenerates only app projections/MTPJ and leaves boot
-untouched. Change a JSON mapping explicitly when enabling/disabling a driver.
+it retains local C headers, regenerates only app projections/MTPJ and leaves boot
+untouched. Change the IRQ X-macro explicitly when enabling/disabling a driver.
 See the app-local section in docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md.
 
 - *_bridge_update.bin: load this HOST APP file in tool Misc.
@@ -66,5 +68,9 @@ The runtime requires BRIDGE_SPLIT_APP; no standalone build/identity fallback
 remains. Install matching Boot once, then use Misc for App-only updates.
 
 Hardware validation remains pending; see the shared guide and HANDOFF.
+Metadata geometry/identity belongs to f24_bridge_common/image_metadata_config.h;
+its profile and common bridge_image_metadata.c/.h are independently compiled.
+The parser receives byte extents and has no CAN/UART/Flash-driver dependency.
+boot_app_handoff.h owns no-init RAM, separate from serialized metadata.
 For recovery, hold SW1/P32 LOW during reset/power-up, release after Boot starts,
 then use Misc115200 to update App and explicitly RUN.

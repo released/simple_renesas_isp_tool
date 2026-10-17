@@ -15,6 +15,32 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-17 F24 host metadata: common bridge_image_metadata.c/.h is independent
+of command/Flash engine, with project image_metadata_config/profile and
+boot_app_handoff headers. App release/IRQ authoring uses C headers, with linked
+identity and full vector packaging guards. Host Boot/App clean builds and
+Tool0089 release/smoke PASS; native Debug/Release, strict C90/reference cases
+and real App A/B with unchanged Boot PASS. Boot remains20KiB/App5000 with189
+bytes spare. Host MD/local web/PDF synchronized; see HANDOFF/SELF_CHECK for
+actual evidence. Physical verification NOT RUN. Device firmware untouched.
+
+2026-10-17 device runtime parser: image_metadata.c/.h owns portable C90
+decoding/validation, image_metadata_profile.c supplies per-project contract,
+CAN staging remains in its adapter. Both standalone Boot/App pairs compile
+the C units separately. Final builds,12 strict C90 combinations,54 focused
+regressions, native/fault models and both App A/B flows PASS. Boot spare
+F13894/F24514 retains512guard. MD/local web/PDF integration and actual
+verification details are recorded at the top of HANDOFF/SELF_CHECK.
+Physical tests NOT RUN; F24 host and Tool runtime are outside this change.
+
+2026-10-17 device header ownership: image_metadata_config.h owns neutral IMAGE_*
+format/MCU/Flash/policy/Boot identity; can_boot_config.h owns CAN, and
+boot_app_handoff.h owns RAM/owner. Both golden generators read these three
+explicit sources; App release/IRQ headers remain App-local. Clean Boot/App
+builds and byte-identical deliveries, independent App A/B builds, negative
+header cases, native models and MD/web/PDF checks are recorded at the top of
+HANDOFF/SELF_CHECK. No Tool runtime/host changes or hardware claim.
+
 2026-10-17 publication entry: root github_push.bat, explicit Execute/Yes and
 read-only PS preview; fixed F13 Boot/App/Tool catalog includes F24 CAN host
 deliveries. Archive non-delivery DefaultBuild files under ignored tmp before

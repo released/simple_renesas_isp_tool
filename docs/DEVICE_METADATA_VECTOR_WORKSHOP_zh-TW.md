@@ -33,11 +33,25 @@ F24 device 的板端設定與建置方式見 [F24 CAN device 工程配置](https
 | 檔案 | 內容 | 編輯方式 |
 | --- | --- | --- |
 | `app_image_config.h` | App 版本、build 與映像身分核對值 | 使用者設定 |
+| Boot `image_metadata_config.h` | 格式、MCU／Flash、IRQ ABI、更新政策與 Boot 版本 | 共用映像契約；變動時核對 Boot／App、linker、封裝及 Tool |
+| Boot `can_boot_config.h` | CAN ID、速率宣告、命令與接收規則 | CAN 通訊設定；搭配實際 clock／timing 修改 |
+| Boot `boot_app_handoff.h` | 共用 RAM、IRQ owner 與一次性交接標記 | 啟動交接契約；與 linker／startup／向量產生器對應 |
+| `image_metadata.c/.h` | 執行時欄位解碼與完整 metadata 驗證 | 共用 C90 模組；Boot／App 分別編譯引用 |
+| `image_metadata_profile.c` | 工程接受的 32-word metadata core | 結合映像契約與 ISP 設定；不操作 driver register |
 | `app_irq_handlers.h` | 實體 vector → ISR 函式名稱 | 使用者設定，搭配 App 的 ISR C 檔 |
 | `.inc`、identity header、向量表 | 編譯與封裝所需資料 | 產生器輸出；檔名見 [建置產物](#device-app-build) |
 | `DefaultBuild/app_build_report.html` | 實際 BIN 的 metadata、位址、CRC、向量表 | post-build 輸出；以瀏覽器開啟，見 [編譯摘要](#device-app-build-report) |
 
 兩個 device 使用相同的 C header 欄位，產生器依各自的 Boot 契約輸出對應檔案。
+
+Metadata 的共用宣告採 `IMAGE_*` 名稱，放在獨立 header；不引用 CAN driver。
+CAN 參數仍會被記錄到 BIN，產生器及驗證端在組合欄位時讀取 `can_boot_config.h`，
+因此不需要在 metadata header 再維護一份 CAN ID／速率。
+
+日常 App 發行編輯 `app_image_config.h`；改 MCU／分區／格式時核對 `image_metadata_config.h`；
+改 CAN 通訊參數時核對 `can_boot_config.h` 與驅動。
+CS+ 專案樹已列入這些設定 header。F13 App 的同名 metadata header 只引用相鄰 Boot 契約，
+不另存一份可獨立修改的共用數值。
 
 <a id="device-app-json"></a>
 <a id="device-app-config"></a>
@@ -68,7 +82,7 @@ App 版本、Boot 版本與 minimum Boot 為不同欄位。
 | `APP_IMAGE_UPDATE_TRANSPORTS` | 允許的更新介面 bitmask，不是 App 執行時使用的周邊 | 協定 `0x01U`＝CAN、`0x02U`＝I2C、`0x04U`＝UART，`0x03U`＝CAN＋I2C；本 CAN 工程僅接受 `0x01U`，其他值不會啟用另一種更新流程 |
 | `APP_IMAGE_VERSION_CONTROL` | 已安裝有效 App 的版本政策 | `0U`＝任意版本、`1U`＝同版／新版；其他值拒絕產生；維護操作見 [force 降版](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version) |
 
-Boot 自身的版本／build 位於 `can_boot_config.h` 的 `CAN_BOOT_FIRMWARE_VERSION`／`CAN_BOOT_FIRMWARE_BUILD`。
+Boot 自身的版本／build 位於 `image_metadata_config.h` 的 `IMAGE_BOOT_VERSION`／`IMAGE_BOOT_BUILD`。
 App producer 將該 Boot 版本寫成 metadata 的 minimum Boot；板上 Boot 版本須不低於此值。
 例如 Boot 1.7.0 與 App 2.1.3 可以搭配；App 版本與 Boot 版本不做相等比較。
 只更新相容的 App 時，保留 Boot 設定即可。
@@ -107,7 +121,7 @@ App producer 將該 Boot 版本寫成 metadata 的 minimum Boot；板上 Boot �
 #endif
 ```
 
-App pre-build 讀 C header 與 matching Boot 的 `can_boot_config.h`，產生 `ftable.inc`／`app_identity.h`；
+App pre-build 讀 App C header、Boot 的 `image_metadata_config.h` 及 CAN 設定，產生 `ftable.inc`／`app_identity.h`；
 `ftable_RL78_F13.asm` 依生成常數排列 App metadata，讓 App INFO 與 BIN 使用同一版本／build。
 `IMAGE_SIZE_POST_BUILD = 0xFFFFFFFF` 是封裝前的長度預留值，post-build 會填入實際大小。
 
@@ -180,11 +194,69 @@ version／build 是 App 身分設定；target／role／transport 是與 Boot 核
 
 ```mermaid
 flowchart TD
-    CONFIG["MCU CAN device App<br/>app_image_config.h"] --> PRE["pre-build 產生 metadata inc<br/>與 identity header"]
+    CONFIG["MCU CAN device App<br/>app_image_config.h"] --> PRE["App pre-build<br/>metadata INC／identity header"]
+    IMAGE["image_metadata_config.h<br/>映像格式與工程配置"] --> PRE
+    CANCFG["can_boot_config.h<br/>CAN 通訊參數"] --> PRE
     PRE --> LINK["Linker map：實際 code / data 範圍"]
     LINK --> PACK["各自 post-build<br/>產生或填入 metadata、actual size、tail CRC"]
     PACK --> BIN["封裝 update.bin<br/>不是 raw MOT / ABS"]
 ```
+
+<a id="device-metadata-parser"></a>
+
+#### B5. Metadata C 模組與移植入口
+
+兩個 device 的 Boot／App 分別編譯 `image_metadata.c`，介面由 `image_metadata.h` 宣告。
+模組不包含 CAN driver、Flash 擦寫或 reset 操作。
+App 的 INFO 欄位讀取與 Boot 的 metadata 驗證使用同一組介面。
+`image_metadata_profile.c` 定義工程的 `g_image_metadata_contract[32]`，
+由映像契約及 ISP 設定組合預期 core；CAN 分包暫存、順序／重送與 SEAL 留在 adapter。
+
+| API | 輸入與結果 | 驗證範圍 |
+| --- | --- | --- |
+| `ImageMetadataRead32(data, length, offset, &value)` | data 指向 metadata byte0；可用長度至少 256 bytes，offset 為 0..252；成功回傳 1，失敗回傳 0 並清除輸出值 | 讀取任意 LE32 window，支援未對齊 byte buffer；不代表身分或 CRC 已通過 |
+| `ImageMetadataValidate(words)` | 完整 64 個對齊的 native 32-bit words；成功為 `IMAGE_METADATA_OK` | 128-byte core、128-byte reserved FF、大小、版本編碼、build、版控值、minimum Boot、分區、身分、ISP 參數與 IRQ ABI |
+
+C90 模組要求 `unsigned long` 為 32 bits，header 會檢查寬度。
+直接映射 Flash 為 word pointer 適用於對齊的 little-endian CPU。
+Byte-oriented 或 big-endian backend 先用 `ImageMetadataRead32` 將 64 words 解碼至對齊的 native word array，再執行完整 metadata 驗證。
+長度、來源範圍及對齊由呼叫端確認；範例的 Flash metadata 與 RAM staging buffer 已依此配置。
+
+完整 metadata 驗證不包含全映像 CRC，也不取代 START 的已安裝 App 版控判斷。
+「欄位可讀」「映像契約相符」與「完整映像可啟動」分別核對。
+
+```mermaid
+flowchart TD
+    RX["ISP adapter<br/>收齊 256-byte metadata"] --> CHECK["ImageMetadataValidate"]
+    PROFILE["工程 config／profile"] --> CHECK
+    CHECK --> OK{"Metadata 契約相符？"}
+    OK -->|否| STOP["回報錯誤；拒絕更新"]
+    OK -->|是| NEXT["Boot 續行 CRC／更新狀態機<br/>與完整啟動檢查"]
+    APP["App 讀取欄位"] --> READ["ImageMetadataRead32<br/>解碼不代表映像有效"]
+```
+
+`IMAGE_METADATA_DETAILED_STATUS` 是編譯時診斷選項，不寫入 BIN metadata。
+`1U` 回報 field／policy／IRQ ABI／layout 等原因；`0U` 統一回報 BAD_IMAGE。
+兩種設定執行相同的接受／拒絕條件，並由工程的 ROM 餘裕檢查核對容量。
+
+#### 模組移植步驟
+
+1. 保留 `image_metadata.c/.h`，依實際 MCU／分區修改 `image_metadata_config.h`。
+2. 在 `image_metadata_profile.c` 組合工程接受的身分、格式與 ISP 參數。
+   換介面時對應其設定與 adapter；共用解析模組不處理通訊命令或 register。
+3. 在 Boot／App 的 CS+ 專案樹註冊 C 來源與 header；C 來源各編譯一次，不以 include 合併 C 檔。
+   範例已完成註冊，App 引用相鄰 Boot 的本機來源。
+4. Boot 在 metadata staging、已安裝映像判斷與 END 使用共用驗證；
+   CRC、向量檢查及 Flash 保護維持在 Boot 流程。
+   App 讀欄位時呼叫 `ImageMetadataRead32`，不另行複製 byte shift 或直接套用未對齊 struct。
+5. Clean rebuild 後核對 Boot map／餘裕、App metadata／CRC／向量及 HTML 編譯摘要。
+   檢查正常映像、錯誤身分／分區／IRQ、保留 bytes、短資料與更新中斷等情況。
+
+共用原稿位於 Tool repository 的 `firmware/common/device_metadata`。
+兩份 Boot repository 各自攜帶相同 C／header，日常 MCU 建置不依賴 Tool checkout。
+維護共用模組時，在 Tool repository 使用
+`scripts/sync_device_metadata.ps1 -F13Boot <Boot checkout> -F24Boot <Boot checkout>` 同步，
+加上 `-CheckOnly` 可唯讀核對；各工程 config／profile 不由此腳本覆寫。
 
 <a id="device-app-irq"></a>
 
@@ -192,7 +264,7 @@ flowchart TD
 
 本例使用兩個 device header 都定義的 `INTP1 = 0x0A`。
 其他 IRQ 的 vector 位址依各 MCU 的 device header 決定。
-vector ? 是 **實體 vector byte address**，不是 IRQ 序號、App slot 或周邊 pin。
+Vector 位址是**實體 vector byte address**，不是 IRQ 序號、App slot 或周邊 pin。
 兩者的 App slot 計算為 `0x2000 + 0x0A × 2 = 0x2014`，即 BIN offset `0x14`。
 
 #### C1. 加入一般 ISR，並在 App MTPJ 註冊來源
@@ -222,10 +294,10 @@ SC／Code Generator 重產後，核對 ISR pragma 並移除 App 的 `vect=`，�
 
 #### C2. F13 mapping：保留原有項目，新增 0x0A
 
-vector ? 的來源是此 App 的 [iodefine.h](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/iodefine.h) 中的中斷定義。
+Vector 位址的來源是此 App 的 [iodefine.h](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/iodefine.h) 中的中斷定義。
 硬體規格可對照 RL78/F13 硬體手冊「Interrupt functions」章節的中斷來源／向量表。
 
-| vector ? | header 定義 | ISR 名稱 | 函式來源 |
+| Vector 位址 | header 定義 | ISR 名稱 | 函式來源 |
 | --- | --- | --- | --- |
 | `0x08` | `INTP0 = 0x0008` | `r_intc0_interrupt` | [r_cg_intc_user.c](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/src/code_gen/r_cg_intc_user.c) |
 | `0x0A` | `INTP1 = 0x000A` | `app_aux_irq` | 本章 C1 的 `app_extra_irq.c` |
@@ -495,7 +567,7 @@ CRC 用於完整性檢查。
 | --- | --- |
 | 只改 App version／build 或相容的一般 IRQ | 產表、重建與封裝 App；不因 ISR 名稱改動重燒 Boot |
 | 改 MCU／App start／geometry／IRQ ABI／更新協定 | 屬於共同契約變更；同步 Boot、App、producer、Tool／validator 並重新驗證 |
-| vector ? 寫 `0x2014`、IRQ index 或保留／奇數 vector | 應寫合法實體 byte address，本例為 `0x0A`；以本工程 header 核對 |
+| Vector 位址填入 `0x2014`、IRQ index 或保留／奇數 vector | 填寫合法實體 byte address，本例為 `0x0A`；以本工程 header 核對 |
 | C 檔只複製進資料夾，沒有加入 MTPJ | generator 或 linker 應拒絕；先修正專案登錄 |
 | ISR 帶 `vect=`／static／普通函式，或 symbol 拼錯 | 改成正常 global interrupt ISR，再核對 C header 與 generated table |
 | 覆蓋原有 UART／timer mappings | 先恢復仍在用的清單；新增不是替換整份 C header |

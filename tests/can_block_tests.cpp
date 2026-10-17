@@ -39,7 +39,7 @@ void Put32(std::vector<uint8_t>& p, uint32_t value) {
 }
 std::vector<uint8_t> Image(unsigned size) {
     std::vector<uint8_t> image(size,0xA6U);
-    std::memcpy(image.data()+256,block_target::g_manifest_contract,128);
+    std::memcpy(image.data()+256,block_target::g_image_metadata_contract,128);
     std::fill_n(image.data()+384,128,static_cast<uint8_t>(0xFFU));
     IP_Write32(image.data()+272,0x10500U);
     IP_Write32(image.data()+276,20261015U);
@@ -83,10 +83,10 @@ public:
             const auto page=p[1]; uint32_t value=0;
             if(page==0x1BU) return Ack(cmd,0,static_cast<uint16_t>(page|(app_mode?0x0100U:0x0200U)),app_mode?0x30701U:0U);
             if(page==0x1CU) return Ack(cmd,0,static_cast<uint16_t>(page|(app_mode?0x0100U:0x0200U)),app_mode?1U:7U);
-            const uint32_t info[]={0x0605F13BU,CAN_BOOT_FIRMWARE_VERSION,CAN_BOOT_FIRMWARE_BUILD,0xFFFFFFFFU,0xFFFFFFFFU,
+            const uint32_t info[]={0x0605F13BU,IMAGE_BOOT_VERSION,IMAGE_BOOT_BUILD,0xFFFFFFFFU,0xFFFFFFFFU,
                 0x2000U,0x1E000U,0x20000U,0x2000U,1024U,0x01010001U,4U,0U,0x700U,0x701U,
-                CAN_BOOT_MCU_PART_0,CAN_BOOT_MCU_PART_1,0U,0U,CAN_BOOT_MCU_FAMILY_0,
-                CAN_BOOT_MCU_FAMILY_1,0U,0xFFFFFFFFU,516U,CAN_BOOT_POLICY_WORD,CAN_BOOT_IRQ_ABI,CAN_BOOT_BLOCK_INFO};
+                IMAGE_MCU_PART_0,IMAGE_MCU_PART_1,0U,0U,IMAGE_MCU_FAMILY_0,
+                IMAGE_MCU_FAMILY_1,0U,0xFFFFFFFFU,516U,IMAGE_POLICY_WORD,IMAGE_IRQ_ABI,CAN_BOOT_BLOCK_INFO};
             if(page==CAN_BOOT_INFO_PAGE_VERSION_POLICY) value=BootValid() ? 1U|(IP_Read32(flash.data()+0x174U)<<1U) : 0U;
             else { Check(page < 27U,"INFO page bounds"); if (page < 27U) value=info[page]; }
             if(BootValid() && (page==3U || page==4U || page==22U))
@@ -277,7 +277,7 @@ int TestCanBlock(const char* actual_image) {
             "force cannot bypass image CRC check");
         for(const auto offset:{0x10CU,0x11CU,0x168U,0x16CU}) {
             auto incompatible=still_older; incompatible[offset]^=0x80U;
-            if(offset==0x16CU) IP_Write32(incompatible.data()+offset,CAN_BOOT_FIRMWARE_VERSION+1U);
+            if(offset==0x16CU) IP_Write32(incompatible.data()+offset,IMAGE_BOOT_VERSION+1U);
             IP_Write32(incompatible.data()+incompatible.size()-4,
                 firmware_update::Crc32(incompatible.data(),incompatible.size()-4));
             Check(!f13_boot::RunUpdate(&device,incompatible,force,&report,&error) &&

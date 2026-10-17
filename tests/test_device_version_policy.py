@@ -19,7 +19,7 @@ class DeviceVersionPolicy(unittest.TestCase):
             app=boot.parent/(boot.name+'_app')
             text=(app/'app_image_config.h').read_text(encoding='utf-8-sig')
             for term in ('0x02U=I2C','0x04U=UART','5U','0xF33BU',
-                         'CAN_BOOT_FIRMWARE_VERSION','APP_IMAGE_VERSION_CONTROL',
+                         'IMAGE_BOOT_VERSION','APP_IMAGE_VERSION_CONTROL',
                          'force upgrade old version firmware','0U=disabled'):
                 self.assertIn(term,text)
             data=(app/'DefaultBuild'/(app.name+'_update.bin')).read_bytes()
@@ -64,7 +64,7 @@ class DeviceVersionPolicy(unittest.TestCase):
             self.assertNotIn('Erase(',start)
             self.assertNotIn('Write(',start)
             self.assertNotRegex(text,r'\bg_force\w*\b')
-            config=(boot/'can_boot_config.h').read_text(encoding='utf-8-sig')
+            config=(boot/'image_metadata_config.h').read_text(encoding='utf-8-sig')
             self.assertIn('(0x004E4143UL)',config)
             self.assertNotIn('CAN3',config)
 

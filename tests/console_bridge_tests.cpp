@@ -152,8 +152,8 @@ int TestConsoleBridge() {
     check(Bu_MatchesDevice(&image.metadata,&device)!=0,"exact bridge descriptor match");
     device.board_id=0x0202; check(!Bu_MatchesDevice(&image.metadata,&device),"wrong host rejected"); device.board_id=0x0101;
     std::uint8_t wire[96]; bu_info_t decoded={}; Bu_EncodeInfo(&device,wire);
-    check(Bu_ParseInfo(wire,&decoded)!=0,"boot descriptor round trip");
-    wire[6]=63; check(!Bu_ParseInfo(wire,&decoded),"unaligned data limit rejected");
+    check(Bu_ParseInfo(wire,BU_INFO_SIZE,&decoded)!=0,"boot descriptor round trip");
+    wire[6]=63; check(!Bu_ParseInfo(wire,BU_INFO_SIZE,&decoded),"unaligned data limit rejected");
     p[128]=0; checksum(); check(!b::Inspect(bytes).valid,"reserved bridge extension rejected with correct CRC"); p[128]=0xFF;
     p[4]=1; checksum(); check(!b::Inspect(bytes).valid,"bridge contract1 rejected"); p[4]=BU_PROTOCOL;
     p[64]='X'; checksum(); image=b::Inspect(bytes);

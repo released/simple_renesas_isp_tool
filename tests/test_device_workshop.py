@@ -51,7 +51,7 @@ class DeviceWorkshop(unittest.TestCase):
         cls.irq_c = next(value for value in blocks if '#pragma interrupt app_aux_irq' in value)
 
     def test_scope_structure_source_links_and_examples(self):
-        self.assertEqual(self.text.count('```mermaid'),3)
+        self.assertEqual(self.text.count('```mermaid'),4)
         self.assertEqual(len(self.examples),8)
         self.assertGreaterEqual(len(re.findall(r'(?m)^\| --- \|',self.text)),7)
         self.assertEqual(self.text.count('```')%2,0)
@@ -100,7 +100,8 @@ class DeviceWorkshop(unittest.TestCase):
         shutil.copyfile(source/'iodefine.h', destination/'iodefine.h')
 
     def test_f13_actual_generator_with_documented_metadata_and_irq(self):
-        protected=list(F13.glob('*.asm'))+[F13/'can_boot_config.h',F13/f'{F13.name}.mtpj']
+        protected=list(F13.glob('*.asm'))+[F13/name for name in
+            ('can_boot_config.h','image_metadata_config.h','boot_app_handoff.h',f'{F13.name}.mtpj')]
         before=hashed(protected)
         with tempfile.TemporaryDirectory(prefix='device_workshop_f13_') as folder:
             project=Path(folder)
@@ -129,7 +130,8 @@ class DeviceWorkshop(unittest.TestCase):
 
     def test_f24_actual_app_prepare_with_documented_header_and_irq(self):
         if not F24.exists(): self.skipTest('Select F24 device checkout for production generator tests')
-        protected=list(F24.glob('*.asm'))+[F24/'can_boot_config.h',F24/f'{F24.name}.mtpj']
+        protected=list(F24.glob('*.asm'))+[F24/name for name in
+            ('can_boot_config.h','image_metadata_config.h','boot_app_handoff.h',f'{F24.name}.mtpj')]
         before=hashed(protected)
         # The production generator deliberately uses same-volume relative paths.
         scratch=F24/'tmp/workshop_tests'
@@ -221,7 +223,9 @@ class DeviceWorkshop(unittest.TestCase):
             parent=Path(folder)
             boot=parent/F13.name; boot.mkdir()
             project=parent/F13_APP.name; project.mkdir()
-            for name in ('generate_irq_contract.ps1','app_config.ps1','app_build_report.ps1','can_boot_config.h'):
+            for name in ('generate_irq_contract.ps1','app_config.ps1','app_build_report.ps1',
+                         'can_boot_config.h','image_metadata_config.h','boot_app_handoff.h',
+                         'image_metadata.c','image_metadata.h','image_metadata_profile.c'):
                 shutil.copyfile(F13/name,boot/name)
             self.temp_project(F13_APP,project,self.examples[5])
             (project/'app_image_config.h').write_text(image_header(self.examples[1]),encoding='utf-8')
@@ -294,7 +298,7 @@ class DeviceWorkshop(unittest.TestCase):
     def test_pdf_diagrams_text_and_page_bounds(self):
         path=DOC.with_suffix('.pdf')
         reader=PdfReader(path)
-        self.assertEqual(sum(len(page.images) for page in reader.pages),3)
+        self.assertEqual(sum(len(page.images) for page in reader.pages),4)
         text='\n'.join(page.extract_text() for page in reader.pages)
         for phrase in ('app_aux_irq','0x2014','ftable.inc','app_image_config.h','CheckOnly','not raw','0xF24B'):
             if phrase == 'not raw': self.assertIn('raw',text)

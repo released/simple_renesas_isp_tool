@@ -29,13 +29,13 @@ the checked-in configuration and clean CC-RL builds are verified.
 The preparation script reads each project's existing MTPJ; it never clones a
 third project or resets project-local compiler/linker/build-hook settings.
 It reconciles registered generated sources, derives no-physical-vector ISR and
-startup projections, and preserves App's JSON mapping/identity. Do not edit
+startup projections, and preserves App's C-header mapping/identity. Do not edit
 projections directly or compile canonical vect-bearing sources alongside them.
-New App ISRs still require an explicit `app_irq_handlers.json` entry.
+New App ISRs use an explicit `app_irq_handlers.h` entry.
 
 `f24_runtime_hooks.h` is the small shared UART/timer callback interface.
 Boot's `boot_platform.c` and App's own runtime implement it independently;
 shared drivers must not include App's `inc_main.h` or depend on App source files.
 
 Start with [F24 bring-up](../../docs/F24_BRINGUP.md) and the
-[Boot/App porting guide](../../docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md).
+[Host App engineering guide](../../docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md#host-app-engineering).

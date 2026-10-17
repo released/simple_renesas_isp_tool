@@ -50,6 +50,8 @@
     <ClCompile Include="host_link_protocol_tests.cpp" />
     <ClCompile Include="image_policy_tests.cpp" />
     <ClCompile Include="can_block_tests.cpp" />
+    <ClCompile Include="$(F13BootProject)\image_metadata.c" />
+    <ClCompile Include="$(F13BootProject)\image_metadata_profile.c" />
     <ClCompile Include="f24_can_process_tests.cpp" />
     <ClCompile Include="console_bridge_tests.cpp" />
     <ClCompile Include="bridge_engine_tests.cpp" />
@@ -58,7 +60,7 @@
     </ClCompile>
     <ClCompile Include="..\src\ui\console_geometry.cpp" />
     <ClCompile Include="..\src\core\bridge_update_profile.cpp" />
-    <ClCompile Include="..\firmware\common\bridge_update_contract.c" />
+    <ClCompile Include="..\firmware\common\bridge_image_metadata.c" />
     <ClCompile Include="..\firmware\common\bridge_update_engine.c" />
     <ClCompile Include="..\firmware\common\bridge_boot_link.c" />
     <ClCompile Include="serial_port_catalog_tests.cpp" />

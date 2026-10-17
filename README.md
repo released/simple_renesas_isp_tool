@@ -14,6 +14,11 @@ For editing device image metadata or adding App interrupts, use the
 editable versus generated fields, before/after examples, App-only commands
 and BIN/vector verification. Both devices use app_image_config.h and
 app_irq_handlers.h; generators own INC/identity/vector outputs.
+The shared image contract is image_metadata_config.h (IMAGE_*), separate from
+can_boot_config.h transport settings and boot_app_handoff.h RAM/owner markers.
+Runtime metadata decoding/validation is independently compiled from the common
+image_metadata.c/.h; image_metadata_profile.c supplies the project contract.
+See the [C module porting entry](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser).
 Each App post-build also produces DefaultBuild/app_build_report.html with the
 actual BIN identity, metadata byte addresses, CRC/SHA-256 and complete vector
 table. See the [build-summary guide](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build-report).
@@ -30,6 +35,12 @@ and the [Boot/App porting guide](https://released.github.io/slide_boot_loader_fo
 The matching offline source is [the multi-bus guide](docs/MULTIBUS_TOOL_GUIDE_zh-TW.md#downloads).
 Initial Boot installation uses a programmer; Misc updates the Host App only,
 while CAN Upgrade updates the external Device App. These images are not interchangeable.
+
+Host App metadata and IRQ authoring also use C headers: app_image_config.h
+and app_irq_handlers.h. The portable bridge_image_metadata.c/.h module,
+engineering config/profile and RAM handoff are separate from the update engine.
+See [Host App engineering](docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md#host-app-engineering)
+for editing, parser APIs and standalone App build/package checks.
 
 For the complete Tool-to-device teaching path, start with the
 [CAN update walkthrough](docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md) and its
@@ -64,6 +75,11 @@ The PC Tool selects bridge ports from the connected host's advertised capabiliti
 F13 and F24 CAN devices each maintain independent Transfer/Boot/App projects.
 
 ## Operation and firmware development
+
+The [metadata editor and cross-MCU/ISP portability design](docs/METADATA_EDITOR_PORTABILITY_DESIGN_zh-TW.md)
+maps all metadata fields to their sources and Boot/App/IRQ/Tool dependencies.
+It covers fixed-Boot App releases, MCU/interface migration and compatibility
+acceptance; it is a design assessment, not an enabled editor or update adapter.
 
 [Update confirmation and validation](docs/UPDATE_VALIDATION_zh-TW.md) covers
 automatic App checks, metadata differences, staged progress, independent Cancel,

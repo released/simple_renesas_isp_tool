@@ -45,15 +45,15 @@ class PortingGuideTests(unittest.TestCase):
                 self.assertIn(urlsplit(link).hostname, ['github.com', 'released.github.io'])
             else:
                 self.assertTrue((DOC.parent / link.split("#")[0]).exists(), link)
-        config = (companion_path('F13Boot') / 'can_boot_config.h').read_text()
-        self.assertRegex(config, r"CAN_BOOT_IMAGE_FORMAT_VERSION\s+\(0x06U\)")
-        self.assertRegex(config, r"CAN_BOOT_MANIFEST_SIZE\s+\(128U\)")
+        config = (companion_path('F13Boot') / 'image_metadata_config.h').read_text()
+        self.assertRegex(config, r"IMAGE_FORMAT_VERSION\s+\(0x06U\)")
+        self.assertRegex(config, r"IMAGE_MANIFEST_SIZE\s+\(128U\)")
         f24 = companion_path('F13Boot').parent/'RL78_F24_Boot_loader_CAN'
         f24_vectors = (f24 / 'f24_boot_vectors.asm').read_text()
         self.assertIn('CMP !0xF710,#0x55', f24_vectors)
-        f24_config = (f24 / 'can_boot_config.h').read_text()
-        self.assertRegex(f24_config,r'CAN_BOOT_RAM_OWNER_BOOT\s+\(0xAAU\)')
-        self.assertRegex(f24_config,r'CAN_BOOT_RAM_OWNER_APPLICATION\s+\(0x55U\)')
+        f24_config = (f24 / 'boot_app_handoff.h').read_text()
+        self.assertRegex(f24_config,r'BOOT_APP_RAM_OWNER_BOOT\s+\(0xAAU\)')
+        self.assertRegex(f24_config,r'BOOT_APP_RAM_OWNER_APPLICATION\s+\(0x55U\)')
         for phrase in ["0x2100..0x217F", "0x2180..0x21FF", "app_image_config.h",
                        "Physical BRK", "RETI", "0xAA", "0x55", "F1V1", "F2V1",
                        "package_images.ps1", "Windows PowerShell"]:

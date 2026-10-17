@@ -15,7 +15,7 @@ Image Inspect(const std::vector<std::uint8_t>& bytes) {
     out.calculated_crc=firmware_update::Crc32(bytes.data(),bytes.size()-4U);
     out.stored_crc=Bu_Read32(bytes.data()+bytes.size()-4U);
     out.crc_matches=out.calculated_crc==out.stored_crc;
-    if (!Bu_ParseMetadataRegion(bytes.data()+BU_MANIFEST_OFFSET,&out.metadata))
+    if (!Bu_ParseMetadataRegion(bytes.data()+BU_MANIFEST_OFFSET,BU_METADATA_REGION_SIZE,&out.metadata))
         out.error=L"Not a bridge app manifest (BUR1). CAN device / G16 / raw BIN cannot update a host.";
     else if (out.metadata.image_size!=bytes.size()) out.error=L"Bridge manifest length does not match BIN size.";
     else if (!out.crc_matches) out.error=L"Bridge app CRC32 MISMATCH.";
@@ -25,13 +25,13 @@ Image Inspect(const std::vector<std::uint8_t>& bytes) {
 bool ReadInfo(host_link::Client& link, bu_info_t* info, std::wstring* error) {
     host_link::Response reply;
     if (!Send(link,BU_INFO_COMMAND,{},&reply,error)) return false;
-    if (reply.payload.size()!=BU_INFO_SIZE || !Bu_ParseInfo(reply.payload.data(),info)) {
+    if (reply.payload.size()!=BU_INFO_SIZE || !Bu_ParseInfo(reply.payload.data(),BU_INFO_SIZE,info)) {
         *error=L"Bridge update descriptor is invalid."; return false;
     }
     if (info->flags&BU_FLAG_VALID_APP) {
         std::vector<std::uint8_t> region; bu_manifest_t manifest={};
         if (!ReadMetadata(link,&region,error)) return false;
-        if (!Bu_ParseMetadataRegion(region.data(),&manifest) || !Bu_MatchesDevice(&manifest,info) ||
+        if (!Bu_ParseMetadataRegion(region.data(),BU_METADATA_REGION_SIZE,&manifest) || !Bu_MatchesDevice(&manifest,info) ||
             manifest.version!=info->app_version || manifest.build!=info->app_build || manifest.image_size!=info->installed_size) {
             *error=L"Live256-byte bridge metadata differs from its descriptor."; return false;
         }

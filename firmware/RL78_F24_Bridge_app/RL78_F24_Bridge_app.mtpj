@@ -710,9 +710,9 @@
     <Instance Guid="9b508ba2-a654-4886-908c-253671754e8e">
       <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
       <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
-      <Name>bridge_update_contract.c</Name>
+      <Name>bridge_image_metadata.c</Name>
       <Type>File</Type>
-      <RelativePath>..\common\bridge_update_contract.c</RelativePath>
+      <RelativePath>..\common\bridge_image_metadata.c</RelativePath>
     </Instance>
     <Instance Guid="eb26f0bc-29d2-43c2-b125-60f265907c1e">
       <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
@@ -741,6 +741,55 @@
       <Name>bridge_app.c</Name>
       <Type>File</Type>
       <RelativePath>bridge_app.c</RelativePath>
+    </Instance>
+    <Instance Guid="968d10e0-f1a8-48b8-810d-007cb29ebe73">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>bridge_image_metadata.h</Name>
+      <Type>File</Type>
+      <RelativePath>..\common\bridge_image_metadata.h</RelativePath>
+    </Instance>
+    <Instance Guid="715c0716-ef92-4b45-ac7f-4c29392551f5">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>boot_app_handoff.h</Name>
+      <Type>File</Type>
+      <RelativePath>..\f24_bridge_common\boot_app_handoff.h</RelativePath>
+    </Instance>
+    <Instance Guid="f5963169-cfa0-43c9-886c-7971edefb5a2">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>image_metadata_config.h</Name>
+      <Type>File</Type>
+      <RelativePath>..\f24_bridge_common\image_metadata_config.h</RelativePath>
+    </Instance>
+    <Instance Guid="2b6ff179-ae11-4cc3-80b2-b2a42b7ac72f">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>image_metadata_profile.c</Name>
+      <Type>File</Type>
+      <RelativePath>..\f24_bridge_common\image_metadata_profile.c</RelativePath>
+    </Instance>
+    <Instance Guid="65eaac95-e2c0-41fe-86eb-0487dbdf56dc">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>image_metadata_profile.h</Name>
+      <Type>File</Type>
+      <RelativePath>..\f24_bridge_common\image_metadata_profile.h</RelativePath>
+    </Instance>
+    <Instance Guid="d59c321b-d043-4ba9-ab81-35d35943b636">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>app_image_config.h</Name>
+      <Type>File</Type>
+      <RelativePath>app_image_config.h</RelativePath>
+    </Instance>
+    <Instance Guid="2e162b9d-fd0d-408f-8ece-ed85e91a9d3d">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>app_irq_handlers.h</Name>
+      <Type>File</Type>
+      <RelativePath>app_irq_handlers.h</RelativePath>
     </Instance>
   </Class>
   <Class Guid="fb98844b-2c27-4275-9804-f6e63e204da0">

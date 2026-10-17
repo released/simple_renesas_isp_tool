@@ -1,11 +1,14 @@
 param([ValidateSet('boot','app')][string]$Kind='app',[string]$AppProject='')
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
-$layout=Get-Content (Join-Path $repo 'firmware\f24_bridge_common\f24_bridge_layout.h') -Raw
+. (Join-Path $PSScriptRoot 'f24_app_contract.ps1')
+$layout=Read-F24MetadataConfig
+$handoff=Read-F24HandoffConfig
+$handoffStart=[Math]::Min($handoff.COOKIE_ADDRESS,$handoff.DISPATCH_ADDRESS)
+$handoffEnd=[Math]::Max($handoff.COOKIE_ADDRESS+3,$handoff.DISPATCH_ADDRESS+3)
 function Value([string]$name) {
-    $m=[regex]::Match($layout,"#define F24_BRIDGE_$name \((0x[0-9A-Fa-f]+|[0-9]+)[UL]*\)")
-    if (!$m.Success) { throw "Missing layout value $name" }
-    return [Convert]::ToUInt32($m.Groups[1].Value.Replace('0x',''),$(if($m.Groups[1].Value.StartsWith('0x')){16}else{10}))
+    if(!$layout.ContainsKey($name)) { throw "Missing metadata config value $name" }
+    return $layout[$name]
 }
 $start=Value 'APP_START'; $limit=Value 'APP_LIMIT'; $flash=Value 'FLASH_SIZE'
 $name='RL78_F24_Bridge_'+$Kind
@@ -30,7 +33,7 @@ foreach($m in [regex]::Matches($mapping[0],'(?m)^([.\w]+)\r?\n\s+([0-9a-fA-F]{8}
     $sections[$n]=@($a,$end,$size)
     if (!$size) { continue }
     if ($a -ge 0xF0000) {
-        if ($a -le 0xFF713 -and $end -ge 0xFF700) { throw "RAM $n overwrites handoff region" }
+        if ($a -le $handoffEnd -and $end -ge $handoffStart) { throw "RAM $n overwrites handoff region" }
     } elseif ($n -notin @('.monitor2','.option_byte','.security_id','.flash_security_id','.monitor1','.vect')) {
         if ($Kind -eq 'boot' -and $end -ge $start) { throw "Boot section $n crosses app boundary" }
         if ($Kind -eq 'app' -and ($a -lt $start -or $end -ge $limit)) { throw "App section $n outside allowed region" }
@@ -104,6 +107,18 @@ if ($size -gt $limit-$start) { throw 'App plus CRC exceeds partition capacity' }
 $image=New-Object byte[] $size
 for($i=0;$i -lt $image.Length;$i++) { $image[$i]=255 }
 foreach($pair in $records.GetEnumerator()) { $image[$pair.Key-$start]=$pair.Value }
+$identitySymbol=[regex]::Match($map,'(?m)^\s*_g_host_app_image_contract\s*\r?\n\s*([0-9A-Fa-f]{8})\s+([0-9A-Fa-f]+)\s+')
+if(!$identitySymbol.Success -or [Convert]::ToUInt32($identitySymbol.Groups[2].Value,16) -ne 20) {
+    throw 'Missing compiled Host App image contract.'
+}
+$identityOffset=[long][Convert]::ToUInt32($identitySymbol.Groups[1].Value,16)-$start
+if($identityOffset -lt 0x200 -or $identityOffset+20 -gt $image.Length-4) { throw 'Compiled Host App identity lies outside App code/data.' }
+$expectedIdentity=@($appContract.Version,$appContract.Build,(Value 'BOARD_ID'),2,4)
+for($i=0;$i -lt 5;$i++) {
+    if([BitConverter]::ToUInt32($image,[int]($identityOffset+$i*4)) -ne $expectedIdentity[$i]) {
+        throw 'Linked Host App identity differs from app_image_config.h; rebuild before packaging.'
+    }
+}
 for($i=0x100;$i -lt 0x200;$i++) { if($image[$i] -ne 255) { throw '256-byte metadata region overlaps linked code/data' } }
 # Four-byte BR !! entries: the reset target must point into actual app code.
 for($i=0;$i -lt 256;$i+=4) {
@@ -120,9 +135,9 @@ Put32 12 $size; Put32 16 $appContract.Version; Put32 20 $appContract.Build; Put3
 Put32 28 ($limit-$start); Put32 32 $flash; Put32 36 $start; Put32 40 (Value 'ERASE_SIZE')
 Put32 44 (Value 'MINIMUM_SIZE'); Put32 48 (Value 'UART_BAUD'); Put32 80 (Value 'BOOT_VERSION')
 Put32 96 0x31445055; $image[0x164]=1; $image[0x165]=32; $image[0x166]=2; $image[0x167]=4
-Put32 104 0x31563246; Put32 108 (Value 'BOOT_VERSION')
-[Text.Encoding]::ASCII.GetBytes('RL78/F24').CopyTo($image,0x134)
-[Text.Encoding]::ASCII.GetBytes('R7F124FLJ3xFB').CopyTo($image,0x140)
+Put32 104 (Value 'IRQ_ABI'); Put32 108 (Value 'BOOT_VERSION')
+[Text.Encoding]::ASCII.GetBytes($layout.FAMILY).CopyTo($image,0x134)
+[Text.Encoding]::ASCII.GetBytes($layout.PART).CopyTo($image,0x140)
 if (-not ('F24BridgeCrc' -as [type])) {
     Add-Type 'public static class F24BridgeCrc { public static uint Calculate(byte[] b,int n) {uint c=0xffffffff;for(int i=0;i<n;i++){c^=b[i];for(int j=0;j<8;j++)c=(c>>1)^((c&1)!=0?0xedb88320u:0u);}return c^0xffffffff;} }'
 }

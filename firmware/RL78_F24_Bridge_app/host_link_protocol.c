@@ -7,10 +7,22 @@
 #endif
 #include "f24_bridge_support.h"
 #include "f24_app_identity.generated.h"
-#define F24_HOST_FW_MAJOR ((uint8_t)(F24_APP_IMAGE_VERSION >> 16))
-#define F24_HOST_FW_MINOR ((uint8_t)(F24_APP_IMAGE_VERSION >> 8))
-#define F24_HOST_FW_PATCH ((uint8_t)F24_APP_IMAGE_VERSION)
-#define F24_HOST_FW_BUILD F24_APP_IMAGE_BUILD
+#include "app_image_config.h"
+#if APP_IMAGE_VERSION != F24_APP_IMAGE_VERSION || APP_IMAGE_BUILD != F24_APP_IMAGE_BUILD
+#error App release header and generated identity must match before compilation.
+#endif
+/* Post-build compares this linked record with the editable App header.
+ * Volatile reads keep the live Host Link identity tied to compiled data.
+ * These native words are not the serialized BUR1 metadata structure.
+ */
+const volatile uint32_t __far g_host_app_image_contract[5] = {
+    APP_IMAGE_VERSION, APP_IMAGE_BUILD, APP_IMAGE_TARGET_ID,
+    APP_IMAGE_ROLE, APP_IMAGE_UPDATE_TRANSPORTS
+};
+#define F24_HOST_FW_MAJOR ((uint8_t)(g_host_app_image_contract[0] >> 16))
+#define F24_HOST_FW_MINOR ((uint8_t)(g_host_app_image_contract[0] >> 8))
+#define F24_HOST_FW_PATCH ((uint8_t)g_host_app_image_contract[0])
+#define F24_HOST_FW_BUILD g_host_app_image_contract[1]
 #include "f24_can_clock.h"
 #include "f24_can_timing.h"
 #include "bridge_i2c.h"
@@ -60,7 +72,7 @@
 #define HOST_LINK_EVENT_CAN_STATE              (0x81U)
 #define HOST_LINK_EVENT_HOST_ERROR             (0x82U)
 
-#define HOST_LINK_BOARD_ID                     (0x0101U)
+#define HOST_LINK_BOARD_ID                     F24_BRIDGE_BOARD_ID
 #define HOST_LINK_FEATURE_CLASSICAL_CAN        (0x00000001UL)
 #define HOST_LINK_FEATURE_CAN_FD               (0x00000002UL)
 #define HOST_LINK_FEATURE_STANDARD_ID          (0x00000004UL)

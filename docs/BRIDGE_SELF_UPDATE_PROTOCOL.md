@@ -1,7 +1,11 @@
 # Bridge self-update contract3 over Host Link v2 /128
 
 Status: implemented software / F24 build and mock validation; physical gates open.
-Canonical definitions: firmware/common/bridge_update_contract.h/.c.
+Commands: firmware/common/bridge_update_contract.h; update state/Flash callbacks:
+bridge_update_engine.c/.h. Portable metadata/descriptor parsing is separately
+compiled from firmware/common/bridge_image_metadata.c/.h, without command IDs.
+Its Parse APIs receive the available byte length, reject null/short input and
+return0/1; successful decoding is not full-image CRC or launch authorization.
 This is PC -> HOST BRIDGE UART, never an external target profile or CAN command.
 
 Feature bit10 (0x400) advertises descriptor/update support. A boot-only bridge
@@ -100,7 +104,11 @@ boot is retained. Boot/options/data/debug flash are never exposed to commands.
 Boot validates full CRC before default auto-jump after reset and before RUN.
 After an acknowledged END it waits indefinitely for explicit RUN or reset.
 
-F24 geometry is in f24_bridge_layout.h; preparation derives IRQ projections
+F24 geometry/identity is in f24_bridge_common/image_metadata_config.h;
+image_metadata_profile.c builds the expected descriptor. RAM recovery/IRQ
+handoff is in boot_app_handoff.h. App release/IRQ input is app_image_config.h
+and app_irq_handlers.h; generated identity/vectors are checked against linked
+bytes before packaging. Preparation derives IRQ projections
 while each owned MTPJ retains its linker settings. Geometry changes must align
 those settings with the layout and pass post-build bounds checks; preparation
 does not silently replace project options. Packaging derives length and metadata.

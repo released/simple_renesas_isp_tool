@@ -94,12 +94,59 @@ class PublicWebGuides(unittest.TestCase):
         self.assertTrue((ISP / 'index.html').is_file())
 
     def test_public_pages_have_no_draft_or_delivery_pins(self):
-        for path in [NAV, ISP / 'index.md', BOOT / 'index.md',
+        for path in [NAV, NAV.with_suffix('.html'), ISP / 'index.md', BOOT / 'index.md',
+                     BOOT / 'uart_i2c/index.md',
                      ISP / 'README.md', BOOT / 'README.md']:
             text = path.read_text(encoding='utf-8-sig')
             self.assertNotRegex(text, r'尚未發布|未發布|尚未公開發布|本機稿|本機編輯稿|本機製作稿|工程第一版')
             self.assertNotRegex(text, r'0\.1\.0\.\d+|Tool00\d\d|1\.5\.0|19244|10963')
             self.assertEqual(len(re.findall(r'(?m)^```', text)) % 2, 0)
+
+    def test_navigation_exports_share_current_rl78_entries(self):
+        from html import unescape
+        markdown = NAV.read_text(encoding='utf-8-sig')
+        exported = NAV.with_suffix('.html').read_text(encoding='utf-8-sig')
+        for label in ('RL78 Bootloader', 'RL78 ISP Tool'):
+            entry, = re.findall(rf'(?m)^\| \[{re.escape(label)}\].*$', markdown)
+            row, = re.findall(rf'<tr>\s*<td><a [^>]*>{re.escape(label)}</a></td>.*?</tr>', exported, re.S)
+            plain_md = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', entry).strip('| ').split(' | ', 1)[1]
+            plain_html = unescape(re.sub(r'<[^>]+>', '', row)).strip()
+            self.assertEqual(plain_html, label + '\n' + plain_md)
+            self.assertIn('https://released.github.io/slide_', row)
+        entry, = re.findall(r'(?m)^\| \[RL78 Bootloader\].*$', markdown)
+        self.assertNotIn('MCU CAN host', entry)
+
+    def test_uart_i2c_scope_and_preserved_anchor_links(self):
+        main = (BOOT / 'index.md').read_text(encoding='utf-8-sig')
+        examples = (BOOT / 'uart_i2c/index.md').read_text(encoding='utf-8-sig')
+        self.assertTrue((BOOT / 'uart_i2c/index.html').is_file())
+        self.assertIn('參考工程', examples)
+        self.assertIn('不是依 MCU 型號固定的最小 Boot 容量', examples)
+        self.assertNotIn('MUST set bigger or equal', examples)
+        self.assertNotIn('FLASH_TABLE       .EQU  0x5000', main)
+        for text in (main, examples, (ISP / 'index.md').read_text(encoding='utf-8-sig')):
+            prose = re.sub(r'(?ms)^```[^\n]*\n.*?^```\s*$', '', text)
+            self.assertEqual(len(re.findall(r'(?m)^# ', prose)), 1)
+            ids = re.findall(r'<a id="([^"]+)"></a>', prose)
+            self.assertEqual(len(ids), len(set(ids)))
+            self.assertNotRegex(text, r'[\uE000-\uF8FF\uFFFD]')
+        targets = re.findall(r'\]\(uart_i2c/#([^)]+)\)', main)
+        self.assertGreater(len(targets), 10)
+        for anchor in ('target_MCU_flash_type', 'ram_flag', 'FALSH_TABLE', 'ftable_inc',
+                       'map_const', 'boot_main', 'boot_hdwinit', 'fsy_file',
+                       'vect_address', 'vector_table'):
+            self.assertIn(anchor, targets)
+        folded = '\n'.join(re.findall(r'<details>.*?</details>', main, re.S))
+        for anchor in targets:
+            self.assertEqual(main.count(f'<a id="{anchor}"></a>'), 1)
+            self.assertNotIn(f'<a id="{anchor}"></a>', folded)
+            self.assertEqual(examples.count(f'<a id="{anchor}"></a>'), 1)
+
+    def test_device_update_operation_includes_automatic_confirmation(self):
+        text = (ISP / 'index.md').read_text(encoding='utf-8-sig')
+        operation = text.split('## 3. MCU CAN device：App 更新', 1)[1].split('```mermaid', 1)[0]
+        for phrase in ('APP_READY', 'live INFO', 'App confirmed', '不自動重寫', '[更新確認](#update-confirmation)'):
+            self.assertIn(phrase, operation)
 
     def test_technical_contracts_and_unverified_boundaries_remain(self):
         text = (ISP / 'index.md').read_text(encoding='utf-8-sig')

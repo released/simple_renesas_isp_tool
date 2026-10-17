@@ -41,6 +41,9 @@ not authorize Git commit/push, publishing, or fabricated UI/hardware evidence.
 
 ## Product boundaries
 
+Prioritize F13/F24 MCU device Boot/App alignment and verification before F24
+host work. Do not extend a device metadata/vector task into host firmware.
+
 Update observability owns bounded CAN APP_READY/live-image confirmation and
 explicit Misc RUN same-COM115200 revalidation. Never repeat erase/RUN to resolve
 an unknown result. Keep independent Cancel worker-owned with ABORT/stop cleanup;
@@ -121,9 +124,9 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
   f24_board owns shared board/drivers/SC, never a third MTPJ or flashable image.
   App runtime belongs to App; shared UART/timer depend on minimal runtime hooks,
   not App headers. Prepare each existing MTPJ in place; preserve owned build
-  options/hooks/JSON. After SC generation reconcile projections before building.
+  options/hooks/C headers. After SC generation reconcile projections before building.
 
-- Each F24 split app owns app_irq_handlers.json and app_image.json. Run
+- Each F24 split app owns app_irq_handlers.h and app_image_config.h. Run
   prepare_f24_app_irq.ps1 in pre-build; do not derive its mapping from the
   canonical app's active IRQ list. App-only -AppProject build/package must not
   write boot files. Keep no-vect/global ISR, physical-vector/RETI and metadata
@@ -137,7 +140,15 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
   all metadata pages. Never workaround BAD_COMMAND57 by skipping validation.
 - Split bridge boot/app additionally owns its own protected UART self-update
   contract (docs/BRIDGE_SELF_UPDATE_PROTOCOL.md), never target flash semantics.
-  F24 layout is f24_bridge_common/f24_bridge_layout.h; prepare derived projects
+  Host image contract is f24_bridge_common/image_metadata_config.h, with
+  independently compiled image_metadata_profile.c. Common metadata decoding
+  is bridge_image_metadata.c/.h, separate from command IDs/engine/Flash.
+  Parse APIs require explicit extents; low-level Read/Write helpers require
+  caller-validated windows. Keep BUR1/BUI1 bytes and accepted format unchanged.
+  No-init cookie/owner belongs to boot_app_handoff.h. Post-build checks actual
+  linked App identity as well as IRQ destinations; regenerated headers cannot
+  legitimize stale compiled inputs. Use strict C-header readers, no JSON fallback.
+  Prepare derived projects
   after SC regeneration. Keep explicit stack/handoff RAM, far-ROM constants,
   IRQ projections, RAM-only RFD execution and post-build packaging guards.
 - Must not contain target flash addresses, F13 boot state, image layout, or
@@ -161,7 +172,7 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 - F13 image format6 uses a fixed complete normal-vector interface. Boot
   pre-build owns all04..7C stubs independently of app mappings; no competing
   -VECTN/C vect ownership. App handlers, including INTTRJ0, are normal RETI
-  ISRs without vect. Preserve app_irq_handlers.json generation, app-local
+  ISRs without vect. Preserve app_irq_handlers.h generation, app-local
   identity and artifact/real-HEX stack-model checks; never restore the old
   ordinary timer callback. Physical BRK7E is not forwarded. App-only IRQ
   additions within the fixed contract must not change boot sources/options.
@@ -288,6 +299,17 @@ or live hardware. Keep compile reports distinct from Tool operation JSON.
 Both devices' ftable.inc / app_identity.h / app_irq_table.inc are generated, not
 manual inputs. No INC fallback; preserve strict C-header/contract and stale linked
 metadata checks before packaging. App-mode generation must not rebuild Boot.
+Device image_metadata_config.h owns IMAGE_* format/MCU/Flash/policy/Boot
+identity independently of CAN. can_boot_config.h owns CAN only and
+boot_app_handoff.h owns RAM/owner. Build readers combine exactly those headers;
+keep direct consumers, artifact guards, CS+ registrations and both golden
+samples aligned. Do not restore metadata under CAN config or duplicate values.
+Device runtime parsing/validation is independently compiled image_metadata.c/.h,
+mirrored from firmware/common/device_metadata with sync_device_metadata.ps1.
+Each project owns image_metadata_profile.c and config. Preserve C90/word-width/
+endian/alignment/extent boundaries; decoding alone is not metadata/CRC validity.
+Compact/detailed status changes labels only, never acceptance. Boot calls the
+module directly; keep CAN staging/status mapping and CRC/launch logic separate.
 
 Keep current user/developer guides and authoritative specifications in docs;
 put historical verification reports, implementation plans and diagnostic

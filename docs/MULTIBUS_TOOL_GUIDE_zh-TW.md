@@ -99,6 +99,9 @@ Bridge Board Self Test 是實體 CAN 訊號測試：STD ID 0x123、DLC8，每秒
 F13 Transfer 是已由使用者確認的通訊 benchmark，不需載入 BIN；不得拿它的 BIN 當 upgrade image。
 MCU CAN device 的 Boot 啟動條件與 App 工程設定，見 [MCU CAN device 章節](https://released.github.io/slide_boot_loader_for_RL78/)。
 
+CAN 更新通過 END 後，Tool 自動核對 APP_READY 與 live INFO；符合載入映像的版本、build 與大小後顯示 App confirmed。
+未確認時保留「已寫入／App 未確認」結果，不自動重寫；詳細判定與補充檢查見 [更新確認](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
+
 ## 4. I2C reference 探索
 
 1. 接好 MCU CAN host 並開啟 Tool；Host Link UART 使用 binary protocol。

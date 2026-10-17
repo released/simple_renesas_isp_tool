@@ -68,13 +68,19 @@ metadata and verifies compiled IRQ destinations before packaging. Contract
 fields remain Boot-owned; changing App headers cannot change device geometry,
 transport or IRQ ABI. See DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md.
 
-F24 app IRQ generation is now app-local: app_irq_handlers.json selects the
-registered normal ISR symbols, app_image.json owns app version/build. The
+F24 host App generation is app-local: app_irq_handlers.h selects the
+registered normal ISR symbols, app_image_config.h owns App release identity. The
 pre-build generator uses only that app's MTPJ/sources plus fixed MCU/geometry
 contracts, never another app's active IRQ list. App-only build/package take
 AppProject; full reference SC regeneration remains explicit and separate.
 Boot dispatch/metadata protocol remain unchanged. Packaging verifies every
 linked slot and real RETI/RETB; see the shared-console guide's managed section.
+
+Host metadata decoding is independently compiled bridge_image_metadata.c/.h.
+Its config/profile, RAM handoff and command/Flash engine have separate owners.
+Bounded byte parsing is shared by PC and MCU; full-image CRC and launch gates
+remain in the engine/Boot. Post-build also compares linked release identity
+with the App header. Host BUR1/BUI1 layouts and Misc115200 remain unchanged.
 
 Provide one Windows tool that can use multiple MCU bridge boards to test CAN
 and I2C transport and update supported target devices. RL78/F24 is the first;

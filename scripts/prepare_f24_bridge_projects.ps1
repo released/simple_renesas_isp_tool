@@ -3,10 +3,12 @@ $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
 $board=Join-Path $repo 'firmware\f24_board'
 $generated=Join-Path $board 'src\smc_gen'
-$layout=[IO.File]::ReadAllText((Join-Path $repo 'firmware\f24_bridge_common\f24_bridge_layout.h'))
-$startMatch=[regex]::Match($layout,'#define F24_BRIDGE_APP_START \((0x[0-9A-Fa-f]+)UL\)')
-if (!$startMatch.Success) { throw 'Missing application geometry.' }
-$start=[Convert]::ToUInt32($startMatch.Groups[1].Value.Substring(2),16)
+. (Join-Path $PSScriptRoot 'f24_app_contract.ps1')
+$layout=Read-F24MetadataConfig
+$start=$layout.APP_START
+$handoff=Read-F24HandoffConfig
+$dispatch=($handoff.DISPATCH_ADDRESS-band0xFFFF).ToString('X4')
+$appOwner=$handoff.APP_OWNER.ToString('X2')
 $header=[IO.File]::ReadAllText((Join-Path $generated 'r_bsp\mcu\rl78_f24\register_access\ccrl\iodefine.h'))
 $vectors=@{}
 foreach($m in [regex]::Matches($header,'#define\s+(INT\w+)\s+(0x[0-9A-Fa-f]+)')) {
@@ -32,6 +34,14 @@ foreach($mode in @('boot','app')) {
     New-Item -ItemType Directory -Path $projection -Force | Out-Null
     $bootHandlers=@{}
     $expected=@{}
+    foreach($path in @('..\common\bridge_image_metadata.h',
+        '..\f24_bridge_common\image_metadata_profile.c','..\f24_bridge_common\image_metadata_profile.h',
+        '..\f24_bridge_common\image_metadata_config.h','..\f24_bridge_common\boot_app_handoff.h')) {
+        $expected[$path]=$true
+    }
+    if($mode -eq 'app') {
+        $expected['app_image_config.h']=$true; $expected['app_irq_handlers.h']=$true
+    }
     foreach($source in $sources) {
         $relative=$source.FullName.Substring($board.Length+1)
         if ($mode -eq 'boot' -and !($relative -match 'smc_gen\\r_bsp\\' -or
@@ -136,9 +146,9 @@ foreach($mode in @('boot','app')) {
             $label='bridge_irq_'+$v.ToString('X2'); $appLabel='app_irq_'+$v.ToString('X2')
             $target=if($bootHandlers.ContainsKey($v)){'_'+$bootHandlers[$v]}else{'bridge_default_isr'}
             $boot+="$label .VECTOR 0x$($v.ToString('X2'))`r`n.SECTION .text, TEXT`r`n${label}:`r`n"
-            $boot+="    CMP !0xF710,#0xA5`r`n    BZ `$${appLabel}`r`n    BR !!$target`r`n${appLabel}:`r`n    BR !!0x$(($start+$v*2).ToString('X5'))`r`n"
+            $boot+="    CMP !0x$dispatch,#0x$appOwner`r`n    BZ `$${appLabel}`r`n    BR !!$target`r`n${appLabel}:`r`n    BR !!0x$(($start+$v*2).ToString('X5'))`r`n"
         }
-        $boot+="bridge_default_isr:`r`n    RETI`r`n_F24Bridge_Jump:`r`n    DI`r`n    CALL !!_R_Config_UART0_Stop`r`n    CALL !!_R_Config_TAU0_1_Stop`r`n    MOV !0xF710,#0xA5`r`n    BR !!0x$($start.ToString('X5'))`r`n"
+        $boot+="bridge_default_isr:`r`n    RETI`r`n_F24Bridge_Jump:`r`n    DI`r`n    CALL !!_R_Config_UART0_Stop`r`n    CALL !!_R_Config_TAU0_1_Stop`r`n    MOV !0x$dispatch,#0x$appOwner`r`n    BR !!0x$($start.ToString('X5'))`r`n"
         WriteGenerated (Join-Path $folder 'bridge_vectors.asm') $boot
     }
 }

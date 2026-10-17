@@ -9,6 +9,9 @@ F13 與 F24 CAN device 的獨立 Boot／App 工程共同作為 metadata、向量
 | 項目 | 共通基準 | MCU 專屬設定 |
 | --- | --- | --- |
 | Metadata 編輯 | `app_image_config.h` 的六個數值 define | App version／build、target ID、version control |
+| 共用映像契約 | Boot 的 `image_metadata_config.h`，使用 `IMAGE_*` 宣告 | 格式、MCU／Flash、IRQ ABI、政策、Boot version／build |
+| 執行時解析／驗證 | 相同 `image_metadata.c/.h`，無 ISP driver／Flash-write 相依 | 工程提供 config／profile；API 見 [C 模組移植](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser) |
+| 通訊／啟動交接 | `can_boot_config.h`／`boot_app_handoff.h` 各自獨立 | CAN 參數／no-init RAM 與 owner；產生器讀取同一來源 |
 | IRQ 編輯 | `app_irq_handlers.h` 的 `APP_IRQ_HANDLERS(X)` 清單 | 合法 vector 位址與 ISR 名稱 |
 | 建置 | CS+ pre-build 產表、post-build 驗證及封裝；Windows PowerShell／.NET | 編譯器、linker、startup 與 Flash driver |
 | 自動產物 | `ftable.inc`、`app_identity.h`、`app_irq_table.inc`、App 更新 BIN | ASM wrapper 與 MCU 符號 |
@@ -45,4 +48,5 @@ Tool repository 內可檢查共通讀取器：
 
 ```powershell
 .\scripts\sync_device_app_config.ps1 -F13Boot <F13 Boot checkout> -F24Boot <F24 Boot checkout> -CheckOnly
+.\scripts\sync_device_metadata.ps1 -F13Boot <F13 Boot checkout> -F24Boot <F24 Boot checkout> -CheckOnly
 ```

@@ -6,17 +6,21 @@ sources live in ../f24_board, which is shared source, not another firmware.
 Normal bridge functionality belongs to ../RL78_F24_Bridge_app.
 Do not regenerate Smart Configurator into this project's projection folder.
 
-Start with [RL78 Boot/App porting](../../docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md)
-for reusable IRQ, startup/linker/RAM, build and installation requirements.
+Use [Host App engineering](../../docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md#host-app-engineering)
+for metadata, IRQ, startup/build and installation requirements.
 
 Run scripts/prepare_f24_bridge_projects.ps1 -Kind boot for intentional boot SC changes;
 then scripts/build_f24_bridge.ps1 -Kind boot. The MTPJ owns its build settings;
 prepare updates shared-source registrations and startup/IRQ projections only.
 Projections are reproducible, not hand-edit targets. Layout is centralized in
-../f24_bridge_common/f24_bridge_layout.h. RFD vendor source is copied unchanged
+../f24_bridge_common/image_metadata_config.h; RAM recovery/IRQ handoff is in
+boot_app_handoff.h. Portable decoding/validation is separately compiled from
+../common/bridge_image_metadata.c/.h; image_metadata_profile.c supplies the
+local descriptor contract. Commands/staging/CRC/Flash remain in the engine.
+RFD vendor source is copied unchanged
 with its Renesas license/disclaimers from the supplied Type02 reference.
 
-For app-only work do not regenerate/rebuild boot: each app owns its JSON
+For app-only work do not regenerate/rebuild boot: each app owns its C-header
 IRQ map and identity, with scripts/build_f24_bridge.ps1 -Kind app -AppProject
 <folder>. The fixed normal-vector interface does not depend on app ISR names.
 Use prepare_f24_bridge_projects.ps1 -Kind boot only for intentional boot

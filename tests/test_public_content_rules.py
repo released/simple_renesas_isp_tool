@@ -89,6 +89,7 @@ class PublicContentRules(unittest.TestCase):
     def test_checker_rejects_narrow_regressions_without_rewriting(self):
         fixtures = {
             'private-path': '```powershell\nD:\\SourceCode\\private\\app.bin\n```\n',
+            'invalid-glyph': 'vector \ue000\n',
             'publication-label': '尚未發布\n',
             'publication-plan': 'GitHub 來源將於實板驗證後提供。\n',
             'development-dialogue': '依使用者要求，本輪修改\n',

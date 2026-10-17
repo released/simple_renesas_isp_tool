@@ -1,4 +1,81 @@
 # Shared app-local IRQ/identity contract. This module never writes boot files.
+. (Join-Path $PSScriptRoot 'device_app_config.ps1')
+
+function Read-F24MetadataConfig {
+    $repo=Split-Path -Parent $PSScriptRoot
+    $path=Join-Path $repo 'firmware\f24_bridge_common\image_metadata_config.h'
+    $body=Get-AppConfigBody $path 'IMAGE_METADATA_CONFIG_H'
+    $values=@{}
+    foreach($line in $body.Split("`n")) {
+        if(!$line.Trim()) { continue }
+        $definition=[regex]::Match($line,'^\s*#define\s+F24_BRIDGE_([A-Z_]+)\s+(.+?)\s*$')
+        if(!$definition.Success -or $values.ContainsKey($definition.Groups[1].Value)) {
+            throw 'Invalid/duplicate host image_metadata_config.h definition.'
+        }
+        $name=$definition.Groups[1].Value; $literal=$definition.Groups[2].Value
+        if($name -in @('FAMILY','PART')) {
+            if($literal -notmatch '^"([\x20-\x21\x23-\x5B\x5D-\x7E]+)"$') { throw 'Use printable ASCII identity without escapes.' }
+            $values[$name]=$Matches[1]
+        } else { $values[$name]=ConvertFrom-AppUnsignedLiteral $literal }
+    }
+    $expected='APP_LIMIT,APP_START,BOARD_ID,BOOT_VERSION,BUILD,ERASE_SIZE,FAMILY,FLASH_SIZE,IRQ_ABI,MINIMUM_SIZE,PART,UART_BAUD'
+    if((@($values.Keys | Sort-Object) -join ',') -cne $expected) { throw 'Incomplete host image metadata contract.' }
+    if(!$values.ERASE_SIZE -or $values.ERASE_SIZE%4 -or !$values.APP_START -or
+        $values.APP_START%$values.ERASE_SIZE -or $values.APP_LIMIT%$values.ERASE_SIZE -or
+        $values.APP_LIMIT -le $values.APP_START -or $values.APP_LIMIT -gt $values.FLASH_SIZE -or
+        $values.MINIMUM_SIZE -lt 516 -or $values.MINIMUM_SIZE%4 -or
+        $values.MINIMUM_SIZE -gt ($values.APP_LIMIT-$values.APP_START) -or
+        !$values.BOARD_ID -or $values.BOARD_ID -ge 65535 -or
+        $values.BOOT_VERSION -gt 0xFFFFFF -or $values.BUILD -eq [uint32]::MaxValue -or
+        !$values.IRQ_ABI -or $values.IRQ_ABI -eq [uint32]::MaxValue -or
+        $values.UART_BAUD -ne 115200 -or $values.FAMILY.Length -gt 12 -or $values.PART.Length -gt 16) {
+        throw 'Invalid host geometry/identity or fixed Misc115200 contract.'
+    }
+    return $values
+}
+
+function Read-F24HandoffConfig {
+    $repo=Split-Path -Parent $PSScriptRoot
+    $body=Get-AppConfigBody (Join-Path $repo 'firmware\f24_bridge_common\boot_app_handoff.h') 'BOOT_APP_HANDOFF_H'
+    $values=@{}
+    foreach($line in $body.Split("`n")) {
+        if(!$line.Trim()) { continue }
+        $definition=[regex]::Match($line,'^\s*#define\s+F24_BRIDGE_([A-Z_]+)\s+(.+?)\s*$')
+        if(!$definition.Success -or $values.ContainsKey($definition.Groups[1].Value)) { throw 'Invalid/duplicate host RAM handoff definition.' }
+        $values[$definition.Groups[1].Value]=ConvertFrom-AppUnsignedLiteral $definition.Groups[2].Value
+    }
+    if((@($values.Keys | Sort-Object) -join ',') -cne 'APP_OWNER,BOOT_COOKIE,BOOT_OWNER,COOKIE_ADDRESS,DISPATCH_ADDRESS' -or
+        $values.COOKIE_ADDRESS -lt 0xF9F00 -or $values.COOKIE_ADDRESS -gt 0xFFFFC -or $values.COOKIE_ADDRESS%4 -or
+        $values.DISPATCH_ADDRESS -lt 0xF9F00 -or $values.DISPATCH_ADDRESS -gt 0xFFFFC -or $values.DISPATCH_ADDRESS%4 -or
+        ($values.DISPATCH_ADDRESS -ge $values.COOKIE_ADDRESS -and $values.DISPATCH_ADDRESS -le $values.COOKIE_ADDRESS+3) -or
+        !$values.BOOT_COOKIE -or $values.BOOT_COOKIE -eq [uint32]::MaxValue -or
+        $values.APP_OWNER -gt 255 -or $values.BOOT_OWNER -gt 255 -or $values.APP_OWNER -eq $values.BOOT_OWNER) {
+        throw 'Invalid host RAM cookie/dispatch contract.'
+    }
+    return $values
+}
+
+function Read-F24AppImageConfig([string]$Project, [uint32]$ExpectedBoardId) {
+    $body=Get-AppConfigBody (Join-Path $Project 'app_image_config.h') 'APP_IMAGE_CONFIG_H'
+    $values=@{}
+    foreach($line in $body.Split("`n")) {
+        if(!$line.Trim()) { continue }
+        $definition=[regex]::Match($line,'^\s*#define\s+(APP_IMAGE_[A-Z_]+)\s+(.+?)\s*$')
+        if(!$definition.Success -or $values.ContainsKey($definition.Groups[1].Value)) { throw 'Invalid/duplicate Host App image definition.' }
+        $values[$definition.Groups[1].Value]=ConvertFrom-AppUnsignedLiteral $definition.Groups[2].Value
+    }
+    if((@($values.Keys | Sort-Object) -join ',') -cne 'APP_IMAGE_BUILD,APP_IMAGE_ROLE,APP_IMAGE_TARGET_ID,APP_IMAGE_UPDATE_TRANSPORTS,APP_IMAGE_VERSION') {
+        throw 'Host app_image_config.h requires version/build/target ID/role/update transports.'
+    }
+    if(!$values.APP_IMAGE_VERSION -or $values.APP_IMAGE_VERSION -gt 0xFFFFFF -or $values.APP_IMAGE_BUILD -eq [uint32]::MaxValue) {
+        throw 'App version must be nonzero0x00MMmmpp and build below0xFFFFFFFF.'
+    }
+    if($values.APP_IMAGE_TARGET_ID -ne $ExpectedBoardId -or $values.APP_IMAGE_ROLE -ne 2 -or $values.APP_IMAGE_UPDATE_TRANSPORTS -ne 4) {
+        throw 'Host App target/role/transport must match HOST_APP/UART and the Boot board identity.'
+    }
+    return $values
+}
+
 function Get-F24AppContract([string]$AppProject) {
     $root = (Resolve-Path -LiteralPath $AppProject).Path
     $projects = @(Get-ChildItem -LiteralPath $root -Filter '*.mtpj' -File)
@@ -12,16 +89,7 @@ function Get-F24AppContract([string]$AppProject) {
     if (!$defines -or $defines.InnerText -notmatch '(?m)^\s*BRIDGE_SPLIT_APP(?:=1)?\s*$') {
         throw 'Enable BRIDGE_SPLIT_APP in the split app project definitions.'
     }
-    $mapPath = Join-Path $root 'app_irq_handlers.json'
-    $raw = [IO.File]::ReadAllText($mapPath)
-    if (!$raw.Trim().StartsWith('{') -or !$raw.Trim().EndsWith('}')) { throw 'IRQ mapping must be a JSON object.' }
-    $entries = $raw | ConvertFrom-Json
-    $names = @{}
-    foreach ($m in [regex]::Matches($raw, '"(0x[0-9A-Fa-f]+)"\s*:')) {
-        $key = $m.Groups[1].Value.ToUpperInvariant()
-        if ($names.ContainsKey($key)) { throw "Duplicate IRQ vector key: $key" }
-        $names[$key] = $true
-    }
+    $entries = Read-AppIrqConfig $root
     $repo = Split-Path -Parent $PSScriptRoot
     $header = [IO.File]::ReadAllText((Join-Path $repo 'firmware\f24_board\src\smc_gen\r_bsp\mcu\rl78_f24\register_access\ccrl\iodefine.h'))
     $valid = @{}
@@ -30,12 +98,9 @@ function Get-F24AppContract([string]$AppProject) {
         if ($v -ge 4 -and $v -le 0x7C -and !($v -band 1)) { $valid[$v] = $true }
     }
     $handlers = @{}
-    foreach ($p in $entries.PSObject.Properties) {
-        if ($p.Name -notmatch '^0x[0-9A-Fa-f]{2}$') { throw "Invalid vector key: $($p.Name)" }
-        $v = [Convert]::ToInt32($p.Name.Substring(2),16)
-        if (!$valid.ContainsKey($v)) { throw "Reserved/non-normal F24 vector: $($p.Name)" }
-        if ($p.Value -isnot [string] -or $p.Value -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') { throw "Invalid IRQ symbol for $($p.Name)" }
-        $handlers[$v] = [string]$p.Value
+    foreach ($v in $entries.Keys) {
+        if (!$valid.ContainsKey($v)) { throw "Reserved/non-normal F24 vector: $v" }
+        $handlers[$v] = $entries[$v]
     }
     $sources = @()
     $tableRegistered = 0
@@ -61,21 +126,16 @@ function Get-F24AppContract([string]$AppProject) {
         $matches = @($sources | Where-Object { $_ -match $pragma -and $_ -match $body })
         if ($matches.Count -ne 1) { throw "IRQ $symbol needs one registered global void ISR with a no-vect interrupt pragma." }
     }
-    $identity = [IO.File]::ReadAllText((Join-Path $root 'app_image.json')) | ConvertFrom-Json
-    if ($identity.version -isnot [string] -or $identity.version -notmatch '^0x[0-9A-Fa-f]{8}$') {
-        throw 'app_image.json version must be a packed 0x00MMmmpp hexadecimal string.'
-    }
-    $version = [Convert]::ToUInt32($identity.version.Substring(2),16)
-    if (!$version -or ($version -band 0xFF000000)) { throw 'Invalid app version.' }
-    if ([string]$identity.build -notmatch '^\d+$') { throw 'App build must be an unsigned integer.' }
-    $build = [Convert]::ToUInt32($identity.build)
-    if ($build -eq [uint32]::MaxValue) { throw 'App build must not be erasedFFFFFFFF.' }
+    $metadata=Read-F24MetadataConfig
+    if($metadata.PART -ne $devices[0]) { throw 'Host metadata part must match the selected CS+ project device.' }
+    $identity=Read-F24AppImageConfig $root $metadata.BOARD_ID
+    $version=$identity.APP_IMAGE_VERSION; $build=$identity.APP_IMAGE_BUILD
     return [pscustomobject]@{ Root=$root; Project=$projects[0].FullName; Name=$projects[0].BaseName;
         Handlers=$handlers; Version=$version; Build=$build }
 }
 
 function Get-F24AppVectorText($Contract) {
-    $text = "; Generated from this app's app_irq_handlers.json by prepare_f24_app_irq.ps1.`r`n"
+    $text = "; Generated from this app's app_irq_handlers.h by prepare_f24_app_irq.ps1.`r`n"
     $text += ".PUBLIC _bridge_default_isr`r`n.EXTERN _start`r`n.SECTION .app_vectors, TEXT`r`n"
     foreach ($symbol in @($Contract.Handlers.Values | Sort-Object -Unique)) { $text += ".EXTERN _$symbol`r`n" }
     for ($v=0; $v -le 0x7E; $v+=2) {

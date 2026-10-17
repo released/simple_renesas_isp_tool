@@ -13,11 +13,16 @@ if(!$TextPath.Count) {
     foreach($folder in @('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78')) {
         foreach($name in @('index.md','README.md')) { $TextPath+=Join-Path $WebRoot ($folder+'\'+$name) }
     }
+    foreach($name in @('slide_boot_loader_for_RL78\uart_i2c\index.md',
+            'released.github.io\README.md','released.github.io\README.html')) {
+        $TextPath+=Join-Path $WebRoot $name
+    }
 }
 # Deliberately narrow checks, not a replacement for contextual semantic review.
 # Unicode escapes keep the source safe in Windows PowerShell 5.1 without a BOM.
 $rules=@(
     @{Id='private-path'; Pattern='(?<![A-Za-z])[A-Za-z]:[\\/]|_Avery|SourceCode'},
+    @{Id='invalid-glyph'; Pattern='[\uE000-\uF8FF\uFFFD]'},
     @{Id='publication-label'; Pattern='\u5c1a\u672a\u767c\u5e03|\u672c\u6a5f\u7de8\u8f2f\u7a3f|\u5de5\u7a0b\u7b2c\u4e00\u7248'},
     @{Id='publication-plan'; Pattern='GitHub[^\r\n]*(?:\u5c07\u65bc|\u9a57\u8b49\u5f8c\u63d0\u4f9b)'},
     @{Id='development-dialogue'; Pattern='\u4f9d\u4f7f\u7528\u8005\u8981\u6c42|\u672c\u8f2a|\u672c\u6b21\u4fee\u6539|\u958b\u767c\u8005\u8207\s*Codex'},
@@ -31,7 +36,9 @@ foreach($path in $TextPath) {
     foreach($line in $lines) {
         $number++
         # Paths in command samples are also public; check before fence filtering.
-        if($line -match $rules[0].Pattern) { $findings.Add("${path}:${number} [private-path]") }
+        foreach($rule in $rules | Select-Object -First 2) {
+            if($line -match $rule.Pattern) { $findings.Add("${path}:${number} [$($rule.Id)]") }
+        }
         if($line -match '^\s*(`{3,}|~{3,})(.*)$') {
             $marker=$Matches[1]; $tail=$Matches[2]
             if(!$fenceLength) { $fenceChar=$marker.Substring(0,1);$fenceLength=$marker.Length }
@@ -41,7 +48,7 @@ foreach($path in $TextPath) {
             continue
         }
         if($fenceLength) { continue }
-        foreach($rule in $rules | Select-Object -Skip 1) {
+        foreach($rule in $rules | Select-Object -Skip 2) {
             if($line -match $rule.Pattern) { $findings.Add("${path}:${number} [$($rule.Id)]") }
         }
     }

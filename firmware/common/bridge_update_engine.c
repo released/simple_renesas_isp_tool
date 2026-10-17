@@ -36,7 +36,7 @@ uint8_t Bu_EngineInit(bu_engine_t *e, const bu_info_t *info, const bu_flash_t *f
     uint8_t wire[BU_INFO_SIZE];
     memset(e,0,sizeof(*e));
     Bu_EncodeInfo(info,wire);
-    if (!flash || !flash->read || !Bu_ParseInfo(wire,&e->info)) return 0U;
+    if (!flash || !flash->read || !Bu_ParseInfo(wire,BU_INFO_SIZE,&e->info)) return 0U;
     e->flash=*flash; e->info.flags &= (uint8_t)(0xFFU ^ BU_FLAG_ACTIVE);
     if (!flash->erase || !flash->write4) e->info.flags &= (uint8_t)(0xFFU ^ BU_FLAG_FLASH_READY);
     invalidate(e); return 1U;
@@ -52,7 +52,7 @@ uint8_t Bu_ValidateInstalled(bu_engine_t *e) {
     e->hold_reason=BU_HOLD_NO_APP;
     if (Bu_Read32(wire)==0xFFFFFFFFUL) return 0U;
     e->hold_reason=BU_HOLD_METADATA;
-    if (!Bu_ParseMetadataRegion(wire,&image)) return 0U;
+    if (!Bu_ParseMetadataRegion(wire,BU_METADATA_REGION_SIZE,&image)) return 0U;
     e->hold_reason=BU_HOLD_CONTRACT;
     if (!Bu_MatchesDevice(&image,&e->info)) return 0U;
     e->hold_reason=BU_HOLD_CRC;
@@ -76,7 +76,7 @@ uint8_t Bu_Begin(bu_engine_t *e, const uint8_t *data, uint16_t length) {
         for (bit=0U; bit<8U; ++bit) crc=(crc>>1)^((crc&1UL)?0xEDB88320UL:0UL);
     }
     if ((crc^0xFFFFFFFFUL)!=Bu_Read32(data+2U)) return BU_CRC_ERROR;
-    if (!Bu_ParseMetadataRegion(e->manifest,&image) || !Bu_MatchesDevice(&image,&e->info)) return BU_INCOMPATIBLE;
+    if (!Bu_ParseMetadataRegion(e->manifest,BU_METADATA_REGION_SIZE,&image) || !Bu_MatchesDevice(&image,&e->info)) return BU_INCOMPATIBLE;
     if (e->info.flags&BU_FLAG_ACTIVE) return BU_OK;
     e->image=image; e->next=0UL;
     /* Invalidate before the first erase, including an uncertain erase failure. */

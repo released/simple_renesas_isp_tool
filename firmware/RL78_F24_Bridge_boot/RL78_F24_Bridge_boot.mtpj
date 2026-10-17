@@ -577,9 +577,9 @@
     <Instance Guid="fbd5d723-cb01-4ceb-8117-4fd00c62557e">
       <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
       <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
-      <Name>bridge_update_contract.c</Name>
+      <Name>bridge_image_metadata.c</Name>
       <Type>File</Type>
-      <RelativePath>..\common\bridge_update_contract.c</RelativePath>
+      <RelativePath>..\common\bridge_image_metadata.c</RelativePath>
     </Instance>
     <Instance Guid="4276670f-58eb-4dbf-9d8c-7b6fb55052b1">
       <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
@@ -664,6 +664,41 @@
       <Name>r_rfd_common_userown.c</Name>
       <Type>File</Type>
       <RelativePath>..\f24_bridge_common\RFDRL78T02\userown\r_rfd_common_userown.c</RelativePath>
+    </Instance>
+    <Instance Guid="3954991d-4fe0-415d-9cde-4b3d7a458554">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>bridge_image_metadata.h</Name>
+      <Type>File</Type>
+      <RelativePath>..\common\bridge_image_metadata.h</RelativePath>
+    </Instance>
+    <Instance Guid="449196b9-d752-4eba-ab60-dd8f1c02fe32">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>boot_app_handoff.h</Name>
+      <Type>File</Type>
+      <RelativePath>..\f24_bridge_common\boot_app_handoff.h</RelativePath>
+    </Instance>
+    <Instance Guid="5c69efb6-4631-492e-8e3f-702e71559fe8">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>image_metadata_config.h</Name>
+      <Type>File</Type>
+      <RelativePath>..\f24_bridge_common\image_metadata_config.h</RelativePath>
+    </Instance>
+    <Instance Guid="6ca7bc20-3234-4fff-812c-20d214ff4b52">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>image_metadata_profile.c</Name>
+      <Type>File</Type>
+      <RelativePath>..\f24_bridge_common\image_metadata_profile.c</RelativePath>
+    </Instance>
+    <Instance Guid="d37643ec-b080-4d8c-aa04-58cc9da19174">
+      <TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid>
+      <ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem>
+      <Name>image_metadata_profile.h</Name>
+      <Type>File</Type>
+      <RelativePath>..\f24_bridge_common\image_metadata_profile.h</RelativePath>
     </Instance>
   </Class>
   <Class Guid="fb98844b-2c27-4275-9804-f6e63e204da0">
