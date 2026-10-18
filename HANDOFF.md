@@ -1,5 +1,54 @@
 # Development Handoff
 
+## Tool reports, preflight, guidance and COM hints (2026-10-18)
+
+Implemented worker-owned JSON/HTML operation reports, offline escaped/CSP HTML,
+exclusive partial-file/flush/non-overwrite publication and visible partial-pair
+errors. UI receives paths and offers Open Last Report for this process session.
+Reports distinguish END/CRC from App confirmation and remain separate from App
+compile reports. Exact failures gain operation/COM/baud/phase context and shared
+inspection advice; Error Details reopens the current failure without a command.
+Preflight shows host/image/route/rate/Boot/version/Flash gates and metadata
+differences from the UI snapshot. It grants no update permission or bus action.
+PnP hints are stored only after successful Probe; hotplug refresh is debounced
+and deferred until idle/disconnected. Missing ports are not replaced with the
+first available COM; reused/moved/ambiguous hints require explicit selection.
+No Metadata editor, firmware, image format, wire command or retry changes.
+
+One-click Release x64 and final Debug/Release builds PASS; delivery0090,
+build2026-10-18 22:42:35, EXE SHA256
+606ECCA80A48B9E4CCEAC11FF5CB0F07035FFE76EB1631A6F44ED44456BD1285.
+Isolated Debug/Release process startup/idle/responding/main HWND/title and
+normal-close(exit0) smoke PASS; no COM opened or user INI modified. Full native
+Debug/Release suites PASS, including real packaged images, fault/replay/power
+models, report storage/escaping/failure paths, port hints and shared port gates.
+29 focused Python tests PASS; one conditional F13 map budget audit NOT RUN
+because delivery pruning retained HEX only. Split that artifact-dependent test
+from delivery-name checks; did not rebuild firmware or weaken a budget guard.
+GDI96/120/144 and minimum/1366/large geometry plus new log controls PASS.
+
+MD/ISP section synchronized;8-page/1diagram PDF content/glyph/bounds/render and
+all-page contact-sheet plus changed-page visual review PASS. HTML3fixture
+outcomes at390/768/1366px pass offline/no-script/no-network/escaping/overflow
+checks; fixture screenshots visually reviewed, not hardware evidence. Four
+web routes/25diagrams,248 local refs,18file public checker and24 safe-clean
+scripts PASS. Evidence: tmp/internal/tool_experience and web_review.
+Computer Use list_windows failed with native-pipe file-not-found after delayed
+retry and kernel reset/reinitialize. Native visual/TAB interaction NOT RUN;
+process and geometry checks are not a substitute. COM catalog enumerates zero
+ports; physical speed/cancel/unplug/power NOT RUN. Firmware tree unchanged.
+No Git commit/push or website deployment performed.
+
+Changed owners: src/core/update_report_view.h + update_report_store.h and
+worker_session render/publish reports; operation_guidance.h supplies shared
+checks; main_frame_evidence/resource/layout/geometry expose common actions;
+serial_port_catalog/main_frame_settings/workflow/bus own advisory inventory.
+bridge_port_catalog/worker_bus share the existing port/rate acceptance with
+Preflight. Native/Python tests cover helpers, ownership and conditional map
+availability. README/architecture/update guide/PDF, AGENTS, checklist/self-check
+and ISP index.md carry the same behavior. Build/version outputs are0090;
+no firmware source or delivery was changed. Internal logs/renderings stay tmp.
+
 ## F24 host metadata / C-header authoring (2026-10-17)
 
 Implemented the requested Host follow-up without modifying device firmware.

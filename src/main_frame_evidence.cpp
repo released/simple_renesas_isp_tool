@@ -2,9 +2,11 @@
 #include "resource.h"
 #include "build_info.generated.h"
 #include "core/update_evidence.h"
-#include "core/update_report_store.h"
+#include "core/preflight_summary.h"
+#include "core/operation_guidance.h"
 #include "core/device_version_policy.h"
 #include <afxdlgs.h>
+#include <shellapi.h>
 
 namespace {
 class ForcePasswordDialog : public CDialog {
@@ -30,15 +32,17 @@ private:
 };
 class MetadataDialog : public CDialog {
 public:
-    MetadataDialog(const std::vector<firmware_upgrade::evidence::Difference>& rows,CWnd* parent)
-        : CDialog(IDD_METADATA_DIFFERENCE,parent), rows_(rows) {}
+    MetadataDialog(const std::vector<firmware_upgrade::evidence::Difference>& rows,CWnd* parent,
+                   const std::wstring& title=L"")
+        : CDialog(IDD_METADATA_DIFFERENCE,parent), rows_(rows), title_(title) {}
     BOOL OnInitDialog() override {
         CDialog::OnInitDialog(); list_.SubclassDlgItem(ID_METADATA_DIFFERENCE_LIST,this);
+        if(!title_.empty()) SetWindowTextW(title_.c_str());
         list_.SetExtendedStyle(LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES|LVS_EX_DOUBLEBUFFER);
         CRect r; list_.GetClientRect(&r);
         list_.InsertColumn(0,L"Field",LVCFMT_LEFT,r.Width()*26/100);
-        list_.InsertColumn(1,L"Loaded image",LVCFMT_LEFT,r.Width()*27/100);
-        list_.InsertColumn(2,L"Live device",LVCFMT_LEFT,r.Width()*27/100);
+        list_.InsertColumn(1,title_.empty()?L"Loaded image":L"Current / image",LVCFMT_LEFT,r.Width()*27/100);
+        list_.InsertColumn(2,title_.empty()?L"Live device":L"Required / live",LVCFMT_LEFT,r.Width()*27/100);
         list_.InsertColumn(3,L"Check",LVCFMT_LEFT,r.Width()*18/100);
         for(const auto& row:rows_) {
             const int i=list_.InsertItem(list_.GetItemCount(),row.field.c_str());
@@ -64,6 +68,7 @@ public:
 private:
     std::vector<firmware_upgrade::evidence::Difference> rows_;
     CListCtrl list_;
+    std::wstring title_;
 };
 }
 bool CMainFrame::ConfirmForceOldFirmware() {
@@ -85,24 +90,93 @@ void CMainFrame::OnCompareMetadata() {
     if(rows.empty()) {AppendLog(L"Compare Metadata requires a valid image and live metadata for the selected destination.");return;}
     MetadataDialog dialog(rows,this); dialog.DoModal();
 }
-void CMainFrame::SaveUpdateReport(const std::wstring& json) {
-    wchar_t exe[MAX_PATH]={}; const DWORD path_size=GetModuleFileNameW(nullptr,exe,MAX_PATH);
-    if(!path_size || path_size>=MAX_PATH) {AppendLog(L"Automatic report path resolution failed; use Export Summary.");return;}
-    std::wstring directory=exe; directory=directory.substr(0,directory.find_last_of(L"\\/"))+L"\\reports";
-    if(!CreateDirectoryW(directory.c_str(),nullptr) && GetLastError()!=ERROR_ALREADY_EXISTS) {
-        AppendLog(L"Automatic report directory failed: "+std::to_wstring(GetLastError()));return;
+void CMainFrame::SaveUpdateReport(const firmware_upgrade::ui::WorkerEvent& event) {
+    if(!event.report_json_path.empty()) AppendLog(L"Automatic JSON update report: "+event.report_json_path);
+    if(!event.report_html_path.empty()) {
+        latest_report_path_=event.report_html_path;
+        AppendLog(L"Automatic HTML update report: "+latest_report_path_);
     }
-    SYSTEMTIME t={};GetLocalTime(&t);
-    wchar_t name[100]={};swprintf_s(name,L"\\update_%04u%02u%02u_%02u%02u%02u_%03u_%llu.json",
-        t.wYear,t.wMonth,t.wDay,t.wHour,t.wMinute,t.wSecond,t.wMilliseconds,GetTickCount64());
-    const std::wstring path=directory+name;
-    SYSTEMTIME utc={};GetSystemTime(&utc);
-    wchar_t stamp[40]={};swprintf_s(stamp,L"%04u-%02u-%02uT%02u:%02u:%02u.%03uZ",
-        utc.wYear,utc.wMonth,utc.wDay,utc.wHour,utc.wMinute,utc.wSecond,utc.wMilliseconds);
-    const auto document=L"{\n  \"tool\": "+firmware_upgrade::evidence::JsonString(FIRMWARE_UPGRADE_TOOL_VERSION)+
-        L",\n  \"build\": "+firmware_upgrade::evidence::JsonString(FIRMWARE_UPGRADE_TOOL_BUILD_TIME)+
-        L",\n  \"recorded_at_utc\": "+firmware_upgrade::evidence::JsonString(stamp)+L",\n  \"update\": "+json+L"}\n";
-    std::wstring error;
-    const bool ok=firmware_upgrade::evidence::WriteReport(path,document,&error);
-    AppendLog(ok?L"Automatic update report: "+path:L"Automatic report write failed: "+path+L"; "+error);
+    if(!event.text.empty()) AppendLog(L"Automatic report warning: "+event.text);
+    UpdateUi();
+}
+void CMainFrame::OnOpenLatestReport() {
+    if(latest_report_path_.empty()) return;
+    const auto result=reinterpret_cast<INT_PTR>(ShellExecuteW(m_hWnd,L"open",latest_report_path_.c_str(),nullptr,nullptr,SW_SHOWNORMAL));
+    if(result<=32) AppendLog(L"Report open failed (Shell error "+std::to_wstring(result)+L"): "+latest_report_path_);
+}
+void CMainFrame::OnErrorDetails() {
+    if(last_operation_error_.empty()) return;
+    MessageBoxW((last_error_guidance_.empty()?firmware_upgrade::guidance::Format(last_operation_error_):
+        last_error_guidance_).c_str(),L"Operation Error / Suggested Checks",MB_OK|MB_ICONINFORMATION);
+}
+void CMainFrame::OnPreflight() {
+    using namespace firmware_upgrade;
+    if(worker_command_pending_ || session_state_.busy) return;
+    std::vector<evidence::Difference> rows;
+    const auto gate=[&](const wchar_t* field,bool ok,const std::wstring& current,const std::wstring& action) {
+        evidence::Gate(rows,field,ok,current,action);
+    };
+    gate(L"Live host",session_state_.host_validated,session_state_.host_summary,L"Open + Probe Host; COM description is not identity");
+    gate(L"Loaded BIN",!binary_data_.empty(),std::to_wstring(binary_data_.size())+L" bytes",L"Load Update Image for the selected destination");
+    if(IsMiscTab()) {
+        const bool info=session_state_.host_validated && session_state_.bridge_info_valid;
+        const auto& d=session_state_.bridge_info;
+        gate(L"Destination",info && d.mode==BU_MODE_BOOT,L"HOST BRIDGE APP / UART",L"Enter Bridge Boot; external device flash is not selected");
+        gate(L"Image / CRC32",binary_bridge_inspection_.valid,binary_bridge_inspection_.error,L"Valid _bridge_update.bin / full CRC32");
+        gate(L"Flash backend",info && (d.flags&BU_FLAG_FLASH_READY),info?L"Live descriptor":L"Unavailable",L"Boot FLASH_READY required");
+        gate(L"Update UART",info && session_state_.baudrate==d.uart_baud,
+            std::to_wstring(session_state_.baudrate),L"Use live Boot descriptor rate (reference host: 115200)");
+        if(info && binary_bridge_inspection_.valid) {
+            gate(L"Host image contract",Bu_MatchesDevice(&binary_bridge_inspection_.metadata,&d)!=0,
+                L"Loaded image vs live descriptor",L"Board, partition, role, UART and minimum Boot must match");
+            const auto diff=evidence::Compare(binary_bridge_inspection_.metadata,d);
+            rows.insert(rows.end(),diff.begin(),diff.end());
+        }
+    } else if(IsI2cTab()) {
+        gate(L"Reference discovery",IsI2cSelectionCurrent(),session_state_.i2c_summary,L"Probe the explicitly selected port/rate/address");
+        gate(L"Programming adapter",false,L"Read-only reference workflow",L"Erase/write is not enabled for this adapter");
+    } else {
+        const bool image=binary_image_valid_ && binary_inspection_.metadata_valid;
+        const bool live=session_state_.target_validated && session_state_.target_profile==ui::TargetProfile::CanUpgrade;
+        gate(L"Workflow",SelectedProfile()==L"CAN Upgrade",SelectedProfile(),L"CAN Upgrade; Custom Transfer is a non-destructive test");
+        gate(L"Live device",live,session_state_.target_summary,L"Discover Target with CAN Upgrade");
+        gate(L"Device Boot",live && session_state_.f13_bootloader_ready,L"Live device mode",L"Enter Boot before programming");
+        gate(L"Image / CRC32",image,binary_image_validation_error_,L"Valid device _update.bin / full CRC32");
+        gate(L"Host burst support",session_state_.host_validated &&
+            (session_state_.host_capabilities.feature_flags&host_link::kCanBurstFeature),L"Live host capability",L"CAN burst capability bit12 required");
+        ui::CanSettings settings; std::wstring error;
+        const bool selected=SelectedCanSettings(&settings,&error);
+        can_host::Configuration config;
+        config.mode=settings.mode; config.nominal_bitrate_preset=settings.nominal_bitrate_preset;
+        config.data_bitrate_preset=settings.data_bitrate_preset;
+        const bool supported=selected && session_state_.host_validated &&
+            can_host::IsConfigurationSupported(config,session_state_.host_capabilities,&error) &&
+            bridge::CanPortSupports(session_state_.host_capabilities,session_state_.can_ports,settings.port,
+                settings.nominal_bitrate_preset,settings.mode==can_host::Mode::CanFd);
+        gate(L"Selected CAN settings",supported,error,L"Select a supported port/mode/rate and valid receive filter");
+        const bool default_filter=settings.filter_selection==ui::FilterSelection::ProfileDefault;
+        const bool response_filter=default_filter ||
+            ((settings.filter_selection==ui::FilterSelection::CustomExtended)==settings.protocol_extended_id &&
+             (settings.protocol_response_id&settings.filter_mask)==(settings.filter_id&settings.filter_mask));
+        gate(L"Response filter",selected && response_filter,evidence::Hex(settings.protocol_response_id),
+            L"Filter must accept the selected response ID and ID format");
+        if(image) {
+            const auto& i=binary_inspection_.metadata;
+            const bool classical=settings.mode==can_host::Mode::Classical;
+            const bool rate=selected && settings.nominal_bitrate_preset<32U && (i.can_mode_mask&(classical?1U:2U)) &&
+                (i.nominal_bitrate_mask&(1UL<<settings.nominal_bitrate_preset)) &&
+                (classical || (settings.data_bitrate_preset<32U && (i.data_bitrate_mask&(1UL<<settings.data_bitrate_preset))));
+            gate(L"BIN / selected rate",rate,SelectedCanBitrate(),L"Use the compiled image update mode/rate");
+            std::uint32_t address=0;
+            gate(L"App start",SelectedApplicationStart(&address,&error) && address==i.application_start,
+                evidence::Hex(address),L"Auto or exact metadata App start");
+            if(live) {
+                gate(L"Installed version policy",!device_version::IsBlocked(i,session_state_.target_metadata),
+                    L"Installed policy vs loaded version",L"Same/newer when enabled; downgrade uses explicit maintenance action");
+                const auto diff=evidence::Compare(i,session_state_.target_metadata);
+                rows.insert(rows.end(),diff.begin(),diff.end());
+            }
+        }
+    }
+    MetadataDialog dialog(rows,this,evidence::PreflightTitle(rows)); dialog.DoModal();
 }

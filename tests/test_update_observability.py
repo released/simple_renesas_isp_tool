@@ -45,12 +45,17 @@ class UpdateObservability(unittest.TestCase):
         catalog=json.loads((ROOT/'scripts/web_guide_sections.json').read_text(encoding='utf-8-sig'))
         self.assertEqual(catalog['UPDATE_EVIDENCE']['owner'],'slide_isp_tool_for_RL78')
 
-    def test_f24_names_and_boot_spare(self):
+    def test_f24_delivery_names(self):
         boot=companion_path('F13Boot')
         app=boot.parent/'RL78_F24_Boot_loader_CAN_app'
         for name in ('ftable.inc','app_identity.h','app_irq_table.inc','ftable_RL78_F24.asm',
                      'DefaultBuild/flash_app_variable_CRC.hex','boot_app.hex'):
             self.assertTrue((app/name).is_file(),name)
+
+    def test_f13_boot_budget_when_map_available(self):
+        boot=companion_path('F13Boot')
+        if not (boot/'DefaultBuild/RL78_F13_Boot_loader_CAN.map').is_file():
+            self.skipTest('F13 map not present in delivery-only checkout; firmware clean-build budget gate NOT RUN')
         result=subprocess.run(['powershell.exe','-NoProfile','-File',str(boot/'verify_boot_budget.ps1')],capture_output=True)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 

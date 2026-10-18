@@ -11,11 +11,14 @@
 
 #include "build_info.generated.h"
 #include "resource.h"
+#include "core/operation_guidance.h"
+#include <dbt.h>
 
 namespace {
 
 constexpr UINT kWorkerEventMessage = WM_APP + 1U;
 constexpr UINT_PTR kOperationElapsedTimerId = 1U;
+constexpr UINT_PTR kComRefreshTimerId = 2U;
 constexpr UINT kOperationElapsedTimerIntervalMs = 100U;
 constexpr UINT kLogTextLimit = 8U * 1024U * 1024U;
 
@@ -86,6 +89,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_WM_CREATE()
     ON_WM_SIZE()
     ON_WM_GETMINMAXINFO()
+    ON_WM_DEVICECHANGE()
     ON_CBN_SELCHANGE(ID_I2C_SPEED_COMBO, &CMainFrame::OnI2cSettingsChanged)
     ON_EN_CHANGE(ID_I2C_ADDRESS_EDIT, &CMainFrame::OnI2cSettingsChanged)
     ON_BN_CLICKED(ID_TOP_REFRESH_COM_BTN, &CMainFrame::OnBnClickedRefreshCom)
@@ -94,6 +98,9 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_BN_CLICKED(ID_TOP_RESET_HOST_BTN, &CMainFrame::OnBnClickedResetHost)
     ON_BN_CLICKED(ID_CANCEL_OPERATION, &CMainFrame::OnCancelOperation)
     ON_BN_CLICKED(ID_COMPARE_METADATA, &CMainFrame::OnCompareMetadata)
+    ON_BN_CLICKED(ID_PREFLIGHT, &CMainFrame::OnPreflight)
+    ON_BN_CLICKED(ID_LOG_OPEN_REPORT_BTN, &CMainFrame::OnOpenLatestReport)
+    ON_BN_CLICKED(ID_ERROR_DETAILS_BTN, &CMainFrame::OnErrorDetails)
     ON_BN_CLICKED(ID_FORCE_OLD_FIRMWARE, &CMainFrame::OnForceOldFirmware)
     ON_BN_CLICKED(ID_FILE_LOAD_BTN, &CMainFrame::OnBnClickedLoadBinary)
     ON_BN_CLICKED(ID_FLOW_ENTER_BOOT_BTN, &CMainFrame::OnBnClickedConnectTarget)
@@ -217,7 +224,9 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
         CRect(),this,ID_CANCEL_OPERATION),L"Cancel button")) return -1;
     if (!create_or_fail(compare_metadata_btn_.Create(L"Compare Metadata",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,
         CRect(),this,ID_COMPARE_METADATA),L"Compare metadata button")) return -1;
-    cancel_btn_.SetFont(&ui_font_); compare_metadata_btn_.SetFont(&ui_font_);
+    if (!create_or_fail(preflight_btn_.Create(L"Preflight",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,
+        CRect(),this,ID_PREFLIGHT),L"Preflight button")) return -1;
+    cancel_btn_.SetFont(&ui_font_); compare_metadata_btn_.SetFont(&ui_font_); preflight_btn_.SetFont(&ui_font_);
     if (!create_or_fail(force_old_firmware_btn_.Create(L"force upgrade old version firmware",
         WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,CRect(),this,ID_FORCE_OLD_FIRMWARE),L"Force older firmware button")) return -1;
     force_old_firmware_btn_.SetFont(&ui_font_);
@@ -408,6 +417,10 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
             WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
             CRect(), this, ID_LOG_DETAILED_TRACE_CHK),
             L"Detailed trace checkbox")) return -1;
+    if (!create_or_fail(open_report_btn_.Create(L"Open Last Report",WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,
+        CRect(),this,ID_LOG_OPEN_REPORT_BTN),L"Open report button")) return -1;
+    if (!create_or_fail(error_details_btn_.Create(L"Error Details",WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,
+        CRect(),this,ID_ERROR_DETAILS_BTN),L"Error details button")) return -1;
 
     if (!InitializeBusUi()) return -1;
 
@@ -429,7 +442,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
         &app_start_edit_, &progress_label_,
         &log_edit_, &clear_log_btn_,
         &start_log_btn_, &stop_log_btn_, &export_summary_btn_,
-        &detailed_trace_check_,
+        &detailed_trace_check_, &open_report_btn_, &error_details_btn_,
     };
     for (CWnd* control : font_controls) {
         control->SetFont(&ui_font_);
@@ -700,6 +713,9 @@ void CMainFrame::RefreshComPorts() {
     com_ports_ = firmware_upgrade::serial_ports::Enumerate();
     const std::wstring preferred = previous.empty() ?
         preferred_com_port_ : previous;
+    com_device_notice_=firmware_upgrade::serial_ports::DescribePreviousDevice(com_ports_,
+        verified_com_port_.empty()?preferred:verified_com_port_,selected_com_instance_);
+    if(!com_device_notice_.empty()) AppendLog(com_device_notice_);
     int selected = -1;
     for (std::size_t index = 0U; index < com_ports_.size(); ++index) {
         const int item = com_combo_.AddString(com_ports_[index].DisplayName().c_str());
@@ -719,8 +735,8 @@ void CMainFrame::RefreshComPorts() {
         return;
     }
 
-    com_combo_.SetCurSel(selected < 0 ? 0 : selected);
-    preferred_com_port_.clear();
+    com_combo_.SetCurSel(selected<0 && preferred.empty()?0:selected);
+    preferred_com_port_=preferred;
     SaveUiSettings();
     AppendLog(L"COM scan completed.");
 }
@@ -773,6 +789,11 @@ void CMainFrame::ApplyWorkerEvent(
             break;
         case WorkerEventKind::State:
             session_state_ = event.state;
+            if(event.state.host_validated && !last_probe_port_.empty() && event.state.port_name==last_probe_port_) {
+                selected_com_instance_=pending_com_instance_;
+                verified_com_port_=last_probe_port_;
+                last_probe_port_.clear(); pending_com_instance_.clear(); com_device_notice_.clear(); SaveUiSettings();
+            }
             if (!event.state.host_summary.empty()) {
                 summary_host_ = event.state.host_summary;
             }
@@ -804,11 +825,12 @@ void CMainFrame::ApplyWorkerEvent(
             SetProgress(event.progress, event.text);
             break;
         case WorkerEventKind::UpdateReport:
-            SaveUpdateReport(event.text);
+            SaveUpdateReport(event);
             break;
         case WorkerEventKind::OperationComplete:
             worker_command_pending_ = false;
             last_operation_error_ = event.success ? L"" : event.text;
+            last_error_guidance_=event.success?L"":event.guidance;
             summary_elapsed_ms_ = operation_timer_running_ ?
                 GetTickCount64() - operation_timer_start_ms_ : 0U;
             summary_result_ = event.success ?
@@ -818,9 +840,11 @@ void CMainFrame::ApplyWorkerEvent(
                 AppendLog(L"Operation completed successfully: " + event.text);
             } else {
                 AppendLog(L"Operation failed: " + event.text);
+                const auto advice=firmware_upgrade::guidance::Explain(event.text);
+                AppendLog(L"Suggested checks ["+advice.layer+L"]: "+advice.next);
                 if (!closing_ && !ContainsCanceled(event.text)) {
                     MessageBoxW(
-                        event.text.c_str(), L"Communication Error",
+                        (event.guidance.empty()?firmware_upgrade::guidance::Format(event.text):event.guidance).c_str(), L"Operation Error / Suggested Checks",
                         MB_ICONERROR | MB_OK);
                 }
             }
@@ -926,7 +950,9 @@ void CMainFrame::OnBnClickedDetailedTrace() {
 }
 
 void CMainFrame::OnCbnSelChangeCom() {
+    com_device_notice_.clear();
     SaveUiSettings();
+    UpdateUi();
 }
 
 void CMainFrame::OnCbnSelChangeBaud() {
@@ -977,12 +1003,25 @@ void CMainFrame::OnEnChangeApplicationStart() {
 }
 
 void CMainFrame::OnTimer(UINT_PTR timer_id) {
+    if(timer_id==kComRefreshTimerId) {
+        if(worker_command_pending_ || session_state_.busy || session_state_.serial_open) return;
+        KillTimer(kComRefreshTimerId); RefreshComPorts(); UpdateUi(); return;
+    }
     if (timer_id == kOperationElapsedTimerId &&
         operation_timer_running_) {
         UpdateOperationElapsedText();
         return;
     }
     CFrameWnd::OnTimer(timer_id);
+}
+BOOL CMainFrame::OnDeviceChange(UINT event_type,DWORD_PTR data) {
+    if(event_type==DBT_DEVNODES_CHANGED || event_type==DBT_DEVICEARRIVAL || event_type==DBT_DEVICEREMOVECOMPLETE) {
+        // Debounce inventory refresh; never open/probe, close COM or change a worker session here.
+        SetTimer(kComRefreshTimerId,750U,nullptr);
+        if(session_state_.serial_open || session_state_.busy || worker_command_pending_)
+            AppendLog(L"Windows device inventory changed; COM refresh deferred until the worker is idle and disconnected. No automatic probe or rewrite.");
+    }
+    return CFrameWnd::OnDeviceChange(event_type,data);
 }
 
 LRESULT CMainFrame::OnWorkerEvent(WPARAM, LPARAM) {

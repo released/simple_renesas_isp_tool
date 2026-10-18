@@ -35,6 +35,14 @@ int TestSerialPortCatalog() {
     }
     check(BuildCatalog({}, {{L"COM6", L"Stale device"}}).empty(),
           "COM catalog does not list absent device names");
+    using firmware_upgrade::serial_ports::DescribePreviousDevice;
+    const std::vector<PortInfo> hints={{L"COM6",L"Adapter",L"USB\\A"},{L"COM9",L"Adapter",L"USB\\B"}};
+    check(DescribePreviousDevice(hints,L"COM6",L"USB\\A").empty(),"same instance/port does not imply a new connection");
+    check(DescribePreviousDevice(hints,L"COM8",L"USB\\A").find(L"COM6")!=std::wstring::npos,"moved adapter is only a hint");
+    check(DescribePreviousDevice(hints,L"COM6",L"USB\\B").find(L"changed")!=std::wstring::npos,"reused COM with different instance flagged");
+    check(DescribePreviousDevice({},L"COM6",L"USB\\A").find(L"absent")!=std::wstring::npos,"unplugged adapter flagged");
+    check(DescribePreviousDevice({hints[0],{L"COM7",L"Adapter",L"USB\\A"}},L"COM6",L"USB\\A").find(L"ambiguous")!=std::wstring::npos,"duplicate instance hints are not trusted");
+    check(DescribePreviousDevice(hints,L"COM6",L"").empty(),"missing PnP hint does not invent an identity");
     check(PortInfo{L"COM7", L"JLink CDC UART Port (COM7)"}.DisplayName() ==
               L"COM7: JLink CDC UART Port (COM7)",
           "COM catalog preserves driver descriptions verbatim");

@@ -64,6 +64,7 @@
     <ClCompile Include="..\firmware\common\bridge_update_engine.c" />
     <ClCompile Include="..\firmware\common\bridge_boot_link.c" />
     <ClCompile Include="serial_port_catalog_tests.cpp" />
+    <ClCompile Include="tool_experience_tests.cpp" />
     <ClCompile Include="serial_port_io_tests.cpp" />
     <ClCompile Include="..\src\core\serial_port_catalog.cpp" />
     <ClCompile Include="f24_can_clock_tests.c" />

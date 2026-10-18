@@ -79,8 +79,11 @@ void CMainFrame::LayoutControls(int width, int height) {
     Move(app_start_label_, {image.x, address_y + 3, address_width, row});
     Move(app_start_edit_, {image.x + address_width + gap, address_y, 118, row});
     const int compare_x=image.x+address_width+gap+118+gap;
-    Move(compare_metadata_btn_,{compare_x,address_y,(std::min)(CaptionWidth(compare_metadata_btn_)+12,
-        image.x+image.width-compare_x),row});
+    const int compare_width=(std::min)(CaptionWidth(compare_metadata_btn_)+12,
+        (std::max)(0,image.x+image.width-compare_x-CaptionWidth(preflight_btn_)-12-gap));
+    Move(compare_metadata_btn_,{compare_x,address_y,compare_width,row});
+    Move(preflight_btn_,{compare_x+compare_width+gap,address_y,
+        (std::max)(0,image.x+image.width-compare_x-compare_width-gap),row});
     int label_width = 0;
     for (auto& label : firmware_field_labels_) label_width = (std::max)(label_width, CaptionWidth(label));
     const int cell_width = (image.width - gap) / 2;
@@ -107,14 +110,12 @@ void CMainFrame::LayoutControls(int width, int height) {
         (std::max)(0,image.y+image.height-notice_y)});
 
     const Rect log = layout.log_pane;
-    CButton* log_buttons[] = {&clear_log_btn_, &start_log_btn_, &stop_log_btn_, &export_summary_btn_};
-    for (int i = 0; i < 4; ++i)
-        Move(*log_buttons[i], {log.x + (i % 2) * ((log.width - gap) / 2 + gap),
-            log.y + (i / 2) * (row + 2), (log.width - gap) / 2, row});
-    const int trace_y = log.y + (row + 2) * 2;
-    Move(detailed_trace_check_, {log.x, trace_y, log.width, row});
-    const int log_y = trace_y + row + 2;
-    Move(log_edit_, {log.x, log_y, log.width, (std::max)(0, log.y + log.height - log_y)});
+    const auto log_tools=firmware_upgrade::console::CalculateLog(log,row);
+    CButton* log_buttons[] = {&clear_log_btn_, &export_summary_btn_, &start_log_btn_, &stop_log_btn_, &open_report_btn_, &error_details_btn_};
+    for (int i = 0; i < 6; ++i)
+        Move(*log_buttons[i],log_tools.buttons[i]);
+    Move(detailed_trace_check_,log_tools.trace);
+    Move(log_edit_,log_tools.history);
 
     // Reserve 100% up front so progress updates never move the bar per packet.
     const std::wstring progress_sample = progress_operation_ + L": 100%";

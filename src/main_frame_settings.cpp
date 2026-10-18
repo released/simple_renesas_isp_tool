@@ -45,6 +45,7 @@ void CMainFrame::WriteIniValue(const wchar_t* key,
         ini_write_error_reported_ = true;
         last_operation_error_ = L"INI write failed: " + ini_path_ +
             L" (Windows error " + std::to_wstring(error) + L").";
+        last_error_guidance_.clear();
         AppendLog(last_operation_error_);
     }
 }
@@ -71,6 +72,8 @@ void CMainFrame::LoadUiSettings() {
     preferred_i2c_speed_ = ReadIniValue(L"i2c_speed", L"0") == L"1" ? 1U : 0U;
     i2c_address_edit_.SetWindowTextW(ReadIniValue(L"i2c_address", L"0x09").c_str());
     preferred_com_port_ = ReadIniValue(L"com_port", L"");
+    selected_com_instance_=ReadIniValue(L"com_device_hint",L"");
+    verified_com_port_=ReadIniValue(L"com_verified_port",L"");
     ApplyComboSelection(baud_combo_, ReadIniValue(L"baud", L"115200"));
     ApplyComboSelection(
         can_bitrate_combo_, ReadIniValue(L"can_bitrate", L"500K"));
@@ -123,7 +126,10 @@ void CMainFrame::SaveUiSettings() {
     WriteIniValue(L"i2c_speed", std::to_wstring(preferred_i2c_speed_));
     CString i2c_address; i2c_address_edit_.GetWindowTextW(i2c_address);
     WriteIniValue(L"i2c_address", i2c_address.GetString());
-    WriteIniValue(L"com_port", SelectedComPort());
+    const auto selected_port=SelectedComPort();
+    if(!selected_port.empty()) WriteIniValue(L"com_port", selected_port);
+    WriteIniValue(L"com_device_hint",selected_com_instance_);
+    WriteIniValue(L"com_verified_port",verified_com_port_);
     WriteIniValue(L"baud", std::to_wstring(SelectedBaudrate()));
     WriteIniValue(L"can_bitrate", SelectedCanBitrate());
     CString text;

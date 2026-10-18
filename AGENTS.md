@@ -41,6 +41,16 @@ not authorize Git commit/push, publishing, or fabricated UI/hardware evidence.
 
 ## Product boundaries
 
+Tool update reports are a worker-owned JSON/HTML pair, flushed to exclusive
+partial files before non-overwriting publication. UI consumes paths/errors only;
+never render reports from parsed/untrusted HTML or auto-launch a browser.
+Preflight is a read-only UI/session snapshot, not permission to skip live worker
+or device gates. Shared failure guidance preserves exact errors and offers
+checks, never automatic erase/RUN retries. PnP instances remain local advisory
+selection hints; hotplug refresh waits for idle/disconnected state and never
+opens, probes or switches another COM. Do not add the metadata editor as part
+of this Tool experience change. Native models do not establish UI/board results.
+
 Prioritize F13/F24 MCU device Boot/App alignment and verification before F24
 host work. Do not extend a device metadata/vector task into host firmware.
 

@@ -128,6 +128,8 @@ void CMainFrame::UpdateBusUi() {
         CardText(operation_status_card_, L"[WORKING] Cancel stops safely; Close COM also disconnects", Tone::Working);
     else if (!last_operation_error_.empty())
         CardText(operation_status_card_, L"[ERROR] " + last_operation_error_, Tone::Error);
+    else if(!com_device_notice_.empty())
+        CardText(operation_status_card_,com_device_notice_,Tone::Pending);
     else
         CardText(operation_status_card_, L"Green: ready | Amber: waiting | Red: blocked/error | Gray: N/A | Blue: offline BIN / working", Tone::Neutral);
     if (i2c) {

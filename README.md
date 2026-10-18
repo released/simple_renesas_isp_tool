@@ -84,6 +84,11 @@ acceptance; it is a design assessment, not an enabled editor or update adapter.
 [Update confirmation and validation](docs/UPDATE_VALIDATION_zh-TW.md) covers
 automatic App checks, metadata differences, staged progress, independent Cancel,
 automatic JSON reports, diagnostics and the hardware acceptance matrix.
+Operation reports also include an offline HTML view; Open Last Report opens
+the last HTML created in the current session. Preflight summarizes current
+update gates without sending commands. Error Details preserves exact errors
+with suggested checks; Windows PnP hints assist explicit COM selection without
+probing or switching other ports automatically.
 
 The Tool provides one shared image/metadata/log console. CAN and I2C settings
 occupy the left TAB area; Misc updates the host's own App over UART115200.

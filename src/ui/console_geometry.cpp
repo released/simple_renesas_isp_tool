@@ -2,6 +2,16 @@
 #include <algorithm>
 
 namespace firmware_upgrade::console {
+LogLayout CalculateLog(const Rect& bounds,int row) {
+    LogLayout out={};
+    const int gap=5, width=(std::max)(0,bounds.width-gap)/2;
+    for(int i=0;i<6;++i) out.buttons[i]={bounds.x+(i%2)*(width+gap),bounds.y+(i/2)*(row+2),width,row};
+    const int trace_y=bounds.y+(row+2)*3;
+    out.trace={bounds.x,trace_y,bounds.width,row};
+    const int history_y=trace_y+row+2;
+    out.history={bounds.x,history_y,bounds.width,(std::max)(0,bounds.y+bounds.height-history_y)};
+    return out;
+}
 Layout Calculate(int width, int height, int text_height) {
     const int margin = 6, gap = 5;
     const int row = (std::max)(24, text_height + 8);

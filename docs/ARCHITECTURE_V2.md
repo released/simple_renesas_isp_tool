@@ -6,9 +6,14 @@ Update completion now distinguishes END acceptance from post-reset APP_READY
 and matching live identity/version/build/size. Misc END remains Boot; only an
 explicit RUN triggers bounded same-COM115200 automatic App confirmation.
 Independent Cancel retains worker COM ownership and bounded cleanup. Shared
-metadata differences, stage progress, phase timing and automatic JSON reports
+metadata differences, read-only preflight snapshots, stage progress, phase timing and automatic JSON/HTML reports
 are PC responsibilities; host telemetry/stay reasons remain generic.
 See UPDATE_VALIDATION_zh-TW.md. Device Boot8KiB/512spare and IRQ ABI are preserved.
+Report rendering/UTF-8 flush/publication belong to the worker; UI receives paths
+and errors only. Shared guidance preserves exact failures and suggests checks,
+without changing protocol retry/erase/RUN policy. Windows PnP instances are
+local selection hints; hotplug inventory refresh waits for idle/disconnected
+state and never opens, probes or switches another COM automatically.
 
 F24 MCU CAN device now has separate Transfer/Boot/App source/build/model
 projects. It is not the F24 host backend:4MHz X1,8KiB Boot/App2000,targetF24B,

@@ -1988,8 +1988,10 @@ int TestF24CanProcess();
 int TestPackagedBridge(const char* path);
 int TestPackagedCan(const char* path);
 int TestF24AppReadback(const char* path);
+int TestToolExperience();
 int main(int argc, char** argv) {
     Check(TestSerialPortIo() == 0, "Real SerialPort low-latency reads and bounded deadlines");
+    Check(TestToolExperience()==0,"Tool HTML report, guidance and preflight models");
     TestLinkBaudNegotiation();
     TestReconnectSequenceCollision();
     Check(TestF24Uart()==0,"Real F24 UART high-speed state machine");

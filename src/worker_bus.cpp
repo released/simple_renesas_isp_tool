@@ -17,11 +17,8 @@ bool WorkerSession::PrepareCanPort(const CanSettings& settings,
                                    std::wstring* error) {
     const auto found = std::find_if(state_.can_ports.begin(), state_.can_ports.end(),
         [&settings](const bridge::Port& p) { return p.id == settings.port; });
-    if (found == state_.can_ports.end() || (found->flags & 1U) == 0U ||
-        (found->rates & (1UL << settings.nominal_bitrate_preset)) == 0U ||
-        (settings.mode == can_host::Mode::CanFd &&
-         (state_.host_capabilities.feature_flags & bridge::kFeaturePortCatalog) != 0U &&
-         (found->flags & 4U) == 0U)) {
+    if (!bridge::CanPortSupports(state_.host_capabilities,state_.can_ports,settings.port,
+            settings.nominal_bitrate_preset,settings.mode==can_host::Mode::CanFd)) {
         *error = L"Selected CAN port does not support this mode/rate.";
         return false;
     }

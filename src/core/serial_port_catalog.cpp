@@ -119,7 +119,9 @@ std::vector<PortInfo> DeviceNames() {
         if (friendly.empty()) {
             friendly = DeviceProperty(devices, &device, SPDRP_DEVICEDESC);
         }
-        result.push_back({port_name, friendly});
+        wchar_t instance[1024]={};
+        if(!SetupDiGetDeviceInstanceIdW(devices,&device,instance,static_cast<DWORD>(std::size(instance)),nullptr)) instance[0]=L'\0';
+        result.push_back({port_name, friendly, instance});
     }
     SetupDiDestroyDeviceInfoList(devices);
     return result;
@@ -143,8 +145,9 @@ std::vector<PortInfo> BuildCatalog(
     }
     for (const auto& device : device_names) {
         const auto found = ports.find(PortNumber(device.port_name));
-        if (found != ports.end() && found->second.friendly_name.empty()) {
-            found->second.friendly_name = device.friendly_name;
+        if (found != ports.end()) {
+            if(found->second.friendly_name.empty()) found->second.friendly_name = device.friendly_name;
+            if(found->second.instance_id.empty()) found->second.instance_id=device.instance_id;
         }
     }
     std::vector<PortInfo> result;
@@ -156,6 +159,25 @@ std::vector<PortInfo> BuildCatalog(
 
 std::vector<PortInfo> Enumerate() {
     return BuildCatalog(PresentPorts(), DeviceNames());
+}
+std::wstring DescribePreviousDevice(const std::vector<PortInfo>& ports,
+                                   const std::wstring& previous_port,
+                                   const std::wstring& previous_instance) {
+    if(previous_port.empty()) return L"";
+    const PortInfo* at_port=nullptr;
+    const PortInfo* match=nullptr;
+    unsigned matches=0;
+    for(const auto& p:ports) {
+        if(p.port_name==previous_port) at_port=&p;
+        if(!previous_instance.empty() && p.instance_id==previous_instance) {match=&p; ++matches;}
+    }
+    if(matches>1U) return L"Adapter hint is ambiguous. Select COM explicitly and Open + Probe Host.";
+    if(at_port && !previous_instance.empty() && !at_port->instance_id.empty() && at_port->instance_id!=previous_instance)
+        return L"The Windows device at "+previous_port+L" has changed. Check the selection and explicitly Open + Probe Host.";
+    if(match && match->port_name!=previous_port)
+        return L"Previous Windows adapter may now be "+match->port_name+L". Select it explicitly and Open + Probe Host; no automatic connection.";
+    if(!at_port) return L"Previous port "+previous_port+L" is absent. Check power/USB, Refresh, then explicitly select and probe a host.";
+    return L"";
 }
 
 } // namespace firmware_upgrade::serial_ports

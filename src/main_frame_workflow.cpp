@@ -241,6 +241,8 @@ bool CMainFrame::QueueOpenSelectedCom() {
         AppendLog(L"Open blocked: no COM port is selected.");
         return false;
     }
+    pending_com_instance_.clear(); last_probe_port_=port;
+    for(const auto& p:com_ports_) if(p.port_name==port) pending_com_instance_=p.instance_id;
     if (!worker_session_.OpenAndProbe(port, SelectedBaudrate())) {
         AppendLog(L"Open blocked: another worker operation is active.");
         return false;
@@ -380,6 +382,9 @@ void CMainFrame::UpdateUi() {
     com_combo_.EnableWindow(!busy && !port_open);
     baud_combo_.EnableWindow(!busy && !port_open);
     cancel_btn_.EnableWindow(busy);
+    preflight_btn_.EnableWindow(!busy);
+    open_report_btn_.EnableWindow(!busy && !latest_report_path_.empty());
+    error_details_btn_.EnableWindow(!busy && !last_operation_error_.empty());
     compare_metadata_btn_.EnableWindow(!busy && !binary_data_.empty() &&
         (IsMiscTab()?session_state_.bridge_info_valid:!IsI2cTab() && target_ready));
     force_old_firmware_btn_.ShowWindow(!IsMiscTab() && !IsI2cTab() ? SW_SHOW : SW_HIDE);

@@ -15,6 +15,15 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-18 Tool experience: worker-owned JSON/HTML update reports, Preflight
+snapshot, exact-error guidance and local PnP selection hints implemented;
+Metadata editor excluded. Tool0090 Debug/Release builds, isolated startup/close,
+native full suites and29 focused Python tests PASS. HTML offline/browser,
+MD/ISP/PDF rendering/visual, web/refs/clean checks PASS; one F13 map-dependent
+budget audit NOT RUN after delivery pruning. Evidence in HANDOFF/SELF_CHECK.
+Native Computer Use pipe unavailable and no COM ports: UI visual and physical
+speed/unplug/power acceptance remain distinct NOT RUN gates.
+
 2026-10-17 F24 host metadata: common bridge_image_metadata.c/.h is independent
 of command/Flash engine, with project image_metadata_config/profile and
 boot_app_handoff headers. App release/IRQ authoring uses C headers, with linked

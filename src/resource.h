@@ -13,6 +13,7 @@
 #define ID_CANCEL_OPERATION         1009
 #define ID_COMPARE_METADATA         1012
 #define ID_FORCE_OLD_FIRMWARE       1013
+#define ID_PREFLIGHT                1014
 #define IDD_FORCE_OLD_PASSWORD      1310
 #define ID_FORCE_OLD_PASSWORD      1311
 #define IDD_METADATA_DIFFERENCE      1300
@@ -42,6 +43,8 @@
 #define ID_LOG_STOP_BTN             1053
 #define ID_LOG_EXPORT_SUMMARY_BTN   1054
 #define ID_LOG_DETAILED_TRACE_CHK   1055
+#define ID_LOG_OPEN_REPORT_BTN      1056
+#define ID_ERROR_DETAILS_BTN        1057
 
 #define ID_BUILD_INFO_LABEL         1060
 #define ID_PROGRAM_TIMER_LABEL      1061

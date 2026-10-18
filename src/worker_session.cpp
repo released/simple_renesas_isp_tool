@@ -1,4 +1,8 @@
 #include "worker_session.h"
+#include "build_info.generated.h"
+#include "core/operation_guidance.h"
+#include "core/update_report_view.h"
+#include "core/update_report_store.h"
 #include "worker_format.h"
 
 #include "core/firmware_update_profile.h"
@@ -269,6 +273,7 @@ void WorkerSession::ThreadMain() {
         const auto stats_before=state_.f24_stats;
         const auto client_before=host_link_client_.Stats();
         update_details_.clear();
+        current_phase_.clear();
         update_timings_.clear();
         const auto report_host=state_.host_summary;
         const auto report_target=state_.target_summary;
@@ -340,6 +345,12 @@ void WorkerSession::ThreadMain() {
         }
 
         if(!success && IsCancelRequested()) error=L"Operation canceled. "+error;
+        if(!success && error.empty()) error=L"Worker operation failed.";
+        const auto error_context=std::wstring(CommandName(command.type))+L" | "+
+            (report_port.empty()?command.port_name:report_port)+L" | Host Baud "+
+            std::to_wstring(report_baud?report_baud:command.baudrate)+
+            (current_phase_.empty()?L"":L" | Phase: "+current_phase_);
+        const auto help=success?std::wstring():guidance::Format(error,error_context);
         state_.busy = false;
         if(report_update) {
             const bool old_cleanup=cleanup_in_progress_; cleanup_in_progress_=true;
@@ -394,6 +405,42 @@ void WorkerSession::ThreadMain() {
                 L",\n  \"link_retries\": "+(command.type==CommandType::BridgeRun ||
                     host_link_client_.Stats().retries<client_before.retries ? std::wstring(L"null") :
                     std::to_wstring(host_link_client_.Stats().retries-client_before.retries))+L"\n}\n";
+            // Render and flush on the worker, never on the window-message path.
+            try {
+                evidence::ReportView view;
+                view.operation=command.type==CommandType::ProgramF13Boot?L"CAN device update":
+                    command.type==CommandType::BridgeRun?L"Host explicit RUN confirmation":L"Host app update";
+                view.result=success?L"PASS":IsCancelRequested()?L"CANCELED":L"FAIL";
+                view.message=error; view.guidance=help;
+                view.tool=FIRMWARE_UPGRADE_TOOL_VERSION; view.build=FIRMWARE_UPGRADE_TOOL_BUILD_TIME;
+                SYSTEMTIME utc={}; GetSystemTime(&utc);
+                wchar_t stamp[40]={}; swprintf_s(stamp,L"%04u-%02u-%02uT%02u:%02u:%02u.%03uZ",
+                    utc.wYear,utc.wMonth,utc.wDay,utc.wHour,utc.wMinute,utc.wSecond,utc.wMilliseconds);
+                view.recorded_utc=stamp; view.phases=update_timings_;
+                view.fields={{L"COM",report_port},{L"Host Baud",std::to_wstring(report_baud)},
+                    {L"Host",report_host},{L"Target before operation",report_target},{L"CAN configuration",report_can},
+                    {L"Input bytes",std::to_wstring(command.image.size())},{L"Elapsed ms",std::to_wstring(elapsed)},
+                    {L"Operation evidence",update_details_},{L"Host counter deltas",counters},{L"Host peaks / scope",peaks}};
+                if(command.type!=CommandType::BridgeRun && !command.image.empty()) {
+                    if(command.type==CommandType::ProgramF13Boot) {
+                        const auto input=firmware_update::InspectImage(command.image);
+                        view.fields.push_back({L"Offline BIN CRC32 (calculated / stored)",evidence::Hex(input.calculated_crc32)+L" / "+evidence::Hex(input.stored_crc32)});
+                        if(input.metadata_valid) view.fields.push_back({L"Offline BIN identity",input.metadata.mcu_family+L" / "+input.metadata.mcu_part+
+                            L"; version="+evidence::Hex(input.metadata.version)+L"; build="+std::to_wstring(input.metadata.build)});
+                    } else {
+                        const auto input=bridge_update::Inspect(command.image);
+                        view.fields.push_back({L"Offline BIN CRC32 (calculated / stored)",evidence::Hex(input.calculated_crc)+L" / "+evidence::Hex(input.stored_crc)});
+                        if(input.valid) view.fields.push_back({L"Offline HOST BIN identity",L"board="+evidence::Hex(input.metadata.board_id)+
+                            L"; version="+evidence::Hex(input.metadata.version)+L"; build="+std::to_wstring(input.metadata.build)});
+                    }
+                }
+                const auto document=L"{\n  \"tool\": "+evidence::JsonString(view.tool)+
+                    L",\n  \"build\": "+evidence::JsonString(view.build)+L",\n  \"recorded_at_utc\": "+
+                    evidence::JsonString(view.recorded_utc)+L",\n  \"failure_guidance\": "+
+                    evidence::JsonString(help)+L",\n  \"update\": "+report.text+L"}\n";
+                const auto saved=evidence::SaveReportPair(document,evidence::RenderReport(view));
+                report.text=saved.error; report.report_json_path=saved.json_path; report.report_html_path=saved.html_path;
+            } catch(...) {report.text=L"Report generation failed; use Export Summary.";}
             QueueEvent(std::move(report));
         }
         PostState();
@@ -401,7 +448,9 @@ void WorkerSession::ThreadMain() {
             if (!success && error.empty()) {
                 error = L"Worker operation failed.";
             }
-            PostCompletion(success, success ? L"Operation completed." : error);
+            WorkerEvent completion; completion.kind=WorkerEventKind::OperationComplete;
+            completion.success=success; completion.text=success?L"Operation completed.":error;
+            completion.guidance=help; QueueEvent(std::move(completion));
         }
 
         {
@@ -844,6 +893,7 @@ void WorkerSession::PostCanTrace(can_host::TraceDirection direction,
 }
 
 void WorkerSession::PostProgress(int progress, const std::wstring& text) {
+    current_phase_=text;
     WorkerEvent event;
     event.kind = WorkerEventKind::Progress;
     event.progress = (std::max)(0, (std::min)(progress, 100));
@@ -851,14 +901,26 @@ void WorkerSession::PostProgress(int progress, const std::wstring& text) {
     QueueEvent(std::move(event));
 }
 
-void WorkerSession::PostCompletion(bool success, const std::wstring& text) {
-    WorkerEvent event;
-    event.kind = WorkerEventKind::OperationComplete;
-    event.success = success;
-    event.text = text;
-    QueueEvent(std::move(event));
+const wchar_t* WorkerSession::CommandName(CommandType type) {
+    switch(type) {
+    case CommandType::OpenAndProbe: return L"Open + Probe Host";
+    case CommandType::ApplyCanSettings: return L"Configure CAN";
+    case CommandType::ConnectF13Transfer: return L"Discover transfer target";
+    case CommandType::RunF13TransferTest: return L"Custom Transfer";
+    case CommandType::DiscoverF13Boot: return L"Discover update target";
+    case CommandType::EnterF13Bootloader: return L"Enter device Boot";
+    case CommandType::ProgramF13Boot: return L"CAN device update";
+    case CommandType::VerifyInstalled: return L"Verify installed image";
+    case CommandType::CanTxTest: return L"Bridge self test";
+    case CommandType::ResetHost: return L"Reset host";
+    case CommandType::ProbeI2c: return L"I2C reference discovery";
+    case CommandType::BridgeInfo: return L"Read host update info";
+    case CommandType::BridgeEnter: return L"Enter host Boot";
+    case CommandType::BridgeProgram: return L"Host App update";
+    case CommandType::BridgeRun: return L"Explicit host RUN confirmation";
+    default: return L"Session operation";
+    }
 }
-
 void WorkerSession::QueueEvent(WorkerEvent event) {
     HWND notify_window;
     UINT notify_message;

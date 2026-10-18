@@ -12,6 +12,13 @@ std::uint16_t Le16(const std::uint8_t* p) {
 }
 }
 
+bool CanPortSupports(const host_link::Capabilities& caps,const std::vector<Port>& ports,
+                     std::uint8_t id,std::uint8_t nominal_preset,bool fd) {
+    if(nominal_preset>=32U) return false;
+    for(const auto& p:ports) if(p.bus==Bus::Can && p.id==id && (p.flags&1U) &&
+        (p.rates&(1UL<<nominal_preset)) && (!fd || !(caps.feature_flags&kFeaturePortCatalog) || (p.flags&4U))) return true;
+    return false;
+}
 bool GetPorts(host_link::Client& client, const host_link::Capabilities& caps,
               Bus bus, std::vector<Port>* ports, std::wstring* error) {
     if (ports == nullptr || !client.IsHostValidated())

@@ -103,6 +103,9 @@ struct WorkerEvent {
     int progress = 0;
     bool success = false;
     std::wstring text;
+    std::wstring guidance;
+    std::wstring report_json_path;
+    std::wstring report_html_path;
 };
 
 class WorkerSession {
@@ -214,7 +217,7 @@ private:
     void PostLog(const std::wstring& text);
     void PostState();
     void PostProgress(int progress, const std::wstring& text);
-    void PostCompletion(bool success, const std::wstring& text);
+    static const wchar_t* CommandName(CommandType type);
     void QueueEvent(WorkerEvent event);
 
     HWND notify_window_ = nullptr;
@@ -226,6 +229,7 @@ private:
     bool command_pending_or_busy_ = false;
     bool started_ = false;
     std::atomic<bool> stopping_{false};
+    std::wstring current_phase_;
     std::atomic<bool> cancel_requested_{false};
     std::atomic<bool> can_tx_test_stop_requested_{false};
     std::atomic<bool> detailed_trace_enabled_{false};

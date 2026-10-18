@@ -76,6 +76,17 @@ int TestConsoleBridge() {
         return child.x>=parent.x && child.y>=parent.y && child.width>=0 && child.height>=0 &&
             child.x+child.width<=parent.x+parent.width && child.y+child.height<=parent.y+parent.height;
     };
+    for(const auto size:{std::pair<int,int>{1260,660},{1350,690},{1904,1000}}) {
+        for(const int text_height:{14,18,21}) {
+            const auto layout=c::Calculate(size.first,size.second,text_height);
+            const auto log=c::CalculateLog(layout.log_pane,layout.field_row_height);
+            for(const auto& b:log.buttons) check(inside(b,layout.log_pane),"report/error log buttons remain within pane at100/125/150-percent metrics");
+            check(inside(log.trace,layout.log_pane) && inside(log.history,layout.log_pane),"trace and log remain in pane");
+            check(log.history.height>=80,"shared log retains readable history at minimum client");
+            check(log.buttons[4].y+log.buttons[4].height<=log.trace.y &&
+                log.trace.y+log.trace.height<log.history.y,"log tools do not overlap trace/history");
+        }
+    }
     // Use real Segoe UI/GDI metrics, including the reported long Misc caption.
     HDC dc=CreateCompatibleDC(nullptr);
     check(dc!=nullptr,"footer font measurement DC created");

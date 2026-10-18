@@ -1,5 +1,28 @@
 # Host Link v2 Self-Check
 
+## Tool experience / update evidence (2026-10-18)
+
+- [x] Worker JSON/HTML pair, escaped offline rendering, exclusive partial files,
+  flush/non-overwrite publication and independent format errors. UI paths only.
+- [x] Exact error context/advice, read-only Preflight and explicit report/error
+  actions. No Metadata editor, MCU firmware or protocol/retry changes.
+- [x] Advisory PnP inventory/INI, moved/reused/duplicate/missing scenarios;
+  refresh waits for idle/disconnected, without auto-open/probe/switch.
+- [x] Final Debug/Release app builds and native full suites PASS; release0090
+  delivery equals compiled EXE. Isolated process startup/idle/title/normal-close
+  PASS for both configurations, without COM or modifying the user's INI.
+- [x] 29 focused Python tests PASS; source/ownership, actual report store,
+  escaping, Win32/guidance edge cases, port/rate and PnP scenarios covered.
+- [x] Shared log geometry and GDI96/120/144 metrics/minimum/1366/large PASS.
+- [x] MD/ISP projection,8-page/1diagram PDF rendering/visual review, HTML3
+  outcomes x3 viewport sizes, four web routes/25diagrams,248 refs,18file public
+  checker and24 safe-clean scripts PASS. Evidence in tmp/internal/tool_experience.
+- [ ] Conditional F13 map budget audit NOT RUN: delivery-only checkout lacks
+  map; HEX retained. No firmware rebuild or budget guard changes performed.
+- [ ] Native UI visual/interaction NOT RUN: Computer Use native pipe unavailable
+  after retry/reset; pure geometry/GDI checks are not a screenshot substitute.
+- [ ] Physical speed/cancel/unplug/power NOT RUN: zero enumerated COM ports.
+
 ## F24 host metadata and C-header inputs (2026-10-17)
 
 - [x] Independent bridge_image_metadata.c/.h with byte extents; command/engine,

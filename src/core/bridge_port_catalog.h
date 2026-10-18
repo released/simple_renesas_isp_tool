@@ -16,6 +16,9 @@ struct Port {
 };
 bool GetPorts(host_link::Client& client, const host_link::Capabilities& caps,
               Bus bus, std::vector<Port>* ports, std::wstring* error);
+// Shared read-only acceptance for UI preflight and worker port selection.
+bool CanPortSupports(const host_link::Capabilities& caps,const std::vector<Port>& ports,
+                     std::uint8_t id,std::uint8_t nominal_preset,bool fd);
 bool SelectCanPort(host_link::Client& client,
                    const host_link::Capabilities& caps,
                    const std::vector<Port>& ports, std::uint8_t id,

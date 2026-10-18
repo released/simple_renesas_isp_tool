@@ -45,6 +45,10 @@ protected:
     afx_msg void OnBnClickedExportSummary();
     afx_msg void OnCancelOperation();
     afx_msg void OnCompareMetadata();
+    afx_msg void OnPreflight();
+    afx_msg void OnOpenLatestReport();
+    afx_msg void OnErrorDetails();
+    afx_msg BOOL OnDeviceChange(UINT event_type, DWORD_PTR data);
     afx_msg void OnBnClickedDetailedTrace();
     afx_msg void OnCbnSelChangeCom();
     afx_msg void OnCbnSelChangeBaud();
@@ -141,7 +145,7 @@ private:
     void StopLogRecording(bool emit_log);
     void ExportSessionSummary();
     std::wstring BuildSessionSummary() const;
-    void SaveUpdateReport(const std::wstring& json);
+    void SaveUpdateReport(const firmware_upgrade::ui::WorkerEvent& event);
     bool LoadBinaryFromPath(const std::wstring& path, bool silent);
     void ValidateLoadedFirmwareImage(bool emit_log);
     void UpdateFirmwareImageInfoText();
@@ -156,6 +160,11 @@ private:
     CStatic com_label_;
     CComboBox com_combo_;
     std::vector<firmware_upgrade::serial_ports::PortInfo> com_ports_;
+    std::wstring selected_com_instance_;
+    std::wstring verified_com_port_;
+    std::wstring pending_com_instance_;
+    std::wstring com_device_notice_;
+    std::wstring last_probe_port_;
     CStatic baud_label_;
     CComboBox baud_combo_;
     CButton refresh_com_btn_;
@@ -164,6 +173,7 @@ private:
     CButton reset_host_btn_;
     CButton cancel_btn_;
     CButton compare_metadata_btn_;
+    CButton preflight_btn_;
     CStatic build_info_label_;
 
     CStatusCard host_info_label_;
@@ -227,6 +237,8 @@ private:
     std::uint8_t preferred_i2c_port_ = 0U;
     std::uint8_t preferred_i2c_speed_ = 0U;
     std::wstring last_operation_error_;
+    std::wstring last_error_guidance_;
+    std::wstring latest_report_path_;
     firmware_upgrade::g16_i2c::ImageInspection binary_i2c_inspection_;
     firmware_upgrade::bridge_update::Image binary_bridge_inspection_;
     CBrush page_background_brush_;
@@ -244,6 +256,8 @@ private:
     CButton start_log_btn_;
     CButton stop_log_btn_;
     CButton export_summary_btn_;
+    CButton open_report_btn_;
+    CButton error_details_btn_;
     CButton detailed_trace_check_;
 
     std::wstring binary_path_;
