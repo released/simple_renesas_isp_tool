@@ -13,6 +13,7 @@ bool CMainFrame::InitializeOverviewUi() {
     CStatusCard* cards[] = {&host_info_label_, &target_info_label_,
         &firmware_overview_cards_[0], &firmware_overview_cards_[1], &firmware_overview_cards_[2]};
     for (auto* card : cards) {
+        card->SetInfoStyle();
         card->ModifyStyle(0, SS_NOTIFY);
         overview_tooltip_.AddTool(card, L"N/A");
     }

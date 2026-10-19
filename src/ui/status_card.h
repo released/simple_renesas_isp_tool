@@ -10,6 +10,7 @@ Palette Colors(Tone tone);
 class CStatusCard : public CStatic {
 public:
     void SetTone(firmware_upgrade::visual::Tone tone);
+    void SetInfoStyle() { info_style_=true; }
     void SetContent(const std::wstring& heading, const std::wstring& value,
                     const std::wstring& detail);
 protected:
@@ -18,4 +19,5 @@ protected:
 private:
     firmware_upgrade::visual::Tone tone_ = firmware_upgrade::visual::Tone::Neutral;
     std::wstring heading_, value_, detail_;
+    bool info_style_=false;
 };

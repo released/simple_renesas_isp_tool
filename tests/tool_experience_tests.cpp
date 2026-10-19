@@ -3,6 +3,7 @@
 #include "operation_guidance.h"
 #include "preflight_summary.h"
 #include "bridge_port_catalog.h"
+#include "../src/ui/update_feedback.h"
 #include <iostream>
 
 int TestToolExperience() {
@@ -58,6 +59,31 @@ int TestToolExperience() {
     check(!bridge::CanPortSupports(caps,{port},2,32,false),"out-of-range rate cannot shift by32");
     check(!bridge::CanPortSupports(caps,{port},2,2,true),"Classical-only port cannot appear FD ready");
     port.flags=5;check(bridge::CanPortSupports(caps,{port},2,2,true),"advertised FD port accepted");
+    using feedback::Result;
+    for (const auto result : {Result::DeviceAppConfirmed,Result::DeviceAppConfirmedCanActive,
+                              Result::HostAppWritten,Result::HostAppRunning}) {
+        const auto view=feedback::Describe(result);
+        check(!view.title.empty() && !view.next.empty() && !view.progress.empty(),"completion has title, next step and footer");
+        check(!view.compact.empty() && view.compact.find(L"\r\n")!=std::wstring::npos,"compact persistent result separates outcome and next action");
+        check(view.status.find(L"[COMPLETE")==0,"persistent completion is explicit, not an idle prerequisite error");
+    }
+    check(feedback::Describe(Result::None).status.empty(),"generic discovery/percentage cannot create success feedback");
+    const auto device=feedback::Describe(Result::DeviceAppConfirmed);
+    check(device.status.find(L"CAN stopped")!=std::wstring::npos && !device.warning,"confirmed device has stopped CAN and clear success");
+    check(device.next.find(L"Discover Target > Enter Boot (if App mode)")!=std::wstring::npos,"another update requires discovery and conditional ENTER");
+    const auto active=feedback::Describe(Result::DeviceAppConfirmedCanActive);
+    check(active.warning && active.next.find(L"may still be active")!=std::wstring::npos,"failed CAN stop is a separate warning");
+    check(active.next.find(L"Do not repeat the update")!=std::wstring::npos,"cleanup warning never requests another erase");
+    const auto written=feedback::Describe(Result::HostAppWritten);
+    check(written.status.find(L"remains in Boot")!=std::wstring::npos &&
+          written.next.find(L"not been started")!=std::wstring::npos,"host written does not claim execution");
+    check(feedback::Describe(Result::HostAppRunning).status.find(L"Same-COM")!=std::wstring::npos,"host RUN confirmation is separate");
+    check(!feedback::IsDevice(Result::HostAppWritten) && feedback::IsDevice(Result::DeviceAppConfirmedCanActive),"completion destination is typed");
+    for (bool host : {false,true}) for (bool discovered : {false,true}) for (bool boot : {false,true}) {
+        const auto next=feedback::CanNextStep(host,discovered,boot);
+        check(next.find(!host?L"Open + Probe Host":!discovered?L"Discover Target":boot?L"Enter Boot is not needed":L"Next: Enter Boot")!=std::wstring::npos,
+              "next step follows host/discovery/Boot-App state");
+    }
     std::cout<<"Tool experience tests: "<<(failures?"FAIL":"PASS")<<'\n';
     return failures;
 }

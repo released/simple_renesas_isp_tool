@@ -27,9 +27,6 @@ bool CMainFrame::InitializeBusUi() {
                                CRect(), this, ID_I2C_PROBE_BTN) ||
         !i2c_notes_.Create(L"", label, CRect(), this, ID_I2C_NOTES) ||
         !operation_status_card_.Create(L"", label, CRect(), this, ID_OPERATION_STATUS) ||
-        !interface_heading_.Create(L"INTERFACE SETTINGS", label, CRect(), this, ID_INTERFACE_HEADING) ||
-        !image_heading_.Create(L"SHARED IMAGE / METADATA", label, CRect(), this, ID_IMAGE_HEADING) ||
-        !log_heading_.Create(L"SHARED LOG", label, CRect(), this, ID_LOG_HEADING) ||
         !InitializeOverviewUi())
         return false;
     bus_tabs_.InsertItem(0, L"CAN");
@@ -40,15 +37,9 @@ bool CMainFrame::InitializeBusUi() {
     i2c_address_edit_.SetWindowTextW(L"0x09");
     CWnd* controls[] = {&bus_tabs_, &bus_port_label_, &bus_port_combo_,
         &i2c_speed_label_, &i2c_speed_combo_, &i2c_address_label_,
-        &i2c_address_edit_, &i2c_probe_btn_, &i2c_notes_, &operation_status_card_,
-        &interface_heading_, &image_heading_, &log_heading_};
+        &i2c_address_edit_, &i2c_probe_btn_, &i2c_notes_, &operation_status_card_};
     for (CWnd* control : controls) control->SetFont(&ui_font_);
-    image_heading_.SetTone(Tone::Working);
-    page_background_brush_.CreateSolidBrush(RGB(245,247,251));
-    ready_background_brush_.CreateSolidBrush(firmware_upgrade::visual::Colors(Tone::Ready).background);
-    error_background_brush_.CreateSolidBrush(firmware_upgrade::visual::Colors(Tone::Error).background);
-    pending_background_brush_.CreateSolidBrush(firmware_upgrade::visual::Colors(Tone::Pending).background);
-    neutral_background_brush_.CreateSolidBrush(firmware_upgrade::visual::Colors(Tone::Neutral).background);
+    InitializeThemeBrushes();
     return true;
 }
 bool CMainFrame::IsI2cTab() const {
@@ -131,7 +122,7 @@ void CMainFrame::UpdateBusUi() {
     else if(!com_device_notice_.empty())
         CardText(operation_status_card_,com_device_notice_,Tone::Pending);
     else
-        CardText(operation_status_card_, L"Green: ready | Amber: waiting | Red: blocked/error | Gray: N/A | Blue: offline BIN / working", Tone::Neutral);
+        CardText(operation_status_card_, L"Status: green = ready/complete | amber = waiting/policy | red = blocked/error | OFFLINE = loaded file, LIVE = connected board", Tone::Neutral);
     if (i2c) {
         can_mode_combo_.EnableWindow(FALSE); can_bitrate_combo_.EnableWindow(FALSE);
         can_data_combo_.EnableWindow(FALSE); can_tx_test_btn_.EnableWindow(FALSE);
@@ -170,6 +161,7 @@ void CMainFrame::OnBusTabChanged(NMHDR*, LRESULT* result) {
         bus_tabs_.SetCurSel(active_tab_); return;
     }
     last_operation_error_.clear();
+    last_update_result_=firmware_upgrade::feedback::Result::None;
     ValidateLoadedFirmwareImage(false);
     SaveUiSettings(); UpdateUi();
 }
@@ -248,14 +240,15 @@ void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, in
     const auto move = [&](CWnd& c, int left, int top, int w, int h) {
         if (c.GetSafeHwnd()) c.MoveWindow(left, top, w, h, FALSE);
     };
-    const auto pair = [&](CWnd& label, CWnd& value, int top) {
+    const auto pair_at = [&](CWnd& label, CWnd& value, int top,int left,int span) {
         CClientDC dc(&label); CFont* old=dc.SelectObject(&ui_font_);
         CString text; label.GetWindowTextW(text);
         const int lw=dc.GetTextExtent(text).cx+10; dc.SelectObject(old);
-        move(label,x,top+3,lw,row-2);
+        move(label,left,top+3,lw,row-2);
         const bool combo=(value.GetStyle() & CBS_DROPDOWNLIST)==CBS_DROPDOWNLIST;
-        move(value,x+lw+3,top,width-lw-3,combo ? 220 : row-2);
+        move(value,left+lw+3,top,span-lw-3,combo ? 220 : row-2);
     };
+    const auto pair=[&](CWnd& label,CWnd& value,int top) {pair_at(label,value,top,x,width);};
     if (misc) {
         move(connect_target_btn_,x,y,width,row);
         move(enter_bootloader_btn_,x,y+step,width,row);
@@ -272,21 +265,22 @@ void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, in
     } else {
         pair(bus_port_label_,bus_port_combo_,y);
         pair(can_mode_label_,can_mode_combo_,y+step);
-        pair(can_bitrate_label_,can_bitrate_combo_,y+step*2);
-        pair(can_data_label_,can_data_combo_,y+step*3);
-        pair(can_filter_label_,can_filter_combo_,y+step*4);
+        const int rate_half=(width-6)/2;
+        pair_at(can_bitrate_label_,can_bitrate_combo_,y+step*2,x,rate_half);
+        pair_at(can_data_label_,can_data_combo_,y+step*2,x+rate_half+6,width-rate_half-6);
+        pair(can_filter_label_,can_filter_combo_,y+step*3);
         const int half=(width-4)/2;
-        move(can_filter_id_label_,x,y+step*5+3,24,row-2);
-        move(can_filter_id_edit_,x+26,y+step*5,half-26,row-2);
-        move(can_filter_mask_label_,x+half+4,y+step*5+3,40,row-2);
-        move(can_filter_mask_edit_,x+half+46,y+step*5,width-half-46,row-2);
-        pair(profile_label_,profile_combo_,y+step*6);
-        move(connect_target_btn_,x,y+step*7,width,row);
+        move(can_filter_id_label_,x,y+step*4+3,24,row-2);
+        move(can_filter_id_edit_,x+26,y+step*4,half-26,row-2);
+        move(can_filter_mask_label_,x+half+4,y+step*4+3,40,row-2);
+        move(can_filter_mask_edit_,x+half+46,y+step*4,width-half-46,row-2);
+        pair(profile_label_,profile_combo_,y+step*5);
+        move(connect_target_btn_,x,y+step*6,width,row);
         const int third=(width-4)/2;
-        move(enter_bootloader_btn_,x,y+step*8,third,row);
-        move(transfer_test_btn_,x+third+4,y+step*8,width-third-4,row);
-        move(can_tx_test_btn_,x,y+step*9,width-23,row);
-        move(can_tx_test_help_,x+width-20,y+step*9+3,20,row);
-        move(disconnect_btn_,x,y+step*10,width,row);
+        move(enter_bootloader_btn_,x,y+step*7,third,row);
+        move(transfer_test_btn_,x+third+4,y+step*7,width-third-4,row);
+        move(can_tx_test_btn_,x,y+step*8,width-23,row);
+        move(can_tx_test_help_,x+width-20,y+step*8+3,20,row);
+        move(disconnect_btn_,x,y+step*9,width,row);
     }
 }

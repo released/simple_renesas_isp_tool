@@ -14,6 +14,7 @@
 #include "core/serial_port_catalog.h"
 #include "worker_session.h"
 #include "ui/status_card.h"
+#include "ui/console_geometry.h"
 
 class CMainFrame : public CFrameWnd {
 public:
@@ -50,6 +51,9 @@ protected:
     afx_msg void OnErrorDetails();
     afx_msg BOOL OnDeviceChange(UINT event_type, DWORD_PTR data);
     afx_msg void OnBnClickedDetailedTrace();
+    afx_msg void OnLogAutoScroll();
+    afx_msg void OnPaint();
+    afx_msg void OnSysColorChange();
     afx_msg void OnCbnSelChangeCom();
     afx_msg void OnCbnSelChangeBaud();
     afx_msg void OnCbnSelChangeCanBitrate();
@@ -100,6 +104,8 @@ private:
     void QueueDisconnect();
     void AppendLog(const std::wstring& text);
     void UpdateUi();
+    void InitializeThemeBrushes();
+    void UpdateCompletionFeedback();
     void StartDeviceUpdate(bool force_old_version);
     bool ConfirmForceOldFirmware();
     bool InitializeBusUi();
@@ -181,9 +187,8 @@ private:
     std::array<CStatusCard, 3> firmware_overview_cards_;
     CToolTipCtrl overview_tooltip_;
     CStatic target_metadata_label_;
-    CStatusCard interface_heading_;
-    CStatusCard image_heading_;
-    CStatusCard log_heading_;
+    CFont section_font_;
+    firmware_upgrade::console::Layout console_layout_={};
 
     CButton load_binary_btn_;
     CStatic file_path_label_;
@@ -237,6 +242,7 @@ private:
     std::uint8_t preferred_i2c_port_ = 0U;
     std::uint8_t preferred_i2c_speed_ = 0U;
     std::wstring last_operation_error_;
+    firmware_upgrade::feedback::Result last_update_result_ = firmware_upgrade::feedback::Result::None;
     std::wstring last_error_guidance_;
     std::wstring latest_report_path_;
     firmware_upgrade::g16_i2c::ImageInspection binary_i2c_inspection_;
@@ -246,6 +252,7 @@ private:
     CBrush error_background_brush_;
     CBrush pending_background_brush_;
     CBrush neutral_background_brush_;
+    CBrush field_background_brush_;
 
     CProgressCtrl progress_bar_;
     CStatic progress_label_;
@@ -259,6 +266,8 @@ private:
     CButton open_report_btn_;
     CButton error_details_btn_;
     CButton detailed_trace_check_;
+    CButton log_auto_scroll_check_;
+    bool log_auto_scroll_ = true;
 
     std::wstring binary_path_;
     std::wstring preferred_com_port_;

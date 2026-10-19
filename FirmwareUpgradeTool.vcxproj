@@ -178,6 +178,7 @@
     <ClCompile Include="src\main_frame_status.cpp" />
     <ClCompile Include="src\main_frame_overview.cpp" />
     <ClCompile Include="src\ui\overview_model.cpp" />
+    <ClCompile Include="src\ui\log_view.cpp" />
     <ClCompile Include="src\ui\status_card.cpp" />
     <ClCompile Include="src\core\bridge_port_catalog.cpp" />
     <ClCompile Include="src\core\i2c_host_client.cpp" />
@@ -199,6 +200,8 @@
   <ItemGroup>
     <ClInclude Include="src\app.h" />
     <ClInclude Include="src\ui\overview_model.h" />
+    <ClInclude Include="src\ui\update_feedback.h" />
+    <ClInclude Include="src\ui\log_view.h" />
     <ClInclude Include="src\core\can_host_client.h" />
     <ClInclude Include="src\core\f13_boot_profile.h" />
     <ClInclude Include="src\core\f13_boot_update.h" />

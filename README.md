@@ -9,6 +9,11 @@ are checked; F24 device hardware acceptance is still required.
 
 ## Downloads and operating guides
 
+For the 20 shared image fields, status colors, exact error messages and
+CAN/Misc/I2C display differences, see the
+[Tool field guide](https://released.github.io/slide_isp_tool_for_RL78/#tool-ui-fields)
+or its [offline Markdown source](docs/UPDATE_VALIDATION_zh-TW.md#tool-ui-fields).
+
 For editing device image metadata or adding App interrupts, use the
 [F13/F24 CAN device workshop](docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md):
 editable versus generated fields, before/after examples, App-only commands
@@ -84,6 +89,11 @@ acceptance; it is a design assessment, not an enabled editor or update adapter.
 [Update confirmation and validation](docs/UPDATE_VALIDATION_zh-TW.md) covers
 automatic App checks, metadata differences, staged progress, independent Cancel,
 automatic JSON reports, diagnostics and the hardware acceptance matrix.
+Verified updates show a completion dialog and persistent next steps. CAN stops
+only after App confirmation and keeps Host COM open; Misc writing remains in
+Boot until explicit RUN. Discover Target works in Boot/App; Enter Boot is
+needed only for a discovered running App. See the
+[completion guide](https://released.github.io/slide_isp_tool_for_RL78/#update-completion).
 Operation reports also include an offline HTML view; Open Last Report opens
 the last HTML created in the current session. Preflight summarizes current
 update gates without sending commands. Error Details preserves exact errors
@@ -92,6 +102,11 @@ probing or switching other ports automatically.
 
 The Tool provides one shared image/metadata/log console. CAN and I2C settings
 occupy the left TAB area; Misc updates the host's own App over UART115200.
+Five framed, system-color MFC groups separate connection, BIN/live information,
+peripheral settings, shared update actions and message log. Auto scroll down
+defaults on and is stored in the INI; disabling it preserves the reading
+position and selected text while new messages and file recording continue.
+See the [console/log guide](https://released.github.io/slide_isp_tool_for_RL78/#tool-console-layout).
 
 - Host Link: powers up115200; compatible host Apps negotiate460800/921600.
 - CAN: bridge self test, non-destructive Custom Transfer and device App update.

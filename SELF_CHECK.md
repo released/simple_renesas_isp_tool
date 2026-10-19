@@ -1,5 +1,63 @@
 # Host Link v2 Self-Check
 
+## Classic groups / persistent Log follow (2026-10-19)
+
+- [x] Five system-gray/white, thick-framed MFC work groups;20 fields reused in
+  four semantic groups. Lower-left TAB only; shared image/log independent.
+- [x] Auto scroll default1; INI load/save, immediate re-enable bottom. Paused
+  native RichEdit preserves selection/viewport through short and15000-line
+  histories and repeated/wrapped appends. File recording remains independent.
+- [x]0092 one-click Release and final Debug/Release builds PASS0warnings/errors;
+  final build EXE hash matches delivery. Both isolated startup/close PASS;
+  default1 and prepared0 persist, with no COM or user's INI modification.
+- [x] Native Debug/Release full suites PASS with actual packaged BIN fixtures;
+  frame/field/log geometry and1350x690/text18 plus minimum-size checks PASS.
+- [x]49 focused Python tests PASS. MD/ISP mirror/public18files/248refs/anchors/
+  24safe-clean scripts/four web routes25diagrams and1366/390 tables PASS.
+- [x] Updated15page1diagram and9page3diagram PDFs rendered/visually reviewed;
+  README/architecture/agent rules/engineering records updated. No MCU changes.
+- [ ] Main-window visual/TAB/checkbox interaction NOT RUN: Computer Use native
+  pipe os error2 twice. Native-control/process tests do not close this gate.
+- [ ] Physical COM/update, commit/push and web publication NOT RUN; none was
+  performed for this UI task. Exact evidence/hash/limitations in HANDOFF.
+
+## Explicit completion / next-step guidance (2026-10-19)
+
+- [x] Typed success dialog/persistent status/compact hint/footer/report outcomes
+  distinguish device confirmed, STOP warning, Host written and Host running.
+- [x] CAN_STOP only follows successful APP_READY/live matching. ACK clears live
+  target but retains COM; STOP failure preserves CAN state and exact warning.
+- [x] Discover works in Boot/App; UI ENTER requires discovered App. Existing
+  image/role/identity/Boot/IRQ/version/port gates and explicit Misc RUN retained.
+- [x] Release one-click0091 and final Debug/Release builds PASS0warnings/errors.
+  Isolated startup/idle/title/normal-close PASS, no COM/actual user INI writes.
+- [x] Final native Debug/Release suites with packaged Host/F13 BINs PASS; GDI
+ 96/120/144 covers footer, compact600px hints and1220px completion status.
+- [x]45 focused Python tests PASS; canonical sync/public18file/248refs/24safe-
+  clean/four browser routes25diagrams and1366/390 field tables/anchors PASS.
+- [x] MD/web/14page1diagram PDF rendered and visually checked; architecture,
+  README, rules and engineering records updated. No MCU changes or Git push.
+- [ ] Native modal/UI visual NOT RUN: Computer Use native-pipe os error2 twice.
+  Process/geometry/model results do not imply actual interaction acceptance.
+- [ ] Physical update/STOP/RUN/unplug NOT RUN; no board programming performed.
+
+## Tool operation field reference (2026-10-19)
+
+- [x] All20 actual UI captions documented with source, examples, scope and
+  actions; CAN/Misc/I2C and offline/live distinctions match display adapters.
+- [x] Exact parser/status labels checked against source; policy colors do not
+  imply live Boot/IRQ compatibility, and CRC MATCH is not overall acceptance.
+- [x]5 new field/PDF-reader tests plus27 existing focused tests PASS; no skips.
+- [x] Canonical MD/ISP mirror, README and operation navigation synchronized;
+  public18file/248reference checks,24 safe-clean scripts and diff checks PASS.
+- [x]13-page/1diagram PDF rendered and visually reviewed; escaped pipes and
+  level5 headings render correctly. Web8 reference tables and anchors checked
+  at1366/390; all four guide routes/25diagrams render without errors.
+- [x] No runtime build/version/firmware change; EXE hash unchanged. Screenshots
+  owned by the user preserved. Evidence in tmp/internal/tool_ui_fields.
+- [ ] Git publication and physical tests NOT RUN; neither is required for
+  this documentation-only task. No native Tool interaction result implied.
+
 ## Tool experience / update evidence (2026-10-18)
 
 - [x] Worker JSON/HTML pair, escaped offline rendering, exclusive partial files,

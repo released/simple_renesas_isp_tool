@@ -179,7 +179,8 @@ def make_styles() -> dict[str, ParagraphStyle]:
 
 
 def split_table_row(line: str) -> list[str]:
-    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+    return [cell.strip().replace(r"\|", "|")
+            for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
 
 
 def table_flowable(lines: list[str], styles: dict[str, ParagraphStyle], width: float) -> Table:
@@ -363,7 +364,7 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
             story.append(table_flowable(table_lines, styles, landscape_width))
             story.append(Spacer(1, 7))
             continue
-        heading = re.match(r"^(#{1,4})\s+(.+)$", stripped)
+        heading = re.match(r"^(#{1,6})\s+(.+)$", stripped)
         if heading:
             flush_paragraph()
             level = len(heading.group(1))

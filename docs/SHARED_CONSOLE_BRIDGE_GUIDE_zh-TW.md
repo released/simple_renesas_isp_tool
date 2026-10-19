@@ -2,24 +2,27 @@
 
 本指南整理 Tool 的共用畫面，以及 MCU CAN host 的 UART App 更新與工程設定。
 
-## 1. 一個畫面，三個工作區
+## 1. 共用畫面與操作群組
 
-畫面以1366×768為最低配置：上方識別卡、左側介面設定、中間共用BIN／metadata／checksum、右側共用log、底部progress／elapsed。
-主視窗沒有上下捲軸，log歷史與下拉清單可捲動。
-五張卡於小畫面同列、大畫面分兩列，hover可讀全文。
+畫面以1366×768配置呈現上方連線、BIN／裝置資訊，以及下方周邊設定、載入／更新、Message Log 五個群組。
+使用 Windows 系統灰白配色與加粗邊框；狀態色保留於判定結果與提示。
+主視窗沒有上下捲軸，Log 歷史與下拉清單可捲動；最小視窗高度隨字型尺寸調整。
+五張摘要卡同列顯示，hover 可讀全文。
 
-BIN、檔案路徑、18個metadata欄位與log由各TAB共用。
+BIN、檔案路徑、20個metadata欄位與Log由各TAB共用。
 
 CAN 與 I2C TAB 提供 port、speed、ID／mask 或 slave address 等介面參數及適用的 image contract。
 最後一個 TAB 是 Misc，更新目的地為 host bridge。
 
-CAN／I2C／Misc TAB 位於左側 INTERFACE SETTINGS。
-中欄 SHARED IMAGE / METADATA 與右欄 SHARED LOG 固定獨立，切換 TAB 時保留共用資料。
+CAN／I2C／Misc TAB 只位於左下 PERIPHERAL / TARGET 群組。
+上方 BIN 資訊、中下 LOAD / UPDATE IMAGE 與右下 MESSAGE LOG 固定獨立，切換 TAB 保留共用資料。
+完整[群組與欄位對照](https://released.github.io/slide_isp_tool_for_RL78/#tool-console-layout)及
+[Auto scroll down／INI 設定](https://released.github.io/slide_isp_tool_for_RL78/#tool-log-auto-scroll)集中於 Tool operation。
 
 | 顏色與文字 | 意義 |
 | --- | --- |
 | 綠色 READY／MATCH | 條件符合或資料完整性相符，不代表身分認證 |
-| 藍色 OFFLINE／WORKING | 本地 BIN 資訊或執行中 |
+| OFFLINE／WORKING 文字 | 本地 BIN 資訊或執行中，以系統灰白底呈現 |
 | 黃色 REQUIRED／REFERENCE | 等待必要條件或僅為範例回報資訊 |
 | 紅色 ERROR／BLOCKED | 錯誤、CRC 不符或不允許操作 |
 | 灰色 N/A | 尚未取得或該協定未提供；離線 BIN 資料與 live 資訊分開顯示 |

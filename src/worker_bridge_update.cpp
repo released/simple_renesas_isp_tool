@@ -104,6 +104,7 @@ bool WorkerSession::ProcessBridgeAction(const Command& command, std::wstring* er
             PostLog(L"HOST BRIDGE RUN confirmation PASS: same board, APP mode and complete installed metadata match.");
             update_timings_.push_back({L"run_reconnect_confirmation",static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now()-run_started).count())});
+            update_result_=feedback::Result::HostAppRunning;
             PostProgress(100,L"2/2 Host App confirmed"); *error=L""; return true;
         }
         *error=IsCancelRequested()?L"Host RUN confirmation canceled; no repeated RUN or rewrite.":
@@ -144,6 +145,7 @@ bool WorkerSession::ProcessBridgeAction(const Command& command, std::wstring* er
         if (!RefreshBridgeInfo(&refresh_error)) PostLog(L"Bridge INFO refresh failed: "+refresh_error);
     }
     if (result) {
+        update_result_=feedback::Result::HostAppWritten;
         PostProgress(100,L"4/4 Host CRC/readback");
         PostLog(L"HOST BRIDGE END CRC acknowledged. Remains in boot; RUN is explicit.");
     }

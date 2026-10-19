@@ -1,9 +1,51 @@
 #include "main_frame.h"
 
+namespace {
+void Group(CDC& dc,const firmware_upgrade::console::Rect& box,const wchar_t* title) {
+    if (box.width<=0 || box.height<=0) return;
+    TEXTMETRIC metric={}; dc.GetTextMetrics(&metric);
+    CPen pen(PS_SOLID,2,GetSysColor(COLOR_3DSHADOW));
+    auto* old_pen=dc.SelectObject(&pen); auto* old_brush=dc.SelectStockObject(NULL_BRUSH);
+    dc.Rectangle(box.x+1,box.y+metric.tmHeight/2,box.x+box.width-1,box.y+box.height-1);
+    dc.SelectObject(old_pen); dc.SelectObject(old_brush);
+    const auto size=dc.GetTextExtent(title);
+    CRect caption(box.x+10,box.y,box.x+14+size.cx,box.y+metric.tmHeight+2);
+    dc.FillSolidRect(caption,GetSysColor(COLOR_3DFACE));
+    dc.DrawTextW(title,caption,DT_LEFT|DT_SINGLELINE|DT_NOPREFIX);
+}
+}
+void CMainFrame::InitializeThemeBrushes() {
+    using firmware_upgrade::visual::Tone;
+    CBrush* brushes[]={&page_background_brush_,&ready_background_brush_,&error_background_brush_,
+        &pending_background_brush_,&neutral_background_brush_,&field_background_brush_};
+    const COLORREF colors[]={GetSysColor(COLOR_3DFACE),firmware_upgrade::visual::Colors(Tone::Ready).background,
+        firmware_upgrade::visual::Colors(Tone::Error).background,firmware_upgrade::visual::Colors(Tone::Pending).background,
+        GetSysColor(COLOR_3DFACE),GetSysColor(COLOR_WINDOW)};
+    for (int i=0;i<6;++i) {brushes[i]->DeleteObject(); brushes[i]->CreateSolidBrush(colors[i]);}
+}
+void CMainFrame::OnSysColorChange() {
+    CFrameWnd::OnSysColorChange(); InitializeThemeBrushes();
+    if (log_edit_.GetSafeHwnd()) log_edit_.SetBackgroundColor(FALSE,GetSysColor(COLOR_WINDOW));
+    RedrawWindow(nullptr,nullptr,RDW_INVALIDATE|RDW_ERASE|RDW_ALLCHILDREN);
+}
+void CMainFrame::OnPaint() {
+    CPaintDC dc(this); dc.SetBkMode(TRANSPARENT); dc.SetTextColor(GetSysColor(COLOR_BTNTEXT));
+    auto* previous=section_font_.GetSafeHandle() ? dc.SelectObject(&section_font_) : nullptr;
+    const auto& layout=console_layout_;
+    Group(dc,layout.connection_group,L"1. HOST CONNECTION");
+    Group(dc,layout.analysis_group,L"2. BIN / DEVICE INFORMATION - OFFLINE FILE / LIVE BOARD");
+    Group(dc,layout.interface_group,L"3. PERIPHERAL / TARGET");
+    Group(dc,layout.image_group,L"4. LOAD / UPDATE IMAGE");
+    Group(dc,layout.log_group,L"5. MESSAGE LOG");
+    const wchar_t* titles[]={L"File / integrity",L"Image identity",L"Flash layout / IRQ",L"Update contract"};
+    for (int i=0;i<4;++i) Group(dc,layout.metadata_groups[i],titles[i]);
+    if (previous) dc.SelectObject(previous);
+}
+
 BOOL CMainFrame::OnEraseBkgnd(CDC* dc) {
     if (dc == nullptr) return FALSE;
     CRect rectangle; GetClientRect(&rectangle);
-    dc->FillSolidRect(rectangle, RGB(245,247,251));
+    dc->FillSolidRect(rectangle, GetSysColor(COLOR_3DFACE));
     return TRUE;
 }
 HBRUSH CMainFrame::OnCtlColor(CDC* dc, CWnd* window, UINT control_type) {
@@ -12,9 +54,13 @@ HBRUSH CMainFrame::OnCtlColor(CDC* dc, CWnd* window, UINT control_type) {
         page_background_brush_.GetSafeHandle() == nullptr) return brush;
     const HWND handle = window->GetSafeHwnd();
     if (control_type == CTLCOLOR_STATIC) {
-        dc->SetTextColor(RGB(36,51,71));
-        dc->SetBkColor(RGB(245,247,251));
+        dc->SetTextColor(GetSysColor(COLOR_BTNTEXT));
+        dc->SetBkColor(GetSysColor(COLOR_3DFACE));
         brush = static_cast<HBRUSH>(page_background_brush_.GetSafeHandle());
+        for (auto& value:firmware_field_values_) if (handle==value.GetSafeHwnd()) {
+            dc->SetTextColor(GetSysColor(COLOR_WINDOWTEXT)); dc->SetBkColor(GetSysColor(COLOR_WINDOW));
+            brush=static_cast<HBRUSH>(field_background_brush_.GetSafeHandle()); break;
+        }
     }
     const bool status_field =
         handle == firmware_field_values_[kFirmwareFieldChecksumResult].GetSafeHwnd() ||

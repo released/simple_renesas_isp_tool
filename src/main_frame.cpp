@@ -12,6 +12,7 @@
 #include "build_info.generated.h"
 #include "resource.h"
 #include "core/operation_guidance.h"
+#include "ui/log_view.h"
 #include <dbt.h>
 
 namespace {
@@ -118,6 +119,9 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
                   &CMainFrame::OnBnClickedExportSummary)
     ON_BN_CLICKED(ID_LOG_DETAILED_TRACE_CHK,
                   &CMainFrame::OnBnClickedDetailedTrace)
+    ON_BN_CLICKED(ID_LOG_AUTO_SCROLL_CHK, &CMainFrame::OnLogAutoScroll)
+    ON_WM_PAINT()
+    ON_WM_SYSCOLORCHANGE()
     ON_CBN_SELCHANGE(ID_TOP_COM_COMBO, &CMainFrame::OnCbnSelChangeCom)
     ON_CBN_SELCHANGE(ID_TOP_BAUD_COMBO, &CMainFrame::OnCbnSelChangeBaud)
     ON_CBN_SELCHANGE(ID_CAN_BITRATE_COMBO,
@@ -181,6 +185,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
     SetIcon(icon, TRUE);
     SetIcon(icon, FALSE);
     ui_font_.CreatePointFont(90, L"Segoe UI");
+    LOGFONT section_spec={}; ui_font_.GetLogFont(&section_spec);
+    section_spec.lfWeight=FW_BOLD; section_font_.CreateFontIndirect(&section_spec);
 
     const auto create_or_fail =
         [this](BOOL created, const wchar_t* name) -> bool {
@@ -421,6 +427,10 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
         CRect(),this,ID_LOG_OPEN_REPORT_BTN),L"Open report button")) return -1;
     if (!create_or_fail(error_details_btn_.Create(L"Error Details",WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,
         CRect(),this,ID_ERROR_DETAILS_BTN),L"Error details button")) return -1;
+    if (!create_or_fail(log_auto_scroll_check_.Create(L"Auto scroll down",
+        WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX,CRect(),this,ID_LOG_AUTO_SCROLL_CHK),
+        L"Log auto scroll checkbox")) return -1;
+    log_auto_scroll_check_.SetCheck(BST_CHECKED);
 
     if (!InitializeBusUi()) return -1;
 
@@ -442,7 +452,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
         &app_start_edit_, &progress_label_,
         &log_edit_, &clear_log_btn_,
         &start_log_btn_, &stop_log_btn_, &export_summary_btn_,
-        &detailed_trace_check_, &open_report_btn_, &error_details_btn_,
+        &detailed_trace_check_, &log_auto_scroll_check_, &open_report_btn_, &error_details_btn_,
     };
     for (CWnd* control : font_controls) {
         control->SetFont(&ui_font_);
@@ -482,6 +492,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
     progress_bar_.SetRange32(0, 100);
     progress_bar_.SetPos(0);
     log_edit_.LimitText(kLogTextLimit);
+    log_edit_.SetBackgroundColor(FALSE,GetSysColor(COLOR_WINDOW));
     build_info_label_.SetWindowTextW(
         (std::wstring(L"Build ") + FIRMWARE_UPGRADE_TOOL_VERSION + L"  " +
          FIRMWARE_UPGRADE_TOOL_BUILD_TIME).c_str());
@@ -520,15 +531,8 @@ void CMainFrame::AppendLog(const std::wstring& text) {
 
     const std::wstring line = L"[" + NowTimeText() + L"] " + text +
                               L"\r\n";
-    const int length = log_edit_.GetWindowTextLengthW();
-    log_edit_.SetSel(length, length);
-    CHARFORMAT format = {};
-    format.cbSize = sizeof(format);
-    format.dwMask = CFM_COLOR;
-    format.crTextColor = IsErrorLogText(text) ?
-        RGB(196, 24, 24) : GetSysColor(COLOR_WINDOWTEXT);
-    log_edit_.SetSelectionCharFormat(format);
-    log_edit_.ReplaceSel(line.c_str());
+    firmware_upgrade::log_view::Append(log_edit_.GetSafeHwnd(),line,
+        IsErrorLogText(text) ? RGB(196,24,24) : GetSysColor(COLOR_WINDOWTEXT),log_auto_scroll_);
 
     if (log_recording_ && log_record_fp_ != nullptr) {
         const std::string utf8 = WideToUtf8(line);
@@ -789,6 +793,8 @@ void CMainFrame::ApplyWorkerEvent(
             break;
         case WorkerEventKind::State:
             session_state_ = event.state;
+            if (event.state.busy)
+                last_update_result_=firmware_upgrade::feedback::Result::None;
             if(event.state.host_validated && !last_probe_port_.empty() && event.state.port_name==last_probe_port_) {
                 selected_com_instance_=pending_com_instance_;
                 verified_com_port_=last_probe_port_;
@@ -829,6 +835,7 @@ void CMainFrame::ApplyWorkerEvent(
             break;
         case WorkerEventKind::OperationComplete:
             worker_command_pending_ = false;
+            last_update_result_=event.update_result;
             last_operation_error_ = event.success ? L"" : event.text;
             last_error_guidance_=event.success?L"":event.guidance;
             summary_elapsed_ms_ = operation_timer_running_ ?
@@ -849,11 +856,18 @@ void CMainFrame::ApplyWorkerEvent(
                 }
             }
             UpdateUi();
+            if (event.success && event.update_result!=firmware_upgrade::feedback::Result::None && !closing_) {
+                const auto feedback=firmware_upgrade::feedback::Describe(event.update_result);
+                SetProgress(100,feedback.progress);
+                MessageBoxW((feedback.status+L"\r\n\r\n"+feedback.next).c_str(),feedback.title.c_str(),
+                    MB_OK | (feedback.warning ? MB_ICONWARNING : MB_ICONINFORMATION));
+            }
             break;
     }
 }
 
 void CMainFrame::StartOperationElapsedTimer() {
+    last_update_result_=firmware_upgrade::feedback::Result::None;
     operation_timer_start_ms_ = GetTickCount64();
     operation_timer_running_ = true;
     SetTimer(

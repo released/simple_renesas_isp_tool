@@ -1989,7 +1989,9 @@ int TestPackagedBridge(const char* path);
 int TestPackagedCan(const char* path);
 int TestF24AppReadback(const char* path);
 int TestToolExperience();
+int TestLogView();
 int main(int argc, char** argv) {
+    Check(TestLogView()==0,"Real RichEdit follow / preserve viewport and selection");
     Check(TestSerialPortIo() == 0, "Real SerialPort low-latency reads and bounded deadlines");
     Check(TestToolExperience()==0,"Tool HTML report, guidance and preflight models");
     TestLinkBaudNegotiation();

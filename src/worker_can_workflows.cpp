@@ -657,9 +657,38 @@ bool WorkerSession::ProcessProgramF13Boot(
     if(!confirmed) {
         const bool old=cleanup_in_progress_; cleanup_in_progress_=true;
         StopCanBestEffort(); cleanup_in_progress_=old;
-    }else PostProgress(100,L"5/5 App confirmed");
+    } else {
+        const bool stopped=StopCanAfterAppConfirmation();
+        update_result_=stopped ? feedback::Result::DeviceAppConfirmed :
+            feedback::Result::DeviceAppConfirmedCanActive;
+        update_details_+=stopped ? L"; host_can_stop=PASS; Host COM retained" :
+            L"; host_can_stop=NOT CONFIRMED; CAN state retained";
+        PostProgress(100,L"5/5 App confirmed");
+    }
     PostState();
     return confirmed;
+}
+
+bool WorkerSession::StopCanAfterAppConfirmation() {
+    const bool old=cleanup_in_progress_;
+    cleanup_in_progress_=true;
+    std::uint32_t controller_state=0U;
+    std::wstring stop_error;
+    const bool stopped=can_client_.Stop(&controller_state,&stop_error);
+    cleanup_in_progress_=old;
+    if (!stopped) {
+        update_details_+=L"; host_can_stop_error="+stop_error;
+        PostLog(L"App update succeeded, but CAN stop was not confirmed: "+stop_error);
+        return false;
+    }
+    state_.can_started=false;
+    state_.target_validated=false;
+    state_.f13_bootloader_ready=false;
+    state_.target_profile=TargetProfile::None;
+    state_.target_metadata={};
+    state_.target_summary.clear();
+    PostLog(L"App confirmed; Host CAN stopped. Host COM remains open. Check the App; Discover Target again for another update.");
+    return true;
 }
 
 bool WorkerSession::ConfirmDeviceApp(const firmware_update::ImageInfo& image,std::wstring* error) {

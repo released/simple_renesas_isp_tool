@@ -6,8 +6,7 @@ Palette Colors(Tone tone) {
         case Tone::Ready: return {RGB(230,255,240), RGB(0,85,43), RGB(0,145,80)};
         case Tone::Pending: return {RGB(255,246,216), RGB(112,64,0), RGB(202,130,0)};
         case Tone::Error: return {RGB(255,234,237), RGB(163,14,39), RGB(213,30,63)};
-        case Tone::Working: return {RGB(230,246,255), RGB(0,64,120), RGB(0,112,196)};
-        default: return {RGB(248,250,253), RGB(56,69,88), RGB(149,164,184)};
+        default: return {GetSysColor(COLOR_3DFACE),GetSysColor(COLOR_BTNTEXT),GetSysColor(COLOR_3DSHADOW)};
     }
 }
 } // namespace firmware_upgrade::visual
@@ -23,13 +22,14 @@ void CStatusCard::OnPaint() {
     CPaintDC dc(this);
     CRect rectangle; GetClientRect(&rectangle);
     const auto palette = firmware_upgrade::visual::Colors(tone_);
-    dc.FillSolidRect(rectangle, palette.background);
-    dc.Draw3dRect(rectangle, palette.border, palette.border);
-    dc.FillSolidRect(rectangle.left, rectangle.top, 5, rectangle.Height(), palette.border);
+    dc.FillSolidRect(rectangle, info_style_ && tone_!=firmware_upgrade::visual::Tone::Error ? GetSysColor(COLOR_WINDOW) : palette.background);
+    const auto border=info_style_ ? GetSysColor(COLOR_3DSHADOW) : palette.border;
+    dc.Draw3dRect(rectangle, border, border);
+    dc.FillSolidRect(rectangle.left, rectangle.top, info_style_ ? 3 : 5, rectangle.Height(), palette.border);
     rectangle.DeflateRect(10, 3, 6, 3);
     CString text; GetWindowTextW(text);
     CFont* previous = GetFont() == nullptr ? nullptr : dc.SelectObject(GetFont());
-    dc.SetBkMode(TRANSPARENT); dc.SetTextColor(palette.text);
+    dc.SetBkMode(TRANSPARENT); dc.SetTextColor(info_style_ ? GetSysColor(COLOR_WINDOWTEXT) : palette.text);
     if (heading_.empty()) {
         dc.DrawTextW(text, rectangle, DT_LEFT | DT_WORDBREAK | DT_NOPREFIX);
     } else {

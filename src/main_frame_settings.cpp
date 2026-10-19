@@ -1,4 +1,5 @@
 #include "main_frame.h"
+#include "ui/log_view.h"
 
 #include <iterator>
 #include <string>
@@ -104,6 +105,8 @@ void CMainFrame::LoadUiSettings() {
     detailed_trace_check_.SetCheck(
         ReadIniValue(L"detailed_trace", L"0") == L"1" ?
             BST_CHECKED : BST_UNCHECKED);
+    log_auto_scroll_=ReadIniValue(L"log_auto_scroll",L"1")!=L"0";
+    log_auto_scroll_check_.SetCheck(log_auto_scroll_ ? BST_CHECKED : BST_UNCHECKED);
 
     binary_path_ = ReadIniValue(L"binary_path", L"");
     if (!binary_path_.empty() &&
@@ -151,4 +154,11 @@ void CMainFrame::SaveUiSettings() {
     WriteIniValue(
         L"detailed_trace",
         detailed_trace_check_.GetCheck() == BST_CHECKED ? L"1" : L"0");
+    WriteIniValue(L"log_auto_scroll",log_auto_scroll_ ? L"1" : L"0");
+}
+
+void CMainFrame::OnLogAutoScroll() {
+    log_auto_scroll_=log_auto_scroll_check_.GetCheck()==BST_CHECKED;
+    if (log_auto_scroll_) firmware_upgrade::log_view::ScrollToEnd(log_edit_.GetSafeHwnd());
+    SaveUiSettings();
 }

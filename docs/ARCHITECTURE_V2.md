@@ -2,9 +2,25 @@
 
 Status: implementation baseline
 
+The console uses five system-color MFC groups: Host connection, BIN/live-device
+information, peripheral/target, shared load/update actions and message log.
+Metadata owns four semantic groups above the actions; tabs own only peripheral
+settings. Geometry and font-aware minimum height remain separate from protocol.
+Log follow defaults on and persists as ui/log_auto_scroll in the portable INI.
+The isolated RichEdit append helper preserves pixel viewport/selection when
+follow is off, with a visible-line fallback for large histories. File logging,
+worker queues, update acceptance and the existing text limit are unchanged.
+
 Update completion now distinguishes END acceptance from post-reset APP_READY
 and matching live identity/version/build/size. Misc END remains Boot; only an
 explicit RUN triggers bounded same-COM115200 automatic App confirmation.
+After CAN App confirmation, the worker requests CAN_STOP and retains Host COM.
+Only acknowledged STOP clears the live target snapshot; a failed STOP retains
+CAN state and reports App-confirmed/cleanup-warning, not an update failure or
+invented disconnect. Typed operation outcomes drive one completion dialog and
+persistent status/next-step text, independently of stage percentages. Misc
+written/awaiting RUN and RUN-confirmed are separate outcomes. Discovery works
+in Boot/App; the UI enables ENTER only for an already discovered App.
 Independent Cancel retains worker COM ownership and bounded cleanup. Shared
 metadata differences, read-only preflight snapshots, stage progress, phase timing and automatic JSON/HTML reports
 are PC responsibilities; host telemetry/stay reasons remain generic.

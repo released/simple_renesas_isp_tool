@@ -1,5 +1,151 @@
 # Development Handoff
 
+## Classic grouped console and Log follow (2026-10-19)
+
+Tool0092 uses five thick, parent-painted system-gray MFC group frames: Host
+connection, BIN/live information, peripheral/target, load/update actions and
+Message Log. Five summary cards share one row;20 metadata controls are reused
+in four semantic groups above the lower three columns. Tabs still own only
+the peripheral column. White/system text replaces general blue/pastel panels;
+semantic result colors and all update/worker gates remain. Font-aware minimum
+height and compact CAN rate rows preserve the normal1366-class single screen.
+
+Auto scroll down defaults enabled and persists as [ui] log_auto_scroll=1/0 in
+FirmwareUpgradeTool.ini. Re-enabling immediately returns to the bottom.
+ui/log_view.cpp owns real RichEdit append/follow/selection/viewport behavior;
+main_frame_settings.cpp owns preference load/save and the checkbox command.
+File recording,8MiB history limit, worker queues and protocols are unchanged.
+Other code owners: main_frame.cpp/.h, main_frame_bus.cpp, main_frame_layout.cpp,
+main_frame_status.cpp, main_frame_overview.cpp, ui/console_geometry.cpp/.h,
+ui/status_card.cpp/.h, resource.h and the two vcxproj registrations.
+
+Final Debug/Release builds PASS with no warnings/errors; Release one-click
+entry also PASS. Delivery0.1.0.0092, stamp2026-10-19 10:04:48, SHA256
+7D8AFF4EA18E3A7FF70B81A39C2FB599B91D921A12EC642479376A1613D4404E
+matches compiled Release. Isolated Debug/Release process startup/idle/title
+and normal-close exit0 PASS. Missing-key default1 and manually prepared0 were
+both preserved through actual startup/close; user's runtime INI untouched.
+
+Final native Debug/Release suites with packaged Host/F13 BINs PASS, including
+real RichEdit350 initial lines,100 paused appends, selection restoration,
+re-enable/final caret,15000-line history with100 paused appends and100 wrapped
+appends in the middle of that history. Geometry covers five frames/four field
+groups, footer, log tools/history and font-aware minimums;1350x690/text18 fits.
+49 focused Python tests PASS (4 classic,3 settings,5 experience,5 field guide,
+5 completion,5 observability,5 public rules,12 public web,5 PDF renderer).
+
+Initial large-history regression exposed a one-line drift; bounded line
+correction after pixel restoration fixes it. RichEdit's documented pixel
+coordinates are16-bit; see https://learn.microsoft.com/en-us/windows/win32/controls/em-getscrollpos.
+The first ordinary caret test was corrected to use RichEdit text positions
+rather than Win32 CRLF character counts. Final tests above exercise the fix.
+
+Canonical operation MD/ISP projection, shared guide, architecture/README and
+agent rules synchronized. PDFs15pages/1diagram and9pages/3diagrams passed
+text/glyph/bounds/render and all-page/changed-page visual review. Public18file,
+248refs/anchors,24safe-clean scripts and four browser routes/25diagrams PASS;
+new group/follow anchors and10 reference tables checked at1366/390 widths.
+Evidence: tmp/internal/tool_ui_fields/classic_* and pdf_classic/web_render.
+An initial verification loop used an empty test_pdf* pattern; the actual
+test_guide_pdf_renderer.py was subsequently run with5 PASS. Sync without the
+workspace WebRoot override could not find the sibling checkout; rerun with
+FIRMWARE_WEB_ROOT set to the actual web root PASS, without changing defaults.
+
+Native visual/TAB/checkbox interaction NOT RUN: Computer Use native pipe
+unavailable after two attempts(os error2). Process/native-control/geometry
+tests are not actual main-window screenshots. Screenshot checklist retains
+the pending capture gate. Physical COM/flash tests NOT RUN; no MCU source,
+firmware image, boot slide, user screenshot or user INI changed. No Git commit,
+push or web deployment. Existing completion/field-guide changes preserved.
+
+## Explicit update completion and Boot/App guidance (2026-10-19)
+
+Implemented typed outcomes in ui/update_feedback.h and WorkerEvent: confirmed
+device App, confirmed App with CAN-stop warning, written Host App/awaiting RUN,
+and Host RUN-confirmed. Only successful update/RUN emits one informational
+dialog (warning icon for unconfirmed STOP); stage100%, failure/cancel and
+discovery never create completion. Status, compact two-line prerequisite
+guidance, footer and report messages share those outcomes. Busy/new operations,
+image/validation changes and TAB changes clear the prior completion; a banner
+never changes EnableWindow/write gates. Long advice remains in dialog/tooltip.
+
+CAN worker retains APP_READY/live identity/version/build/size gates, then sends
+CAN_STOP under cleanup cancellation shielding. STOP ACK clears live target and
+CAN flags but keeps COM/Host. STOP failure retains CAN state and succeeds as
+App-confirmed/cleanup-warning, with exact stop error in report details. No
+automatic erase/ENTER/RUN retry was added. Misc write still remains in Boot;
+explicit RUN and same-COM revalidation remain separate. UI ENTER now requires
+an already discovered App. Discover supports Boot and a protocol-aware App;
+Boot skips ENTER. Missing-image/identity/version/port/capability gates remain.
+
+Release one-click build and final Debug/Release builds PASS,0warnings/0errors;
+delivery0.1.0.0091, stamp2026-10-19 09:27:58, SHA256
+10E983F627D823A3CFA3FC9B6ECBD588C916DBE5696B99B2678DAC104632DEC7.
+Isolated process startup/idle/main title and normal-close exit0 PASS for both
+configurations, without opening COM or changing the user's INI. Final native
+Debug/Release suites PASS including actual packaged Host/F13 images, existing
+fault/replay/power models, all feedback cases and8 Boot/App/host combinations.
+GDI96/120/144 tests cover new footer captions, two-line hints at600px and
+status at1220px.45 focused Python tests PASS, including5 completion guards.
+The public operation regression was updated to check COMPLETE/CAN stop/COM
+retention instead of the replaced App-confirmed-only wording.
+
+Canonical update MD/ISP projection and architecture/README/agent rules synced;
+14-page/1diagram PDF content/bounds/render/all-page and changed-page review
+PASS.18file public check,248 resource refs,24 safe-clean scripts, four browser
+routes/25diagrams and1366/390 reference-table/anchor checks PASS. Evidence in
+tmp/internal/tool_ui_fields/completion_* and its web_render/pdf_render folders.
+No MCU source/image changes, commit/push or web deployment performed. Existing
+field-guide/PDF-parser work and user-owned screenshots remain preserved.
+Changed owners: src/ui/update_feedback.h owns text/outcomes; worker_session.h/
+.cpp, worker_can_workflows.cpp and worker_bridge_update.cpp publish verified
+results and cleanup. main_frame.cpp/.h, main_frame_evidence.cpp and
+main_frame_workflow.cpp consume/show them; main_frame_bus.cpp and
+main_frame_image.cpp clear prior context. FirmwareUpgradeTool.vcxproj registers
+the header. Native console/tool-experience tests, test_update_completion.py and
+the updated public-operation test cover integration. Generated version/header
+and build/FirmwareUpgradeTool.exe are the0091 delivery. The existing MD/web/PDF
+owners and root records carry the behavior. One extra browser preview received
+ERR_UNSAFE_PORT from OS-selected10080; rerun on local8087 PASS without a browser
+security override, including completion-section desktop/mobile visual review.
+
+Native visual/modal interaction NOT RUN: Computer Use list_windows twice
+returned native-pipe file-not-found(os error2). Process/GDI/models are not a
+screenshot substitute. Physical update/stop/unplug/RUN NOT RUN: no board flash
+operation was requested for this UI task. Read-only inventory now lists3 COM
+ports; enumeration is not evidence of working target links.
+
+## Tool operation field reference (2026-10-19)
+
+Documentation-only: UPDATE_VALIDATION_zh-TW.md now owns the exact20 shared
+image captions, source/scope/examples/actions, settings and status/card labels,
+offline versus live boundaries, CAN/Misc/I2C differences and parser messages.
+The ISP operation intro/navigation and Tool README link to that one reference;
+sync_update_evidence.ps1 projects the full block only to the ISP page.
+CAN Metadata VALID is independent of CRC MATCH and live acceptance. Policy/ABI
+backgrounds indicate role/transport compatibility, not live ABI/minimum-Boot
+verification. ENABLED amber is informational; N/A is not a zero/disabled value.
+
+PDF generator now preserves escaped table pipes and recognizes Markdown
+headings through level6, preventing policy labels from becoming extra columns
+and level5 headings from appearing as raw text. Added5 source-backed tests in
+tests/test_tool_ui_field_guide.py; they cover20 captions, actual messages,
+display adapters, single-owner anchors and the production table reader.
+Run these with the existing observability/experience/public-content/web tests:
+32 tests PASS, including the available F13 map budget audit. Sync -CheckOnly,
+18-file public checks,248 resource references,24 safe-clean scripts PASS.
+PDF13pages/1diagram: text/glyph/bounds checks and all-page PNG visual review
+PASS. New8 reference tables preserve3/4 columns and anchors at1366/390 widths;
+four web routes/25Mermaid diagrams render without page errors, duplicate IDs
+or broken images. Evidence: tmp/internal/tool_ui_fields; existing web-review
+helper also rerun. An initial reused PDF-render directory mixed old unpadded
+and new padded filenames; verification rerun successfully in a new directory.
+
+No Tool/firmware build, version change, hardware operation, commit or push.
+Delivery EXE SHA256 unchanged:
+606ECCA80A48B9E4CCEAC11FF5CB0F07035FFE76EB1631A6F44ED44456BD1285.
+User-owned tracked/untracked root screenshots remain untouched.
+
 ## Tool reports, preflight, guidance and COM hints (2026-10-18)
 
 Implemented worker-owned JSON/HTML operation reports, offline escaped/CSP HTML,

@@ -2,6 +2,7 @@
 #include "../src/core/bridge_update_profile.h"
 #include "../src/core/update_evidence.h"
 #include "../src/core/update_report_store.h"
+#include "../src/ui/update_feedback.h"
 #include <iostream>
 #include <cstring>
 #include <algorithm>
@@ -54,7 +55,7 @@ int TestConsoleBridge() {
     ++app.app_start;check(!ev::ConfirmBridgeApp(boot,app),"Misc RUN rejects a changed live geometry");--app.app_start;
     app.mode=BU_MODE_BOOT;check(!ev::ConfirmBridgeApp(boot,app),"Misc RUN returning to Boot is not success");
     }
-    for (const auto size:{std::pair<int,int>{1350,690},{1260,625},{1904,990}}) {
+    for (const auto size:{std::pair<int,int>{1350,690},{1244,661},{1904,990}}) {
         const auto r=c::Calculate(size.first,size.second,16);
         check(r.fits,"console body fits at 1366 desktop / minimum / large");
         check(r.image_pane.x>=r.interface_pane.x+r.interface_pane.width,"interface and image do not overlap");
@@ -78,13 +79,24 @@ int TestConsoleBridge() {
     };
     for(const auto size:{std::pair<int,int>{1260,660},{1350,690},{1904,1000}}) {
         for(const int text_height:{14,18,21}) {
-            const auto layout=c::Calculate(size.first,size.second,text_height);
+            const auto layout=c::Calculate(size.first,(std::max)(size.second,c::MinimumClientHeight(text_height)),text_height);
             const auto log=c::CalculateLog(layout.log_pane,layout.field_row_height);
+            check(layout.fits,"font-aware minimum client size contains the console");
+            check(inside(layout.connection,layout.connection_group),"connection controls stay within their frame");
+            check(inside(layout.identities,layout.analysis_group) && inside(layout.firmware,layout.analysis_group),"live/offline cards stay in analysis frame");
+            for (int group=0;group<4;++group) {
+                check(inside(layout.metadata_groups[group],layout.analysis_group),"metadata group inside analysis frame");
+                check(inside(layout.metadata_panes[group],layout.metadata_groups[group]),"metadata fields inside their semantic group");
+                if(group) check(layout.metadata_groups[group-1].x+layout.metadata_groups[group-1].width<layout.metadata_groups[group].x,"metadata groups do not overlap");
+            }
+            check(inside(layout.interface_pane,layout.interface_group) && inside(layout.tabs,layout.interface_group) &&
+                inside(layout.image_pane,layout.image_group) && inside(layout.log_pane,layout.log_group),"three lower panes stay within independent frames");
             for(const auto& b:log.buttons) check(inside(b,layout.log_pane),"report/error log buttons remain within pane at100/125/150-percent metrics");
-            check(inside(log.trace,layout.log_pane) && inside(log.history,layout.log_pane),"trace and log remain in pane");
+            check(inside(log.trace,layout.log_pane) && inside(log.auto_scroll,layout.log_pane) && inside(log.history,layout.log_pane),"trace, auto-scroll and log remain in pane");
             check(log.history.height>=80,"shared log retains readable history at minimum client");
             check(log.buttons[4].y+log.buttons[4].height<=log.trace.y &&
-                log.trace.y+log.trace.height<log.history.y,"log tools do not overlap trace/history");
+                log.trace.y+log.trace.height<=log.auto_scroll.y &&
+                log.auto_scroll.y+log.auto_scroll.height<log.history.y,"log tools do not overlap trace/auto-scroll/history");
         }
     }
     // Use real Segoe UI/GDI metrics, including the reported long Misc caption.
@@ -112,7 +124,8 @@ int TestConsoleBridge() {
             const auto body=c::Calculate(size.first,size.second,metric.tmHeight);
             for (const wchar_t* label:{L"Progress",L"Host bridge UART",L"Host bridge app update",
                      L"Bridge board self test",L"Target discovery",L"Enter bootloader",
-                     L"Transfer test",L"Firmware update"}) {
+                     L"Transfer test",L"Firmware update",L"Device update complete",
+                     L"Device App confirmed",L"Host update complete",L"Host App confirmed"}) {
                 const int caption=measure(std::wstring(label)+L": 100%",145);
                 const auto footer=c::CalculateFooter(body.footer,caption,
                     measure(L"Elapsed: 00:00.0",145),measure(L"Build 0.1.0.0078  2026-10-15 23:59:59",270));
@@ -127,6 +140,15 @@ int TestConsoleBridge() {
                         "entire progress caption and percentage fit reserved100-percent width");
                 }
             }
+        }
+        for (const auto result : {firmware_upgrade::feedback::Result::DeviceAppConfirmed,
+                firmware_upgrade::feedback::Result::DeviceAppConfirmedCanActive,
+                firmware_upgrade::feedback::Result::HostAppWritten,firmware_upgrade::feedback::Result::HostAppRunning}) {
+            const auto view=firmware_upgrade::feedback::Describe(result);
+            const auto newline=view.compact.find(L"\r\n");
+            check(newline!=std::wstring::npos && measure(view.compact.substr(0,newline),0)<=600 &&
+                measure(view.compact.substr(newline+2),0)<=600,"two-line completion hint fits narrow image pane at96/120/144dpi");
+            check(measure(view.status,0)<=1220,"completion status fits minimum-width banner at96/120/144dpi");
         }
         SelectObject(dc,old); DeleteObject(font);
     }

@@ -71,6 +71,7 @@ void CMainFrame::OnBnClickedLoadBinary() {
 }
 
 bool CMainFrame::LoadBinaryFromPath(const std::wstring& path, bool silent) {
+    last_update_result_=firmware_upgrade::feedback::Result::None;
     std::ifstream file(path, std::ios::binary);
     if (!file) {
         if (!silent) {
@@ -145,6 +146,7 @@ bool CMainFrame::LoadBinaryFromPath(const std::wstring& path, bool silent) {
 }
 
 void CMainFrame::ValidateLoadedFirmwareImage(bool emit_log) {
+    last_update_result_=firmware_upgrade::feedback::Result::None;
     firmware_upgrade::image_policy::Policy policy;
     const bool known=binary_inspection_.metadata_available || binary_bridge_inspection_.available;
     if (known && (binary_data_.size()<0x200U || !firmware_upgrade::image_policy::Parse(binary_data_.data()+0x100U,&policy) ||

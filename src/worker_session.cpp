@@ -273,6 +273,7 @@ void WorkerSession::ThreadMain() {
         const auto stats_before=state_.f24_stats;
         const auto client_before=host_link_client_.Stats();
         update_details_.clear();
+        update_result_=feedback::Result::None;
         current_phase_.clear();
         update_timings_.clear();
         const auto report_host=state_.host_summary;
@@ -350,6 +351,8 @@ void WorkerSession::ThreadMain() {
             (report_port.empty()?command.port_name:report_port)+L" | Host Baud "+
             std::to_wstring(report_baud?report_baud:command.baudrate)+
             (current_phase_.empty()?L"":L" | Phase: "+current_phase_);
+        const auto result_message=success && update_result_!=feedback::Result::None ?
+            feedback::Describe(update_result_).status : error;
         const auto help=success?std::wstring():guidance::Format(error,error_context);
         state_.busy = false;
         if(report_update) {
@@ -390,7 +393,7 @@ void WorkerSession::ThreadMain() {
                 command.type==CommandType::ProgramF13Boot ? L"CAN device update" :
                 command.type==CommandType::BridgeRun ? L"Host explicit RUN confirmation" : L"Host app update")+
                 L",\n  \"result\": "+evidence::JsonString(success?L"PASS":IsCancelRequested()?L"CANCELED":L"FAIL")+
-                L",\n  \"message\": "+evidence::JsonString(error)+
+                L",\n  \"message\": "+evidence::JsonString(result_message)+
                 L",\n  \"port\": "+evidence::JsonString(report_port)+L",\n  \"host_board\": "+std::to_wstring(report_board)+
                 L",\n  \"host_baud\": "+std::to_wstring(report_baud)+
                 L",\n  \"host\": "+evidence::JsonString(report_host)+
@@ -411,7 +414,7 @@ void WorkerSession::ThreadMain() {
                 view.operation=command.type==CommandType::ProgramF13Boot?L"CAN device update":
                     command.type==CommandType::BridgeRun?L"Host explicit RUN confirmation":L"Host app update";
                 view.result=success?L"PASS":IsCancelRequested()?L"CANCELED":L"FAIL";
-                view.message=error; view.guidance=help;
+                view.message=result_message; view.guidance=help;
                 view.tool=FIRMWARE_UPGRADE_TOOL_VERSION; view.build=FIRMWARE_UPGRADE_TOOL_BUILD_TIME;
                 SYSTEMTIME utc={}; GetSystemTime(&utc);
                 wchar_t stamp[40]={}; swprintf_s(stamp,L"%04u-%02u-%02uT%02u:%02u:%02u.%03uZ",
@@ -450,6 +453,9 @@ void WorkerSession::ThreadMain() {
             }
             WorkerEvent completion; completion.kind=WorkerEventKind::OperationComplete;
             completion.success=success; completion.text=success?L"Operation completed.":error;
+            completion.update_result=success ? update_result_ : feedback::Result::None;
+            if (completion.update_result!=feedback::Result::None)
+                completion.text=feedback::Describe(completion.update_result).status;
             completion.guidance=help; QueueEvent(std::move(completion));
         }
 

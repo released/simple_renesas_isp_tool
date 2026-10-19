@@ -145,7 +145,8 @@ class PublicWebGuides(unittest.TestCase):
     def test_device_update_operation_includes_automatic_confirmation(self):
         text = (ISP / 'index.md').read_text(encoding='utf-8-sig')
         operation = text.split('## 3. MCU CAN device：App 更新', 1)[1].split('```mermaid', 1)[0]
-        for phrase in ('APP_READY', 'live INFO', 'App confirmed', '不自動重寫', '[更新確認](#update-confirmation)'):
+        for phrase in ('APP_READY', 'live INFO', '[COMPLETE]', '不自動重寫',
+                       '停止 Host CAN', '保留 COM', '[完成提示與下一步](#update-completion)'):
             self.assertIn(phrase, operation)
 
     def test_technical_contracts_and_unverified_boundaries_remain(self):

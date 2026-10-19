@@ -394,7 +394,7 @@ void CMainFrame::UpdateUi() {
         start_log_btn_.EnableWindow(!log_recording_);
         stop_log_btn_.EnableWindow(log_recording_);
         export_summary_btn_.EnableWindow(!busy);
-        UpdateBridgeImageFields(); UpdateMiscUi(); return;
+        UpdateBridgeImageFields(); UpdateMiscUi(); UpdateCompletionFeedback(); return;
     }
 
     can_mode_combo_.EnableWindow(!busy && host_ready && !can_started);
@@ -422,9 +422,7 @@ void CMainFrame::UpdateUi() {
     enter_bootloader_btn_.EnableWindow(
         !busy && host_ready && boot_profile && selected_mode_supported &&
         selected_bitrate_supported &&
-        ((!can_started && !target_ready) ||
-         (can_started && target_ready &&
-          !session_state_.f13_bootloader_ready)));
+        can_started && update_target_ready && !session_state_.f13_bootloader_ready);
     transfer_test_btn_.EnableWindow(
         !busy && target_ready && ((boot_profile && session_state_.f13_bootloader_ready &&
             (session_state_.target_metadata.diagnostics&2U)) ||
@@ -452,7 +450,7 @@ void CMainFrame::UpdateUi() {
         if (!update_target_ready) {
             missing.push_back(L"Discover Target with CAN Upgrade");
         } else if (!session_state_.f13_bootloader_ready) {
-            missing.push_back(L"Enter Bootloader");
+            missing.push_back(L"App is running: select Enter Boot");
         }
         if (binary_data_.empty()) {
             missing.push_back(L"Load Update Image _update.bin");
@@ -480,10 +478,11 @@ void CMainFrame::UpdateUi() {
         start_firmware_update_btn_.EnableWindow(missing.empty());
         if (missing.empty()) {
             firmware_prerequisites_label_.SetWindowTextW(
-                L"Ready: bootloader, image metadata, target metadata, "
-                L"address, and CRC32 are compatible.");
+                L"Ready: Boot mode detected; Enter Boot is not needed. "
+                L"Image, target, address and CRC32 are compatible. Next: Start Device Update.");
         } else {
-            std::wstring text = L"Missing: ";
+            std::wstring text = busy ? L"Working: wait, or use Cancel.\r\nMissing: " :
+                firmware_upgrade::feedback::CanNextStep(host_ready,update_target_ready,session_state_.f13_bootloader_ready)+L"\r\nMissing: ";
             for (std::size_t index = 0U; index < missing.size(); ++index) {
                 if (index != 0U) {
                     text += L"; ";
@@ -507,6 +506,7 @@ void CMainFrame::UpdateUi() {
     UpdateFirmwareImageInfoText();
     UpdateTargetMetadataText();
     UpdateBusUi();
+    UpdateCompletionFeedback();
 }
 
 void CMainFrame::OnBnClickedConnectTarget() {

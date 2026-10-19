@@ -30,6 +30,7 @@ void CMainFrame::LayoutControls(int width, int height) {
     TEXTMETRIC metric = {}; dc.GetTextMetrics(&metric);
     if (previous) dc.SelectObject(previous);
     const auto layout = firmware_upgrade::console::Calculate(width, height, metric.tmHeight);
+    console_layout_=layout;
     const int row = layout.field_row_height, gap = 5;
     int x = layout.connection.x;
     const int top = layout.connection.y;
@@ -56,17 +57,14 @@ void CMainFrame::LayoutControls(int width, int height) {
             layout.firmware.y, third, layout.firmware.height});
     Move(target_metadata_label_, layout.device_details);
     Move(operation_status_card_, layout.status);
-    Move(interface_heading_, layout.interface_heading);
-    Move(image_heading_, layout.image_heading);
-    Move(log_heading_, layout.log_heading);
     Move(bus_tabs_, layout.tabs);
     CFont* tab_font = dc.SelectObject(&ui_font_);
     const int tab_caption = (std::max)({dc.GetTextExtent(L"CAN").cx,
         dc.GetTextExtent(L"I2C").cx, dc.GetTextExtent(L"Misc").cx}) + 24;
     if (tab_font) dc.SelectObject(tab_font);
-    bus_tabs_.SetItemSize(CSize((std::max)(tab_caption, (layout.tabs.width - 8) / 3), row));
+    bus_tabs_.SetItemSize(CSize((std::max)(tab_caption, (layout.tabs.width - 8) / 3), layout.interface_row_height));
     LayoutInterfaceControls(layout.interface_pane.x, layout.interface_pane.y,
-                            layout.interface_pane.width, layout.interface_pane.height, row);
+                            layout.interface_pane.width, layout.interface_pane.height, layout.interface_row_height);
 
     // These HWNDs are owned once by the common console, never by a bus TAB.
     const Rect image = layout.image_pane;
@@ -84,19 +82,23 @@ void CMainFrame::LayoutControls(int width, int height) {
     Move(compare_metadata_btn_,{compare_x,address_y,compare_width,row});
     Move(preflight_btn_,{compare_x+compare_width+gap,address_y,
         (std::max)(0,image.x+image.width-compare_x-compare_width-gap),row});
-    int label_width = 0;
-    for (auto& label : firmware_field_labels_) label_width = (std::max)(label_width, CaptionWidth(label));
-    const int cell_width = (image.width - gap) / 2;
-    label_width = (std::min)(label_width, cell_width * 46 / 100);
-    const int fields_y = address_y + row + gap;
-    for (std::size_t i = 0; i < kFirmwareFieldCount; ++i) {
-        const int cx = image.x + static_cast<int>(i % 2) * (cell_width + gap);
-        const int cy = fields_y + static_cast<int>(i / 2) * row;
-        Move(firmware_field_labels_[i], {cx, cy + 3, label_width, row - 2});
-        Move(firmware_field_values_[i], {cx + label_width + 3, cy,
-            cell_width - label_width - 3, row - 2});
+    const FirmwareFieldIndex groups[4][5]={
+        {kFirmwareFieldBinSize,kFirmwareFieldCalculatedCrc,kFirmwareFieldStoredCrc,kFirmwareFieldChecksumResult,kFirmwareFieldMetadataStatus},
+        {kFirmwareFieldMcu,kFirmwareFieldAppVersion,kFirmwareFieldBuild,kFirmwareFieldTarget,kFirmwareFieldProtocolFormat},
+        {kFirmwareFieldAppRange,kFirmwareFieldImageCapacity,kFirmwareFieldFlashBoot,kFirmwareFieldMinimumErase,kFirmwareFieldBootAbi},
+        {kFirmwareFieldCanRates,kFirmwareFieldCanIds,kFirmwareFieldUpdatePolicy,kFirmwareFieldVersionControl,kFirmwareFieldInstalledVersionPolicy}};
+    for (std::size_t group=0;group<4;++group) {
+        const auto& pane=layout.metadata_panes[group];
+        int label_width=0;
+        for (auto field:groups[group]) label_width=(std::max)(label_width,CaptionWidth(firmware_field_labels_[field]));
+        for (std::size_t item=0;item<5;++item) {
+            const auto field=groups[group][item]; const int cy=pane.y+static_cast<int>(item)*layout.metadata_row_height;
+            Move(firmware_field_labels_[field],{pane.x,cy+2,label_width,layout.metadata_row_height-2});
+            Move(firmware_field_values_[field],{pane.x+label_width+3,cy,
+                pane.width-label_width-3,layout.metadata_row_height-2});
+        }
     }
-    const int action_y = fields_y + row * static_cast<int>((kFirmwareFieldCount+1U)/2U) + gap;
+    const int action_y = layout.device_details.y+layout.device_details.height+gap;
     const int start_width = CaptionWidth(start_firmware_update_btn_) + 16;
     Move(start_firmware_update_btn_, {image.x, action_y, start_width, row + 5});
     const int force_width=CaptionWidth(force_old_firmware_btn_)+16;
@@ -115,6 +117,7 @@ void CMainFrame::LayoutControls(int width, int height) {
     for (int i = 0; i < 6; ++i)
         Move(*log_buttons[i],log_tools.buttons[i]);
     Move(detailed_trace_check_,log_tools.trace);
+    Move(log_auto_scroll_check_,log_tools.auto_scroll);
     Move(log_edit_,log_tools.history);
 
     // Reserve 100% up front so progress updates never move the bar per packet.
@@ -132,5 +135,12 @@ void CMainFrame::LayoutControls(int width, int height) {
 void CMainFrame::OnGetMinMaxInfo(MINMAXINFO* info) {
     CFrameWnd::OnGetMinMaxInfo(info);
     info->ptMinTrackSize.x = 1260;
-    info->ptMinTrackSize.y = 660;
+    info->ptMinTrackSize.y = 700;
+    if (GetSafeHwnd() && ui_font_.GetSafeHandle()) {
+        CClientDC dc(this); auto* previous=dc.SelectObject(&ui_font_);
+        TEXTMETRIC metric={}; dc.GetTextMetrics(&metric); dc.SelectObject(previous);
+        CRect window,client; GetWindowRect(&window); GetClientRect(&client);
+        info->ptMinTrackSize.y=(std::max)(700,
+            firmware_upgrade::console::MinimumClientHeight(metric.tmHeight)+window.Height()-client.Height());
+    }
 }

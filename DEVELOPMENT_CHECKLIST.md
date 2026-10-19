@@ -15,6 +15,31 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-19 classic console: five thick system-gray/white MFC work groups and
+four semantic metadata groups replace general pastel panels. Auto scroll down
+defaults on, persists in INI, preserves reading viewport/selection when off
+and returns to bottom on re-enable; recording/protocols unchanged.0092 app
+builds, startup/close/default1/prepared0 persistence, native Debug/Release
+suites including15000-line RichEdit histories,49 focused Python tests and
+MD/web/PDF/public/clean checks PASS. Actual main-window visual/TAB acceptance
+NOT RUN(native pipe unavailable); no physical tests or publishing performed.
+See HANDOFF/SELF_CHECK for files, hash, evidence and verification boundaries.
+
+2026-10-19 completion UX: verified update/RUN emits a typed dialog and persistent
+result/next-step/footer. CAN App-confirmation precedes CAN_STOP/COM retention;
+STOP failure is an explicit cleanup warning with CAN state retained. Misc
+write remains Boot and RUN is explicit. Discovery covers Boot/App; ENTER is
+for discovered App only.0091 Debug/Release builds/process smoke, native suites,
+45 focused tests, GDI widths, MD/web/PDF/refs/clean checks PASS. Native visual
+and physical update acceptance NOT RUN; exact evidence in HANDOFF/SELF_CHECK.
+
+2026-10-19 Tool operation reference: all20 shared metadata/image captions,
+normal/error/action tables, settings, live/offline and CAN/Misc/I2C boundaries
+added to the single-owner UPDATE_EVIDENCE block. Operation navigation and README
+link there. PDF table/heading reader corrected;32 focused tests, public/sync/
+resource/safe-clean checks and web/PDF rendering/visual review PASS. Runtime
+EXE/firmware unchanged; no commit/push or hardware action. See HANDOFF/SELF_CHECK.
+
 2026-10-18 Tool experience: worker-owned JSON/HTML update reports, Preflight
 snapshot, exact-error guidance and local PnP selection hints implemented;
 Metadata editor excluded. Tool0090 Debug/Release builds, isolated startup/close,

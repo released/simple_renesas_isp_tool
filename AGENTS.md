@@ -61,6 +61,13 @@ automatic reports include failed/canceled outcomes, phase durations and honest
 counter reset/saturation/peak scope. Query live diagnostic capabilities rather
 than guessing from model/version. No hardware evidence is implied by models.
 See docs/UPDATE_VALIDATION_zh-TW.md; sync_update_evidence.ps1 owns its web block.
+Successful update/RUN outcomes own one explicit dialog and persistent completion
+guidance, never derived from a stage reaching100percent. CAN_STOP is sent only
+after App confirmation; retain Host COM and clear live target only on STOP ACK.
+STOP failure is App-confirmed/cleanup-warning with CAN state retained. Misc
+write completion remains Boot/explicit RUN; failed or canceled operations never
+inherit success feedback. Discovery is valid in Boot/App; UI ENTER requires
+a discovered App. Do not turn a completion banner into write authorization.
 
 First engineering delivery is frozen at Tool0082/F24 Boot1.2.0-App1.5.0/F13
 Boot-App1.5.0. User182253 verifies one normal115200/500K v5 update/END, not
@@ -94,6 +101,13 @@ operation is canonical in docs/UPDATE_VALIDATION_zh-TW.md#force-old-version.
 Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 
 ### PC tool
+
+- Keep the native system-gray/white five-group console and four semantic
+  metadata groups. Status colors indicate results, not entire identity panels.
+  Font-aware minimum height must keep1366-class normal/125-percent layouts
+  within one screen; only log/dropdowns scroll. Log follow is ui/log_auto_scroll,
+  default1; disabled appends preserve viewport/selection, not just the scrollbar
+  style. Test the actual RichEdit helper and keep file recording independent.
 
 - Native Windows MFC/C++17 executable; no Python runtime dependency.
 - UART/USB virtual COM is the initial PC-to-host transport.

@@ -21,6 +21,7 @@
 #include "core/host_link_client.h"
 #include "core/serial_port.h"
 #include "core/bridge_update_profile.h"
+#include "ui/update_feedback.h"
 
 namespace firmware_upgrade::ui {
 
@@ -102,6 +103,7 @@ struct WorkerEvent {
     SessionState state;
     int progress = 0;
     bool success = false;
+    feedback::Result update_result = feedback::Result::None;
     std::wstring text;
     std::wstring guidance;
     std::wstring report_json_path;
@@ -189,6 +191,7 @@ private:
                                    std::wstring* error);
     bool ProcessProgramF13Boot(const Command& command, std::wstring* error);
     bool ConfirmDeviceApp(const firmware_update::ImageInfo& image, std::wstring* error);
+    bool StopCanAfterAppConfirmation();
     bool ProcessCanTxTest(const Command& command, std::wstring* error);
     bool ProcessResetHost(std::wstring* error);
     bool ProcessProbeI2c(const Command& command, std::wstring* error);
@@ -230,6 +233,7 @@ private:
     bool started_ = false;
     std::atomic<bool> stopping_{false};
     std::wstring current_phase_;
+    feedback::Result update_result_ = feedback::Result::None;
     std::atomic<bool> cancel_requested_{false};
     std::atomic<bool> can_tx_test_stop_requested_{false};
     std::atomic<bool> detailed_trace_enabled_{false};

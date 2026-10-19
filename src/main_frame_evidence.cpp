@@ -74,6 +74,18 @@ private:
 bool CMainFrame::ConfirmForceOldFirmware() {
     ForcePasswordDialog dialog(this); return dialog.DoModal()==IDOK;
 }
+void CMainFrame::UpdateCompletionFeedback() {
+    namespace feedback=firmware_upgrade::feedback;
+    if (worker_command_pending_ || session_state_.busy || !last_operation_error_.empty() ||
+        last_update_result_==feedback::Result::None || IsI2cTab()) return;
+    if (feedback::IsDevice(last_update_result_) ? IsMiscTab() || SelectedProfile()!=L"CAN Upgrade" : !IsMiscTab()) return;
+    const auto view=feedback::Describe(last_update_result_);
+    const auto tone=view.warning ? firmware_upgrade::visual::Tone::Pending : firmware_upgrade::visual::Tone::Ready;
+    operation_status_card_.SetWindowTextW(view.status.c_str()); operation_status_card_.SetTone(tone);
+    firmware_prerequisites_label_.SetWindowTextW(view.compact.c_str());
+    firmware_prerequisites_label_.SetTone(tone);
+    overview_tooltip_.UpdateTipText((view.status+L"\r\n"+view.next).c_str(),&firmware_prerequisites_label_);
+}
 void CMainFrame::OnForceOldFirmware() {
     if(IsMiscTab() || IsI2cTab()) return;
     StartDeviceUpdate(true);
