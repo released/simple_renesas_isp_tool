@@ -59,7 +59,7 @@ class GuideMarkdownTests(unittest.TestCase):
 
     def test_final_guide_outputs(self):
         expected = {
-            "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": (3,['BUR1','f24_board','115200','App 工程']),
+            "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": (18,['BUR1','f24_board','115200','App 工程','Device App 更新操作圖','Host App 更新操作圖']),
             "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": (4,['下載與操作總覽','CRC16','100 kHz','128']),
             "F13_CAN_Bootloader_Update_Guide_zh-TW.pdf": (10,['UPD1','0x2100','30','SEAL']),
         }

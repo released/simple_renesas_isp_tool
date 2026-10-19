@@ -1,5 +1,27 @@
 # Host Link v2 Self-Check
 
+## Delivery choices / operation captures / ENTER inactivity (2026-10-19)
+
+- [x] F24 host App flash MOT download and F13 Boot-only wording; combined F13
+  HEX/BIN and programmer erase scope documented without changing deliveries.
+- [x]14 public operation images in three canonical blocks and mirrored assets;
+  actual states preserved, private paths masked, full-size links tested.
+- [x]14 originals safely moved to ignored private archive after user approval;
+  pre/post SHA256 identical. Raw root images excluded from future publication;
+  pending tracked deletion retained without staging/committing or history edits.
+- [x]30s inactivity/valid-original-App/pre-START boundary checked against F13
+  source; stale Boot snapshot/fresh worker check and Discover/Enter steps shown.
+- [x]31 focused Python tests PASS, including sync failure/read-only behavior,
+  linked-image/source-root PDF rendering and existing public guide contracts.
+- [x] Three PDFs25/9/18pages,18/4/10images: content/glyph/bounds/render/all-page
+  and changed-page visual review PASS. Original-aspect screenshot scaling.
+- [x] Sync/public18files/276refs/seven downloads,24 safe-clean scripts, browser
+  four routes25diagrams and1366/390 images/links/anchors/overflow PASS.
+- [x] Publication PLAN ONLY PASS; five DefaultBuild keepers, no raw/tmp additions.
+  Product EXE hash unchanged; no firmware/protocol/COM/flash/commit/push changes.
+- [ ] Physical inactivity/fault/high-speed/DPI acceptance NOT RUN this task;
+  user-supplied operation screenshots do not establish the full test matrix.
+
 ## Classic groups / persistent Log follow (2026-10-19)
 
 - [x] Five system-gray/white, thick-framed MFC work groups;20 fields reused in

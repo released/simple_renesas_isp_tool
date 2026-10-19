@@ -349,6 +349,13 @@ Public downloads and six workflow entries are canonical in the PUBLIC_RESOURCES
 block of docs/MULTIBUS_TOOL_GUIDE_zh-TW.md; sync_public_resources.ps1 updates both
 web guides. Keep actual source/download URLs and stable section anchors tested. web_guide_sections.json
 owns topic placement; non-owner pages contain short links, never full duplicates.
+COM/device/host operation screenshots and their three TOOL_*_MEDIA blocks are
+owned by SHARED_CONSOLE_BRIDGE_GUIDE. sync_tool_operation_media.ps1 copies only
+docs/images/tool_operation public assets and validates block/hash parity.
+Keep local paths redacted, actual states unchanged, originals separate, and
+the ENTER inactivity/START boundary aligned with the actual device source.
+Raw tool operation captures belong under ignored tmp/private_screenshots;
+never substitute unredacted root captures for docs/images publication copies.
 Companion F13 checkouts default to siblings; workspace_paths helpers support
 explicit paths and machine-local environment overrides, never personal fallbacks.
 Normal solution builds exclude the explicit F13 integration-test project.

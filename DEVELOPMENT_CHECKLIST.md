@@ -15,6 +15,15 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-19 operation media: direct packaged App MOT download, Boot-only/combined
+image usage and erase scope clarified. Fourteen redacted operation captures
+are canonical in the shared guide and synchronized to ISP; originals preserved
+in ignored private archive with identical hashes and raw-root publication
+exclusion. ENTER inactivity and fresh-mode rejection match source.31 focused
+tests, three PDF render/visual reviews, source/public/refs/clean/browser checks
+and publication PLAN ONLY PASS. Tool/firmware unchanged; no COM/flash/push or
+new physical timeout/fault acceptance. Exact owners/evidence in HANDOFF.
+
 2026-10-19 classic console: five thick system-gray/white MFC work groups and
 four semantic metadata groups replace general pastel panels. Auto scroll down
 defaults on, persists in INI, preserves reading viewport/selection when off

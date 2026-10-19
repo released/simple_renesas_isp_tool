@@ -107,6 +107,9 @@ peripheral settings, shared update actions and message log. Auto scroll down
 defaults on and is stored in the INI; disabling it preserves the reading
 position and selected text while new messages and file recording continue.
 See the [console/log guide](https://released.github.io/slide_isp_tool_for_RL78/#tool-console-layout).
+Step-by-step captures cover [COM connection](https://released.github.io/slide_isp_tool_for_RL78/#tool-connect-example),
+[CAN device App update](https://released.github.io/slide_isp_tool_for_RL78/#device-update-example)
+and [Misc Host App update/RUN](https://released.github.io/slide_isp_tool_for_RL78/#bridge-update-example).
 
 - Host Link: powers up115200; compatible host Apps negotiate460800/921600.
 - CAN: bridge self test, non-destructive Custom Transfer and device App update.

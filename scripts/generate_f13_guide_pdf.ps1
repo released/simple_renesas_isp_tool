@@ -38,7 +38,8 @@ if ($LASTEXITCODE -ne 0) {
 
 & python (Join-Path $PSScriptRoot "generate_f13_guide_pdf.py") `
     --source $renderedMarkdown `
-    --output $outputPath --title $Title --footer $Footer
+    --output $outputPath --title $Title --footer $Footer `
+    --asset-root (Split-Path -Parent $sourcePath)
 if ($LASTEXITCODE -ne 0) {
     throw "PDF generation failed."
 }

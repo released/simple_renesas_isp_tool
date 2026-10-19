@@ -1,6 +1,10 @@
 # Visual Studio and compiler intermediates
 tmp/
 /github_push.local.psd1
+# Raw operation captures stay local; publish redacted docs/images copies.
+/tool_connect_COM.jpg
+/tool_Bridge_update*_*.jpg
+/tool_CAN_update*_*.jpg
 .vs/
 *.user
 *.suo

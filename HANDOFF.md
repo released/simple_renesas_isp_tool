@@ -1,5 +1,67 @@
 # Development Handoff
 
+## Public delivery choices and operation captures (2026-10-19)
+
+Documentation/media only. MULTIBUS_TOOL_GUIDE PUBLIC_RESOURCES adds the direct
+F24 host packaged App MOT link, labels F13 boot0000_1FFF.hex Boot-only and
+explains HEX/MOT/BIN, packaged versus compiler outputs, combined F13 HEX/BIN
+and programmer erase scope. GITHUB_PUBLISH adds a short link and combined-BIN
+purpose; publication catalog/firmware deliveries are unchanged.
+
+SHARED_CONSOLE_BRIDGE_GUIDE owns three TOOL_*_MEDIA blocks: one COM example,
+six CAN device steps and seven Misc host steps. sync_tool_operation_media.ps1
+validates all blocks/assets before mutation, mirrors only those blocks to ISP
+and copies fourteen sanitized docs/images/tool_operation JPEGs with SHA checks.
+It has read-only CheckOnly. The wrong-route state in the COM capture is
+explicitly explained; actual displayed outcomes were not changed. Thumbnails
+link to full-size images. F13_BOOT_UPDATE_FLOW adds the practical Discover/
+Enter/Start recovery to the existing complete timeout table and Boot diagram.
+Canonical sync updates both slide checkouts without duplicating the galleries.
+
+Inactivity verified against F13 can_boot_config.h/can_boot_transport.c/r_main.c:
+30000 timer ticks, valid original App, ENTER and START not yet accepted; matching
+requests refresh it. START/session failure/ABORT and invalid-App recovery do
+not inherit the return-to-original-App rule. Worker fresh GetTargetInfo check
+in ProcessProgramF13Boot rejects a target already back in App before writing.
+This task does not change that behavior or imply physical timeout measurement.
+
+User explicitly approved programmatic path redaction and moving originals to
+ignored tmp/private_screenshots/20261019_tool_operation.14 originals moved only
+after exact workspace/destination/name and pre-review hash validation; all
+post-move SHA256 match. No original permanently deleted. Root raw-capture
+ignore patterns added; tracked tool_connect_COM.jpg now has a pending deletion
+for the next ordinary publication commit. Git index was left unchanged so the
+one-click publisher's no-preexisting-staging guard still passes. Previous user
+deletions of other root screenshots were preserved. Git history not rewritten.
+
+PDF renderer/wrapper now resolve relative author assets against source docs
+after Mermaid expansion, support linked-image Markdown, and keep short text
+with captures using bounded scaling. Existing non-image callers retain default
+arguments. Updated final PDFs: shared25pages/18images(4diagrams+14captures),
+multibus9pages/4diagrams, F13 guide18pages/10diagrams. Text/glyph/bounds/render,
+all-page contact review and changed-page review PASS. Earlier render directories
+contained stale pages after pagination changed; final QA uses a separate
+pdf_render_deliver folder. One source guard initially expected `if (started)`;
+corrected to actual `if (started != 0U)` and final regressions PASS.
+
+31 focused Python tests PASS:4 media/sync/assets/PDF fallback,5 renderer,
+12 public web,5 public rules,5 field guide. Source sync CheckOnly/public18files/
+276refs/anchors/seven downloads PASS;24 safe-clean scripts PASS. Browser four
+routes/25diagrams and1366/390 operation captures,14 images, full-size clicks,
+overflow/duplicate IDs/fragments/page errors PASS. Publication PLAN ONLY PASS,
+still five DefaultBuild files and no raw captures/tmp in the new payload;
+no index/commit/remote mutation by that check. README/AGENTS/checklists and
+slide README/capture inventory updated. Evidence: tmp/internal/tool_operation_review.
+
+No Tool/MCU build, firmware source/image, protocol, COM/flash action, commit,
+push or deployment. Tool0092 EXE SHA256 remains
+7D8AFF4EA18E3A7FF70B81A39C2FB599B91D921A12EC642479376A1613D4404E.
+User captures demonstrate the shown UI outcomes, not independent physical
+power/fault/high-speed/DPI acceptance. Source files changed for this task are
+the four canonical MDs, README/AGENTS/records/.gitignore, PDF renderer/wrapper,
+sync script, three affected regression modules and public image assets; web
+ISP index/README/capture checklist/verifier/assets plus Boot index projection.
+
 ## Classic grouped console and Log follow (2026-10-19)
 
 Tool0092 uses five thick, parent-painted system-gray MFC group frames: Host

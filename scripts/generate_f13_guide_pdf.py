@@ -228,7 +228,7 @@ def diagram_image(path: Path, available_width: float, available_height: float):
     return diagram, float(pixel_width) / float(pixel_height)
 
 
-def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
+def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle], asset_root: Path | None = None):
     lines = markdown_path.read_text(encoding="utf-8").splitlines()
     landscape_width = LANDSCAPE_PAGE[0] - LEFT_MARGIN - RIGHT_MARGIN
     landscape_height = (
@@ -288,11 +288,16 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
             story.append(Preformatted("\n".join(code_lines), styles["code"]))
             index += 1
             continue
-        image_match = re.fullmatch(r"!\[[^]]*\]\(([^)]+)\)", stripped)
+        # Markdown thumbnails may link to the same full-size public image.
+        linked_image = re.fullmatch(r"\[(!\[[^]]*\]\([^)]+\))\]\([^)]+\)", stripped)
+        image_markup = linked_image.group(1) if linked_image else stripped
+        image_match = re.fullmatch(r"!\[[^]]*\]\(([^)]+)\)", image_markup)
         if image_match:
             flush_paragraph()
             relative = image_match.group(1).replace("\\", "/")
             image_path = (markdown_path.parent / relative).resolve()
+            if not image_path.is_file() and asset_root is not None:
+                image_path = (asset_root / relative).resolve()
             with PillowImage.open(image_path) as source:
                 aspect_ratio = float(source.width) / float(source.height)
             if aspect_ratio <= 1.05:
@@ -325,28 +330,40 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle]):
                 story.append(NextPageTemplate("landscape"))
                 story.append(PageBreak())
             else:
+                screenshot = relative.startswith("images/tool_operation/")
                 diagram, unused_ratio = diagram_image(
-                    image_path, landscape_width, landscape_height
+                    image_path, landscape_width,
+                    landscape_height * 0.64 if screenshot else landscape_height
                 )
-                if diagram.drawHeight > landscape_height * 0.68:
+                if screenshot or diagram.drawHeight > landscape_height * 0.68:
                     preamble = []
+                    if screenshot:
+                        # Carry short introductions with the first capture, not
+                        # just its last heading. Leave at least half a page for
+                        # the image and preserve its original pixel resolution.
+                        start = len(story)
+                        while start and isinstance(story[start - 1], (Paragraph, Spacer)):
+                            start -= 1
+                        candidate = story[start:]
+                        caption_height = sum(item.wrap(landscape_width, landscape_height)[1]
+                            + item.getSpaceBefore() + item.getSpaceAfter() for item in candidate)
+                        if caption_height < landscape_height * 0.4:
+                            diagram, unused_ratio = diagram_image(image_path, landscape_width,
+                                min(landscape_height * 0.64, landscape_height - caption_height - 20))
+                            preamble = candidate
+                            del story[start:]
                     if (last_heading_index is not None and
-                            len(story) - last_heading_index <= 3):
-                        preamble = story[last_heading_index:]
-                        del story[last_heading_index:]
-                    if not story or not isinstance(story[-1], PageBreak):
-                        story.append(PageBreak())
-                    if preamble:
-                        story.extend(preamble)
-                    elif last_heading_text:
-                        story.append(Paragraph(
-                            inline_markup(last_heading_text), last_heading_style
-                        ))
-                    diagram, unused_ratio = diagram_image(
-                        image_path, landscape_width,
-                        landscape_height - 26 * mm
-                    )
-                    story.append(KeepTogether([diagram, Spacer(1, 7)]))
+                            not preamble and len(story) - last_heading_index <= 12):
+                        candidate = story[last_heading_index:]
+                        if all(isinstance(item, (Paragraph, Spacer)) for item in candidate):
+                            caption_height = sum(item.wrap(landscape_width, landscape_height)[1]
+                                + item.getSpaceBefore() + item.getSpaceAfter() for item in candidate)
+                            if caption_height + diagram.drawHeight + 12 < landscape_height:
+                                preamble = candidate
+                                del story[last_heading_index:]
+                    # Let the frame choose the break. A forced break here leaves
+                    # short section introductions stranded on mostly empty pages.
+                    story.append(KeepTogether(preamble + [diagram, Spacer(1, 7)]))
                 else:
                     story.extend([
                         CondPageBreak(diagram.drawHeight + 10),
@@ -433,7 +450,7 @@ def draw_page(canvas, doc) -> None:
     canvas.restoreState()
 
 
-def create_pdf(markdown_path: Path, output_path: Path, title: str, footer: str) -> None:
+def create_pdf(markdown_path: Path, output_path: Path, title: str, footer: str, asset_root: Path | None = None) -> None:
     register_fonts()
     styles = make_styles()
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -481,17 +498,18 @@ def create_pdf(markdown_path: Path, output_path: Path, title: str, footer: str) 
             onPage=draw_page, pagesize=PORTRAIT_PAGE
         ),
     ])
-    document.build(build_story(markdown_path, styles))
+    document.build(build_story(markdown_path, styles, asset_root))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--asset-root", type=Path)
     parser.add_argument("--title", default="RL78/F13 CAN Firmware Update Guide (zh-TW)")
     parser.add_argument("--footer", default="FirmwareUpgradeTool - F13 CAN")
     args = parser.parse_args()
-    create_pdf(args.source.resolve(), args.output.resolve(), args.title, args.footer)
+    create_pdf(args.source.resolve(), args.output.resolve(), args.title, args.footer, args.asset_root)
     print(args.output.resolve())
 
 

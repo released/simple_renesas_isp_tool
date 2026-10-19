@@ -44,7 +44,7 @@ class PublicWebGuides(unittest.TestCase):
             self.assertNotRegex(text, r'_Avery|[A-Z]:[\\/]|\.\./\.\./python|SourceCode')
             self.assertNotIn('有效core長度仍為96', text)
         for filename in ['FirmwareUpgradeTool.exe', 'RL78_F24_Bridge_boot.mot',
-                         'RL78_F24_Bridge_app_bridge_update.bin', 'boot0000_1FFF.hex',
+                         'RL78_F24_Bridge_app_bridge_update.bin', 'RL78_F24_Bridge_app_flash.mot', 'boot0000_1FFF.hex',
                          'boot_app.hex', 'RL78_F13_Boot_loader_CAN_app_update.bin']:
             self.assertIn('https://raw.githubusercontent.com/released/', block)
             self.assertIn('/' + filename + ')', block)
@@ -146,7 +146,7 @@ class PublicWebGuides(unittest.TestCase):
         text = (ISP / 'index.md').read_text(encoding='utf-8-sig')
         operation = text.split('## 3. MCU CAN device：App 更新', 1)[1].split('```mermaid', 1)[0]
         for phrase in ('APP_READY', 'live INFO', '[COMPLETE]', '不自動重寫',
-                       '停止 Host CAN', '保留 COM', '[完成提示與下一步](#update-completion)'):
+                       '停止 Host CAN', '保留 COM', '#update-completion)'):
             self.assertIn(phrase, operation)
 
     def test_technical_contracts_and_unverified_boundaries_remain(self):

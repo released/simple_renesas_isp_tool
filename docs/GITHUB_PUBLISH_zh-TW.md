@@ -18,6 +18,8 @@ Tool repository 包含 F24 (MCU CAN host) 的 Bridge Boot／App。
 只依明確檔名保留，不會因為副檔名是 BIN／HEX／MOT 就全部保留。
 App 原始 `.mot` 與已封裝的 `_flash.mot` 用途不同，安裝方式見 [Host App 工程](https://released.github.io/slide_isp_tool_for_RL78/#host-app-engineering)。
 其他原始碼、共用 driver、專案設定、根目錄的 App 初裝合併映像及正式文件不在清理範圍內。
+F13 App 根目錄的 `boot_app.hex` 供燒錄器初裝；`boot_app.bin` 是相同內容的 raw binary，起點為 `0x0000`，不是 Tool 的 CAN 更新映像。
+各操作應選用的檔案與下載連結集中於[下載與操作總覽](https://released.github.io/slide_isp_tool_for_RL78/#downloads)。
 這個入口不重新編譯、不調整版號，也不納入其他 MCU CAN device repository 或 web repository。
 
 ## 路徑與執行
