@@ -5,6 +5,7 @@ tmp/
 /tool_connect_COM.jpg
 /tool_Bridge_update*_*.jpg
 /tool_CAN_update*_*.jpg
+/CAN_custom_transfer*.jpg
 .vs/
 *.user
 *.suo
@@ -39,6 +40,10 @@ build/*.ini
 build/*.log
 build/reports/
 build/logs/
+
+# Original operation captures stay private; publish reviewed docs/images copies.
+/MCU_F24_Device_app_log.jpg
+/firmware_update_report.jpg
 
 # CS+ reproducible build intermediates; retain explicit firmware deliveries.
 firmware/**/DefaultBuild/*

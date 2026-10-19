@@ -61,6 +61,8 @@ Misc 的 BOOT／APP 卡改為 host bridge 自己的資訊，且目的地卡明�
 
 先完成 Host Probe，在 CAN 頁選取 `CAN Upgrade`、Bridge port 與 device 使用的 bitrate。
 以下圖片使用 F13 (MCU CAN device)，各欄數值來自所載入 BIN 與 live device；操作順序依回報模式選擇。
+F13 與 F24 device 的正常 CAN App 更新皆已完成實板驗證，使用相同的載入、探索、進 Boot、更新及 App 確認流程。
+F24 的完成報告與執行畫面見 [F24 device 更新結果](#f24-device-update-example)。
 完整[欄位與狀態判讀](https://released.github.io/slide_isp_tool_for_RL78/#tool-ui-fields)集中於 Tool operation。
 
 #### 1. 載入 Device App BIN
@@ -111,6 +113,7 @@ START 已接受後失聯不會沿用步驟 3 的自動返回原 App 行為；取
 只有 END／CRC 通過、APP_READY 與 live INFO 核對完成後，才顯示 `[COMPLETE]` 與 Device App update complete。
 正常完成會停止 Host CAN、保留 COM（Host UART），讓使用者檢查 App 與板上功能；因此 DEVICE TARGET 回到 N/A 並要求再次 Discover 是完成清理後的狀態。
 App 未確認或 CAN STOP 未確認時，依[完成提示與下一步](https://released.github.io/slide_isp_tool_for_RL78/#update-completion)處理，不自動重寫。
+Tool 自動保存 Firmware update report；右下 `MESSAGE LOG` 的 `Open Last Report` 可開啟報告，操作見[更新報告](https://released.github.io/slide_isp_tool_for_RL78/#update-html-report)。
 
 [![Device 更新完成並確認 App 後停止 CAN 保留 COM](images/tool_operation/tool_CAN_update6_after_update.jpg)](images/tool_operation/tool_CAN_update6_after_update.jpg)
 
@@ -130,6 +133,42 @@ flowchart TD
     END --> APP["確認 APP_READY 與 live INFO"]
     APP --> DONE["停止 Host CAN / 保留 COM<br/>顯示完成或停止警告"]
 ```
+
+<a id="f24-device-update-example"></a>
+
+### F24 (MCU CAN device)：更新結果與 App 執行
+
+F24 device 已確認可完整執行正常 CAN App 更新：配對 Boot 驗證映像、寫入 App、
+END／CRC 通過、reset 後回報 APP_READY，Tool 再核對 live INFO 並停止 Host CAN。
+操作沿用上方六個步驟，載入檔案改為 `RL78_F24_Boot_loader_CAN_app_update.bin`，
+並核對 F24 device 自己的 MCU、target、Flash 配置與 IRQ ABI。
+
+#### 更新報告
+
+HTML 報告的 `PASS | CAN device update` 與 `[COMPLETE]` 表示寫入、CRC 及 App 啟動確認均完成，
+不以進度到達 100% 單獨判定成功。圖中 Host Link 為 115200，CAN 為 Classical 500K。
+
+[![F24 device CAN App 更新報告顯示 PASS 與 App 啟動已確認](images/tool_operation/firmware_update_report.png)](images/tool_operation/firmware_update_report.png)
+
+| 報告項目 | 判讀方式 |
+| --- | --- |
+| `Target before operation` | 更新前的 device 模式與已安裝 App；不是更新後版本 |
+| `Input bytes` | 此次載入並傳送的 App BIN 長度，與 Flash capacity 分開 |
+| `App version / Build / Image bytes` 比對 | 完整 HTML 的 live 值與載入 BIN 相符，代表重啟後辨識到此次 App |
+| `CAN stopped; Host COM remains open` | App 確認後停止 CAN、保留 Host COM；下一次更新先重新 Discover |
+
+開啟方式、完整欄位與錯誤判讀集中於 [更新報告](https://released.github.io/slide_isp_tool_for_RL78/#update-html-report)。
+
+#### Device UART 執行紀錄
+
+UART 畫面顯示 `boot-validated`、`CAN update: completed`，以及 `log(timer)-V1` counter 從 0 持續遞增。
+這份紀錄與 Tool 的 APP_READY／live INFO 一起確認 App 已啟動、timer 與主迴圈持續運作。
+V1 是可編輯的觀察標籤，不取代 metadata 的版本號；修改位置見 [App 執行標籤](https://released.github.io/slide_boot_loader_for_RL78/#device-app-runtime-log)。
+
+[![F24 device 更新後 App UART 顯示 V1 與遞增 counter](images/tool_operation/MCU_F24_Device_app_log.png)](images/tool_operation/MCU_F24_Device_app_log.png)
+
+以上確認正常 115200 Host Link／500K CAN 更新與 App 執行。
+250K／1M、長時間壓力、其他 IRQ、取消、拔線及斷電復原各自依 [實板驗證矩陣](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation) 保留測試結果。
 <!-- TOOL_DEVICE_MEDIA_END -->
 
 ## 3. Misc：PC 透過 UART 更新 Host App
@@ -215,6 +254,7 @@ flowchart TD
 
 `Host App update complete - RUN required` 表示映像寫入、CRC 與 metadata readback 通過，**還沒有啟動 App**。
 下一步是明確執行 RUN，不需再次燒錄。
+此次寫入結果會自動保存為 Firmware update report，可按 `Open Last Report` 查看；[報告操作](https://released.github.io/slide_isp_tool_for_RL78/#update-html-report)說明儲存位置與判讀方式。
 
 [![Host App 寫入完成但尚待 RUN](images/tool_operation/tool_Bridge_update5_after_update.jpg)](images/tool_operation/tool_Bridge_update5_after_update.jpg)
 
@@ -229,6 +269,7 @@ flowchart TD
 Tool 自動重連同一 COM，重新讀取並核對已安裝 App 資訊。
 `Host App startup confirmed` 與 `[COMPLETE] Host App is running` 表示此階段完成；之後可選擇 CAN 等 device 介面。
 若 Log 的 counter 顯示 unavailable，代表該次重啟前後無可比對的 snapshot，不等於此處的 App 更新失敗。
+此時 `Open Last Report` 開啟的是本次 RUN 確認報告；先前的寫入報告仍保留於 `reports/`。
 
 [![RUN 後自動重連並確認 Host App](images/tool_operation/tool_Bridge_update7_update_finish.jpg)](images/tool_operation/tool_Bridge_update7_update_finish.jpg)
 <!-- TOOL_BRIDGE_MEDIA_END -->

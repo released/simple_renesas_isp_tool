@@ -5,7 +5,10 @@ target firmware updates and staged I2C master communication.
 
 The separate [F24 MCU CAN device design](docs/F24_CAN_DEVICE_DESIGN_zh-TW.md)
 uses an 8KiB Boot and App at 0x2000. Its Transfer/Boot/App builds and safe software models
-are checked; F24 device hardware acceptance is still required.
+are checked. Normal500K App programming, CRC, post-reset APP_READY/live INFO
+and the incrementing UART timer counter are verified on hardware, using the
+same Tool workflow as F13. See the [F24 device update result](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example);
+other rates and fault/power recovery require separate hardware acceptance.
 
 ## Downloads and operating guides
 
@@ -24,6 +27,9 @@ can_boot_config.h transport settings and boot_app_handoff.h RAM/owner markers.
 Runtime metadata decoding/validation is independently compiled from the common
 image_metadata.c/.h; image_metadata_profile.c supplies the project contract.
 See the [C module porting entry](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser).
+The workshop also covers [device250K/500K/1M configuration](https://released.github.io/slide_boot_loader_for_RL78/#device-can-bitrate),
+[Boot/App ISR names and ownership](https://released.github.io/slide_boot_loader_for_RL78/#device-irq-ownership)
+and [App UART tags/counters](https://released.github.io/slide_boot_loader_for_RL78/#device-app-runtime-log).
 Each App post-build also produces DefaultBuild/app_build_report.html with the
 actual BIN identity, metadata byte addresses, CRC/SHA-256 and complete vector
 table. See the [build-summary guide](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build-report).
@@ -241,11 +247,20 @@ MSBuild `
 ## GitHub source / delivery publication
 
 Double-click `github_push.bat` to review, archive non-delivery DefaultBuild
-outputs and commit/push the F13 Boot, F13 App and Tool repositories in order.
+outputs and commit/push F13 device Boot/App, F24 device Transfer/Boot/App and
+Tool repositories in order (six repositories, eight DefaultBuild deliveries).
 The Tool includes F24 CAN host Bridge Boot/App. Type PUSH to confirm; no force
 push, automatic merge, build or web deployment. Local tmp/INI/log/report data
 are excluded. For a read-only preview run scripts/push_github.ps1 without flags.
 See the [publication and recovery guide (zh-TW)](./docs/GITHUB_PUBLISH_zh-TW.md).
+The shared catalog is scripts/github_publish_catalog.ps1. Checkouts must
+already have main, an initial local commit and matching origin; missing Git
+setup stops before pruning. An existing empty origin supports initial main
+publication. The script never creates/initializes repositories automatically.
+Tracked or unignored local-only files are rejected before any output is moved.
+Explicit staged removals of local-only tracking may remain; other pre-staged
+changes still require review. Local files are preserved when using --cached;
+the recovery guide explains the inspection and retry steps.
 
 ## Documentation
 

@@ -47,7 +47,7 @@ F24 App 原始 `.mot` 與 F13 原始專案 `.hex` 是編譯／封裝輸入。
 正式安裝使用已加入 metadata／CRC 的 `_flash.mot`、`flash_app_variable_CRC.hex` 或配套合併 HEX；日常更新使用對應的更新 BIN。
 以燒錄器重燒 Boot／App 前，核對實際 MCU、檔案位址及 erase 設定；分區映像不代表燒錄器一定採分區擦除。
 
-原始碼維護可使用 Tool 根目錄的 `github_push.bat`，同步 F13 Boot／App 與 Tool（含 F24 MCU CAN host）。
+原始碼維護可使用 Tool 根目錄的 `github_push.bat`，同步 F13 Boot／App、F24 device Transfer／Boot／App 與 Tool（含 F24 MCU CAN host）。
 保留檔清單、本機 `tmp` 排除、確認與恢復方式見 [GitHub 原始碼與交付檔同步](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/GITHUB_PUBLISH_zh-TW.md)。
 
 ### 操作與工程入口
@@ -115,6 +115,95 @@ Bridge Board Self Test 是實體 CAN 訊號測試：STD ID 0x123、DLC8，每秒
 每次啟動 counter 從 00 遞增；需搭配 CAN analyzer 觀察，tool TX log 不是波形量測證據。
 F13 Transfer 是已由使用者確認的通訊 benchmark，不需載入 BIN；不得拿它的 BIN 當 upgrade image。
 MCU CAN device 的 Boot 啟動條件與 App 工程設定，見 [MCU CAN device 章節](https://released.github.io/slide_boot_loader_for_RL78/)。
+
+<!-- TRANSFER_DIAGNOSTICS_BEGIN -->
+<a id="transfer-diagnostics"></a>
+
+### Custom Transfer 診斷
+
+Device UART（P15／P16，115200）的啟動與錯誤訊息，可對照初始化、CAN 連線及封包處理。
+
+| Device UART 欄位 | 意義與核對方式 |
+| --- | --- |
+| `CAN init: OK/FAIL`、`result` | CAN 初始化結果；`0x0000` 表示成功，非零值依各 MCU driver 定義 |
+| `global_status`／`channel_status` | F24 controller 原始狀態；保留完整值供診斷，不與 F13 的狀態數值直接比較 |
+| `stage` | F24 初始化階段；`5` 表示 ready，未完成的 `1..4` 見下表 |
+| `CAN config` | 編譯設定：Classical 500K、request `0x710`、response `0x711`、filter `0x710/0x7FF` |
+| `STB=P12_LOW/HIGH` | MCU 的 P12 output latch；成功後應為 LOW，初始化失敗維持 HIGH。這不是供電或腳位電壓量測 |
+| `TRACE CT RX/TX` | ID、DLC、完整資料、sequence、command 與 CRC；TX 表示 driver 接受傳送，不等於已收到 CAN ACK |
+| `TRACE CT CAN_ERROR` | 已擷取的 Classical CAN 錯誤旗標與名稱；重複故障期間最多每 250 ms 輸出一次 |
+
+| F24 stage 1..4 | 檢查位置 | 未通過時的核對方向 |
+| ---: | --- | --- |
+| 1 | driver configuration | 保留 result，核對 SC 與 clock／CAN 設定 |
+| 2 | ID／global／channel reset state | 核對 request ID 與 controller raw status |
+| 3 | start communication | 核對 driver result 與 mode transition |
+| 4 | communication active | 等待有界；逾時回報 WAITING，核對 controller／bus 狀態 |
+
+F24 的 `clock status: OK` 表示時鐘初始化檢查通過，不是頻率量測。
+若時鐘初始化未通過，程式保留 standby，且不使用尚未符合 clock 設定的 UART 輸出。
+
+GET_STATS index 7／8／9 分別是 warning／error-passive／bus-off 擷取計數，index 11 是最後擷取的錯誤旗標。
+F13 由 error ISR 擷取；F24 由主迴圈輪詢並清除已觀察旗標，不在 ISR 格式化文字。
+硬體旗標可能合併多次事件，計數表示軟體擷取次數；counter 飽和於 `0xFFFF`。
+`CLEAR_STATS` 會重設統計，因此零次紀錄不等於已量測到沒有實體錯誤。
+
+比對封包時開啟 Tool 的 `Detailed trace (slower)` 與 Log，另存 device UART 與 analyzer trace。
+量測速度時將 device 的 `CAN_TRANSFER_UART_TRACE_ENABLE` 設為 `0U` 後重建，並關閉 Tool detailed trace；
+錯誤擷取與 GET_STATS 仍運作。
+完整 byte／command／counter 定義見 [通訊測試協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/F13_TRANSFER_PROTOCOL.md)。
+<!-- TRANSFER_DIAGNOSTICS_END -->
+
+<!-- CUSTOM_TRANSFER_MEDIA_BEGIN -->
+<a id="f24-custom-transfer-example"></a>
+
+### F24 (MCU CAN device)：Custom Transfer 操作範例
+
+範例使用 `RL78_F24_CAN_Transfer`，Classical CAN 500K，request／response 為 `0x710／0x711`。
+操作畫面與 MCU UART 可對照 discovery、測試命令及結果；點選圖片可開啟原尺寸。
+
+畫面上方保留的 F13 App BIN 屬於 **OFFLINE** 檔案資訊，Custom Transfer 不使用此 BIN。
+實際連線的 device 以 **DEVICE TARGET** 的 live 回覆為準；此例為 `R7F124FP`、target `0xF24B`。
+Custom Transfer 不回報 Boot／App metadata，對應 LIVE INFO 顯示 `N/A` 是此模式的正常狀態。
+
+#### 1. Tool：選擇通訊測試
+
+Host 連線完成後，CAN 頁選擇 `Custom Transfer`、Classical 500K，再執行 `Discover Test Target`。
+
+[![Tool 選擇 Custom Transfer，device 尚未探索](images/custom_transfer/CAN_custom_transfer_1.png)](images/custom_transfer/CAN_custom_transfer_1.png)
+
+圖：Host 已連線、device 尚未探索。此模式使用通訊測試命令，更新按鈕不啟用。
+
+#### 2. MCU UART：Discovery 回覆
+
+`DEVICE_INFO` 的 sequence 1..7 依序回覆 protocol、target、part prefix 與 capabilities。
+圖中的 RX／TX 分別是 `0x710／0x711`，各筆顯示 `crc=OK`；target page 的 `4B F2` 為 little-endian `0xF24B`。
+
+[![MCU UART 的 DEVICE_INFO sequence 1 到 7 收發紀錄](images/custom_transfer/CAN_custom_transfer_mcu_log_1.png)](images/custom_transfer/CAN_custom_transfer_mcu_log_1.png)
+
+圖：Device discovery 的 CAN request／response，可核對相同 sequence、command、payload 與 CRC。
+
+#### 3. Tool：Transfer Test 完成
+
+探索完成後，DEVICE TARGET 顯示 `R7F124FP / 0xF24B / protocol 1.0`。
+執行 `Transfer Test` 後，Log 顯示 `Custom Transfer test completed successfully`，進度為 100%。
+
+[![Tool 顯示 F24 device 身分及 Custom Transfer 測試完成](images/custom_transfer/CAN_custom_transfer_2.png)](images/custom_transfer/CAN_custom_transfer_2.png)
+
+圖：正常通訊測試完成。Log 的 `F24 counters: CAN RX=22, TX=22` 是 **MCU host** 的統計；
+`Custom Transfer statistic[index]` 則來自 **MCU device** 的 GET_STATS 回覆。
+
+#### 4. MCU UART：測試命令與統計
+
+Sequence 8..22 可對照 PING（`0x02`）、ECHO（`0x03`）、PATTERN_TEST（`0x04`）與 GET_STATS（`0x05`）。
+UART 圖中各筆 request／response 均顯示 `crc=OK`，可與 Tool 結果交叉核對。
+
+[![MCU UART 的 PING ECHO PATTERN 與 GET_STATS 收發紀錄](images/custom_transfer/CAN_custom_transfer_mcu_log_2.png)](images/custom_transfer/CAN_custom_transfer_mcu_log_2.png)
+
+圖：Device 的測試命令與統計回覆。Counter 定義與判讀見 [Custom Transfer 診斷](#transfer-diagnostics)。
+
+這組操作紀錄呈現正常 discovery／通訊測試；不包含 CAN 波形量測、故障注入、斷線恢復或 Boot／App 擦寫驗證。
+<!-- CUSTOM_TRANSFER_MEDIA_END -->
 
 CAN 更新通過 END 後，Tool 自動核對 APP_READY 與 live INFO；符合載入映像的版本、build 與大小後顯示 App confirmed。
 未確認時保留「已寫入／App 未確認」結果，不自動重寫；詳細判定與補充檢查見 [更新確認](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。

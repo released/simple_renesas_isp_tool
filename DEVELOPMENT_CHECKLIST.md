@@ -15,6 +15,66 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-19 F24 device README alignment: all three public READMEs are English
+with corresponding F13 reader structure; local F24 hardware/IRQ/metadata/
+build/output/capability facts preserved. Five read-only source/link tests PASS.
+Full tutorials remain linked, not duplicated; no F13 or firmware code edit,
+rebuild, hardware activity or commit/push. Three-README public checks and
+final six-repo read-only preview PASS; CRC8 example frames verified.
+
+2026-10-19 tracked local-data recovery: user-approved --cached removes15 F24
+Boot tmp paths while preserving local files; three device ignores added.
+Four script-owned staged deletions cleared with index backups; all eight
+deliveries/actual HEADs unchanged. Preflight now refuses tracked/unignored
+local-only files before archive/stage and permits only reviewed local-only
+staged removals. Actual preview and21 path/public tests/syntax/content/
+310refs/mirrors/24safe-clean PASS;18-case isolated Git regression PASS.
+No actual commit/push or product rebuild; details in HANDOFF.
+
+2026-10-19 publication/report operation: six-repo/eight-delivery catalog adds
+F24 device Transfer/Boot/App;15 isolated Git checks and4path tests PASS.
+Real read-only preview refuses missing F24 .git before cleanup; no actual
+init/commit/push. Canonical report steps describe automatic HTML/JSON,
+Open Last Report, history and separate CAN/Misc write/RUN outcomes; gallery
+completion steps link to the same owner.43focused tests/content/310refs/
+mirrors/24safe-clean PASS;5PDFs84pages36images visual QA and web1366/390 PASS.
+Existing EXE/firmware hashes unchanged; no hardware writes or deployment.
+
+2026-10-19 F24 device normal update accepted: user report confirms1.0.3/4224B/
+CRC/App confirmation/CAN_STOP and UART V1 counter0..26. Same normal workflow
+as F13 device. Two public PNGs/16operation assets, all9PDF/MD review;4PDFs
+refreshed and69pages visually checked.38focused tests/310refs/24safe-clean/
+source mirrors/browser1366/390 PASS. High-rate/fault acceptance remains scoped;
+no runtime rebuild, COM/Flash or publishing. Details and evidence in HANDOFF.
+
+2026-10-19 device log/bitrate/IRQ: F24 App-only1.0.3 clean0errors/5existing
+warnings,4224B/CRCCF1C72F8; Boot/Transfer/PC binaries unchanged. V1/V2 tag and
+decimal counter execute in main. Canonical workshop adds complete device
+250K/500K/1M steps, separate F13 timing headers, shared F24 preinclude and
+Boot/App same-name ISR ownership.34focused tests,9artifact checks/C models,
+sync/public/304refs/24safe-clean PASS. PDF24pages6diagrams and browser1366/390
+verified. User's preceding normal500K update/CRC/App evidence is recorded
+separately from unresolved post-update CAN errors. New App board/high-rate/
+fault tests NOT RUN. No host/Tool rebuild, COM writes or publication.
+
+2026-10-19 F24 Custom Transfer gallery: four user operation captures added to
+the canonical MULTIBUS_TOOL_GUIDE/ISP chapter, explaining live device identity,
+cached offline BIN and separate host/device counters. Public lossless copies
+mask local paths; originals retain hashes in ignored private archive.
+MD/4assets/MultiBus PDF15pages8images synchronized, browser1366/390 and32 focused
+source/media/public/PDF checks PASS; actual evidence/limits in HANDOFF. These
+captures establish normal discovery/transfer only, not fault or Flash tests.
+No runtime changes, compiler invocation, COM writes or Git/web publication.
+
+2026-10-19 F24 device Transfer diagnostics: main-loop raw Classical error
+capture/clear feeds GET_STATS and250ms UART trace; startup stage/result/raw
+statuses/filter/P12 output are visible. Transfer clean build and trace1/0
+production-code models PASS; Boot/App clean rebuilds retain exact hashes and
+Boot spare514. Nine artifact checks, production metadata/Tool models and20
+source/sync/public/PDF regressions PASS. MD/ISP/MultiBus PDF synchronized;
+actual evidence and hardware/browser NOT RUN boundaries are in HANDOFF.
+PC executable, host firmware and wire format unchanged; no publication.
+
 2026-10-19 operation media: direct packaged App MOT download, Boot-only/combined
 image usage and erase scope clarified. Fourteen redacted operation captures
 are canonical in the shared guide and synchronized to ISP; originals preserved

@@ -40,10 +40,41 @@ function Assert-PublishRemote([string]$Value, [string]$Expected) {
     } elseif($Value -cne $Expected) { throw 'Origin does not match the explicit test repository.' }
 }
 
+function Test-PublishLocalOnlyPath([string]$Path) {
+    return $Path -match '^(tmp/|github_push\.local\.psd1$|build/(?:reports/|logs/|.*\.(?:ini|log)$))'
+}
+
+function Assert-PublishLocalOnlyData($Target) {
+    foreach($path in (Invoke-PublishGit $Target.Root @('ls-files','-z')).Text.Split([char]0)) {
+        if(Test-PublishLocalOnlyPath $path) {
+            throw "Local-only data is tracked in $($Target.Root): $path. Keep the local file and review its Git tracking before publication."
+        }
+    }
+    foreach($path in (Invoke-PublishGit $Target.Root @('ls-files','--others','--exclude-standard','-z')).Text.Split([char]0)) {
+        if(Test-PublishLocalOnlyPath $path) {
+            throw "Local-only data is not ignored in $($Target.Root): $path. Review .gitignore before publication."
+        }
+    }
+}
+
+function Assert-PublishStagedChanges([string]$Root) {
+    # Explicit local-data tracking removals are safe to include. Preserve and
+    # refuse every other pre-existing staged change, including source deletions.
+    $changes=(Invoke-PublishGit $Root @('diff','--cached','--name-status','--no-renames','-z')).Text.Split([char]0)
+    for($i=0;$i+1 -lt $changes.Count;$i+=2) {
+        if($changes[$i] -cne 'D' -or !(Test-PublishLocalOnlyPath $changes[$i+1])) {
+            throw "Existing staged changes must be reviewed/committed before batch publication: $Root. Only local-only tracking removals may remain staged."
+        }
+    }
+}
+
 function Assert-PublishRepository($Target) {
     $root=(Resolve-Path -LiteralPath $Target.Root -ErrorAction Stop).ProviderPath.TrimEnd('\','/')
     if((Split-Path -Leaf $root) -cne $Target.Name) { throw "Unexpected repository directory: $root" }
     Assert-PublishTree $root $root
+    if(!(Test-Path -LiteralPath (Join-Path $root '.git'))) {
+        throw "Git repository is not initialized: $root. Configure its main branch, initial commit and origin before publication; no files were pruned."
+    }
     $actual=(Invoke-PublishGit $root @('rev-parse','--show-toplevel')).Text.Replace('/','\').TrimEnd('\')
     if($actual -ine $root.Replace('/','\')) { throw "Not an exact repository root: $root" }
     if((Invoke-PublishGit $root @('symbolic-ref','--short','HEAD')).Text -cne 'main') {
@@ -60,9 +91,8 @@ function Assert-PublishRepository($Target) {
         if(![IO.Path]::IsPathRooted($path)) { $path=Join-Path $root $path }
         if(Test-Path -LiteralPath $path) { throw "Finish the active Git operation first: $name in $root" }
     }
-    if((Invoke-PublishGit $root @('diff','--cached','--quiet') @(0,1)).Code) {
-        throw "Existing staged changes must be reviewed/committed before batch publication: $root"
-    }
+    Assert-PublishStagedChanges $root
+    Assert-PublishLocalOnlyData $Target
     foreach($key in @('user.name','user.email')) {
         if(!(Invoke-PublishGit $root @('config','--get',$key) @(0,1)).Text) { throw "Missing Git $key in $root" }
     }
@@ -73,6 +103,14 @@ function Assert-PublishRepository($Target) {
 
 function Assert-PublishAncestry($Targets) {
     foreach($target in $Targets) {
+        $remote=(Invoke-PublishGit $target.Root @('ls-remote','--exit-code','origin','refs/heads/main') @(0,2))
+        if($remote.Code -eq 2) {
+            if((Invoke-PublishGit $target.Root @('ls-remote','origin')).Text) {
+                throw "Remote is not empty and has no main branch. Review before publishing: $($target.Name)"
+            }
+            Write-Host "Verified empty origin; initial main publication: $($target.Name)"
+            continue
+        }
         [void](Invoke-PublishGit $target.Root @('fetch','--no-tags','origin','refs/heads/main'))
         if((Invoke-PublishGit $target.Root @('merge-base','--is-ancestor','FETCH_HEAD','HEAD') @(0,1)).Code) {
             throw "Remote main contains changes not in local main. Review/synchronize before publishing: $($target.Name)"

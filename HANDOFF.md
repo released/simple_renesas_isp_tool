@@ -1,5 +1,236 @@
 # Development Handoff
 
+## English F24 device README alignment (2026-10-19)
+
+User-supplied SourceCode_Avery_Renesas spelling does not exist; edits use the
+established SourceCode/_Avery_Renesas/CS+ checkouts. Read all six F13/F24
+Transfer/Boot/App READMEs and F24 contracts/runtime/build scripts. Reorganized
+only the three F24 READMEs into English, parallel to the F13 reader structure:
+checkout dependencies, trace, IRQ, layout, runtime provenance/ENTER, build
+artifacts, debugging and verification. F13 READMEs/firmware remain unchanged.
+
+Retained actual F24 CPU/CAN40/X1=4M, TAU0 channel1/vector2E, AA55 owner, RAM
+ENTER atFF71C, RFD/last1KiB protection and8KiB/512spare guards. Described compact
+BAD_IMAGE and no advertised Boot VERIFY rather than copying F13 diagnostics.
+Clarified Boot MOT/map for combined-image generation and full-build inputs
+required by test.ps1; normal App-only packaging does not rebuild Boot. Public
+links use configured F24 origins and existing workshop/operation anchors.
+
+Five new read-only README tests PASS: English/role/dependencies, F13 section
+parity, all local web anchors, geometry/timer/capability source checks and
+runtime/artifact/ignore parity, including CRC8-valid example frames. Public
+guidelines checks for all three READMEs and final six-repo preview PASS.
+No firmware/project/source/
+binary changes or rebuild, hardware operation, commit/push or web deployment.
+No canonical web/PDF body changed; full tutorials remain single-owner links.
+
+## Local-only publication tracking recovery (2026-10-19)
+
+User's publish.log 20261019T052716Z stopped after all eight F24 device
+intermediates were archived and Transfer/Boot index entries had been staged;
+no commit/push was reached. F24 Boot initial commit tracked15 tmp build/test
+files and all three actual F24 device projects lacked .gitignore.
+
+With explicit user approval, added project-specific ignore files and removed
+only those15 tmp paths from the index via --cached. Local SHA256 hashes match;
+all eight catalog deliveries match before/after. Verified four script-owned
+staged deletions against HEAD and archived blobs, backed up all three F24
+indices, and cleared only those four index entries without restoring working
+files. Other archived output deletions remain unstaged for normal publication.
+The15 local-only tracking removals intentionally remain staged. Index backups:
+tmp/internal/github_repair/71aa06cb3a3f497baeeade94da251028; outputs remain in
+the original publication archive. Actual HEADs unchanged; no commit/push,
+history rewrite, product rebuild, COM/Flash or local tmp-file deletion.
+
+Publication now checks tracked AND unignored local-only data before moving
+any output, rechecks before execution and after staging, and includes repo
+identity in refusal text. One shared path predicate defines the narrow
+exception for pre-staged local-only deletions; all other pre-staged changes
+remain blocked. The script does not automatically remove tracking or reset
+an index. GITHUB_PUBLISH/README/AGENTS and ISP maintenance links updated.
+No guide PDF source changed; existing public-resource projections still match.
+
+Real six-repo read-only preview PASS, including the pending local-only
+removals.21 path/public tests, helper syntax,310refs/mirrors/content and
+24safe-clean checks PASS. All18 isolated Git integration checks PASS, including
+early tracked/unignored refusals and approved local-only deletion publication
+with the local file/hash preserved. Evidence: tmp/internal/github_publish_tests/
+266de16d. Tool EXE SHA256 unchanged.
+
+## Six-repository publication and report operation (2026-10-19)
+
+github_push.bat now includes F24 CAN device Transfer/Boot/App in addition to
+F13 Boot/App and Tool. github_publish_catalog.ps1 is the single source for
+six repositories, seven DefaultBuild directories and eight exact deliveries.
+workspace_paths and ignored local settings support all five device paths.
+Missing .git stops before pruning/staging; no repository is auto-created or
+initialized. Empty origins are accepted only after confirming no remote refs;
+nonempty origins without main are refused. Existing ancestry, bounded archive,
+index review, no-force push and remote SHA checks remain intact.
+
+User explicitly requested scripts/safety checks only. Actual F24 projects
+still have no .git, and the real read-only preview safely refuses at F24
+Transfer. Six actual project paths/eight nonempty keepers checked; F13 Git
+working trees remain clean. No actual release pruning, init, commit, push,
+COM/Flash activity or product rebuild. Tool EXE and F24 Boot/App/Transfer
+SHA256 match the previous accepted artifacts.
+
+15 integration checks PASS using only temporary local repositories/bare
+remotes: all eight deliveries, archive/index/tmp exclusions, quoting, no-op,
+missing files/repo, branch/remote/mirror/reparse/approval/ancestry refusals,
+partial push recovery and empty-origin first main. Evidence retained under
+tmp/internal/github_publish_tests/8da1aaae. Four workspace-path tests PASS,
+including all three F24 kinds and explicit/environment/sibling precedence.
+GITHUB_PUBLISH guide, README, AGENTS and shared web resources synchronized.
+
+UPDATE_VALIDATION owns the step-by-step Firmware update report operation:
+automatic reports beside EXE, MESSAGE LOG/Open Last Report, current-session
+button scope, historical HTML/JSON, no automatic browser opening and distinct
+CAN App confirmation versus Misc write/RUN results. CAN/Misc gallery completion
+steps link to that owner instead of repeating the full explanation.
+
+43 focused acceptance/media/workshop/public/PDF/path tests PASS; modified
+PowerShell syntax,18 public-content files,310 references/anchors,source/asset
+mirrors and24 workspace safe-clean scripts PASS. Five refreshed PDFs total
+84pages/36images; all-page contact sheets and changed pages visually reviewed,
+all glyph bounds PASS. Browser1366/390 validates report instructions and links,
+16 operation assets/15 ISP diagrams, full-size images and no page errors.
+No web deployment. Normal user F24 acceptance and remaining fault/high-rate
+scope are recorded below; this documentation work adds no hardware claims.
+
+## F24 normal device App update acceptance and media (2026-10-19)
+
+User report update_20261019_044520_030_29540_419293781_1 JSON/HTML confirms
+App1.0.2 ->1.0.3/build20261019,4224B/CRCCF1C72F8,66blocks,4340ms total;
+metadata1056/start15/transfer2114/END64/confirmation575ms. Live targetF24B,
+MCU/layout/policy/IRQ/version/build/size all match, APP_READY and CAN_STOP PASS,
+Host COM retained, no link retries; recorded overflow/lost/bus-off/recovery/
+TX-failure deltas0. This report does not settle prior post-completion error
+events or fault/high-rate testing. UART capture confirms boot-validated,
+update-completed and V1 counter0..26. Physical work is user evidence, not agent
+COM activity. App1.0.3 normal programming/startup is no longer pending.
+
+Canonical SHARED_CONSOLE TOOL_DEVICE_MEDIA owns f24-device-update-example and
+two lossless PNGs. No path masks were needed; decoded pixels are identical,
+no EXIF/other metadata. Original JPEGs retained with SHA256 under ignored
+tmp/private_screenshots/20261019_f24_device_update; exact root names ignored.
+sync_tool_operation_media validates three blocks/16 JPG-or-PNG assets and
+CheckOnly hashes, including PNG corruption/refusal tests. No tracked raw image.
+
+Reviewed all9 public guide PDFs and current public MD/site states. Updated
+normal acceptance in F24 design/workshop/golden sample/validation/architecture/
+README; legacy performance notes point to current confirmation. Removed
+obsolete firmware-ready/native-pipe paragraphs from the UI identity guide,
+aligned it with current system-gray grouped console. Historical handoff/
+first-delivery measurements remain scoped records, not current acceptance.
+Four refreshed PDFs visually reviewed: operation27pages/20images,workshop24/6,
+validation15/1,identity3/1 (69pages total).38 focused acceptance/media/workshop/
+public/PDF tests PASS, page glyph bounds checked. Mirrors/public-content/
+310refs/24safe-clean checks PASS; web1366/390,15ISP diagrams/two new images,
+full-size click/anchors/no page errors PASS. QA in tmp/internal/f24_device_acceptance.
+No runtime/source/binary rebuild, COM/Flash or Git/web publication. High-rate,
+other IRQ, long stress, cancel/disconnect/power recovery remain separate tests.
+
+## Device App heartbeat / CAN bitrate / ISR ownership (2026-10-19)
+
+User's update_20261019_040723 report and UART capture establish normal F24
+device App1.0.2/4152B programming, CRC6ABF121D and post-reset APP_READY.
+Report4302ms;65blocks; confirmation586ms. Later BUS_ERROR/ERROR_PASSIVE events
+are separate unresolved evidence, not a fault-free/high-rate acceptance claim.
+
+F24 device App now owns app_runtime_log.c/.h: editable V1/V2 observation tag
+and decimal32-bit counter, reset0, emitted once per1000ms in main. Timer ISR,
+Boot, Host and Tool runtime remain unchanged. App1.0.3/build20261019 clean
+build0errors/5existing warnings,4224B/CRCCF1C72F8, SHA256
+DB3BD26F87EAEE2797431DF626597D452382D00112C3214B71BA7587CCD5C81F.
+Actual BIN contains V1 and no old fixed alive/version string. Boot HEX SHA256
+129DF147018D823669203126F67E60A570A336124CB5B261D951BEE45C2D808D
+unchanged; Transfer HEX and PC EXE hashes also unchanged. F13 repos untouched.
+
+Canonical DEVICE_WORKSHOP now owns device-can-bitrate / device-irq-ownership /
+device-app-runtime-log. Device timing and metadata mask presets are derived
+from actual driver encoding/clocks. F13 requires BOTH local RSCANlite headers;
+F24 uses shared preinclude. Complete rebuild/program/Tool/analyzer/error steps
+retain500K default. COMMON_IMAGE_POLICY adds only an ISP-to-device jump link;
+no duplicated tutorial or host firmware work. Same ISR names are legal across
+separate links; physical ownership/no-vect/AA55 rules and both timer mappings
+are tabulated and flowcharted. Public examples have no invented F24 source URL.
+
+Nine F24 artifact checks and production C/Tool models PASS.34 focused tests
+(4new +8workshop +12public web +5public rules +5PDF renderer) PASS. Formatter
+compiled strictC90/W4/WX for V1/V2, decimal boundaries/guards/unsigned wrap.
+Workshop stale-linked test takes optional FIRMWARE_F13_APP_LINKED_ARTIFACTS;
+for this run it read matching archived HEX/map, without restoring release
+intermediates into F13. No product/build dependency on the archive was added.
+Both sync CheckOnly modes,304refs/anchors/public-content and24safe-clean checks
+PASS. PDF24pages/6diagrams rendered/all-page contact/changed-page visual QA;
+browser1366/390,11Boot diagrams, anchors and ISP single-owner crosslink PASS.
+Disposable QA is tmp/internal/device_can_bitrate. New App board UART/timing,
+250K/1M and physical faults NOT RUN; no COM/flashing/commit/push/deployment.
+
+## F24 Custom Transfer operation captures (2026-10-19)
+
+User supplied four screenshots after programming RL78_F24_CAN_Transfer.
+Observed evidence: Tool discovery reports R7F124FP/targetF24B/protocol1.0;
+Transfer Test reports success/100percent. MCU UART shows DEVICE_INFO seq1..7
+and PING/ECHO/PATTERN/GET_STATS seq8..22 with CRC OK. Tool's22RX/22TX summary
+belongs to MCU host, distinct from device GET_STATS. Cached F13 offline BIN
+remains visibly unchanged and is explicitly outside Custom Transfer.
+No startup-stage capture/analyzer waveform/fault injection/Boot-App write
+record is inferred from these images; physical work was performed by user,
+not by the agent. No additional firmware or PC runtime changes/builds.
+
+MULTIBUS_TOOL_GUIDE CUSTOM_TRANSFER_MEDIA owns the four-step gallery. Public
+PNGs under docs/images/custom_transfer preserve exact decoded pixels outside
+the two explicitly masked image-path rows; MCU traces remain pixel-identical.
+No EXIF. All four original JPEGs were moved into validated ignored
+tmp/private_screenshots/20261019_custom_transfer with unchanged SHA256; root
+raw captures are independently ignored. There was no tracked raw image or
+Git index/history modification. Redaction evidence is disposable
+tmp/internal/custom_transfer_media/redaction_audit.json.
+
+sync_custom_transfer_media.ps1 validates block/assets then mirrors only public
+copies to ISP; CheckOnly tests cover drift, missing markers and hash mismatch
+without writes. F24 Transfer README and protocol/architecture verification
+references now point to normal-operation evidence, not blanket NOT RUN.
+MultiBus PDF15pages/8images(4diagrams+4captures), all-page contact and capture
+page visual checks PASS; image dimensions/text/glyph checks PASS. Browser1366/
+390:4images/15diagrams, full-size PNG click, no broken images/overflow/duplicate
+IDs/fragment targets/page errors PASS.32 focused source/media/public/PDF tests,
+public-content,304refs/anchors and24safe-clean checks PASS. PDF expectation
+updated from4 diagrams-only images to8 images including captures.
+No COM/device Flash, EXE rebuild/version bump, Git commit/push or deployment.
+
+## F24 device Transfer diagnostics (2026-10-19)
+
+Independent F24 CAN_Transfer now feeds existing protocol counters/trace from
+main-loop raw15-bit C0ERFL capture/observed-bit W0C clearing. Its startup log
+reports clock/config/result/stage/raw statuses/filter/actual P12 latch. The
+common backend additions compile only for F24_DEVICE_TRANSFER. Transfer wire,
+identity, PC runtime and F24 host are unchanged. Transfer clean build0errors/
+2license warnings; Boot0/2 and App0/5 clean rebuilds preserve both delivery
+hashes, Boot end1DFD/spare514 and no Transfer diagnostic symbols in their maps.
+Detailed hashes and local test entry are in the F24 device Boot HANDOFF.
+
+Nine PS artifact/negative checks and production metadata/block/Tool models
+PASS. New strict-C90 production adapter/protocol test runs UART trace1/0;
+init failure/waits,15bits/write-zero masks, counters/saturation/clear, trace
+throttle/tick wrap and TX timeout/command behavior PASS.20 focused Tool tests
+PASS, covering3 new source/sync checks,12 public-web and5 PDF regressions.
+An initial fixture used the Windows default text encoding; explicit UTF8 now
+matches the production synchronizer. One initial test invocation used an
+incorrect module name; the final named suite is fully passing.
+
+F24 Transfer README and F13_TRANSFER_PROTOCOL describe both implementations.
+MULTIBUS_TOOL_GUIDE owns TRANSFER_DIAGNOSTICS and sync_transfer_diagnostics.ps1
+mirrors it to the ISP Custom Transfer chapter; no duplicated device-development
+chapter. New sync CheckOnly/drift/missing-marker tests PASS. MultiBus PDF now
+10pages/4diagrams, rendered and visually checked. Local public/content/
+292refs/anchors and24safe-clean checks PASS; browser rendering NOT RUN.
+Evidence: tmp/internal/transfer_diagnostics and device Boot tmp/build/tests.
+Physical CAN/ACK/fault/recovery NOT RUN; no board/COM/device Flash, PC EXE
+rebuild, Tool version change, Git commit/push or website deployment.
+
 ## Public delivery choices and operation captures (2026-10-19)
 
 Documentation/media only. MULTIBUS_TOOL_GUIDE PUBLIC_RESOURCES adds the direct

@@ -46,7 +46,9 @@ ReadTotalTimeoutConstant為剩餘期限與50ms的較小值。**50ms只限制無�
 需更新F24 App1.5.0並重燒F13 Boot/App1.5.0；F24 Boot不變。
 使用者182253 log已確認Host115200／CAN500K：19244B、301區塊、10963ms／1755B/s，
 END CRC CA0DF55C相符、無重試或CAN錯誤；較舊約79秒快約7.2倍，但BIN略有不同且
-僅單次結果。reset後App啟動與高速／多次A/B仍待驗證。
+僅單次效能結果，該筆 log 未包含完整 reset 後 App 確認。
+目前正常 CAN 更新的 App 啟動確認已由 F13／F24 device 紀錄核對，見 [更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)；
+高速、連續壓力與多次 A/B 仍依各條件驗證。
 詳見[區塊更新指南](CAN_BLOCK_TRANSFER_V5_zh-TW.md)。
 
 比較方式：先用0080維持115200／CAN500K／相同BIN與Detailed trace設定，

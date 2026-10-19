@@ -1,5 +1,103 @@
 # Host Link v2 Self-Check
 
+## F24 English repository READMEs (2026-10-19)
+
+- [x] Three F24 device READMEs now English, structured by the corresponding
+  F13 Transfer/Boot/App entry points; F13 files not edited.
+- [x] Five documentation tests PASS; hardware/IRQ/Flash/build/artifact/trace
+  facts match local sources and every linked local web anchor exists.
+- [x] Public-content checks for all three READMEs and final six-repo preview
+  PASS; example frame CRC8 values independently checked.
+  No runtime/firmware build, hardware operation, commit/push or deployment.
+
+## Tracked tmp recovery and early publication checks (2026-10-19)
+
+- [x] User-approved15-path --cached removal preserves all local hashes;
+  three exact F24 .gitignore files added, eight delivery hashes unchanged.
+- [x] Four script-owned staged deletions verified against HEAD/archive and
+  cleared only in the index; three index backups retained; no commit/push.
+- [x] Tracked/unignored local-only checks run before archives and after stage;
+  only local-only staged removals are accepted. Actual read-only preview PASS.
+- [x]21 path/public tests, syntax/310refs/mirrors/content/24safe-clean PASS.
+- [x] Full18-case isolated Git regression PASS, including early refusal and
+  preserving local files while publishing explicit tracking removals.
+  No actual Git history rewrite, firmware/EXE build, COM/Flash or deployment.
+
+## Publication scope and report instructions (2026-10-19)
+
+- [x] Single catalog covers six repos/eight exact deliveries, including F24
+  device Transfer/Boot/App. Fifteen isolated Git integration checks PASS.
+- [x] Four path tests PASS; F24 explicit/environment/sibling overrides checked.
+  Real preview stops for missing F24 .git before pruning; no actual Git init,
+  stage/commit/push or release cleanup. Actual delivery files remain intact.
+- [x] Report operation explains automatic HTML/JSON, Open Last Report,
+  current-session/history, CAN confirmation and separate Misc write/RUN.
+  Canonical MD, CAN/Misc completion links and ISP web mirror checked.
+- [x]43 focused tests, syntax/content/310refs/mirrors/24safe-clean PASS.
+  Five PDFs/84pages/36images rendered and visually inspected; glyph bounds
+  PASS. Web1366/390 includes report steps, links, images and15diagrams PASS.
+- [x] Tool EXE and F24 Boot/App/Transfer hashes unchanged; no product build,
+  COM/Flash or website publication. Normal/fault acceptance scopes unchanged.
+
+## F24 device normal update accepted (2026-10-19)
+
+- [x] User JSON/HTML and UART confirm App1.0.3/4224B/CRC,APP_READY/live INFO,
+  CAN_STOP and V1 counter0..26; same normal Tool workflow as F13 device.
+- [x] Two pixel-identical metadata-free public PNGs; originals privately
+  archived/hash verified/ignored. Three operation blocks/16assets sync PASS.
+- [x] All9PDF/current public MD reviewed; refreshed4PDFs/69pages visually
+  checked.38focused tests, glyph bounds,310refs/mirrors/content/24safe-clean PASS.
+- [x] Web1366/390, two new images/15diagrams/full-size link/anchors PASS.
+- [ ]250K/1M, extended IRQ/stress/cancel/disconnect/power acceptance separate.
+  No agent COM/flash/build, Git commit/push or website deployment.
+
+## Device App log / bitrate / interrupt guide (2026-10-19)
+
+- [x] F24 App-only clean0errors/5existing warnings;1.0.3/4224B/CRCCF1C72F8.
+  V1/V2 tag and decimal counter in main; timer ISR/Boot binary unchanged.
+- [x] Nine artifact/contract checks and production metadata/block/Tool models;
+  V1/V2 strictC90 formatter boundaries/canaries/wrap;34 focused tests PASS.
+- [x] Canonical250K/500K/1M driver+mask+Boot/App rebuild/install/Tool steps,
+  separate F13 headers, separate-link ISR names/AA55/no-vect and log editing.
+- [x] MD/web mirrors,304refs/anchors/public-content/24safe-clean PASS;
+  PDF24pages/6diagrams rendered/inspected, browser1366/390 checks PASS.
+- [x] User's App1.0.2 normal500K update/CRC/APP_READY evidence distinguished
+  from later CAN error events and the newly built App1.0.3.
+- [x] App1.0.3 normal update/UART counter confirmed by the later user report.
+- [ ] Precision timing,250K/1M and fault/power NOT RUN.
+  No COM/device writes, host firmware/Tool EXE rebuild, push or deployment.
+
+## F24 Custom Transfer gallery (2026-10-19)
+
+- [x] Four user-supplied Tool/MCU UART captures document normal discovery and
+  Transfer Test success; live targetF24B, cached F13 OFFLINE BIN and host/device
+  statistics are explicitly distinguished. No fault/Flash acceptance inferred.
+- [x] Four lossless public PNGs, exact pixels outside two approved path masks,
+  no EXIF; four original JPEGs retained in ignored private archive with same
+  SHA256, root raw capture ignore verified. No tracked original/index changes.
+- [x] Single canonical MD/gallery and four assets synced to ISP; CheckOnly,
+  drift/missing-marker/asset-hash failure tests preserve destination state.
+- [x]32 focused source/media/public/PDF tests,304refs/anchors/public-content/
+  24safe-clean checks PASS. MultiBus PDF15pages/8images rendered and inspected.
+- [x] Browser1366/390: four public captures,15diagrams, full-size click, no
+  broken/unlinked/overflow/duplicate anchors/missing fragments/page errors.
+- [ ] Analyzer waveforms, error injection/recovery and Boot/App Flash tests
+  not established by these captures. No agent COM/flash, rebuild or publication.
+
+## F24 device Transfer diagnostics (2026-10-19)
+
+- [x] Raw15-bit error capture/clear feeds existing counters/UART trace; actual
+  stage/result/controller/filter/STB startup log, same wire and target identity.
+- [x] Transfer clean0errors/2license warnings; Boot0/2 and App0/5 clean builds
+  preserve delivery SHA256, Boot spare514 and no diagnostic symbols in maps.
+- [x] Nine device PS checks, production C/Tool models and strict-C90 Transfer
+  trace1/0 models PASS;20 focused Tool source/sync/public/PDF tests PASS.
+- [x] Canonical MD/ISP sync/CheckOnly, missing-marker/read-only negative cases,
+  public content/292refs/anchors/24safe-clean checks PASS. MultiBus PDF10pages/
+  4diagrams rendered/visually checked. PC executable unchanged.
+- [ ] Browser and physical CAN/ACK/error injection/recovery NOT RUN. No device
+  Flash, host firmware change, commit/push or web publication performed.
+
 ## Delivery choices / operation captures / ENTER inactivity (2026-10-19)
 
 - [x] F24 host App flash MOT download and F13 Boot-only wording; combined F13

@@ -51,7 +51,7 @@ class DeviceWorkshop(unittest.TestCase):
         cls.irq_c = next(value for value in blocks if '#pragma interrupt app_aux_irq' in value)
 
     def test_scope_structure_source_links_and_examples(self):
-        self.assertEqual(self.text.count('```mermaid'),4)
+        self.assertEqual(self.text.count('```mermaid'),6)
         self.assertEqual(len(self.examples),8)
         self.assertGreaterEqual(len(re.findall(r'(?m)^\| --- \|',self.text)),7)
         self.assertEqual(self.text.count('```')%2,0)
@@ -232,8 +232,14 @@ class DeviceWorkshop(unittest.TestCase):
             command(['powershell.exe','-NoProfile','-File',str(boot/'generate_irq_contract.ps1'),
                      '-Mode','App','-AppProject',str(project)])
             build=project/'DefaultBuild'; build.mkdir()
+            # Release checkouts retain only the BIN. An explicit read-only
+            # linked-output directory can supply the matching HEX/map fixtures.
+            linked = Path(os.environ.get('FIRMWARE_F13_APP_LINKED_ARTIFACTS',
+                                         str(F13_APP/'DefaultBuild')))
             for name in ('flash2000_1FFFF.hex',F13_APP.name+'.map'):
-                shutil.copyfile(F13_APP/'DefaultBuild'/name,build/name)
+                self.assertTrue((linked/name).is_file(),
+                    'Build F13 App or set FIRMWARE_F13_APP_LINKED_ARTIFACTS to matching HEX/map outputs')
+                shutil.copyfile(linked/name,build/name)
             shutil.copyfile(F13_APP/'generate_update_image.ps1',project/'generate_update_image.ps1')
             result=subprocess.run(['powershell.exe','-NoProfile','-File',str(project/'generate_update_image.ps1')],
                                   capture_output=True,timeout=60)
@@ -298,7 +304,7 @@ class DeviceWorkshop(unittest.TestCase):
     def test_pdf_diagrams_text_and_page_bounds(self):
         path=DOC.with_suffix('.pdf')
         reader=PdfReader(path)
-        self.assertEqual(sum(len(page.images) for page in reader.pages),4)
+        self.assertEqual(sum(len(page.images) for page in reader.pages),6)
         text='\n'.join(page.extract_text() for page in reader.pages)
         for phrase in ('app_aux_irq','0x2014','ftable.inc','app_image_config.h','CheckOnly','not raw','0xF24B'):
             if phrase == 'not raw': self.assertIn('raw',text)

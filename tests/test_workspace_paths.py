@@ -56,6 +56,30 @@ class WorkspacePathsTests(unittest.TestCase):
                      ROOT / 'scripts/workspace_paths.ps1', ROOT / 'scripts/verify_f13_artifacts.ps1']:
             self.assertNotRegex(path.read_text(encoding='utf-8-sig'), r'_Avery|[A-Z]:\\SourceCode|\.\./\.\./\.\./_')
 
+    def test_f24_publication_paths_default_environment_and_explicit(self):
+        variants = (
+            ('F24Transfer', 'FIRMWARE_F24_DEVICE_TRANSFER_PROJECT', 'RL78_F24_CAN_Transfer'),
+            ('F24Boot', 'FIRMWARE_F24_DEVICE_BOOT_PROJECT', 'RL78_F24_Boot_loader_CAN'),
+            ('F24App', 'FIRMWARE_F24_DEVICE_APP_PROJECT', 'RL78_F24_Boot_loader_CAN_app'),
+        )
+        with tempfile.TemporaryDirectory(prefix='device_publish_layout_') as folder:
+            parent = Path(folder)
+            helper = str(ROOT / 'scripts/workspace_paths.ps1').replace("'", "''")
+            tool = str(parent / 'tool').replace("'", "''")
+            for kind, variable, name in variants:
+                env = dict(os.environ, **{variable: ''})
+                code = ". '{}' ; Get-CompanionPath -Kind {} -ToolRoot '{}'".format(helper, kind, tool)
+                for override, explicit, expected in (
+                        ('', '', parent / name),
+                        (str(parent / 'environment path'), '', parent / 'environment path'),
+                        (str(parent / 'environment path'), str(parent / 'explicit path'), parent / 'explicit path')):
+                    env[variable] = override
+                    command = code + (" -ExplicitPath '{}'".format(explicit.replace("'", "''")) if explicit else '')
+                    result = subprocess.run(['powershell.exe', '-NoProfile', '-Command', command],
+                                            env=env, capture_output=True, timeout=30)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(Path(result.stdout.decode().strip()), expected)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

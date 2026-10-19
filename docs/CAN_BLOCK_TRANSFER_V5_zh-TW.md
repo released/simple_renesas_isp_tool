@@ -96,8 +96,9 @@ F13 block staging／CRC；涵蓋16種尾段長度、缺段、壞CRC、衝突重�
 錯ACK、Flash錯誤、斷線、取消、同區塊不重寫與模擬逐word斷電。HAL及Flash是模型，
 不是實際FSL／CAN bus／電源測量；既有metadata／IRQ／layout artifact guards保留。
 
-新版實板正常更新與END CRC已有上方單次log；bus-off、拔線、真實斷電、
-reset後新版App啟動與E2 Lite／IRQ runtime仍待驗證。
+正常 CAN App 更新與 END CRC、reset 後 APP_READY／live INFO 已由 F13／F24 device 的實板紀錄確認；
+F24 的報告與 UART counter 見 [更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+bus-off、拔線、真實斷電、E2 Lite 與其他 IRQ runtime 按各條件分項驗證。
 同一v5 BIN、CAN500K，先Host115200／相同trace，再trace-off與460800／921600各至少3次。
 保存summary bytes／blocks／ms／B/s、CRC、UART overflow、CAN lost/error與reset後App log。
 CAN 傳送結果以 wire trace 及 device 回覆核對；PC TX log 記錄的是傳送要求。

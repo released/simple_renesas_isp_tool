@@ -320,6 +320,19 @@ CAN 更新、Misc 更新及 Misc RUN 結束時，Tool 在 EXE 旁的 `reports/` 
 成功、失敗與取消都有紀錄；檔案以時間與唯一尾碼區分，不覆寫既有報告。
 目錄或寫檔失敗會顯示在 shared log，並保留手動 Export Summary。
 
+#### 更新完成後開啟 Firmware update report
+
+1. 更新成功後，確認完成對話框與 `[COMPLETE]` 提示。報告會自動儲存，不需先按 Export Summary。
+2. 在右下 `MESSAGE LOG` 群組按 `Open Last Report`，以預設瀏覽器開啟 **Firmware update report**；Tool 不會自行開啟瀏覽器。
+3. 先核對 `operation`、`result` 與 `message`，再查看目的地、載入映像、CRC、App 確認及階段時間。
+   CAN 更新包含 App 啟動確認；Misc 寫入完成仍需明確 RUN，RUN 的確認另存一份報告。各結果見[完成提示與下一步](#update-completion)。
+4. 需要保存或分享紀錄時，可從 EXE 旁的 `reports/` 取得同名 `update_*.html` 與 `update_*.json`。
+   HTML 可直接離線閱讀；對外分享前可先核對其中的 COM、檔案路徑及裝置資訊。
+
+`Open Last Report` 開啟本次 Tool 執行期間最後成功儲存的 HTML；尚未產生時按鈕不啟用。
+重新開啟 Tool 後，可直接從 `reports/` 開啟歷史報告。
+實際畫面見 [MCU CAN device 更新報告範例](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+
 | 產物 | 閱讀與使用方式 |
 | --- | --- |
 | HTML 更新報告 | 瀏覽器離線開啟；顯示結果、Host／Device、BIN CRC／身分、階段時間、counter 範圍與檢查建議 |
@@ -327,8 +340,7 @@ CAN 更新、Misc 更新及 Misc RUN 結束時，Tool 在 EXE 旁的 `reports/` 
 | App 編譯報告 | 記錄建置產生的 BIN、Metadata 與向量表；見 [編譯報告](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build-report) |
 
 更新報告對應實際 Tool 作業；編譯報告對應建置產物，兩者用途分開。
-`Open Last Report` 開啟本次 Tool 執行期間最後成功儲存的 HTML；尚未產生時按鈕不啟用。
-也可直接從 `reports/` 開啟歷史檔案。報告不自動開啟瀏覽器，無外部腳本或資源需求。
+HTML 報告無外部腳本或資源需求。
 
 產生、編碼與寫檔由 worker 執行。
 檔案先寫入暫存檔並完成 flush，再以不覆寫既有檔案的方式發布。
@@ -336,7 +348,7 @@ CAN 更新、Misc 更新及 Misc RUN 結束時，Tool 在 EXE 旁的 `reports/` 
 
 | 報告欄位 | 內容／範圍 |
 | --- | --- |
-| operation／result／message | 更新目的地、PASS／FAIL／CANCELED、失敗原因 |
+| operation／result／message | 更新目的地、PASS／FAIL／CANCELED、完成範圍或失敗原因 |
 | recorded_at_utc | 報告建立時間，UTC ISO 8601 |
 | failure_guidance | 保留原始錯誤、作業／COM／Host Baud／階段及對應檢查建議；成功時為空 |
 | host／port／host_baud／can | 本次選定的 Host 身分、COM 與速度、CAN 設定 |
@@ -463,11 +475,14 @@ A／B 使用不同 IRQ mapping 與 ISR 名稱，各自執行 CS+ clean compile�
 
 ### 實板驗證紀錄
 
-以下項目需要實際板子、可擦寫的測試映像、Tool log 與 CAN analyzer trace。
-未取得板上證據前，狀態維持 NOT RUN；離線模型不替代電氣、Flash 或斷電驗證。
+F13 與 F24 device 的正常 CAN App 更新已完成實板驗證。
+F24 的更新報告、reset 後 App 確認與 UART counter 集中於 [F24 device 更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+各測試保留自己的證據範圍；尚無對應紀錄的壓力與故障項目維持 NOT RUN。
+CAN 波形、電氣特性與斷電復原仍需對應量測或故障測試，不由正常更新報告推定。
 
 | 項目 | 測試方式 | 驗收證據 | 狀態 |
 | --- | --- | --- | --- |
+| 正常 CAN device App 更新 | Host Link 115200／Classical CAN 500K；配對 Boot／App | F13／F24：寫入、END CRC、reset 後 APP_READY／live INFO；F24 UART counter 遞增 | PASS |
 | Host Link 三種速度 | 115200／460800／921600 各連續更新 50 次；CAN 速度依 device BIN | 每次 END／APP_READY／live identity、報告；overflow／lost／bus-off 無增加 | NOT RUN |
 | Misc 速度邊界 | 高速 Host App → ENTER → Boot 115200 → 更新 → 明確 RUN → 自動確認 | 同 COM／board、metadata 一致，確認 App 啟動 | NOT RUN |
 | 獨立取消 | Metadata、Transfer、END／確認等階段取消 | ABORT／cleanup 記錄，COM 不由 UI 直接關閉，可重新操作 | NOT RUN |

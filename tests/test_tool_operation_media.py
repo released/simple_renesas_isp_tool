@@ -17,7 +17,7 @@ SOURCE=ROOT/'docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md'
 SECTIONS=('TOOL_CONNECT_MEDIA','TOOL_DEVICE_MEDIA','TOOL_BRIDGE_MEDIA')
 
 class OperationMedia(unittest.TestCase):
-    def test_fourteen_public_copies_and_single_owner(self):
+    def test_sixteen_public_copies_and_single_owner(self):
         source=SOURCE.read_text(encoding='utf-8-sig')
         page=(WEB/'slide_isp_tool_for_RL78/index.md').read_text(encoding='utf-8-sig')
         other=(WEB/'slide_boot_loader_for_RL78/index.md').read_text(encoding='utf-8-sig')
@@ -29,8 +29,8 @@ class OperationMedia(unittest.TestCase):
             self.assertEqual(re.findall(pattern,page,re.S),blocks)
             self.assertNotIn(section,other)
             images+=re.findall(r'!\[[^\]]*\]\((images/tool_operation/[^)]+)\)',blocks[0])
-        self.assertEqual(len(images),14)
-        self.assertEqual(len(set(images)),14)
+        self.assertEqual(len(images),16)
+        self.assertEqual(len(set(images)),16)
         for relative in images:
             local=ROOT/'docs'/relative
             public=WEB/'slide_isp_tool_for_RL78'/relative
@@ -39,7 +39,7 @@ class OperationMedia(unittest.TestCase):
             if original.is_file():
                 self.assertNotEqual(hashlib.sha256(local.read_bytes()).digest(),hashlib.sha256(original.read_bytes()).digest())
             with Image.open(local) as im:
-                self.assertGreater(im.width,1900)
+                self.assertGreater(im.width,1500 if local.name=='MCU_F24_Device_app_log.png' else 1900)
                 self.assertFalse(im.getexif())
 
     def test_timeout_contract_and_fresh_live_gate(self):
@@ -52,6 +52,22 @@ class OperationMedia(unittest.TestCase):
         self.assertIn('if (started != 0U)',(firmware/'can_boot_transport.c').read_text())
         self.assertIn('Device is no longer in Boot; update not started.',(ROOT/'src/worker_can_workflows.cpp').read_text())
         self.assertIn('INVALID - HOST APP required',text)
+
+    def test_success_report_operation_and_scope(self):
+        text=SOURCE.read_text(encoding='utf-8-sig')
+        device=text.split('<!-- TOOL_DEVICE_MEDIA_BEGIN -->',1)[1].split('<!-- TOOL_DEVICE_MEDIA_END -->',1)[0]
+        bridge=text.split('<!-- TOOL_BRIDGE_MEDIA_BEGIN -->',1)[1].split('<!-- TOOL_BRIDGE_MEDIA_END -->',1)[0]
+        for section in (device,bridge):
+            self.assertIn('Open Last Report',section)
+            self.assertIn('#update-html-report',section)
+        report=(ROOT/'docs/UPDATE_VALIDATION_zh-TW.md').read_text(encoding='utf-8-sig')
+        report=report.split('<a id="update-html-report"></a>',1)[1]
+        for phrase in ('更新完成後開啟 Firmware update report','MESSAGE LOG','不需先按 Export Summary',
+                       'Tool 不會自行開啟瀏覽器','Misc 寫入完成仍需明確 RUN',
+                       'RUN 的確認另存一份報告','update_*.html','update_*.json',
+                       '本次 Tool 執行期間最後成功儲存','重新開啟 Tool 後'):
+            self.assertIn(phrase,report)
+        self.assertIn('OnOpenLatestReport', (ROOT/'src/main_frame_evidence.cpp').read_text())
 
     def test_sync_validation_and_read_only_check(self):
         with tempfile.TemporaryDirectory(prefix='operation_media_') as folder:

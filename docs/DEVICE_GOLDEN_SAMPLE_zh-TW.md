@@ -4,7 +4,9 @@
 
 F13 與 F24 CAN device 的獨立 Boot／App 工程共同作為 metadata、向量表與建置流程的參考基準。
 新增 MCU 或修改共通功能時，先對照這兩份工程，再列出新工程的硬體與分區差異。
-基準涵蓋來源、建置與離線驗證；各 MCU 的實板驗證狀態分別記錄。
+基準涵蓋來源、建置、離線驗證及已完成的正常 CAN App 更新／啟動實板驗證。
+兩個 device 沿用相同 Tool 操作順序；F24 的完成報告與 UART counter 見 [更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+其他速率、周邊 IRQ、壓力與故障驗證按各 MCU／測試條件分別記錄。
 
 | 項目 | 共通基準 | MCU 專屬設定 |
 | --- | --- | --- |

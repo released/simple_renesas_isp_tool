@@ -1,11 +1,10 @@
-# Custom CAN Transfer Test Protocol (RL78/F13 reference)
-
-Status: implementation baseline
+# Custom CAN Transfer Test Protocol
 
 This non-destructive protocol verifies the complete PC-to-MCU-host-to-target
 CAN path before firmware-update work is attempted. It never erases or writes
-flash. `RL78_F13_CAN_Transfer` is the first reference target; the PC workflow
-is named `Custom Transfer` because any MCU may implement this same contract.
+flash. `RL78_F13_CAN_Transfer` and `RL78_F24_CAN_Transfer` are independent
+device projects implementing this contract. The PC workflow is named
+`Custom Transfer` and accepts matching implementations on other MCUs.
 
 Custom Transfer does not load or parse a target firmware BIN. Program the
 diagnostic target with its normal debugger/programmer, then use the tool to
@@ -102,6 +101,8 @@ The workflow is not restricted to one MCU target ID or part number.
 
 The label is one through eight printable ASCII characters with zero padding.
 The F13 reference reports target `0xF13B` and label `R5F10BMG`.
+The F24 device reports target `0xF24B` and label prefix `R7F124FP`;
+the eight-character label is the protocol limit, not a complete part number.
 Capability bits 0 through 5 respectively advertise `DEVICE_INFO`, `PING`,
 `ECHO`, `PATTERN_TEST`, `GET_STATS`, and `CLEAR_STATS`. The PC workflow requires
 all six bits and rejects an incompatible version, reserved target ID, malformed
@@ -124,11 +125,18 @@ All counters saturate at `0xFFFF`.
 | 8 | CAN error-passive entries |
 | 9 | CAN bus-off entries |
 | 10 | Last raw CAN driver result |
-| 11 | Last raw channel-error flags |
+| 11 | Last captured Classical channel-error flags (C0ERFL bits0..14) |
 
 `CLEAR_STATS` clears the counters before its response is queued. Consequently,
 the clear response itself makes TX count equal to one if it is accepted by the
 controller.
+
+Warning/passive/bus-off counters count captured hardware indications. Latched
+flags can coalesce repeated events; these are not exact physical error totals.
+F13 captures flags in its error ISR; F24 polls/clears the same Classical flag
+positions from the main loop. The F24 driver callback's TDCV source mask is
+not a raw C0ERFL value and is not passed to this decoder. Raw driver-result
+numbers (index10) remain platform-specific.
 
 ## 5. Sequence, duplicate, and timeout behavior
 
@@ -150,7 +158,7 @@ controller.
 
 ### 6.1 PC/target text-log comparison
 
-The F13 reference target has a default-on
+Both device targets have a default-on
 `CAN_TRANSFER_UART_TRACE_ENABLE` diagnostic. Main-loop protocol processing,
 never an ISR, prints one `TRACE CT RX` line for the received request and one
 `TRACE CT TX` line after the response is accepted by the CAN TX driver. Each
@@ -161,8 +169,8 @@ For a short integrity capture, enable `Detailed trace (slower)` and `Start Log`
 in FirmwareUpgradeTool while separately saving the target UART0 terminal output.
 Compare:
 
-- PC `TRACE CAN TX id=0x710` to F13 `TRACE CT RX id=0x710`.
-- F13 `TRACE CT TX id=0x711` to PC `TRACE CAN RX id=0x711`.
+- PC `TRACE CAN TX id=0x710` to device `TRACE CT RX id=0x710`.
+- Device `TRACE CT TX id=0x711` to PC `TRACE CAN RX id=0x711`.
 
 ID, DLC, all eight data bytes, decoded sequence/command, and `crc=OK` must agree.
 PC/target timestamps are independent and must not be compared. The target
@@ -170,25 +178,34 @@ trace uses blocking UART0 output at 115200 baud, so set
 `CAN_TRANSFER_UART_TRACE_ENABLE` to `0` and rebuild before throughput,
 queue-stress, or timing measurements.
 
-At startup the same target reports `CAN init: OK/FAIL`, the driver result,
+At startup both targets report `CAN init: OK/FAIL`, the driver result,
 channel status, the compiled Classical 500K setting, request/response IDs,
-exact request filter, and P12 transceiver-standby state. The channel-error ISR
-only captures flags; `CAN_TransferProtocol_Process()` later prints one
+exact request filter, and P12 transceiver-standby output. F24 additionally
+reports initialization stage and global/channel status. Only a successful
+clock check enables its diagnostic UART; an absent startup log can therefore
+require checking the clock before CAN. F13's channel-error ISR and F24's
+main-loop polling capture flags; `CAN_TransferProtocol_Process()` prints one
 coalesced `TRACE CT CAN_ERROR` line with raw flags and decoded controller error
 names, limited to one line per 250 ms during repeated faults. This allows a
 timeout with no `TRACE CT RX` to be separated into CAN
 initialization, physical/bit-timing, and protocol stages without formatting
 text inside an ISR.
 
-### 6.2 Current automated/build status
+Field/stage interpretation is maintained in the
+[Custom Transfer diagnostic guide](https://released.github.io/slide_isp_tool_for_RL78/#transfer-diagnostics).
 
-The F13 reference target and PC workflow clean-build. The PC target client drives all commands
+### 6.2 Verification references
+
+Both device projects and the PC workflow clean-build. The PC target client drives all commands
 through generic `CAN_TX_WAIT_RX` with response ID `0x711`, mask `0x7FF`, DLC 8,
 and standard Classical data-frame matching. Unit tests cover CRC, request
 encoding, response identity/ID/sequence/CRC checks, error decoding, complete
 multi-page discovery including a non-F13 identity, every command workflow,
-exact match construction, and advancing non-zero sequences. Physical
-PC-to-F24-to-target CAN traces, hardware
-filter rejection, bus error injection, FIFO overflow, duplicate replay, and TX
-timeout recovery remain required before release. Source/build verification of
-the new diagnostic output does not prove the physical bus condition.
+exact match construction, and advancing non-zero sequences.
+
+F24 device discovery and a successful normal transfer test are illustrated by
+paired Tool/MCU UART captures in the
+[Custom Transfer operation example](https://released.github.io/slide_isp_tool_for_RL78/#f24-custom-transfer-example).
+Hardware filter rejection, bus error injection, FIFO overflow, duplicate replay,
+TX timeout recovery and analyzer waveforms need their own records; the normal
+operation captures and software models do not establish those conditions.

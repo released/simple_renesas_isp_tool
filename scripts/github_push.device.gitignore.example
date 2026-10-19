@@ -1,0 +1,14 @@
+# Copy to .gitignore in each standalone F24 CAN device checkout before its
+# first commit. Only the exact delivery for that project will exist.
+tmp/
+DefaultBuild/*
+!DefaultBuild/RL78_F24_CAN_Transfer.hex
+!DefaultBuild/boot0000_1FFF.hex
+!DefaultBuild/RL78_F24_Boot_loader_CAN_app_update.bin
+*.mtud
+QualityReport*.txt
+*.obj
+*.pdb
+*.ilk
+*.pyc
+__pycache__/

@@ -1,6 +1,8 @@
 # Multi-bus bridge implementation plan
 
-Status: implementation in progress; hardware upgrade validation pending.
+Status: normal CAN device App updates and post-reset confirmation verified on
+F13/F24 devices. Other bus-specific and physical fault/recovery acceptance is
+tracked separately in UPDATE_VALIDATION_zh-TW.md.
 
 Shared-console follow-up: CAN/I2C (future UART device) retain one BIN/metadata/
 log/progress pool; tabs expose only bus settings/actions. Misc is last, with

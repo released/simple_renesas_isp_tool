@@ -3,6 +3,7 @@ param()
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'github_publish_git.ps1')
 . (Join-Path $PSScriptRoot 'github_publish_reset.ps1')
+. (Join-Path $PSScriptRoot 'github_publish_catalog.ps1')
 $testRoot=Join-Path (Split-Path -Parent $PSScriptRoot) ('tmp\internal\github_publish_tests\'+[guid]::NewGuid().ToString('N').Substring(0,8))
 [void](New-Item -ItemType Directory -Path $testRoot -Force)
 $passed=0
@@ -21,12 +22,12 @@ function Expect-Stop([scriptblock]$Action,[string]$Pattern) {
 function New-TestCase([string]$Name) {
     $case=Join-Path $testRoot ($Name+' with spaces')
     [void](New-Item -ItemType Directory -Path $case -Force)
-    $targets=@(
-        @{Name='RL78_F13_Boot_loader_CAN';Groups=@(@{Relative='DefaultBuild';Archive='f13_boot';Keep=@('boot0000_1FFF.hex')})},
-        @{Name='RL78_F13_Boot_loader_CAN_app';Groups=@(@{Relative='DefaultBuild';Archive='f13_app';Keep=@('RL78_F13_Boot_loader_CAN_app_update.bin')})},
-        @{Name='simple_renesas_isp_tool';Groups=@(
-            @{Relative='firmware\RL78_F24_Bridge_boot\DefaultBuild';Archive='bridge_boot';Keep=@('RL78_F24_Bridge_boot.mot')},
-            @{Relative='firmware\RL78_F24_Bridge_app\DefaultBuild';Archive='bridge_app';Keep=@('RL78_F24_Bridge_app_bridge_update.bin','RL78_F24_Bridge_app_flash.mot')})})
+    $targets=@(Get-GithubPublishTargets (Join-Path $case 'simple_renesas_isp_tool') `
+        (Join-Path $case 'RL78_F13_Boot_loader_CAN') (Join-Path $case 'RL78_F13_Boot_loader_CAN_app') `
+        (Join-Path $case 'RL78_F24_CAN_Transfer') (Join-Path $case 'RL78_F24_Boot_loader_CAN') `
+        (Join-Path $case 'RL78_F24_Boot_loader_CAN_app'))
+    Assert-Test ($targets.Count -eq 6) 'production catalog must contain six repositories'
+    Assert-Test (@($targets | ForEach-Object {$_.Groups | ForEach-Object {$_.Keep}}).Count -eq 8) 'production catalog must retain eight deliveries'
     foreach($target in $targets) {
         $target.Root=Join-Path $case $target.Name
         $target.Remote=Join-Path $case ($target.Name+'.git')
@@ -50,7 +51,7 @@ function New-TestCase([string]$Name) {
         Write-Fixture (Join-Path $target.Root 'README.md') "updated 'quoted' message`n"
         Write-Fixture (Join-Path $target.Root 'tmp\local.log') 'never publish'
     }
-    @{Root=$case;Targets=$targets;Backup=(Join-Path $targets[2].Root 'tmp\internal\github_publish\test-archive')}
+    @{Root=$case;Targets=$targets;Backup=(Join-Path $targets[-1].Root 'tmp\internal\github_publish\test-archive')}
 }
 function Pass([string]$Name) { $script:passed++; Write-Host "PASS: $Name" }
 
@@ -69,10 +70,10 @@ foreach($target in $plan) {
     Assert-Test ((Invoke-PublishGit $target.Root @('ls-remote','origin','refs/heads/main')).Text.Split("`t")[0] -ceq $target.Head) 'wrong remote head'
     Assert-Test (!(Invoke-PublishGit $target.Root @('ls-remote','origin','refs/tags/*')).Text) 'unrequested tag published'
 }
-Pass 'five delivery files, tracked output removal, tmp exclusion, backup, quoted arguments and verified three-repo push'
+Pass 'eight delivery files, tracked output removal, tmp exclusion, backup, quoted arguments and verified six-repo push'
 $heads=@($plan | ForEach-Object {$_.Head})
 $plan=New-PublishPlan $case.Targets
-Invoke-GithubPublication $plan (Join-Path $case.Targets[2].Root 'tmp\internal\github_publish\second-archive') 'no-op'
+Invoke-GithubPublication $plan (Join-Path $case.Targets[-1].Root 'tmp\internal\github_publish\second-archive') 'no-op'
 Assert-Test ((@($plan | ForEach-Object {$_.Head}) -join ',') -ceq ($heads -join ',')) 'no-op created commits'
 Pass 'idempotent rerun'
 
@@ -88,6 +89,37 @@ $case=New-TestCase 'staged'
 [void](Invoke-PublishGit $case.Targets[0].Root @('add','README.md'))
 Expect-Stop { New-PublishPlan $case.Targets } 'Existing staged'
 Pass 'pre-existing index preserved'
+
+$case=New-TestCase 'tracked-local-data'
+$localFile=Join-Path $case.Targets[3].Root 'tmp\build\app_rebuild.log'
+Write-Fixture $localFile 'retain this local log'
+[void](Invoke-PublishGit $case.Targets[3].Root @('add','-f','--','tmp/build/app_rebuild.log'))
+[void](Invoke-PublishGit $case.Targets[3].Root @('commit','-m','seed tracked local data'))
+$heads=@($case.Targets | ForEach-Object {(Invoke-PublishGit $_.Root @('rev-parse','HEAD')).Text})
+Expect-Stop { New-PublishPlan $case.Targets } 'Local-only data is tracked.*RL78_F24_Boot_loader_CAN.*app_rebuild'
+foreach($target in $case.Targets) {
+    Assert-Test (!(Invoke-PublishGit $target.Root @('diff','--cached','--name-only')).Text) 'index changed before local-only refusal'
+    foreach($group in $target.Groups) {
+        Assert-Test (Test-Path -LiteralPath (Join-Path $target.Root ($group.Relative+'\diagnostic.map'))) 'archived before local-only refusal'
+    }
+}
+Assert-Test ((@($case.Targets | ForEach-Object {(Invoke-PublishGit $_.Root @('rev-parse','HEAD')).Text}) -join ',') -ceq ($heads -join ',')) 'commit before local-only refusal'
+Pass 'tracked local-only data refuses before any archive, stage or commit'
+
+$localHash=(Get-FileHash -LiteralPath $localFile).Hash
+[void](Invoke-PublishGit $case.Targets[3].Root @('rm','--cached','--','tmp/build/app_rebuild.log'))
+$plan=New-PublishPlan $case.Targets
+Invoke-GithubPublication $plan $case.Backup 'remove local-data tracking'
+Assert-Test ((Get-FileHash -LiteralPath $localFile).Hash -ceq $localHash) 'local file changed during tracking removal'
+Assert-Test (!(Invoke-PublishGit $case.Targets[3].Root @('ls-tree','-r','--name-only','HEAD','--','tmp/')).Text) 'local data still committed'
+Pass 'explicit staged local-only deletion can publish without deleting the local file'
+
+$case=New-TestCase 'unignored-local-data'
+Write-Fixture (Join-Path $case.Targets[3].Root '.gitignore') "github_push.local.psd1`n"
+Expect-Stop { New-PublishPlan $case.Targets } 'Local-only data is not ignored'
+Assert-Test (Test-Path -LiteralPath (Join-Path $case.Targets[3].Root 'DefaultBuild\diagnostic.map')) 'archived before ignore refusal'
+Assert-Test (!(Invoke-PublishGit $case.Targets[3].Root @('diff','--cached','--name-only')).Text) 'index changed on ignore refusal'
+Pass 'unignored local-only file refuses before cleanup or staging'
 
 $case=New-TestCase 'wrong-remote'
 $case.Targets[0].Remote='released/RL78_F13_Boot_loader_CAN'
@@ -141,7 +173,47 @@ Write-Fixture (Join-Path $case.Targets[1].Remote 'hooks\pre-receive') "#!/bin/sh
 Expect-Stop { Invoke-GithubPublication $plan $case.Backup 'partial push test' } 'failed'
 $actual=@($plan | ForEach-Object {(Invoke-PublishGit $_.Root @('ls-remote','origin','refs/heads/main')).Text.Split("`t")[0]})
 Assert-Test ($actual[0] -ceq $plan[0].Head -and $actual[0] -cne $old[0]) 'first successful push lost'
-Assert-Test ($actual[1] -ceq $old[1] -and $actual[2] -ceq $old[2]) 'continued after rejection'
+foreach($index in 1..5) { Assert-Test ($actual[$index] -ceq $old[$index]) 'continued after rejection' }
 Assert-Test (Test-Path -LiteralPath (Join-Path $case.Backup 'f13_boot\diagnostic.map')) 'backup lost on push failure'
 Pass 'partial push stops, retains local commits/backup, never force-pushes remaining repos'
+
+$case=New-TestCase 'uninitialized-device'
+$gitDirectory=Join-Path $case.Targets[2].Root '.git'
+Assert-PublishTree $case.Root $gitDirectory -Recursive
+Move-Item -LiteralPath $gitDirectory -Destination (Join-Path $case.Root 'saved-device-git')
+Expect-Stop { New-PublishPlan $case.Targets } 'not initialized'
+foreach($target in $case.Targets) {
+    foreach($group in $target.Groups) {
+        Assert-Test (Test-Path -LiteralPath (Join-Path $target.Root ($group.Relative+'\diagnostic.map'))) 'pruning occurred on uninitialized repo'
+    }
+}
+Pass 'uninitialized F24 device stops all six before pruning or staging'
+
+foreach($index in 2..4) {
+    $case=New-TestCase ('missing-device-'+$index)
+    $path=Join-Path $case.Targets[$index].Root ('DefaultBuild\'+$case.Targets[$index].Groups[0].Keep[0])
+    Assert-PublishTree $case.Root $path
+    Move-Item -LiteralPath $path -Destination (Join-Path $case.Root 'saved-delivery')
+    Expect-Stop { New-PublishPlan $case.Targets } 'Cannot find|does not exist|Missing'
+    Assert-Test (Test-Path -LiteralPath (Join-Path $case.Targets[$index].Root 'DefaultBuild\diagnostic.map')) 'pruned on missing F24 delivery'
+}
+Pass 'each F24 device delivery is mandatory before any cleanup'
+
+$case=New-TestCase 'empty-device-origin'
+$empty=Join-Path $case.Root 'initial-device.git'
+[void](Invoke-PublishGit $case.Root @('init','--bare',$empty))
+[void](Invoke-PublishGit $case.Targets[2].Root @('remote','set-url','origin',$empty))
+$case.Targets[2].Remote=$empty
+$plan=New-PublishPlan $case.Targets
+Invoke-GithubPublication $plan $case.Backup 'first main publication'
+Assert-Test ((Invoke-PublishGit $case.Targets[2].Root @('ls-remote','origin','refs/heads/main')).Text.Split("`t")[0] -ceq $plan[2].Head) 'initial main was not verified'
+Pass 'verified empty origin accepts initial main without force push or repo creation'
+
+$case=New-TestCase 'nonempty-without-main'
+[void](Invoke-PublishGit $case.Targets[2].Root @('push','origin','HEAD:refs/heads/other'))
+[void](Invoke-PublishGit $case.Root @('--git-dir',$case.Targets[2].Remote,'update-ref','-d','refs/heads/main'))
+$plan=New-PublishPlan $case.Targets
+Expect-Stop { Invoke-GithubPublication $plan $case.Backup 'must not publish' } 'not empty and has no main'
+Assert-Test (Test-Path -LiteralPath (Join-Path $case.Targets[2].Root 'DefaultBuild\diagnostic.map')) 'pruned on ambiguous remote branch'
+Pass 'nonempty origin lacking main refuses before cleanup'
 Write-Host "$passed integration checks PASS. Evidence retained: $testRoot"

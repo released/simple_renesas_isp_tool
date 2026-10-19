@@ -1,10 +1,11 @@
-# FirmwareUpgradeTool 主機、裝置與映像資訊卡
+# FirmwareUpgradeTool 主機、裝置與映像資訊
 
-2026-10-15 | 0.1.0.0070 | UI source / mock tests；實際桌面截圖與DPI待驗證
+本文件整理連線裝置與載入映像的資料來源。
+各欄位、狀態及錯誤訊息的完整對照見 [Tool 欄位說明](https://released.github.io/slide_isp_tool_for_RL78/#tool-ui-fields)。
 
-## 1. 先分清五種資訊
+## 1. 五種資訊來源
 
-| 卡片 | 資料來源 | 確認重點 |
+| 資訊區 | 資料來源 | 確認重點 |
 | --- | --- | --- |
 | HOST BRIDGE | binary UART GET_HOST_INFO | host family、COM、board ID、FW version/build、Host Link v2 |
 | DEVICE TARGET | CAN INFO / Transfer DEVICE_INFO，或G16 reference signature | device MCU/target、目前Application / Bootloader / Transfer mode |
@@ -12,29 +13,32 @@
 | INSTALLED APP | 當前device INFO | 板上app version/build、installed size、capacity；不是read-back CRC |
 | LOADED APP BIN | 本機image inspection | app version/build、MCU/start、實際size；不會填入live資訊 |
 
-Host目前回報的是board family/ID，不含精確silicon part number。
+Host 的 board family／ID、MCU 與 firmware 資訊來自實際 Probe 回覆。
 COM friendly name只幫助選adapter，不證明MCU identity；必須Open + Probe Host。
-Device MCU family/part來自CAN metadata，而非COM或BIN推論。
+Live device MCU family／part 來自 device 的 CAN 回覆，而非 COM 或載入 BIN 推論。
 
-## 2. 顏色與文字都要看
+## 2. 分組、狀態顏色與文字
+
+畫面採系統灰／白與群組邊框；連線、映像資訊、周邊設定、更新操作及 Log 分區呈現。
+狀態顏色用於結果與必要條件，不以整片底色代替 host、device 或 offline 身分文字。
 
 | 顏色 | 文字意義 | 限制 |
 | --- | --- | --- |
-| 綠色 | VERIFIED LINK / LIVE INFO，protocol資料已探索 | 不等於身份認證、firmware簽章或flash read-back |
-| 藍色 | LOADED APP BIN / OFFLINE | 僅本機檔案，不能证明板上版本 |
+| 綠色 | OK／VALID／MATCH／READY 等條件成立 | 不等於身份認證、firmware簽章或flash read-back |
+| 藍色 | WORKING／資訊性提示 | 身分仍依 LIVE／OFFLINE 及資料來源文字判讀 |
 | 琥珀色 | REPORTED CONSTANT / 等待必要條件 | G16範例常數不是實際installed image驗證 |
 | 紅色 | INVALID / ERROR / BLOCKED | 檢查log、CRC/metadata欄位與prerequisite；不可跳過 |
 | 灰色 | N/A / unavailable | 尚未探索、未載BIN或此protocol不提供 |
 
-卡片主值加粗、字型量測後換行與增高；hover可讀完整內容。
-小高度視窗用右側捲軸查看log。未知資料保留N/A，不填猜測的0或固定F13/F24值。
+資訊主值加粗，BIN metadata 依欄位用途分組。
+Log 歷史可捲動，主視窗不以整頁捲軸切換資訊；未知資料保留 N/A，不填猜測值。
 
 ## 3. Offline 與 live 的資料流
 
 ```mermaid
 flowchart TD
     BIN["Load app BIN"] --> CHECK["Cache manifest / size / calculated与stored CRC"]
-    CHECK --> FILE["LOADED APP BIN：OFFLINE，藍色或紅色INVALID"]
+    CHECK --> FILE["LOADED APP BIN：OFFLINE<br/>核對 VALID／INVALID"]
     UART["Open + Probe Host"] --> HOST["HOST BRIDGE：board / FW / COM"]
     HOST --> DISC["Discover選定device"]
     DISC --> TARGET["DEVICE TARGET：MCU / state / protocol"]
@@ -43,7 +47,7 @@ flowchart TD
     CLOSE["Close / reset / selection失效"] --> NA["隱藏舊live snapshot，回N/A；offline BIN保留"]
 ```
 
-Custom Transfer不包含boot/app資訊，因此兩張卡N/A，不把Transfer韌體當boot。
+Custom Transfer不包含boot/app資訊，因此兩個資訊區為N/A，不把Transfer韌體當boot。
 G16 signature的boot/app版本為reference回報常數，顯示琥珀色；Start Update保持BLOCKED。
 更換I2C port、speed或address後重新Probe；斷線時不能繼續把舊資料當current。
 
@@ -58,13 +62,11 @@ Boot/app/data區調整須在device linker與metadata同步定義，tool不猜保
 G16 raw BIN使用不同CRC16/XMODEM規則，沒有MCU/version/start manifest，不能套用CAN metadata。
 Bridge變速經UART SET_CAN_CONFIG（bus stopped），不會自動改device bitrate。
 
-## 5. 功能截圖與驗證狀態
+## 5. 操作圖與驗證範圍
 
-新版UI screenshot / Release與Debug startup / 100%與125% DPI：NOT RUN。
-Computer Use native pipe os error2，retry及session reset後仍不可用。
-Web browser surfaces也不存在，因此網頁外觀未宣稱PASS；HTTP、靜態連結與Mermaid另行檢查。
+COM 連線、Device App 更新與 Host App 更新的實際畫面集中於 [Tool 操作圖](https://released.github.io/slide_isp_tool_for_RL78/#device-update-example)。
+F13 與 F24 device 的正常 CAN App 更新、CRC 及重啟後 App 確認皆已完成實板驗證；
+F24 的報告與 UART counter 見 [更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
 
-既有使用者Transfer benchmark PCAN與MCU log只證明非破壞性傳輸；不是新版UI或Boot/App更新證據。
-Device firmware ready後補App INFO、Enter、Boot INFO、更新確認、progress、新版確認与故障復原。
-I2C須先修正slave READ/auth/boot CRC/recovery，不為截圖開放不安全擦寫。
-本輪不更改MCU firmware、不燒錄、不觸發bus traffic，不發布網站。
+畫面中的 PASS 描述該次操作，不涵蓋其他速率、所有 IRQ 或斷電復原。
+各項測試與證據範圍集中於 [更新驗證矩陣](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。

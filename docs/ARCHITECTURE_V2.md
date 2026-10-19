@@ -35,7 +35,11 @@ F24 MCU CAN device now has separate Transfer/Boot/App source/build/model
 projects. It is not the F24 host backend:4MHz X1,8KiB Boot/App2000,targetF24B,
 F2V1 IRQ ABI,RFD and protected final1KiB. It reuses CAN protocol5/image6 with
 dynamic identity/layout; host forwarding and PC runtime are unchanged.
-See F24_CAN_DEVICE_DESIGN_zh-TW.md. Actual F24 device hardware NOT RUN.
+See F24_CAN_DEVICE_DESIGN_zh-TW.md. Normal F24 device Transfer discovery/test
+captures are documented in MULTIBUS_TOOL_GUIDE_zh-TW.md; Boot/App Flash and
+post-reset App confirmation/UART counter are verified for normal115200/500K
+updates in SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md. Other rates and physical
+fault/recovery remain separate acceptance gates.
 
 0082 adds generic CAN_BURST_WAIT_RX22/feature bit12, compact standard Classical
 records and nonblocking F24 progression. F13 v5 owns64-byte indexed data blocks,

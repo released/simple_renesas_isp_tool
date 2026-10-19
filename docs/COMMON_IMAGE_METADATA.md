@@ -102,6 +102,9 @@ Metadata 位址與欄位格式見 [Device 映像對照](https://released.github.
 Host Link 換速完成後會重新確認 host 身分。
 尚未確認時，host 在2秒內回到115200；已確認後維持該次連線速度。
 
+Device 改為 250K／1M 時，依 [Device CAN 速率配置](https://released.github.io/slide_boot_loader_for_RL78/#device-can-bitrate)
+同步修改 driver timing、Boot／App 的速率契約並重建安裝；Tool 下拉選單只設定 host，不改變 device。
+
 ```mermaid
 sequenceDiagram
     participant P as PC Tool

@@ -190,8 +190,13 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 - F24 CAN device source/build/model baseline is documented in
   docs/F24_CAN_DEVICE_DESIGN_zh-TW.md. It is not the 20MHz F24 host.
   Keep device Boot8KiB/App2000,512-byte spare,F2V1,targetF24B,last1KiB protected,
-  complete App-local IRQ tables and RAM-only RFD. Hardware NOT RUN. Synchronize
+  complete App-local IRQ tables and RAM-only RFD. Normal115200/500K update,
+  CRC/App confirmation and UART counter are user-verified; high-rate/fault
+  acceptance stays separate. Synchronize
   its independent web block with scripts/sync_f24_device_design.ps1.
+  Device repository READMEs are English. Keep Transfer/Boot/App reader structure
+  parallel to the corresponding F13 READMEs, using actual F24 source facts and
+  existing web anchors; do not copy hardware values or diagnostic capabilities.
 
 - F13 image format6 uses a fixed complete normal-vector interface. Boot
   pre-build owns all04..7C stubs independently of app mappings; no competing
@@ -206,6 +211,11 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
   clock hook, deferred bounded waits, inherited PLL and CAN-reset handling.
   Do not transplant F24 clock or flash-library settings. EVB TJA1050T needs 5V.
 - F13 Transfer provides deterministic non-destructive transport tests.
+- F24 device Transfer uses main-loop raw C0ERFL capture (bits0..14), guarded
+  by F24_DEVICE_TRANSFER; diagnostics must not change Boot/App image bytes.
+  Preserve250ms UART trace throttle and optional trace-off counters. Canonical
+  reader content is MULTIBUS_TOOL_GUIDE TRANSFER_DIAGNOSTICS; synchronize ISP
+  with sync_transfer_diagnostics.ps1 and -CheckOnly, plus its MultiBus PDF.
 - F13 Boot/App provides the existing target boot protocol and image validation.
 - Target profiles in the PC tool encode and decode target-specific CAN frames.
 - F13 boot decision documentation is canonical in the marked section of
@@ -267,12 +277,18 @@ logic outside generated files except in preserved user-code sections.
 
 - github_push.bat / scripts/push_github.ps1 is the explicit maintainer publish
   entry. Plain invocation is read-only; -Execute requires PUSH or -Yes.
-  Catalog only F13 Boot, F13 App and Tool, including its F24 CAN host projects.
-  Do not add F24 CAN device repositories without explicit request.
+  Shared catalog github_publish_catalog.ps1 owns six repos: F13 Boot/App,
+  F24 CAN device Transfer/Boot/App and Tool including its F24 CAN host projects.
+  User requests scripts/checks only: do not initialize/create/commit/push actual
+  repositories without a separate request. Missing .git stops before pruning.
 - DefaultBuild release pruning is a recoverable move to ignored tmp/internal/
-  github_publish, never normal clean/build. Preserve the exact five delivery
+  github_publish, never normal clean/build. Preserve the exact eight delivery
   files in the catalog; validate bounds/reparse points, remote ancestry and
   index before commit/push. Never force push, auto-merge or publish web sites.
+  Reject tracked or unignored local-only data before archiving/staging. Permit
+  pre-existing staged deletions only for the shared local-only path allowlist;
+  source changes/deletions remain blocked. Never repair an actual index or
+  remove tracking without user approval; preserve local files and index backups.
   Read docs/GITHUB_PUBLISH_zh-TW.md and run verify_github_publish.ps1 plus the
   workspace safe-clean audit after changing this workflow. No product rebuild
   or version bump for publication-script-only changes.
@@ -311,6 +327,10 @@ docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md (DEVICE_WORKSHOP block).
 sync_device_workshop.ps1 projects the full workshop only to the Bootloader page and a link on ISP; keep source C headers,
 generated outputs, App-only commands and verification boundaries distinct.
 Do not use host BUR1/Misc or host IRQ scripts for F24 CAN device examples.
+The workshop owns device-can-bitrate, device-irq-ownership and App runtime-log
+sections. Preserve separate F13 Boot/App RSCANlite timing inputs versus F24's
+shared preinclude. Rate masks describe compiled timing, never dynamic rate
+discovery. Separate-link ISR names may match; physical vectors stay Boot-owned.
 F13/F24 device Boot/App are joint golden samples (docs/DEVICE_GOLDEN_SAMPLE_zh-TW.md).
 Future MCUs/common changes start from both samples. Both devices use the same
 six-field app_image_config.h plus app_irq_handlers.h X-macro; local identical
@@ -351,11 +371,19 @@ web guides. Keep actual source/download URLs and stable section anchors tested. 
 owns topic placement; non-owner pages contain short links, never full duplicates.
 COM/device/host operation screenshots and their three TOOL_*_MEDIA blocks are
 owned by SHARED_CONSOLE_BRIDGE_GUIDE. sync_tool_operation_media.ps1 copies only
-docs/images/tool_operation public assets and validates block/hash parity.
+docs/images/tool_operation public assets and validates block/hash parity for
+16captures, including the two F24 device update-result PNGs. Their normal
+Flash/App evidence is separate from Transfer-only and fault/power evidence.
 Keep local paths redacted, actual states unchanged, originals separate, and
 the ENTER inactivity/START boundary aligned with the actual device source.
 Raw tool operation captures belong under ignored tmp/private_screenshots;
 never substitute unredacted root captures for docs/images publication copies.
+Custom Transfer captures use the MULTIBUS_TOOL_GUIDE CUSTOM_TRANSFER_MEDIA block
+and docs/images/custom_transfer PNGs; sync_custom_transfer_media.ps1 validates
+all four public assets and hashes before projecting to the ISP owner page.
+Preserve screenshot states, distinguish cached OFFLINE BIN from live target,
+and separate host counters from device GET_STATS. Normal-operation captures
+do not establish physical fault/recovery or Boot/App Flash acceptance.
 Companion F13 checkouts default to siblings; workspace_paths helpers support
 explicit paths and machine-local environment overrides, never personal fallbacks.
 Normal solution builds exclude the explicit F13 integration-test project.

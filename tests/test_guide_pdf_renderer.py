@@ -59,11 +59,11 @@ class GuideMarkdownTests(unittest.TestCase):
 
     def test_final_guide_outputs(self):
         expected = {
-            "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": (18,['BUR1','f24_board','115200','App 工程','Device App 更新操作圖','Host App 更新操作圖']),
-            "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": (4,['下載與操作總覽','CRC16','100 kHz','128']),
+            "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": (20,['BUR1','f24_board','115200','App 工程','Device App 更新操作圖','Host App 更新操作圖','F24','log(timer)-V1']),
+            "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": (8,['下載與操作總覽','CRC16','100 kHz','128','Custom Transfer','0xF24B','OFFLINE']),
             "F13_CAN_Bootloader_Update_Guide_zh-TW.pdf": (10,['UPD1','0x2100','30','SEAL']),
         }
-        for name, (diagrams, phrases) in expected.items():
+        for name, (image_count, phrases) in expected.items():
             with self.subTest(guide=name):
                 reader = PdfReader(ROOT / "docs" / name)
                 self.assertGreater(len(reader.pages), 2)
@@ -77,7 +77,7 @@ class GuideMarkdownTests(unittest.TestCase):
                     self.assertIn(phrase,text)
                 self.assertNotIn("####", text)
                 self.assertNotRegex(text,r'本輪|native pipe|舊\s*format4|G16\s*新版')
-                self.assertEqual(sum(len(page.images) for page in reader.pages),diagrams)
+                self.assertEqual(sum(len(page.images) for page in reader.pages),image_count)
                 if name.startswith('FirmwareUpgradeTool_Shared'):
                     self.assertIn('f24_board', text)
                     self.assertNotIn('RL78_F24_CAN_host_upgrade', text)

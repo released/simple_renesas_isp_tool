@@ -94,12 +94,7 @@ function Assert-PublishIndex($Target) {
             throw "Index contains unexpected/missing DefaultBuild deliveries: $($Target.Name)/$relative"
         }
     }
-    $paths=(Invoke-PublishGit $Target.Root @('ls-files','-z')).Text.Split([char]0)
-    foreach($path in $paths) {
-        if($path -match '^(tmp/|github_push\.local\.psd1$|build/(?:reports/|logs/|.*\.(?:ini|log)$))') {
-            throw "Local-only data is tracked; review/remove it from Git before publishing: $path"
-        }
-    }
+    Assert-PublishLocalOnlyData $Target
     $added=(Invoke-PublishGit $Target.Root @('diff','--cached','--name-only','--diff-filter=ACMR','-z')).Text.Split([char]0)
     foreach($path in $added) {
         if($path -and (Get-Item -LiteralPath (Join-Path $Target.Root $path)).Length -ge 100MB) {

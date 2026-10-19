@@ -7,6 +7,8 @@
 
 F24 CAN device 使用獨立的 Transfer、Boot 與 App 工程。
 板端為 RL78/F24 Target Board R7F124FPJ5xFB。
+正常 CAN App 更新已完成實板驗證，操作與 F13 device 相同：載入配對 BIN、Discover、必要時 Enter Boot、更新並確認 App。
+完成報告與 UART counter 見 [F24 device 更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
 
 ### 板端與更新設定
 
@@ -87,5 +89,7 @@ CAN 更新使用 App `*_update.bin`。App 產表為 `ftable.inc`、`app_identity
 ### 驗證項目
 
 軟體檢查涵蓋編譯、向量／RETI、IRQ stack、RFD RAM 路徑及 metadata／區塊處理。
-實板驗證涵蓋 CAN 波形／ACK、Flash 擦寫、reset 後 App、IRQ、斷線及斷電復原。
+正常 500K CAN App 寫入、END CRC、reset 後 APP_READY／live INFO 與 UART timer counter 已確認。
+CAN 波形量測、250K／1M、其他 IRQ、長時間壓力、取消、斷線及斷電復原分項驗證，
+見 [更新驗證矩陣](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
 <!-- F24_DEVICE_END -->
