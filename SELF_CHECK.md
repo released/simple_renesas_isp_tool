@@ -1,5 +1,14 @@
 # Host Link v2 Self-Check
 
+## Workspace layout / clean audit (2026-10-21)
+
+- Scope: Retained the integrated PC/firmware/public-guide release profile: root RC/res, diagrams/reference images and tmp workflow paths are not blindly moved. Raw captures remain private; current public documentation assets keep their established paths. New clean helper is scoped to tmp/internal/build.
+- Build/tests: PASS: isolated FirmwareUpgradeTool.vcxproj Release|x64 compile with explicit SolutionDir/OutDir/IntDir, pre/post build events disabled, 0 warnings/errors. Original delivery EXE SHA-256 unchanged; no version bump, firmware build, catalog-wide publisher or web sync.
+- PASS: shared `verify_clean_preservation.ps1 -ProjectRoot <this-project> -CleanBatch scripts\clean_mfc.bat -CleanActualProject -CheckNestedDelivery -CheckReparseRejection` with `-IntermediateRoot tmp\internal\build`. Non-destructive help, 17 delivery/runtime sentinels plus source, known object removal, repeat clean, and junction rejection passed; 237 actual protected output files unchanged by SHA-256.
+- Additional evidence: Actual clean hashes cover both build delivery files and tmp/internal/build outputs. Compiler files only; EXE/INI/log/evidence/unknown files survive even inside obj/tests. Reparse points fail closed before deletion.
+- Limits/publication: NOT RUN: GUI/COM/CAN/Flash acceptance, frozen firmware validation, nine-repository publication automation or website deployment. Those are separate contracts and are not implied by a layout/clean audit.
+
+
 ## Three CAN entry pages / Transfer chapter categories (2026-10-20)
 
 - [x] ISP/Bootloader/knowledge-base intro tables show Classical CAN(F13/F24),

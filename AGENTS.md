@@ -1,5 +1,10 @@
 # AGENTS.md
 
+## Workspace Layout And Safe Clean
+
+Workspace profile exception: integrated PC/firmware/public-guide release; retain existing root RC/res and coupled diagrams/reference assets. Do not relocate frozen delivery files or publish raw captures for cosmetic uniformity. clean_mfc.bat uses clean_intermediates.ps1 scoped to tmp/internal/build, file allowlist only, reparse preflight; never purge tmp or obj/tests trees.
+
+
 ## Purpose
 
 Canonical workspace directory: `simple_renesas_isp_tool`. Preserve existing
