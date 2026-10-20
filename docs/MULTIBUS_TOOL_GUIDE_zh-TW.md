@@ -15,7 +15,7 @@ F24 (MCU CAN host) 使用獨立的 Bridge Boot／App，透過 Misc／UART 更新
 以下連結提供 Tool、MCU CAN host 與 MCU CAN device 的下載及原始碼。
 首次安裝Boot使用燒錄器，之後更新App才使用對應的Tool流程；不可把Host與Device映像互換。
 
-| 項目 | 下載／原始碼 | 適用方式 |
+| 項目 | 下載／原始碼／說明 | 適用方式 |
 | --- | --- | --- |
 | PC Tool | [Windows EXE](https://raw.githubusercontent.com/released/simple_renesas_isp_tool/main/build/FirmwareUpgradeTool.exe)／[完整原始碼](https://github.com/released/simple_renesas_isp_tool) | Windows x64；先安裝實際VCOM所需driver，再選COM並Probe Host |
 | F24 (MCU CAN host) Boot | [Boot專案](https://github.com/released/simple_renesas_isp_tool/tree/main/firmware/RL78_F24_Bridge_boot)／[Boot MOT](https://raw.githubusercontent.com/released/simple_renesas_isp_tool/main/firmware/RL78_F24_Bridge_boot/DefaultBuild/RL78_F24_Bridge_boot.mot) | 首次以燒錄器安裝；Misc不更新Boot |
@@ -23,8 +23,10 @@ F24 (MCU CAN host) 使用獨立的 Bridge Boot／App，透過 Misc／UART 更新
 | F13 (MCU CAN device) Boot | [Boot專案](https://github.com/released/RL78_F13_Boot_loader_CAN)／[Boot 專用 HEX](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN/main/DefaultBuild/boot0000_1FFF.hex) | 燒錄器安裝／重燒 Boot；範圍為 `0x0000..0x1FFF`，不包含 App |
 | F13 (MCU CAN device) App | [App專案](https://github.com/released/RL78_F13_Boot_loader_CAN_app)／[初裝合併HEX](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN_app/main/boot_app.hex)／[CAN更新BIN](https://raw.githubusercontent.com/released/RL78_F13_Boot_loader_CAN_app/main/DefaultBuild/RL78_F13_Boot_loader_CAN_app_update.bin) | 合併HEX供燒錄器初裝；CAN TAB載入_update.bin更新Device App |
 | F13 (MCU CAN device) 通訊測試 | [Transfer範例](https://github.com/released/RL78_F13_CAN_Transfer) | Custom Transfer，不擦寫Flash；不是Boot/App更新映像 |
-| F24 (MCU CAN device) Boot／App | [工程配置與建置說明](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device) | 燒錄器初裝 Boot HEX／App flash HEX；CAN 更新使用 App update BIN |
-| F24 (MCU CAN device) 通訊測試 | [Custom Transfer 操作](https://released.github.io/slide_isp_tool_for_RL78/#custom-transfer) | `RL78_F24_CAN_Transfer` 獨立工程；連結為操作說明 |
+| F24 (MCU CAN device) Classical CAN Boot／App | [工程配置與建置說明](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device) | 燒錄器初裝 Boot HEX／App flash HEX；CAN 更新使用 App update BIN |
+| F24 (MCU CAN device) Classical CAN 通訊測試 | [Transfer 原始碼](https://github.com/released/RL78_F24_CAN_Transfer)／[操作與截圖](https://released.github.io/slide_isp_tool_for_RL78/#f24-custom-transfer-example) | `RL78_F24_CAN_Transfer` 獨立工程；Custom Transfer 不擦寫 Flash |
+| F24 (MCU CAN device) CAN FD Boot／App | [工程配置與建置說明](https://released.github.io/slide_boot_loader_for_RL78/#can-fd-device-engineering) | 燒錄器初裝 FD Boot；Tool 使用配對的 FD App update BIN。連結為工程說明 |
+| F24 (MCU CAN device) CAN FD 通訊測試 | [Transfer 原始碼](https://github.com/released/RL78_F24_CAN_FD_Transfer)／[CAN FD 操作](https://released.github.io/slide_isp_tool_for_RL78/#can-fd-custom-transfer) | `RL78_F24_CAN_FD_Transfer` 獨立工程；不使用更新 BIN、不擦寫 Flash |
 
 F24 host firmware 使用完整 Tool repository，包含 firmware 共用來源與 scripts。
 F13 Boot與App需以原repository名稱放在同一父目錄，App會引用相鄰Boot；Download ZIP
@@ -47,7 +49,7 @@ F24 App 原始 `.mot` 與 F13 原始專案 `.hex` 是編譯／封裝輸入。
 正式安裝使用已加入 metadata／CRC 的 `_flash.mot`、`flash_app_variable_CRC.hex` 或配套合併 HEX；日常更新使用對應的更新 BIN。
 以燒錄器重燒 Boot／App 前，核對實際 MCU、檔案位址及 erase 設定；分區映像不代表燒錄器一定採分區擦除。
 
-原始碼維護可使用 Tool 根目錄的 `github_push.bat`，同步 F13 Boot／App、F24 device Transfer／Boot／App 與 Tool（含 F24 MCU CAN host）。
+原始碼維護可使用 Tool 根目錄的 `github_push.bat`，同步 F13 Boot／App、F24 device 的 Classical CAN 與 CAN FD Transfer／Boot／App，以及 Tool（含 F24 MCU CAN host）。
 保留檔清單、本機 `tmp` 排除、確認與恢復方式見 [GitHub 原始碼與交付檔同步](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/GITHUB_PUBLISH_zh-TW.md)。
 
 ### 操作與工程入口
@@ -59,8 +61,10 @@ F24 App 原始 `.mot` 與 F13 原始專案 `.hex` 是編譯／封裝輸入。
 | Tool operation | [COM／Host識別與操作起點](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation) | [共用畫面與操作指南](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md) |
 | 更新確認／診斷／報告 | [App 確認、差異與驗證表](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation) | [更新確認與驗證紀錄](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/UPDATE_VALIDATION_zh-TW.md) |
 | 更新F24 (MCU CAN host) App | [Misc：Host App更新圖與RUN](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware) | [F24 UART自更新協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/BRIDGE_SELF_UPDATE_PROTOCOL.md) |
-| 更新MCU CAN device App | [CAN：驗證、Enter Boot、更新與確認](https://released.github.io/slide_isp_tool_for_RL78/#f13-device-update) | [CAN區塊更新及保護](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_BLOCK_TRANSFER_V5_zh-TW.md) |
-| Custom Transfer 通訊驗證 | [Custom Transfer 操作](https://released.github.io/slide_isp_tool_for_RL78/#custom-transfer) | [通訊測試協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/F13_TRANSFER_PROTOCOL.md) |
+| Classical CAN device App 更新 | [CAN：驗證、Enter Boot、更新與確認](https://released.github.io/slide_isp_tool_for_RL78/#f13-device-update) | [CAN區塊更新及保護](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_BLOCK_TRANSFER_V5_zh-TW.md) |
+| Classical CAN Custom Transfer 通訊驗證 | [Custom Transfer 操作](https://released.github.io/slide_isp_tool_for_RL78/#custom-transfer) | [通訊測試協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/F13_TRANSFER_PROTOCOL.md) |
+| CAN FD device App 更新 | [CAN FD：設定、更新與 App 確認](https://released.github.io/slide_isp_tool_for_RL78/#can-fd-update) | [CAN FD 更新說明](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_FD_UPDATE_zh-TW.md#can-fd-update) |
+| CAN FD Custom Transfer 通訊驗證 | [Discover／Transfer Test 操作](https://released.github.io/slide_isp_tool_for_RL78/#can-fd-custom-transfer) | [CAN FD 通訊測試說明](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_FD_UPDATE_zh-TW.md#can-fd-custom-transfer) |
 | Boot code如何移植 | [Boot/App移植與向量工程](https://released.github.io/slide_boot_loader_for_RL78/#boot-app-porting) | [完整移植指南](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md) |
 
 <a id="tool-bridge-flow"></a>
@@ -113,7 +117,31 @@ bridge 變速不會同時修改 target 的設定；仍需與 target／image meta
 
 Bridge Board Self Test 是實體 CAN 訊號測試：STD ID 0x123、DLC8，每秒 11 22 33 44 55 66 77 counter。
 每次啟動 counter 從 00 遞增；需搭配 CAN analyzer 觀察，tool TX log 不是波形量測證據。
-F13 Transfer 是已由使用者確認的通訊 benchmark，不需載入 BIN；不得拿它的 BIN 當 upgrade image。
+<!-- TRANSFER_EXAMPLES_BEGIN -->
+Custom Transfer 搭配 device 的獨立 Transfer 工程。
+測試包含 DEVICE_INFO、PING、ECHO、PATTERN、STATS，過程不擦寫 App Flash，也不使用更新 BIN。
+
+### CAN_Transfer 範例分類
+
+| MCU device／模式 | 範例原始碼 | Tool 設定 | 操作與對照 |
+| --- | --- | --- | --- |
+| F13 Classical CAN | [RL78_F13_CAN_Transfer](https://github.com/released/RL78_F13_CAN_Transfer) | Classical CAN／500K | [F13 量測範例](https://released.github.io/slide_isp_tool_for_RL78/#f13-transfer-example) |
+| F24 Classical CAN | [RL78_F24_CAN_Transfer](https://github.com/released/RL78_F24_CAN_Transfer) | Classical CAN／500K | [F24 操作與截圖](https://released.github.io/slide_isp_tool_for_RL78/#f24-custom-transfer-example) |
+| F24 CAN FD | [RL78_F24_CAN_FD_Transfer](https://github.com/released/RL78_F24_CAN_FD_Transfer) | CAN FD／500K／2M、BRS | [CAN FD 操作與中斷接收](https://released.github.io/slide_isp_tool_for_RL78/#can-fd-custom-transfer) |
+
+### Classical CAN 操作
+
+1. 燒錄 device Transfer 工程並上電。
+2. Tool 選擇 Custom Transfer、Classical500K。
+3. 按 `Discover Test Target`，核對回覆的 part／target／protocol。
+4. 按 `Transfer Test`。
+5. 使用 PC log、device UART TRACE 與 analyzer trace 比對 sequence、command、payload、CRC 及 counters。
+6. `Export Summary` 匯出結果。
+
+Request 使用 standard `0x710`，response 使用 `0x711`，DLC8。
+Payload Byte7 為 CRC-8/ATM。
+<!-- TRANSFER_EXAMPLES_END -->
+
 MCU CAN device 的 Boot 啟動條件與 App 工程設定，見 [MCU CAN device 章節](https://released.github.io/slide_boot_loader_for_RL78/)。
 
 <!-- TRANSFER_DIAGNOSTICS_BEGIN -->

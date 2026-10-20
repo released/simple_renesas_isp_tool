@@ -15,6 +15,23 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-20 three-entry review:ISP/Bootloader/knowledge-base page intros classify
+Classical F13/F24,CAN FD F24,and Custom Transfer across all three. Canonical
+Transfer chapter table now contains verified source/operation links,with strict
+two-block sync.46production guards,syntax,idempotence,310refs/home anchors,
+18-file content/MD-HTML parity/four diff checks PASS. MultiBus PDF16pages/four
+diagrams and six URI checks/all-page visual review PASS. Existing FD engineering
+body retained. Browser preview NOT RUN(no CUA browser surfaces);own helper stopped.
+No runtime/firmware change,product build/version or Git/website publication.
+
+2026-10-20 CAN FD overview:canonical resource/workflow tables link existing FD
+engineering/update/Custom Transfer chapters;Classical labels and publisher scope
+clear. Single-owner MD/web CheckOnly,310refs/anchors,18-file public checks and
+production guard positive/three negative mutations PASS. MultiBus PDF16pages/
+four diagrams rendered/all pages reviewed;FD PDF links checked. All11current
+deliveries present;Tool EXE/10surviving firmware hashes unchanged. No rebuilt
+intermediates,product change or publication;browser/DPI preview NOT RUN.
+
 2026-10-20 FD publication: nine repositories/eleven delivery files/ten archive
 groups;path mappings,ignore example and preflight guidance synchronized.
 19 isolated Git cases/four path tests PASS. FD generator bookkeeping/comments

@@ -3,21 +3,27 @@ $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'workspace_paths.ps1')
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
-$pattern='(?s)<!-- TRANSFER_DIAGNOSTICS_BEGIN -->.*?<!-- TRANSFER_DIAGNOSTICS_END -->'
 $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\MULTIBUS_TOOL_GUIDE_zh-TW.md'))
-$blocks=[regex]::Matches($source,$pattern)
-if($blocks.Count -ne 1){throw 'Expected one canonical Transfer diagnostics block.'}
 $path=Join-Path $WebRoot 'slide_isp_tool_for_RL78\index.md'
 $web=[IO.File]::ReadAllText($path)
-$matches=[regex]::Matches($web,$pattern)
-if($matches.Count -ne 1){throw 'Expected one Transfer diagnostics block in ISP guide.'}
-if($CheckOnly){
-    if($matches[0].Value.Replace("`r`n","`n") -cne $blocks[0].Value.Replace("`r`n","`n")){
-        throw 'Transfer diagnostics guide differs.'
+$updated=$web
+# Validate both canonical sections before writing the page once.
+foreach($section in @('TRANSFER_EXAMPLES','TRANSFER_DIAGNOSTICS')){
+    $pattern='(?s)<!-- '+$section+'_BEGIN -->.*?<!-- '+$section+'_END -->'
+    $blocks=[regex]::Matches($source,$pattern)
+    if($blocks.Count -ne 1){throw "Expected one canonical $section block."}
+    $matches=[regex]::Matches($web,$pattern)
+    if($matches.Count -ne 1){throw "Expected one $section block in ISP guide."}
+    if($CheckOnly){
+        if($matches[0].Value.Replace("`r`n","`n") -cne $blocks[0].Value.Replace("`r`n","`n")){
+            throw "$section guide differs."
+        }
+    }else{
+        $replacement=$blocks[0].Value
+        $updated=[regex]::Replace($updated,$pattern,[Text.RegularExpressions.MatchEvaluator]{param($m)$replacement})
     }
-}else{
-    $replacement=$blocks[0].Value
-    $updated=[regex]::Replace($web,$pattern,[Text.RegularExpressions.MatchEvaluator]{param($m)$replacement})
+}
+if(!$CheckOnly){
     [IO.File]::WriteAllText($path,$updated,(New-Object Text.UTF8Encoding($false)))
 }
-Write-Host 'PASS: Transfer diagnostics MD/ISP section synchronized/verified.'
+Write-Host 'PASS: Transfer example categories and diagnostics MD/ISP sections synchronized/verified.'

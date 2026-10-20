@@ -1,5 +1,58 @@
 # Development Handoff
 
+## Three CAN entry pages / Transfer chapter categories (2026-10-20)
+
+Fixed the chapter-level gap,not only the download overview. MULTIBUS_TOOL_GUIDE
+TRANSFER_EXAMPLES now owns the three F13 Classical/F24 Classical/F24 FD rows,
+their verified public GitHub repositories,operation links and Classical-only
+steps. sync_transfer_diagnostics validates both this block and the existing
+diagnostics before one page write. A stable f13-transfer-example anchor links
+the existing F13 capture section;FD details remain at their canonical chapter.
+
+Page-owned intro tables on ISP,Bootloader and the knowledge-base homepage now
+classify Classical CAN(F13/F24),CAN FD(F24),and Custom Transfer(all three).
+Bootloader shares the Classical teaching entry but preserves each MCU's actual
+configuration. Its existing complete FD engineering block is unchanged. Root
+README.md and README.html category links agree;index.html actually loads the
+Markdown. Local README/AGENTS record ownership so sync does not duplicate bodies.
+
+Verification:46 production-guard cases PASS across valid LF/CRLF and missing
+rows,source URLs,operation links,markers;two PowerShell syntax checks PASS.
+Two-block Transfer sync is byte-idempotent. Source/FD/media CheckOnly,310local
+refs,home/cross-page anchors,18-file public-content and four worktree diff checks
+PASS. Root HTML table structure and MD/HTML URI parity PASS. MultiBus PDF16pages/
+four diagrams rendered;all pages plus full-size category page reviewed;six
+Transfer source/operation URI annotations verified. No FD PDF/body regeneration
+was needed for the site-owned intro links.
+
+Browser visual preview NOT RUN:CUA returned Browser is not available for iab and
+chrome;inventory apps/browsers both empty. The task-owned loopback preview helper
+was stopped after checking its exact command line. No user browser/app closed.
+No Tool/device/host runtime change,rebuild,version bump,COM/Flash action,Git
+commit/push or deployment. These edits are local;public pages require publishing.
+
+## CAN FD overview navigation (2026-10-20)
+
+Canonical MULTIBUS_TOOL_GUIDE PUBLIC_RESOURCES now links FD Boot/App engineering,
+FD Custom Transfer and FD App update from the download/operation overview.
+F24 Classical entries are labeled explicitly; links are explanation pages,
+not invented source/download URLs. Existing full sections remain single-owner.
+sync_public_resources projects the full overview to ISP and verifies the short
+Bootloader navigation. No Tool/firmware code, build, version or Git publication.
+
+ISP scripts/verify_local.ps1 now requires all three FD links inside the overview,
+not just elsewhere on the page. Actual production AST guard passes the valid
+block and rejects each of three missing-link mutations;syntax PASS. Source
+CheckOnly,310 local refs/cross-page anchors,18-file public-content and all three
+worktree diff checks PASS. MultiBus PDF regenerated:16 nonempty pages/four
+diagrams;all-page contact sheets and full-size overview pages reviewed,no clip.
+All three FD PDF URI annotations verified. Browser/DPI preview NOT RUN.
+
+All11 catalog deliveries remain present;Tool EXE and10 surviving prior firmware
+hashes unchanged. Six prior raw-MOT/programmer intermediates have been cleaned
+outside this documentation work;none was restored/rebuilt. The overview change
+is local only and still requires the normal website publication workflow.
+
 ## FD publication scope / portable project metadata (2026-10-20)
 
 github_push.bat now includes FD Transfer/Boot/App before Tool: nine repositories,

@@ -1,5 +1,32 @@
 # Host Link v2 Self-Check
 
+## Three CAN entry pages / Transfer chapter categories (2026-10-20)
+
+- [x] ISP/Bootloader/knowledge-base intro tables show Classical CAN(F13/F24),
+  CAN FD(F24),Custom Transfer(all three). Chapter-local Transfer table has three
+  verified GitHub sources plus operation links;Classical steps labeled clearly.
+- [x]46production navigation guard cases and two PowerShell syntax checks PASS;
+  two-block Transfer sync byte-idempotent. Source/FD/media CheckOnly,310refs,
+  home/cross-page anchors,18-file public checks and four diff checks PASS.
+- [x] Root MD/HTML link parity and table structure PASS. MultiBus PDF16pages/
+  four diagrams rendered/all pages reviewed;six source/operation URIs verified.
+  Existing canonical FD engineering body unchanged;no MCU/Tool rebuild/push.
+- [ ] Browser visual preview NOT RUN:CUA has no available apps/browsers;task
+  loopback preview helper stopped. Local document changes are not deployment.
+
+## CAN FD overview navigation (2026-10-20)
+
+- [x] Canonical downloads/operation overview includes FD engineering,update and
+  Custom Transfer links;Classical labels explicit. ISP/Bootloader projections
+  and FD chapter CheckOnly PASS;no duplicate full sections or guessed URLs.
+- [x] Production overview guard valid case/three missing-link mutations and
+  PowerShell syntax PASS;310refs/cross-page anchors,18-file content/diff checks
+  PASS. MultiBus PDF16pages/4diagrams rendered/all pages visually reviewed;
+  three FD URI annotations present. Browser/DPI preview NOT RUN.
+- [x]11catalog deliveries present;Tool EXE/10surviving firmware baseline hashes
+  unchanged. Cleaned intermediates not restored;no product rebuild/version bump,
+  COM/Flash action,commit/push or website deployment in this documentation task.
+
 ## FD normal hardware acceptance / publication scope (2026-10-20)
 
 - [x] User133221 with0097:Discover App->ENTER->FD update->APP_READY/live image,

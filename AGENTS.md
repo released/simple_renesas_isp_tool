@@ -265,7 +265,9 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 - F24 device Transfer uses main-loop raw C0ERFL capture (bits0..14), guarded
   by F24_DEVICE_TRANSFER; diagnostics must not change Boot/App image bytes.
   Preserve250ms UART trace throttle and optional trace-off counters. Canonical
-  reader content is MULTIBUS_TOOL_GUIDE TRANSFER_DIAGNOSTICS; synchronize ISP
+  reader content is MULTIBUS_TOOL_GUIDE TRANSFER_EXAMPLES/TRANSFER_DIAGNOSTICS;
+  retain F13 Classical/F24 Classical/F24 FD source and operation links in the
+  Custom Transfer chapter itself. Synchronize ISP
   with sync_transfer_diagnostics.ps1 and -CheckOnly, plus its MultiBus PDF.
 - F13 Boot/App provides the existing target boot protocol and image validation.
 - Target profiles in the PC tool encode and decode target-specific CAN frames.
@@ -416,7 +418,7 @@ verification report to docs; keep detailed internal evidence in tmp.
 Firmware porting entry: docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md. Its marked
 RL78_PORTING block is canonical for the boot web guide; run
 scripts/sync_rl78_porting_guide.ps1 and -CheckOnly after related changes.
-Public downloads and six workflow entries are canonical in the PUBLIC_RESOURCES
+Public downloads and workflow entries are canonical in the PUBLIC_RESOURCES
 block of docs/MULTIBUS_TOOL_GUIDE_zh-TW.md; sync_public_resources.ps1 updates both
 web guides. Keep actual source/download URLs and stable section anchors tested. web_guide_sections.json
 owns topic placement; non-owner pages contain short links, never full duplicates.
