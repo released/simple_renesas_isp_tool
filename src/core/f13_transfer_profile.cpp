@@ -249,19 +249,11 @@ bool Client::Execute(Command command,
     const std::uint8_t sequence = NextSequence();
     can_host::Frame request;
     can_host::Frame received;
-    can_host::ReceiveMatch match;
     if (!BuildRequest(sequence, command, payload, &request, error)) {
         return false;
     }
 
-    match.timeout_ms = timeout_ms_;
-    match.retry_count = retry_count_;
-    match.expected_dlc = static_cast<std::uint8_t>(kFrameSize);
-    match.id = kResponseId;
-    match.id_mask = kResponseMask;
-    match.flags_value = 0U;
-    match.flags_mask = 0x07U;
-    if (!client_->TransmitWaitReceive(request, match, &received, error) ||
+    if (!Exchange(request, static_cast<std::uint8_t>(kFrameSize), &received, error) ||
         !ParseResponse(sequence, command, received, response, error)) {
         return false;
     }
@@ -276,6 +268,49 @@ bool Client::Execute(Command command,
         }
         return false;
     }
+    return true;
+}
+
+bool Client::Exchange(can_host::Frame request, std::uint8_t expected_dlc,
+                      can_host::Frame* received, std::wstring* error) {
+    if (!client_ || !received)
+        return Fail(L"Custom Transfer CAN client/output is not configured.", error);
+    request.fd = request.bit_rate_switch = fd_;
+    can_host::ReceiveMatch match;
+    match.timeout_ms = timeout_ms_;
+    match.retry_count = retry_count_;
+    match.expected_dlc = expected_dlc;
+    match.id = kResponseId;
+    match.id_mask = kResponseMask;
+    match.flags_value = fd_ ? 0x0CU : 0U;
+    match.flags_mask = fd_ ? 0x0FU : 0x07U;
+    if (!client_->TransmitWaitReceive(request, match, received, error)) return false;
+    const auto length = expected_dlc == 15U ? 64U : expected_dlc;
+    if (received->extended || received->remote || received->id != kResponseId ||
+        received->fd != fd_ || received->bit_rate_switch != fd_ ||
+        received->dlc != expected_dlc || received->data.size() != length)
+        return Fail(L"Custom Transfer response ID, mode, BRS or length mismatch.", error);
+    // Parse the shared v1 payload only after strict session-mode validation.
+    received->fd = received->bit_rate_switch = false;
+    return true;
+}
+
+bool Client::EchoFd64(const std::array<std::uint8_t, CT_FD64_PAYLOAD>& input,
+                      std::wstring* error) {
+    if (!fd_) return Fail(L"ECHO_FD64 requires CAN FD mode.", error);
+    const auto sequence = NextSequence();
+    can_host::Frame request, response;
+    request.id = kRequestId;
+    request.dlc = 15U;
+    request.data = {kRequestMagic, kProtocolMajor, sequence, CT_FD64_COMMAND};
+    request.data.insert(request.data.end(), input.begin(), input.end());
+    request.data.push_back(Crc8Atm(request.data.data(), CT_FD64_SIZE - 1U));
+    if (!Exchange(request, 15U, &response, error)) return false;
+    if (response.data[0] != kResponseMagic || response.data[1] != kProtocolMajor ||
+        response.data[2] != sequence || response.data[3] != CT_FD64_COMMAND ||
+        !std::equal(input.begin(), input.end(), response.data.begin()+4U) ||
+        Crc8Atm(response.data.data(), CT_FD64_SIZE-1U) != response.data.back())
+        return Fail(L"Custom Transfer ECHO_FD64 identity, sequence, data or CRC8 mismatch.", error);
     return true;
 }
 

@@ -743,13 +743,17 @@ bool Client::SendBlock(
     if (!BuildBlockRequest(Command::BlockBegin, image_offset, crc, &begin, error) ||
         !BuildBlockRequest(Command::BlockCommit, image_offset, crc, &commit, error)) return false;
     begin.id = commit.id = request_id_;
+    begin.fd = commit.fd = fd_;
+    begin.bit_rate_switch = commit.bit_rate_switch = fd_;
     std::vector<can_host::Frame> frames{begin};
-    for (std::size_t offset = 0U; offset < data.size(); offset += 8U) {
+    for (std::size_t offset = 0U; offset < data.size(); offset += fd_ ? 64U : 8U) {
         can_host::Frame segment;
-        segment.id = block_data_id_ + static_cast<std::uint32_t>(offset / 8U);
-        const auto length = (std::min)(std::size_t{8U}, data.size() - offset);
-        segment.dlc = static_cast<std::uint8_t>(length);
+        segment.id = block_data_id_ + (fd_ ? 0U : static_cast<std::uint32_t>(offset / 8U));
+        const auto length = (std::min)(std::size_t{fd_ ? 64U : 8U}, data.size() - offset);
+        segment.fd = segment.bit_rate_switch = fd_;
+        segment.dlc = fd_ ? 15U : static_cast<std::uint8_t>(length);
         segment.data.assign(data.begin() + offset, data.begin() + offset + length);
+        if (fd_) segment.data.resize(64U, 0xFFU);
         frames.push_back(segment);
     }
     frames.push_back(commit);
@@ -765,6 +769,7 @@ bool Client::SendBlock(
     match.id_mask = 0x7FFU;
     match.expected_dlc = 8U;
     match.flags_mask = 0x0FU;
+    match.flags_value = fd_ ? CB_FD_FLAGS : 0U;
     for (unsigned attempt = 0U; ; ++attempt) {
         host_link::Status completion;
         if (!client_->BurstWaitReceive(frames, match, 0U, &response, error, &completion)) {
@@ -772,6 +777,7 @@ bool Client::SendBlock(
             return false;
         }
         response.id = kResponseId;
+        response.fd = response.bit_rate_switch = false;
         if (!ParseAckResponse(Command::BlockCommit, response, ack, error)) return false;
         if ((ack->status == Status::BadSequence || ack->status == Status::CrcError) &&
             attempt < retry_count_) continue;
@@ -827,20 +833,27 @@ bool Client::Exchange(const can_host::Frame& request,
     can_host::Frame actual_request = request;
     actual_request.id = request_id_;
     actual_request.extended = extended_id_;
+    actual_request.fd = actual_request.bit_rate_switch = fd_;
     can_host::ReceiveMatch match;
     match.timeout_ms = timeout_ms;
     match.retry_count = retry_count_;
     match.expected_dlc = expected_dlc;
     match.id = response_id_;
     match.id_mask = extended_id_ ? 0x1FFFFFFFU : 0x7FFU;
-    match.flags_value = extended_id_ ? 0x01U : 0U;
-    match.flags_mask = 0x07U;
+    match.flags_value = static_cast<std::uint8_t>((extended_id_ ? 0x01U : 0U) |
+                                                (fd_ ? CB_FD_FLAGS : 0U));
+    match.flags_mask = fd_ ? 0x0FU : 0x07U;
     if (!client_->TransmitWaitReceive(
             actual_request, match, response, error)) {
         return false;
     }
+    if (response->id != response_id_ || response->extended != extended_id_ ||
+        response->remote || response->fd != fd_ || response->bit_rate_switch != fd_ ||
+        response->dlc != expected_dlc || response->data.size() != expected_dlc)
+        return Fail(L"CAN Upgrade response ID, mode, BRS or length mismatch.", error);
     response->id = kResponseId;
     response->extended = false;
+    response->fd = response->bit_rate_switch = false;
     return true;
 }
 

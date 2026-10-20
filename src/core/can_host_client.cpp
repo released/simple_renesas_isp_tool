@@ -46,6 +46,25 @@ std::uint32_t ReadLe32(const std::uint8_t* data) {
            (static_cast<std::uint32_t>(data[3]) << 24);
 }
 
+void AppendWaitTimeoutDetail(const host_link::Response& response,
+                             std::wstring* error) {
+    if (error == nullptr || response.command != host_link::Command::CanTxWaitRx ||
+        response.status != host_link::Status::Timeout) return;
+    const auto& bytes = response.payload;
+    if (bytes.size() != 8U || bytes[0] == 0U || bytes[0] > 4U ||
+        bytes[1] || bytes[2] || bytes[3]) {
+        *error += L" CAN timeout detail unavailable: invalid diagnostic payload.";
+        return;
+    }
+    const auto result = ReadLe32(bytes.data() + 4U);
+    const wchar_t* name = result == 0U ? L"TRANSMITTING" :
+        result == 1U ? L"ABORT_OVER" : result == 2U ? L"TX_END" :
+        result == 3U ? L"END_WITH_ABORT" : result == 0xFFFFFFFFU ? L"ARG_ERROR" : L"UNKNOWN";
+    *error += L" CAN TX_WAIT_RX: attempts=" + std::to_wstring(bytes[0]) +
+        L", last_tx_result=" + (result == 0xFFFFFFFFU ? L"-1" : std::to_wstring(result)) +
+        L" (" + name + L"). Host UART returned a response; no matching CAN response completed the transaction.";
+}
+
 bool DlcToLength(std::uint8_t dlc, std::uint8_t* length) {
     static constexpr std::uint8_t kFdLengths[] = {
         12U, 16U, 20U, 24U, 32U, 48U, 64U,
@@ -336,6 +355,7 @@ bool Client::TransmitWaitReceive(const Frame& transmit_frame,
     if (client_ == nullptr ||
         !client_->RequestWithPolicy(host_link::Command::CanTxWaitRx, payload,
                                     host_timeout, 2U, &response, error)) {
+        AppendWaitTimeoutDetail(response, error);
         return false;
     }
     if (!DecodeFrame(response.payload, received_frame, error)) {
@@ -357,21 +377,26 @@ bool Client::BurstWaitReceive(const std::vector<Frame>& frames,
     if (!client_ || !received_frame || frames.empty() || frames.size() > 10U ||
         !match.timeout_ms || match.timeout_ms > 30000U || match.retry_count ||
         match.id > 0x7FFU || !match.id_mask || match.id_mask > 0x7FFU ||
-        match.expected_dlc > 8U || match.flags_value || match.flags_mask != 0x0FU || gap_ms > 10U) {
-        SetError(error, L"Invalid Classical standard CAN burst/match.");
+        match.expected_dlc > 8U ||
+        (match.flags_value != 0U && match.flags_value != CB_FD_FLAGS) ||
+        match.flags_mask != 0x0FU || gap_ms > 10U) {
+        SetError(error, L"Invalid standard CAN burst/match.");
         return false;
     }
-    std::vector<std::uint8_t> payload{1U, static_cast<std::uint8_t>(frames.size())};
+    const bool fd = match.flags_value == CB_FD_FLAGS;
+    std::vector<std::uint8_t> payload{static_cast<std::uint8_t>(fd ? CB_FD_VERSION : CB_VERSION),
+                                    static_cast<std::uint8_t>(frames.size())};
     PutLe16(&payload, match.timeout_ms);
     PutLe16(&payload, static_cast<std::uint16_t>(match.id));
     PutLe16(&payload, static_cast<std::uint16_t>(match.id_mask));
     payload.push_back(match.expected_dlc);
-    payload.push_back(0U);
+    payload.push_back(match.flags_value);
     PutLe16(&payload, gap_ms);
     for (const auto& frame : frames) {
         std::vector<std::uint8_t> encoded;
-        if (!EncodeFrame(frame, true, &encoded, error) || FrameFlags(frame) != 0U) {
-            SetError(error, L"Burst supports Classical standard data frames only.");
+        if (!EncodeFrame(frame, true, &encoded, error) || FrameFlags(frame) != match.flags_value ||
+            (frame.dlc > 8U && (!fd || frame.dlc != 15U))) {
+            SetError(error, L"Burst requires uniform standard Classical or FD+BRS data frames (0..8 or64 bytes).");
             return false;
         }
         PutLe16(&payload, static_cast<std::uint16_t>(frame.id));
@@ -391,7 +416,8 @@ bool Client::BurstWaitReceive(const std::vector<Frame>& frames,
     if (completion_status) *completion_status = response.status;
     if (!received || !DecodeFrame(response.payload, received_frame, error)) return false;
     if ((received_frame->id & match.id_mask) != (match.id & match.id_mask) ||
-        FrameFlags(*received_frame) != 0U || received_frame->dlc != match.expected_dlc) {
+        (FrameFlags(*received_frame) & match.flags_mask) != match.flags_value ||
+        received_frame->dlc != match.expected_dlc) {
         SetError(error, L"CAN burst response does not match the requested filter.");
         return false;
     }

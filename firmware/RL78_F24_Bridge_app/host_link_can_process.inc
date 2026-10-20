@@ -9,7 +9,8 @@ static void next_burst_frame(void)
     (void)cb_next(&g_can_transaction.burst, &id, &dlc, frame->Data.DB);
     frame->Head.Bits.ID = id;
     frame->Head.Bits.DLC = dlc;
-    frame->Head.Bits.FDCTR = CAN_FDCTR_CLASSICAL;
+    frame->Head.Bits.FDCTR = g_can_transaction.burst.payload[0] == CB_FD_VERSION ?
+        CAN_FDCTR_FD : CAN_FDCTR_CLASSICAL;
 }
 
 static void process_can_transaction(void)

@@ -130,7 +130,7 @@ treat unknown trailing diagnostic fields as a protocol error.
 | `SELECT_CAN_PORT` | `0x14` | CAN stopped, no I2C reservation |
 | `CAN_TX` | `0x20` | CAN running |
 | `CAN_TX_WAIT_RX` | `0x21` | CAN running |
-| `CAN_BURST_WAIT_RX` | `0x22` | CAN running; feature bit12 required |
+| `CAN_BURST_WAIT_RX` | `0x22` | CAN running; Classical version1 bit12 / FD version2 bit13 |
 | `GET_STATS` | `0x30` | Any |
 | `CLEAR_STATS` | `0x31` | No active transaction |
 | `SET_I2C_CONFIG` | `0x40` | CAN stopped, no I2C reservation |
@@ -245,6 +245,7 @@ Feature flags:
 | 10 | Bridge UART self-update |
 | 11 | APP Host Link baud INFO/SET/CONFIRM (independent of bus ports) |
 | 12 | Generic Classical standard CAN_BURST_WAIT_RX |
+| 13 | Generic FD+BRS standard CAN_BURST_WAIT_RX version2 |
 
 I2C-only bridges may advertise max-CAN-data0; enabled CAN bridges retain
 8/64-byte CAN limits. Port descriptors constrain selectable per-port rates and
@@ -470,6 +471,15 @@ result:
 | 1 | 3 | Reserved, zero |
 | 4 | 4 | Last raw/normalized TX result |
 
+For the F24 CAN backend, TX results are0=TRANSMITTING,1=ABORT_OVER,
+2=TX_END,3=END_WITH_ABORT,and-1=ARG_ERROR (LE32 FFFFFFFF).
+For example, `02 00 00 00 02 00 00 00` means two attempts and a final TX_END.
+It does not prove target-software processing or a matching response.
+The PC preserves the exact host status and appends decoded detail only after
+validating all8bytes,attempt count1..4 and the reserved bytes. Unknown TX values
+remain labeled UNKNOWN. A host-returned CAN timeout is classified as a bus
+transaction failure,distinct from a missing UART Host Link response.
+
 Retries can repeat a CAN request, so the target profile must select a retry
 count consistent with target idempotency.
 
@@ -531,7 +541,7 @@ host may emit both event types with the same snapshot.
 
 ## 10. Statistics
 
-### CAN_BURST_WAIT_RX extension (bit12, command22)
+### CAN_BURST_WAIT_RX extension (Classical bit12 / FD bit13, command22)
 
 Request header12 bytes: U8 version1, U8 frame count1..10, LE16 response
 timeout1..30000ms, LE16 reply ID, LE16 nonzero reply mask, U8 reply DLC0..8,
@@ -539,6 +549,15 @@ U8 reserved0, LE16 gap0..10ms. Then count compact records
 `[LE16 standard ID, U8 DLC0..8, data[DLC]]`. Classical standard data only.
 Validate every record and exact end before any TX. Ten full records use122
 payload bytes. Successful response is the existing matched CAN record.
+
+Version2 requires bit13 and CAN FD configuration. The same12-byte header uses
+version2 and byte9=0x0C (FDF+BRS). Every record and expected response is standard
+FD+BRS. Each record retains LE16 ID,U8 wire DLC,decoded-length data. DLC0..8
+or15 is accepted;15 means64 data bytes. Reply DLC remains0..8. All records,
+IDs,flags,lengths and exact end are validated before the first TX.
+BEGIN8 + DATA64 + COMMIT8 uses101 payload bytes and three FD frames.
+The bridge does not interpret those target commands or Flash semantics.
+Version1 remains byte-compatible. See [FD operation and engineering](./CAN_FD_UPDATE_zh-TW.md).
 
 Each frame must physically complete before the next is started; the main loop
 advances TX/gap/RX without blocking. Capture the reply once the final TX has

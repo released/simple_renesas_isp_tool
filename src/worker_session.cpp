@@ -8,6 +8,7 @@
 #include "core/firmware_update_profile.h"
 #include "core/host_link_baud.h"
 #include "core/update_evidence.h"
+#include "core/host_counter_evidence.h"
 
 #include <algorithm>
 #include <array>
@@ -351,7 +352,7 @@ void WorkerSession::ThreadMain() {
             (report_port.empty()?command.port_name:report_port)+L" | Host Baud "+
             std::to_wstring(report_baud?report_baud:command.baudrate)+
             (current_phase_.empty()?L"":L" | Phase: "+current_phase_);
-        const auto result_message=success && update_result_!=feedback::Result::None ?
+        auto result_message=success && update_result_!=feedback::Result::None ?
             feedback::Describe(update_result_).status : error;
         const auto help=success?std::wstring():guidance::Format(error,error_context);
         state_.busy = false;
@@ -363,16 +364,15 @@ void WorkerSession::ThreadMain() {
             const auto& after=state_.f24_stats;
             const bool comparable=stats_before_valid && state_.f24_stats_valid &&
                 command.type==CommandType::ProgramF13Boot;
-            const auto delta=[&](std::uint32_t a,std::uint32_t b) {
-                return comparable ? evidence::Delta(a,b) : L"unavailable (snapshot missing or host reset)";
-            };
-            const std::wstring counters=L"UART overflow="+(stats_before.uart_rx_overflows>=65535U || after.uart_rx_overflows>=65535U ?
-                L"unavailable (16-bit saturated)":delta(stats_before.uart_rx_overflows,after.uart_rx_overflows))+
-                L"; CAN lost="+delta(stats_before.can_rx_lost_frames,after.can_rx_lost_frames)+
-                L"; CAN bus-off="+delta(stats_before.can_bus_off_entries,after.can_bus_off_entries)+
-                L"; CAN recovery="+delta(stats_before.can_recovery_count,after.can_recovery_count)+
-                L"; CAN TX failure="+delta(stats_before.can_tx_failures,after.can_tx_failures);
+            const auto observations=evidence::ObserveHostCounters(stats_before,after,comparable);
+            const auto& counters=observations.deltas;
             PostLog(L"Update counter deltas: "+counters);
+            PostLog(L"Host counter assessment: "+observations.Status()+L". "+observations.Note());
+            if(success && observations.increased && update_result_==feedback::Result::DeviceAppConfirmed) {
+                update_result_=feedback::WithHostCounterWarning(update_result_,observations.increased);
+                result_message=feedback::Describe(update_result_).status;
+            }
+            const auto report_result=feedback::ReportResult(success,IsCancelRequested(),update_result_);
             const std::wstring peaks=state_.f24_stats_valid && after.telemetry_available ?
                 L"since host boot/CLEAR_STATS: UART RX bytes="+std::to_wstring(after.uart_rx_high_water)+
                 L"; UART TX bytes="+std::to_wstring(after.uart_tx_high_water)+
@@ -392,7 +392,7 @@ void WorkerSession::ThreadMain() {
             report.text=L"{\n  \"schema\": 1,\n  \"operation\": "+evidence::JsonString(
                 command.type==CommandType::ProgramF13Boot ? L"CAN device update" :
                 command.type==CommandType::BridgeRun ? L"Host explicit RUN confirmation" : L"Host app update")+
-                L",\n  \"result\": "+evidence::JsonString(success?L"PASS":IsCancelRequested()?L"CANCELED":L"FAIL")+
+                L",\n  \"result\": "+evidence::JsonString(report_result)+
                 L",\n  \"message\": "+evidence::JsonString(result_message)+
                 L",\n  \"port\": "+evidence::JsonString(report_port)+L",\n  \"host_board\": "+std::to_wstring(report_board)+
                 L",\n  \"host_baud\": "+std::to_wstring(report_baud)+
@@ -404,6 +404,8 @@ void WorkerSession::ThreadMain() {
                 L",\n  \"phases_ms\": "+phases+
                 L",\n  \"details\": "+evidence::JsonString(update_details_)+
                 L",\n  \"host_deltas\": "+evidence::JsonString(counters)+
+                L",\n  \"host_counter_assessment\": "+evidence::JsonString(observations.Status())+
+                L",\n  \"host_counter_note\": "+evidence::JsonString(observations.Note())+
                 L",\n  \"host_peaks\": "+evidence::JsonString(peaks)+
                 L",\n  \"link_retries\": "+(command.type==CommandType::BridgeRun ||
                     host_link_client_.Stats().retries<client_before.retries ? std::wstring(L"null") :
@@ -413,7 +415,7 @@ void WorkerSession::ThreadMain() {
                 evidence::ReportView view;
                 view.operation=command.type==CommandType::ProgramF13Boot?L"CAN device update":
                     command.type==CommandType::BridgeRun?L"Host explicit RUN confirmation":L"Host app update";
-                view.result=success?L"PASS":IsCancelRequested()?L"CANCELED":L"FAIL";
+                view.result=report_result;
                 view.message=result_message; view.guidance=help;
                 view.tool=FIRMWARE_UPGRADE_TOOL_VERSION; view.build=FIRMWARE_UPGRADE_TOOL_BUILD_TIME;
                 SYSTEMTIME utc={}; GetSystemTime(&utc);
@@ -423,7 +425,8 @@ void WorkerSession::ThreadMain() {
                 view.fields={{L"COM",report_port},{L"Host Baud",std::to_wstring(report_baud)},
                     {L"Host",report_host},{L"Target before operation",report_target},{L"CAN configuration",report_can},
                     {L"Input bytes",std::to_wstring(command.image.size())},{L"Elapsed ms",std::to_wstring(elapsed)},
-                    {L"Operation evidence",update_details_},{L"Host counter deltas",counters},{L"Host peaks / scope",peaks}};
+                    {L"Operation evidence",update_details_},{L"Host counter deltas",counters},
+                    {L"Host counter assessment",observations.Status()+L". "+observations.Note()},{L"Host peaks / scope",peaks}};
                 if(command.type!=CommandType::BridgeRun && !command.image.empty()) {
                     if(command.type==CommandType::ProgramF13Boot) {
                         const auto input=firmware_update::InspectImage(command.image);

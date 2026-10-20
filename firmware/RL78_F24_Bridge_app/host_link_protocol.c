@@ -87,7 +87,7 @@ const volatile uint32_t __far g_host_app_image_contract[5] = {
                                                 HOST_LINK_FEATURE_TX_WAIT_RX | \
                                                 HOST_LINK_FEATURE_ASYNC_RX | \
                                                 HOST_LINK_FEATURE_AUTO_BUS_OFF | \
-                                                0x00000300UL | BRIDGE_SELF_UPDATE_FEATURE | HL_BAUD_FEATURE | CB_FEATURE)
+                                                0x00000300UL | BRIDGE_SELF_UPDATE_FEATURE | HL_BAUD_FEATURE | CB_FEATURE | CB_FD_FEATURE)
 
 #define HOST_LINK_NOMINAL_BITRATE_MASK         F24_CAN_NOMINAL_MASK
 #define HOST_LINK_DATA_BITRATE_MASK            (0x00000002UL)
@@ -1420,7 +1420,13 @@ static void dispatch_request(void)
 
             case CB_COMMAND:
                 memset(&pending_transaction, 0, sizeof(pending_transaction));
+                CAN_HostGetConfig(&can_config);
                 if (!cb_decode(&pending_transaction.burst, payload, payload_length))
+                {
+                    status = HOST_LINK_STATUS_BAD_ARGUMENT;
+                    break;
+                }
+                if (payload[0] == CB_FD_VERSION && can_config.mode == HOST_LINK_CAN_MODE_CLASSICAL)
                 {
                     status = HOST_LINK_STATUS_BAD_ARGUMENT;
                     break;
@@ -1432,6 +1438,7 @@ static void dispatch_request(void)
                 pending_transaction.expected_id = cb_le16(payload+4);
                 pending_transaction.expected_id_mask = cb_le16(payload+6);
                 pending_transaction.expected_dlc = payload[8];
+                pending_transaction.expected_flags = payload[9];
                 pending_transaction.expected_flags_mask = 0x0FU;
                 status = schedule_can_transaction(&pending_transaction);
                 if (status == HOST_LINK_STATUS_OK) defer_response = 1U;

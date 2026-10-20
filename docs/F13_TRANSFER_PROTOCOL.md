@@ -6,6 +6,11 @@ flash. `RL78_F13_CAN_Transfer` and `RL78_F24_CAN_Transfer` are independent
 device projects implementing this contract. The PC workflow is named
 `Custom Transfer` and accepts matching implementations on other MCUs.
 
+`RL78_F24_CAN_FD_Transfer` implements the FD+BRS transport and additive
+ECHO_FD64 capability. The8-byte payload contract below is shared; full FD64
+layout,operating steps and build inputs are maintained in the
+[CAN FD transfer guide](./CAN_FD_UPDATE_zh-TW.md#can-fd-custom-transfer).
+
 Custom Transfer does not load or parse a target firmware BIN. Program the
 diagnostic target with its normal debugger/programmer, then use the tool to
 discover it and run the transfer test. The `Load Update Image` action is only
@@ -13,21 +18,21 @@ for metadata-bearing CAN Upgrade application images.
 
 ## 1. CAN configuration
 
-- Classical CAN: 500 kbit/s.
+- Classical reference:500 kbit/s; FD reference:500 kbit/s nominal /2 Mbit/s data,BRS.
 - Request ID: standard data frame `0x710`.
 - Response ID: standard data frame `0x711`.
-- DLC: exactly 8.
+- Base commands:DLC8; FD64 extension:wire DLC15,64payload bytes.
 - F13 reference hardware receive rule: ID `0x710`, mask `0x7FF`, standard data
   only.
 - MCU-host receive rule: ID `0x711`, mask `0x7FF`, standard data only.
 
-Extended, remote, wrong-ID, and non-8-byte frames are not valid protocol
-requests. The exact F13 hardware rule rejects the first three classes before
-protocol dispatch.
+Extended,remote and wrong-ID frames are invalid. Base commands require8bytes;
+the advertised FD64 extension uses64bytes. Other lengths are rejected.
+Hardware receive rules and the protocol dispatcher enforce these limits.
 
 ## 2. Request and response format
 
-Every request and response is exactly eight bytes.
+Base command requests and responses are exactly eight bytes.
 
 | Byte | Request | Successful response |
 | ---: | --- | --- |
@@ -198,7 +203,9 @@ Field/stage interpretation is maintained in the
 
 Both device projects and the PC workflow clean-build. The PC target client drives all commands
 through generic `CAN_TX_WAIT_RX` with response ID `0x711`, mask `0x7FF`, DLC 8,
-and standard Classical data-frame matching. Unit tests cover CRC, request
+and standard Classical data-frame matching for the Classical session. FD
+sessions require FDF+BRS and DLC8 or15 as selected by the command.
+Unit tests cover CRC, request
 encoding, response identity/ID/sequence/CRC checks, error decoding, complete
 multi-page discovery including a non-F13 identity, every command workflow,
 exact match construction, and advancing non-zero sequences.

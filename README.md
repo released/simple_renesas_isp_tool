@@ -3,6 +3,33 @@
 Native Windows tool and MCU-bridge firmware for CAN/CAN FD transfer testing,
 target firmware updates and staged I2C master communication.
 
+For CAN FD500K/2M,BRS and64-byte block transfers,see the
+[FD operation and device guide](docs/CAN_FD_UPDATE_zh-TW.md).
+The F24 host App advertises FD burst bit13; its Boot is unchanged.
+FD clean builds/software models and physical board acceptance are separate.
+Custom Transfer supports Classical CAN and FD+BRS. Its
+[FD communication test](docs/CAN_FD_UPDATE_zh-TW.md#can-fd-custom-transfer)
+uses8-byte discovery/control plus a capability-gated64-byte ECHO test.
+No firmware BIN is used; the standalone FD Transfer HEX is installed by programmer.
+Its RXMB0 interrupt uses Renesas R_CAN_ReadRXMBInHandler and an8-entry RAM queue;
+the main loop owns protocol/logging and TX completion remains polled. The
+[FD guide](docs/CAN_FD_UPDATE_zh-TW.md#can-fd-custom-transfer) describes the
+startup identifier and continuous-session checks beyond16/32/64 receptions.
+For returned CAN timeouts, the [FD diagnostic fields](docs/CAN_FD_UPDATE_zh-TW.md#can-fd-transfer-diagnostics)
+explain Host TX attempts/results and the device's bounded RXMB/TX snapshots.
+The independent FD device Boot/App pair uses compact RXMB interrupt reception
+and an8-entry queue with Boot-owned physical vectors and App-local ISR entries.
+See [FD device receive/Flash flow](https://released.github.io/slide_boot_loader_for_RL78/#can-fd-device-rx).
+Build/model checks and physical FD App-update acceptance remain distinct.
+Normal FD Transfer and App->ENTER->update->APP_READY operation have board
+evidence;the checked update has zero recorded Host error-counter increases.
+Long stress and power/fault recovery remain separate acceptance items.
+
+After END, the Tool uses a cancel-aware restart wait before read-only App
+confirmation. Successful updates with increased Host error counters retain
+an explicit warning in the completion feedback and JSON/HTML report, including
+warning/error-passive deltas. See [confirmation and report semantics](docs/UPDATE_VALIDATION_zh-TW.md#app-restart-confirmation).
+
 The separate [F24 MCU CAN device design](docs/F24_CAN_DEVICE_DESIGN_zh-TW.md)
 uses an 8KiB Boot and App at 0x2000. Its Transfer/Boot/App builds and safe software models
 are checked. Normal500K App programming, CRC, post-reset APP_READY/live INFO
@@ -247,8 +274,9 @@ MSBuild `
 ## GitHub source / delivery publication
 
 Double-click `github_push.bat` to review, archive non-delivery DefaultBuild
-outputs and commit/push F13 device Boot/App, F24 device Transfer/Boot/App and
-Tool repositories in order (six repositories, eight DefaultBuild deliveries).
+outputs and commit/push F13 device Boot/App, F24 Classical Transfer/Boot/App,
+F24 CAN FD Transfer/Boot/App and Tool in order (nine repositories, eleven
+DefaultBuild deliveries).
 The Tool includes F24 CAN host Bridge Boot/App. Type PUSH to confirm; no force
 push, automatic merge, build or web deployment. Local tmp/INI/log/report data
 are excluded. For a read-only preview run scripts/push_github.ps1 without flags.

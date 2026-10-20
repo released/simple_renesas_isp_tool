@@ -2,6 +2,7 @@
 #include "worker_format.h"
 #include "core/firmware_update_profile.h"
 #include "core/update_evidence.h"
+#include "core/app_confirmation_timing.h"
 #include "core/device_version_policy.h"
 #include <algorithm>
 #include <array>
@@ -199,6 +200,8 @@ bool WorkerSession::ConfigureF13Can(
 
     can_host::Configuration configuration;
     configuration.mode = settings.mode;
+    boot_client_.SetCanFd(settings.mode == can_host::Mode::CanFd);
+    transfer_client_.SetCanFd(settings.mode == can_host::Mode::CanFd);
     configuration.nominal_bitrate_preset =
         settings.nominal_bitrate_preset;
     configuration.data_bitrate_preset = settings.data_bitrate_preset;
@@ -303,9 +306,26 @@ bool WorkerSession::ProcessRunF13TransferTest(std::wstring* error) {
     }
     PostLog(L"Custom Transfer PATTERN_TEST passed.");
 
+    if (transfer_client_.IsCanFd()) {
+        if ((state_.transfer_metadata.capabilities & CT_FD64_CAPABILITY) == 0U) {
+            *error = L"FD target does not advertise ECHO_FD64 capability bit6; 64-byte verification not run.";
+            return false;
+        }
+        PostProgress(40, L"ECHO_FD64");
+        for (unsigned pattern=0U; pattern<3U; ++pattern) {
+            std::array<std::uint8_t, CT_FD64_PAYLOAD> fd_data{};
+            for (std::size_t index=0U; index<fd_data.size(); ++index)
+                fd_data[index] = static_cast<std::uint8_t>(pattern==0U ? index :
+                    pattern==1U ? 0xFFU-index : (index%2U ? 0x55U : 0xAAU));
+            if (!transfer_client_.EchoFd64(fd_data, error)) return false;
+        }
+        PostLog(L"Custom Transfer ECHO_FD64 passed: 3 patterns, FD+BRS, DLC15 / 64 bytes each, full59-byte echo and CRC8.");
+    }
+
     for (std::uint8_t index = 0U; index <= 11U; ++index) {
         std::uint16_t value = 0U;
         if (!transfer_client_.GetStat(index, &value, error)) {
+            *error += L" Custom Transfer GET_STATS index=" + std::to_wstring(index) + L".";
             return false;
         }
         PostLog(L"Custom Transfer statistic[" + std::to_wstring(index) + L"]=" +
@@ -543,8 +563,9 @@ bool WorkerSession::ProcessProgramF13Boot(
     }
     state_.target_metadata=live;
     firmware_update::ImageInfo metadata;
-    if ((state_.host_capabilities.feature_flags & host_link::kCanBurstFeature) == 0U) {
-        *error = L"CAN Upgrade v5 requires bridge CAN_BURST_WAIT_RX (bit12). Update the bridge App in Misc first.";
+    const auto required_burst = can_host::BurstFeatureFor(command.can_settings.mode);
+    if ((state_.host_capabilities.feature_flags & required_burst) == 0U) {
+        *error = L"CAN Upgrade requires matching bridge burst support (Classical bit12 / FD bit13). Update the bridge App in Misc first.";
         return false;
     }
     if (!firmware_update::ValidateImage(
@@ -692,17 +713,29 @@ bool WorkerSession::StopCanAfterAppConfirmation() {
 }
 
 bool WorkerSession::ConfirmDeviceApp(const firmware_update::ImageInfo& image,std::wstring* error) {
-    const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(12);
-    while(std::chrono::steady_clock::now()<deadline && !IsCancelRequested()) {
+    const auto started=std::chrono::steady_clock::now();
+    const auto elapsed=[&]() { return static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started).count()); };
+    evidence::AppConfirmationTiming timing;
+    std::uint32_t probes=0U;
+    const auto record=[&]() { update_details_+=L"; app_reset_quiet_ms="+
+        std::to_wstring(evidence::AppConfirmationTiming::quiet_ms)+L"; app_health_probes="+std::to_wstring(probes); };
+    PostLog(L"App restart wait: "+std::to_wstring(evidence::AppConfirmationTiming::quiet_ms)+
+        L" ms without CAN requests, included in the "+std::to_wstring(evidence::AppConfirmationTiming::budget_ms)+
+        L" ms confirmation window; Cancel remains available.");
+    while(evidence::AwaitAppProbe(timing,elapsed,[this]() { return IsCancelRequested(); },
+        [](std::uint32_t ms) { Sleep(ms); })==evidence::AppConfirmationTiming::Action::Probe) {
+        ++probes;
         std::uint32_t health=0U;
         std::wstring probe_error;
         if(boot_client_.GetAppHealth(&health,&probe_error) && (health&0xFFU)==1U) {
             f13_boot::TargetInfo live;
-            if(!boot_client_.GetTargetInfo(&live,error)) return false;
+            if(!boot_client_.GetTargetInfo(&live,error)) { record(); return false; }
             for(const auto& row:evidence::Compare(image,live))
                 update_details_+=L"\n"+row.field+L": image="+row.image+L", live="+row.live+L", "+row.result;
             if(!evidence::ConfirmApp(image,live,health)) {
                 *error=L"END CRC succeeded, but the running App identity / version / build / size or health differs from the loaded image.";
+                record();
                 return false;
             }
             state_.target_metadata=live; state_.target_validated=true;
@@ -712,10 +745,11 @@ bool WorkerSession::ConfirmDeviceApp(const firmware_update::ImageInfo& image,std
                 L", bytes "+std::to_wstring(live.installed_app_size)+L", health "+evidence::Hex(health);
             PostLog(L"App confirmation PASS: "+state_.target_summary+
                 L". Health covers local clock/CAN/timer checks, not application-level functional acceptance.");
-            *error=L""; return true;
+            record(); *error=L""; return true;
         }
-        Sleep(100U);
+        timing.ProbeFinished(elapsed());
     }
+    record();
     *error=IsCancelRequested()?L"App confirmation canceled; END had already succeeded. No automatic rewrite.":
         L"END CRC succeeded, but APP_READY was not confirmed within the bounded reconnect window. No automatic rewrite.";
     return false;

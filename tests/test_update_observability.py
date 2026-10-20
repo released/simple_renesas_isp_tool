@@ -32,7 +32,7 @@ class UpdateObservability(unittest.TestCase):
 
     def test_public_one_owner_and_hardware_boundary(self):
         source=(ROOT/'docs/UPDATE_VALIDATION_zh-TW.md').read_text(encoding='utf-8-sig')
-        self.assertEqual(source.count('```mermaid'),1)
+        self.assertEqual(source.count('```mermaid'),2)
         for phrase in ('APP_READY','Compare Metadata','Cancel','phases_ms','NOT RUN','921600','460800','Verify Installed'):
             self.assertIn(phrase,source)
         self.assertNotRegex(source,r'[A-Z]:[\\/]|_Avery|SourceCode')

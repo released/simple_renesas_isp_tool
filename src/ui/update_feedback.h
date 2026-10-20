@@ -8,6 +8,7 @@ namespace firmware_upgrade::feedback {
 enum class Result {
     None,
     DeviceAppConfirmed,
+    DeviceAppConfirmedBusWarning,
     DeviceAppConfirmedCanActive,
     HostAppWritten,
     HostAppRunning,
@@ -24,7 +25,13 @@ struct View {
 
 inline bool IsDevice(Result result) {
     return result == Result::DeviceAppConfirmed ||
+           result == Result::DeviceAppConfirmedBusWarning ||
            result == Result::DeviceAppConfirmedCanActive;
+}
+
+inline Result WithHostCounterWarning(Result result, bool increased) {
+    return increased && result == Result::DeviceAppConfirmed ?
+        Result::DeviceAppConfirmedBusWarning : result;
 }
 
 inline View Describe(Result result) {
@@ -36,6 +43,13 @@ inline View Describe(Result result) {
             L"To update again: Discover Target > Enter Boot (if App mode) > Start Device Update.\r\n"
             L"Open Last Report shows the saved operation evidence.", L"Device update complete",
             L"App confirmed; CAN stopped; COM open. Check App.\r\nNext update: Discover Target > Enter Boot (App mode)."};
+    case Result::DeviceAppConfirmedBusWarning:
+        return {L"Device App updated / Host counter warning",
+            L"[COMPLETE / WARNING] Device App written, CRC verified and startup confirmed. CAN stopped; Host error counters increased.",
+            L"The update succeeded. Review Host counter deltas and detailed trace in the Log / Open Last Report.\r\n"
+            L"Host COM remains open. Do not repeat the update to clear the warning.",
+            L"Device App confirmed",
+            L"App confirmed; CAN stopped; Host counter warning.\r\nCheck Log / Open Last Report; COM open.", true};
     case Result::DeviceAppConfirmedCanActive:
         return {L"Device App updated / CAN stop not confirmed",
             L"[COMPLETE / WARNING] Device App verified and startup confirmed; Host CAN stop was not confirmed.",
@@ -59,6 +73,11 @@ inline View Describe(Result result) {
     default:
         return {};
     }
+}
+
+inline std::wstring ReportResult(bool success, bool canceled, Result result) {
+    if (!success) return canceled ? L"CANCELED" : L"FAIL";
+    return Describe(result).warning ? L"PASS_WITH_WARNINGS" : L"PASS";
 }
 
 inline std::wstring CanNextStep(bool host, bool discovered, bool boot) {

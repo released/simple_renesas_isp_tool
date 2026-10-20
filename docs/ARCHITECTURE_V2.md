@@ -2,6 +2,42 @@
 
 Status: implementation baseline
 
+CAN FD updates use a separate device Boot/App pair with compiled FD-only
+mode metadata. Host command22 version2/feature bit13 forwards three standard
+FD+BRS records per64-byte block in101 payload bytes. The PC target profile
+owns padding,CRC/retry and mode checks; the host remains generic.
+Classical version1/bit12 and its device golden projects are preserved.
+See CAN_FD_UPDATE_zh-TW.md; physical FD acceptance is independent of models.
+
+Custom Transfer has an independent session mode in its PC client: Classical
+retains its wire format; FD uses FDF+BRS with strict ID/DLC/flag validation.
+The additive ECHO_FD64 command07/device capability bit6 checks59 echoed bytes
+plus header/CRC8 in a64-byte frame. It uses generic TX_WAIT_RX,not burst/Flash
+commands,and needs no Host App change. Its preflight does not require a BIN.
+CAN_TX_WAIT_RX timeouts retain the raw host error and validate/decode its
+attempt/result payload in the CAN client. Guidance distinguishes that returned
+bus status from a missing PC/Host UART response. FD Transfer runtime snapshots
+are main-loop and bounded; no diagnostic may pop/clear/reset CAN or
+turn a partial transfer test into success. See the FD operation guide.
+Standalone FD Transfer uses the unchanged vendor RXMB ISR at vector0x4C and
+R_CAN_ReadRXMBInHandler in its callback. One64-byte RXMB0 and exact standard
+0x710 filtering feed an8-entry SPSC RAM queue; receive FIFOs are disabled.
+The vendor ISR acknowledges RMND; InHandler owns RAM-window/overwrite checks.
+ISR work only captures/enqueues. Main-loop validates mode/DLC/length and runs
+protocol/logging; TX remains polled. Full queue drops newest,not pending data;
+head/tail publish only after complete copies. Snapshot acquisition masks/restores
+only RXMB IRQ to copy coherent16-bit counters,never consuming/acknowledging data.
+Fields distinguish IRQ/queued/dequeued/depth/peak/drops/overwritten/API errors.
+FD Boot/App independently link a compact RXMB0 no-vect Device_CanRxIsr and
+an8-entry queue. Driver ISR generation is off;RMIEC bit0/CPU source are enabled
+explicitly after ready. Boot physical4C uses ownerAA dispatch;owner55 forwards
+to App table slot2098. Post-build checks actual dispatch/App route/RETI and
+rejects competing vendor vectors. Main loop owns protocol/Flash;RX drops and
+sticky faults are observable. Boot TX uses compile-time response ID/FD+BRS/DLC8.
+RFD busy work remains RAM-only under DI;ACK pacing,not RAM queue capacity,
+prevents the host from streaming across a Flash busy window. All64 App BR
+destinations remain validated after metadata/CRC by device_app_vectors.h.
+
 The console uses five system-color MFC groups: Host connection, BIN/live-device
 information, peripheral/target, shared load/update actions and message log.
 Metadata owns four semantic groups above the actions; tabs own only peripheral
@@ -15,6 +51,14 @@ Update completion now distinguishes END acceptance from post-reset APP_READY
 and matching live identity/version/build/size. Misc END remains Boot; only an
 explicit RUN triggers bounded same-COM115200 automatic App confirmation.
 After CAN App confirmation, the worker requests CAN_STOP and retains Host COM.
+END ACK starts a cancel-aware1000ms no-CAN-request restart wait within the
+existing12-second probe budget; health probes are paced100ms after each
+completed attempt. This is a PC scheduling guard,not a target startup guarantee.
+Counter evidence includes warning/error-passive deltas and distinguishes
+unavailable snapshots from zero. A confirmed update with increased Host error
+counters,or unconfirmed STOP,is PASS_WITH_WARNINGS with amber completion/report
+feedback. Failure/cancel never inherits that success classification. Wire and
+device/host firmware contracts are unchanged;see UPDATE_VALIDATION_zh-TW.md.
 Only acknowledged STOP clears the live target snapshot; a failed STOP retains
 CAN state and reports App-confirmed/cleanup-warning, not an update failure or
 invented disconnect. Typed operation outcomes drive one completion dialog and

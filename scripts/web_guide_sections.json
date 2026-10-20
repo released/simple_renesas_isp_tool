@@ -1,4 +1,22 @@
 {
+  "FD_TRANSFER": {
+    "owner": "slide_isp_tool_for_RL78",
+    "anchor": "can-fd-custom-transfer",
+    "title": "CAN FD Custom Transfer 通訊測試",
+    "description": "CAN FD Discover、8-byte命令、64-byte ECHO、能力與操作核對集中於ISP Tool。"
+  },
+  "FD_UPDATE": {
+    "owner": "slide_isp_tool_for_RL78",
+    "anchor": "can-fd-update",
+    "title": "CAN FD App 更新操作",
+    "description": "500K／2M、BRS、64-byte FD資料幀的Tool與Host操作集中於ISP Tool。"
+  },
+  "FD_DEVICE": {
+    "owner": "slide_boot_loader_for_RL78",
+    "anchor": "can-fd-device-engineering",
+    "title": "MCU CAN FD device 工程設定",
+    "description": "CAN FD Boot/App設定來源、timing、metadata、建置與產物集中於Device指南。"
+  },
   "UPDATE_EVIDENCE": {
     "owner": "slide_isp_tool_for_RL78",
     "anchor": "update-confirmation",

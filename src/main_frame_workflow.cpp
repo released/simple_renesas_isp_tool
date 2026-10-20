@@ -416,7 +416,7 @@ void CMainFrame::UpdateUi() {
     app_start_edit_.EnableWindow(!busy && boot_profile);
     connect_target_btn_.EnableWindow(
         !busy && host_ready && !can_started && !target_ready &&
-        (transfer_profile ? classical_mode :
+        (transfer_profile ? can_settings_valid :
                             selected_mode_supported &&
                                 selected_bitrate_supported));
     enter_bootloader_btn_.EnableWindow(
@@ -436,8 +436,9 @@ void CMainFrame::UpdateUi() {
         if (!host_ready) {
             missing.push_back(L"Open + Probe Host");
         }
-        if (host_ready && (session_state_.host_capabilities.feature_flags & firmware_upgrade::host_link::kCanBurstFeature) == 0U) {
-            missing.push_back(L"update bridge App: CAN burst capability bit12 required");
+        const auto required_burst = firmware_upgrade::can_host::BurstFeatureFor(selected_can_settings.mode);
+        if (host_ready && (session_state_.host_capabilities.feature_flags & required_burst) == 0U) {
+            missing.push_back(L"update bridge App: matching CAN burst capability required (Classical bit12 / FD bit13)");
         }
         if (!selected_mode_supported) {
             missing.push_back(
@@ -525,12 +526,6 @@ void CMainFrame::OnBnClickedConnectTarget() {
                   (settings_error.empty() ?
                        std::wstring(L"unsupported target workflow.") :
                        settings_error));
-        return;
-    }
-    if (profile == L"Custom Transfer" &&
-        settings.mode != firmware_upgrade::can_host::Mode::Classical) {
-        AppendLog(L"Connect blocked: Custom Transfer v1 requires Classical CAN "
-                  L"at the target's bitrate (current F13 reference: 500K).");
         return;
     }
     if (profile == L"CAN Upgrade" && binary_inspection_.metadata_valid) {

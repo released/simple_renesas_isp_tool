@@ -129,7 +129,9 @@ void CMainFrame::OnPreflight() {
         evidence::Gate(rows,field,ok,current,action);
     };
     gate(L"Live host",session_state_.host_validated,session_state_.host_summary,L"Open + Probe Host; COM description is not identity");
-    gate(L"Loaded BIN",!binary_data_.empty(),std::to_wstring(binary_data_.size())+L" bytes",L"Load Update Image for the selected destination");
+    const bool transfer = !IsMiscTab() && !IsI2cTab() && SelectedProfile()==L"Custom Transfer";
+    if (!transfer)
+        gate(L"Loaded BIN",!binary_data_.empty(),std::to_wstring(binary_data_.size())+L" bytes",L"Load Update Image for the selected destination");
     if(IsMiscTab()) {
         const bool info=session_state_.host_validated && session_state_.bridge_info_valid;
         const auto& d=session_state_.bridge_info;
@@ -147,6 +149,22 @@ void CMainFrame::OnPreflight() {
     } else if(IsI2cTab()) {
         gate(L"Reference discovery",IsI2cSelectionCurrent(),session_state_.i2c_summary,L"Probe the explicitly selected port/rate/address");
         gate(L"Programming adapter",false,L"Read-only reference workflow",L"Erase/write is not enabled for this adapter");
+    } else if (transfer) {
+        gate(L"Workflow",true,L"Custom Transfer / non-destructive",L"No firmware BIN or Flash operation is used");
+        ui::CanSettings settings; std::wstring error;
+        const bool selected=SelectedCanSettings(&settings,&error);
+        can_host::Configuration config;
+        config.mode=settings.mode;config.nominal_bitrate_preset=settings.nominal_bitrate_preset;
+        config.data_bitrate_preset=settings.data_bitrate_preset;
+        gate(L"Selected CAN settings",selected && session_state_.host_validated &&
+            can_host::IsConfigurationSupported(config,session_state_.host_capabilities,&error),
+            error,L"Select the target's compiled Classical or FD rate");
+        const bool live=session_state_.target_validated && session_state_.target_profile==ui::TargetProfile::F13Transfer;
+        gate(L"Live test target",live,session_state_.target_summary,L"Discover Test Target");
+        if (selected && settings.mode==can_host::Mode::CanFd)
+            gate(L"FD64 echo capability",live &&
+                (session_state_.transfer_metadata.capabilities&CT_FD64_CAPABILITY),
+                L"Live Custom Transfer capability bit6",L"FD Transfer firmware must advertise ECHO_FD64");
     } else {
         const bool image=binary_image_valid_ && binary_inspection_.metadata_valid;
         const bool live=session_state_.target_validated && session_state_.target_profile==ui::TargetProfile::CanUpgrade;
@@ -154,10 +172,11 @@ void CMainFrame::OnPreflight() {
         gate(L"Live device",live,session_state_.target_summary,L"Discover Target with CAN Upgrade");
         gate(L"Device Boot",live && session_state_.f13_bootloader_ready,L"Live device mode",L"Enter Boot before programming");
         gate(L"Image / CRC32",image,binary_image_validation_error_,L"Valid device _update.bin / full CRC32");
-        gate(L"Host burst support",session_state_.host_validated &&
-            (session_state_.host_capabilities.feature_flags&host_link::kCanBurstFeature),L"Live host capability",L"CAN burst capability bit12 required");
         ui::CanSettings settings; std::wstring error;
         const bool selected=SelectedCanSettings(&settings,&error);
+        gate(L"Host burst support",selected && session_state_.host_validated &&
+            (session_state_.host_capabilities.feature_flags&can_host::BurstFeatureFor(settings.mode)),
+            L"Live host capability",L"Matching burst required: Classical bit12 / FD bit13");
         can_host::Configuration config;
         config.mode=settings.mode; config.nominal_bitrate_preset=settings.nominal_bitrate_preset;
         config.data_bitrate_preset=settings.data_bitrate_preset;

@@ -61,6 +61,9 @@ class WorkspacePathsTests(unittest.TestCase):
             ('F24Transfer', 'FIRMWARE_F24_DEVICE_TRANSFER_PROJECT', 'RL78_F24_CAN_Transfer'),
             ('F24Boot', 'FIRMWARE_F24_DEVICE_BOOT_PROJECT', 'RL78_F24_Boot_loader_CAN'),
             ('F24App', 'FIRMWARE_F24_DEVICE_APP_PROJECT', 'RL78_F24_Boot_loader_CAN_app'),
+            ('F24FdTransfer', 'FIRMWARE_F24_DEVICE_FD_TRANSFER_PROJECT', 'RL78_F24_CAN_FD_Transfer'),
+            ('F24FdBoot', 'FIRMWARE_F24_DEVICE_FD_BOOT_PROJECT', 'RL78_F24_Boot_loader_CAN_FD'),
+            ('F24FdApp', 'FIRMWARE_F24_DEVICE_FD_APP_PROJECT', 'RL78_F24_Boot_loader_CAN_FD_app'),
         )
         with tempfile.TemporaryDirectory(prefix='device_publish_layout_') as folder:
             parent = Path(folder)

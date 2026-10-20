@@ -61,6 +61,13 @@ automatic reports include failed/canceled outcomes, phase durations and honest
 counter reset/saturation/peak scope. Query live diagnostic capabilities rather
 than guessing from model/version. No hardware evidence is implied by models.
 See docs/UPDATE_VALIDATION_zh-TW.md; sync_update_evidence.ps1 owns its web block.
+After END use the shared AppConfirmationTiming/AwaitAppProbe policy:1000ms
+without CAN requests,20ms cancel slices,100ms between completed health probes,
+within the12-second probe budget. Do not extend wire timeouts or repeat END.
+Host counter evidence includes warning/passive;increases on confirmed device
+updates produce typed amber feedback/PASS_WITH_WARNINGS. Preserve unavailable,
+failure/cancel and STOP-warning distinctions. Native timing/counter tests do
+not establish physical restart-error elimination.
 Successful update/RUN outcomes own one explicit dialog and persistent completion
 guidance, never derived from a stage reaching100percent. CAN_STOP is sent only
 after App confirmation; retain Host COM and clear live target only on STOP ACK.
@@ -76,6 +83,50 @@ documentation-only delivery work must not rebuild/bump the measured binaries.
 
 Current wire profile requires128-byte Host Link payload/frame142; no96-host
 compatibility fallback. Canonical limits are firmware/common/host_link_limits.h.
+CAN FD device updates use the independent RL78_F24_Boot_loader_CAN_FD pair:
+500K/2M/BRS,FD64 raw0x720,FF-padded final block and format6/mode2 metadata.
+Host App advertises bit13/command22 version2; bit12/version1 Classical stays
+byte-compatible. UI/preflight/worker share can_host::BurstFeatureFor.
+Host Boot and all Classical golden projects stay unchanged for FD work.
+Keep FD build hooks/includes isolated,8KiB/512-byte spare and all image gates.
+Custom Transfer accepts Classical or FD sessions without a firmware BIN gate.
+FD discovery/base commands are8-byte FD+BRS; ECHO_FD64 command07 uses64bytes,
+59echo bytes and CRC8, advertised by device capability bit6. Validate actual
+ID/mode/BRS/wire-DLC/length before shared v1 parsing. Generic TX_WAIT_RX21 is
+sufficient; do not require update-only burst bit13 or change Host firmware.
+firmware/common/custom_transfer_fd.h is mirrored into the standalone FD
+Transfer checkout; test_fd_transfer.ps1 verifies parity and actual C90 protocol
+against the production PC client with trace off/on. Transfer MTPJ/hooks use
+only FD helpers; explicit -Kind transfer never rebuilds Boot/App. Keep the
+standalone programmer HEX distinct from an update BIN and hardware evidence.
+FD Transfer STATE/IRQ/REGS snapshots are main-loop and Transfer-only;
+retain the three-per-idle-episode/one-second bound and no automatic CAN reset,
+FIFO drain or diagnostic flag clear.
+Standalone FD Transfer enables only RXMB0 IRQ under F24_DEVICE_TRANSFER:
+one64-byte RXMB0,exact0x710 rule,no RX FIFO. Unchanged vendor ISR acknowledges
+RMND;callback uses R_CAN_ReadRXMBInHandler and an8-entry SPSC RAM queue.
+No protocol/UART/TX wait in ISR;main-loop has no hardware polling fallback.
+TX remains polled. Full queue drops newest;overwrites/errors drop that read.
+Snapshots briefly mask/restore RXMB IRQ for coherent software counters,never
+acknowledge flags/consume queue/reset CAN; preserve original mask even if1.
+Diagnostics include IRQ/queued/dequeued/depth/peak/drops/API errors and RMIEC.
+FD Boot/App use their compact RXMB0/no-vect Device_CanRxIsr and8-entry queue;
+driver ISR generation0 does not disable hardware RMIEC/CPU IRQ. Boot owns4C
+through AA/55 dispatcher;App maps4C locally. Keep actual compiled routing/RETI,
+RX drop observations and512-byte spare guards. Boot replies are fixed standard
+response ID/FD+BRS/eight bytes. Flash busy chain remains RAM-only with DI/EI;
+queue does not buffer eight wire frames while global IRQ is disabled.
+Preserve the validated Transfer preprocessed backend/HEX during Boot/App work.
+Native compact-ISR/three-frame tests and hardware acceptance are separate.
+Native Transfer tests extract the actual
+vendor RXMB ISR/InHandler bodies/table/types; do not substitute an API stub
+or claim physical IRQ acceptance from software models.
+For CAN_TX_WAIT_RX21 TIMEOUT, preserve the raw error and validate its8-byte
+attempt/result payload; classify it as bus transaction status,not missing UART
+response. Include failed GET_STATS index without declaring a counter root cause.
+docs/CAN_FD_UPDATE_zh-TW.md owns FD_TRANSFER/FD_UPDATE(ISP) and FD_DEVICE(Bootloader);
+sync_can_fd.ps1 and -CheckOnly maintain both projections and topic links.
+test_can_fd.ps1 takes explicit FD Boot/App paths and runs native models only.
 Image metadata owns256 bytes at offset100h..1FFh,128-byte core plus128 reservedFF;
 core/descriptor/payload/region/chunk sizes are independent. Bridge contract3
 stages/reads64-byte pages with LE16 offsets; BEGIN erases only after complete
@@ -277,12 +328,12 @@ logic outside generated files except in preserved user-code sections.
 
 - github_push.bat / scripts/push_github.ps1 is the explicit maintainer publish
   entry. Plain invocation is read-only; -Execute requires PUSH or -Yes.
-  Shared catalog github_publish_catalog.ps1 owns six repos: F13 Boot/App,
-  F24 CAN device Transfer/Boot/App and Tool including its F24 CAN host projects.
+  Shared catalog github_publish_catalog.ps1 owns nine repos: F13 Boot/App,
+  F24 Classical and FD device Transfer/Boot/App and Tool including its F24 CAN host projects.
   User requests scripts/checks only: do not initialize/create/commit/push actual
   repositories without a separate request. Missing .git stops before pruning.
 - DefaultBuild release pruning is a recoverable move to ignored tmp/internal/
-  github_publish, never normal clean/build. Preserve the exact eight delivery
+  github_publish, never normal clean/build. Preserve the exact eleven delivery
   files in the catalog; validate bounds/reparse points, remote ancestry and
   index before commit/push. Never force push, auto-merge or publish web sites.
   Reject tracked or unignored local-only data before archiving/staging. Permit

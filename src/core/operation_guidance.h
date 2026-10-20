@@ -16,6 +16,8 @@ inline Advice Explain(const std::wstring& message) {
     if(has(L"cancel")) return {L"Canceled",L"Wait for worker cleanup. Probe/discover again before another update; interrupted App flash may require Boot recovery."};
     if(has(L"app_ready") || has(L"app reconnect") || has(L"run returned") || has(L"run sent"))
         return {L"App confirmation",L"Keep the current image and report. Check power and App initialization, then read live INFO. Do not repeat erase or RUN to resolve an unknown result."};
+    if(has(L"host returned timeout for command 0x21."))
+        return {L"Host / device bus",L"Host UART returned a CAN transaction timeout, not a PC serial-response timeout. Check attempts/last TX result, then compare the CAN request/reply with device UART FIFO/TX snapshots and analyzer trace. Check mode/BRS/rates/IDs and transceiver wiring. TX_END does not prove device software processed the request. Save the failure before resetting; do not erase or increase timeouts as a diagnosis."};
     if(has(L"downgrade") || (has(L"version") && has(L"older")))
         return {L"Device version policy",L"Use the same/newer App version, or the explicit force upgrade old version firmware maintenance action. Other image checks remain required."};
     if(has(L"metadata") || has(L"image") || has(L"irq abi") || has(L"geometry") || has(L"policy") || has(L"crc32"))

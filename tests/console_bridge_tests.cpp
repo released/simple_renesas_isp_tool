@@ -142,6 +142,7 @@ int TestConsoleBridge() {
             }
         }
         for (const auto result : {firmware_upgrade::feedback::Result::DeviceAppConfirmed,
+                firmware_upgrade::feedback::Result::DeviceAppConfirmedBusWarning,
                 firmware_upgrade::feedback::Result::DeviceAppConfirmedCanActive,
                 firmware_upgrade::feedback::Result::HostAppWritten,firmware_upgrade::feedback::Result::HostAppRunning}) {
             const auto view=firmware_upgrade::feedback::Describe(result);

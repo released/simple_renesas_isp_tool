@@ -15,6 +15,100 @@ PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
 
+2026-10-20 FD publication: nine repositories/eleven delivery files/ten archive
+groups;path mappings,ignore example and preflight guidance synchronized.
+19 isolated Git cases/four path tests PASS. FD generator bookkeeping/comments
+portable without SFR or compiler-setting changes;three preparation CheckOnly
+and relocated sibling checks PASS. README retains App/Transfer dependency on
+same-parent FD Boot. User133221 normal App->ENTER->update/App/UART confirmed,
+seven Host error deltas zero;stress/power remain separate. MD/web/310refs/
+18-file content/33safe-clean and13-page/four-flow PDF visual review PASS.
+Tool EXE/16firmware artifact hashes unchanged;no rebuild/version bump or real
+Git publication. Actual preview stops before cleanup because FD .git is absent.
+Manual CS+ GUI/SC regeneration and compiler rebuild NOT RUN in this task.
+
+2026-10-20 Tool0097:1000ms cancel-aware no-CAN-request wait after END,
+original12-second probe budget;warning/passive included in operation deltas.
+Confirmed updates with Host error increases or STOP warnings produce amber
+PASS_WITH_WARNINGS;FAIL/CANCELED/unavailable snapshots remain distinct.
+Debug/Release builds/startup/native suites,FD models,7integration/5PDF tests,
+MD/web/310refs/content/33safe-clean and16+13page PDF visual review PASS.
+16firmware artifacts unchanged. User130843 confirms one normal FD update/
+App/IRQ/counter with warning/passive+1,not0097 restart-error elimination.
+Existing observability artifact check remains1FAIL(pruned F24 intermediate)
+and1SKIP(absent F13 map);no golden rebuild. Hardware repeat/fault NOT RUN.
+
+2026-10-20 FD device pair:compact RXMB0 ISR/8-entry queue,AA55 full Boot4C /
+App2098 route,driver vect ISR0 with explicit hardware IRQ. Boot fixed8 reply
+and64-word vector validation preserve guards. Clean Boot0errors/2warnings,
+end1DBF/spare576;App0errors/5warnings,4756bytes/CRC9819B975,minimum Boot1.2.0.
+9artifact/actual-config/C90 per-profile512capture/queue/fault/64slot models,
+PC/host/device RAM retry/replay/lostACK/padding/disconnect and Transfer models
+PASS. Transfer PP/516protected hashes unchanged. MD/Web/310refs/content/
+33safe-clean/syntax,13-page PDF/4diagrams/all-page visual review PASS.
+User112409 verifies standalone IRQ normal traffic only;FD Boot/App physical
+update/repeat/fault/power NOT RUN. No Tool/Host/Transfer rebuild or publication.
+
+2026-10-20 FD Transfer RXMB IRQ:unchanged vendor ISR/vector4C + InHandler,
+8-entry SPSC queue,main-loop protocol/logging,no RX polling fallback. TX unchanged.
+512actual vendor ISR/API native receives,queue wrap/full/order/masked IRQ,
+overwrite/errors/bounds/saturation/stop/reinit/window restore and PC trace0/1
+PASS. Clean standalone0errors/2license warnings;HEX/MOT range/ISR/banner/API
+and vendor SHA verified.9artifact/compact HAL/metadata/CRC/block models PASS;
+Boot/App PP unchanged,517protected hashes unchanged. MD/Web/CheckOnly/310refs/
+content/26safe-clean and11-page PDF/3diagrams/all-page visual review PASS.
+User polling baseline passed Discover+4tests/79RX/TX and is archived;IRQ
+hardware NOT RUN. No Tool/Host/Boot/App rebuild,COM/Flash or Git publication.
+
+2026-10-20 FD Transfer RXMB0 path:one64-byte RXMB,exact0x710,main-loop vendor
+R_CAN_ReadRXMB;receive FIFOs/interrupts disabled only for Transfer. Clock/
+rates/IDs/TX/wire unchanged. Actual vendor C90 model128mixed receptions with
+busy/overwrite/bounds/flags/no FIFO write and PC/protocol trace0/1 PASS.
+Effective config/timing guard and Boot/App preprocessing isolation PASS;
+517protected hashes unchanged. Clean standalone0errors/2license warnings,
+9artifact/compact HAL/metadata/block models PASS. HEX/banner/linked RXMB
+verified;MD/web/310refs/content/26safe-clean and9-page PDF visual QA PASS.
+Physical RXMB acceptance/root cause NOT RUN. Earlier FIFO entry below is an
+engineering record,not the current standalone receive backend.
+
+2026-10-20 FD Transfer vendor FIFO path: Transfer-only adapter calls the real
+R_CAN_ReadRXFIFO, preserving16x64 FIFO/mode/rates/IDs/TX/protocol. Actual vendor
+body/tables/RX types are extracted for C90 register tests;128 modeled dequeues,
+8/64-byte frames,empty/lost/error/DLC/flags/no-extra-pop checks and trace0/1 PC
+protocol models PASS. Three clean Transfer builds0errors/2license warnings PASS.
+Non-Transfer adapter preprocessing unchanged. Tool/Host/Boot/App are not build
+targets.517protected hashes unchanged;actual HEX banner/vendor API linked.
+MD/web/CheckOnly,9-page PDF/all-page visual check,310refs/content/26safe-clean
+and PowerShell syntax PASS. Physical repeated-session acceptance/root cause
+remains NOT RUN.
+
+2026-10-19 FD runtime diagnosis: Tool0096 decodes returned21 timeout attempts/
+result,uses bus-layer guidance and adds failed stats index. FD Transfer adds
+read-only/bounded STATE/REGS checkpoints,idle/TX-failure snapshots. C90 models,
+128pop-write observations,trace0/1,Debug/Release native regressions,FD9guards
+and clean builds PASS. Startup/normal close PASS;Classical512hashes,Host/FD
+Boot/App products and non-Transfer backend preprocessing unchanged. MD/web/
+9-page PDF/content/310refs/24safe-clean PASS. Physical cause/new diagnostic
+capture unresolved;user traces verify only discovery/base/FD64 partial test.
+
+2026-10-19 FD Custom Transfer: Tool0095 removes Classical-only discovery and
+uses strict FD+BRS sessions; FD Transfer has isolated FD backend/hooks and
+64-byte ECHO/CRC/replay. Transfer preflight uses no BIN/Boot/burst requirement.
+Two device clean builds,actual C90/PC models with trace0/1,native Debug/Release
+Classical and FD upgrade regressions PASS. Release build/start/normal close
+PASS;512 Classical files and Host/FD Boot/App delivery hashes unchanged.
+FD operation/protocol/architecture/MD/web and8-page/2-Mermaid PDF aligned;
+visual/syntax/310references/24safe-clean checks PASS. Physical FD NOT RUN.
+
+2026-10-19 CAN FD: isolated F24 device Boot/App500K/2M/BRS/FD64,
+generic Host App bit13/command22 version2 and mode-specific Tool gates built.
+Classical golden512-file hashes and Host Boot unchanged. Nine artifact tests,
+C90 HAL/metadata/block and production PC/host codec/device RAM FD models PASS;
+native Debug/Release Classical regressions PASS. Boot spare522>=512.
+Tool0094 Release/start/normal close PASS;Host App clean build PASS.
+FD MD/web/protocol/5-page PDF synchronized and visually checked;reference/
+content/24safe-clean checks PASS. Physical FD update/fault/power NOT RUN.
+
 2026-10-19 F24 device README alignment: all three public READMEs are English
 with corresponding F13 reader structure; local F24 hardware/IRQ/metadata/
 build/output/capability facts preserved. Five read-only source/link tests PASS.

@@ -14,6 +14,10 @@ enum class Mode : std::uint8_t {
     CanFd = 1U,
 };
 
+constexpr std::uint32_t BurstFeatureFor(Mode mode) {
+    return mode == Mode::CanFd ? host_link::kCanFdBurstFeature : host_link::kCanBurstFeature;
+}
+
 struct Configuration {
     Mode mode = Mode::Classical;
     std::uint8_t nominal_bitrate_preset = 2U;

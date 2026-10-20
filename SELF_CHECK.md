@@ -1,5 +1,169 @@
 # Host Link v2 Self-Check
 
+## FD normal hardware acceptance / publication scope (2026-10-20)
+
+- [x] User133221 with0097:Discover App->ENTER->FD update->APP_READY/live image,
+  END CRC/CAN_STOP,UARTruntime completed/V1 counter pass;75FD64 blocks,all
+  seven Host error deltas zero,no raw CAN error/state events. One checked
+  App-mode update;not long stress or power/fault acceptance.
+- [x] Nine-repository/eleven-delivery catalog:19 isolated Git integration cases
+  PASS;four workspace path tests and PowerShell syntax PASS. Missing FD Git
+  refuses before cleanup;real preview confirms this expected prerequisite.
+- [x] Three FD project generator paths/comments are portable;comment-free C
+  text unchanged. Synthetic tests,three actual CheckOnly gates and relocated
+  sibling checks PASS. App/Transfer README dependency retained.
+- [x] MD/web CheckOnly,310refs/anchors,18-file content and33safe-clean checks
+  PASS;CAN FD PDF13pages/4diagrams rendered/all pages reviewed. Tool EXE and16
+  firmware artifact hashes unchanged. Required FD deliveries remain present.
+- [ ] FD repositories need .git/main/initial commit/origin before publication.
+  No real Git init/index/commit/push or rebuild;manual CS+ GUI/SC regeneration
+  and compiler rebuild NOT RUN for this publication-only task.
+
+## Tool restart wait and counter warnings (2026-10-20)
+
+- [x] User130843 FD write/END/App identity/CAN_STOP and UART V1 counter pass;
+  Host warning/passive each+1,46raw events during initial post-END health.
+  One update only;reset ACK-gap cause not proven. Four evidence copies ignored.
+- [x] Tool shared1000ms quiet wait,20ms cancel slices,100ms probe spacing and
+  original12-second budget;quiet/probe count recorded,no wire/firmware change.
+- [x] Seven error deltas include warning/passive;known increases produce amber
+  typed completion/PASS_WITH_WARNINGS,missing/reset/saturation not zero.
+  STOP-warning precedence and FAIL/CANCELED distinctions preserved.
+- [x] Debug/Release0097 builds0errors/0warnings,startup/title/normal exit0;
+  both full native suites,FD production models,7integration/5PDF tests PASS.
+- [x]16firmware artifact hashes unchanged. MD/web/CheckOnly/310refs/content,
+  33workspace clean scripts PASS.16-page/2flow and13-page/4flow PDFs rendered
+  and allpages visually reviewed. No Git publication or physical bus action.
+- [ ] Existing observability artifact check:3PASS/1FAIL/1SKIP;FAIL expects
+  pruned F24 Classical App flash_app_variable_CRC.hex;F13 map absent(SKIP).
+  No golden rebuild/restoration;unchanged failing artifact-name assertion.
+- [ ]0097 physical restart-error elimination,App->ENTER->repeat,stress/power
+  and full live-DPI screenshots NOT RUN. Retain supplied one-update evidence
+  separately from native models and proposed reset-window diagnosis.
+
+## FD device Boot/App interrupt update baseline (2026-10-20)
+
+- [x] User112409 standalone IRQ baseline:Discover+4full tests,79RX/TX/IRQ/queue,
+  12FD64 pairs,zero faults/drops;archived logs/HEX. Not Flash/stress evidence.
+- [x] Compact Boot/App RXMB0 ISR/8-entry SPSC,explicit hardware IRQ/no driver
+  vect ISR,AA/55 Boot4C/App2098 route,RETI/no-competing-vector guards.
+- [x] Boot fixed8 response route and64-word branch validation preserve wire,
+  metadata/CRC/version/range/Flash gates. RAM-only RFD and DI/EI unchanged.
+- [x] Clean Boot0errors/2warnings,end1DBF/spare576;App0errors/5warnings,
+  size4756/CRC9819B975,identity1.0.4,minimum Boot1.2.0. Actual HEX/BIN verified.
+- [x]9artifact checks plus actual config/C90 Boot/App512captures,queue/full/
+  order/masking/overwrite/length/flags/saturation/stop,three-frame RAM/CRC and
+  all64branch opcode/range tests PASS. Compiled route/RETI corruption rejected.
+- [x] PC/host-codec/device RAM FD retry/replay/lost-ACK/padding/disconnect PASS;
+  Transfer trace0/1/actual vendor ISR PASS. Transfer PP/516protected hashes unchanged.
+- [x] MD/Web/CheckOnly/310refs/content/33safe-clean/syntax;13-page PDF/4diagrams
+  rendered and every page visually inspected. No Tool/Host/Transfer rebuild.
+- [ ] Physical FD Boot/App update,App->ENTER->repeat,stress/power/fault: NOT RUN.
+  No agent COM/Flash/reset/Git publication.
+
+## FD Transfer RXMB0 interrupt / RAM queue (2026-10-20)
+
+- [x] Transfer-only RXMB IRQ/vector4C,actual vendor ISR/InHandler,8-entry SPSC
+  queue;no ISR protocol/logging/TX wait and no main-loop polling fallback.
+  Full queue drops newest;TX/clock/rates/IDs/wire and non-Transfer PP unchanged.
+- [x]512 actual vendor ISR/API modeled receives,8/64-byte,queue wrap/full/order,
+  IRQ masked,overwrite/API error/length/index/null/canaries,counter saturation,
+  stop/reinit,window restore,no FIFO writes;PC/C protocol trace0/1 PASS.
+- [x] Standalone clean rebuild0errors/2license warnings;actual HEX/MOT range,
+  ISR4C=00FC,timer2E=01B9,banner,linked InHandler/no polling API,vendor SHA PASS.
+- [x]9artifact/compact HAL/metadata/CRC/block models PASS;517protected hashes
+  unchanged. No Tool/Host/Boot/App rebuild. Polling baseline HEX/logs archived.
+- [x] MD/Web CheckOnly/310refs/content/26safe-clean;11-page PDF/3diagrams rendered
+  and every page visually inspected. Physical polling baseline is not IRQ evidence.
+- [ ] Physical interrupt/queue/repeated-session/fault acceptance: NOT RUN.
+  No agent COM/Flash/reset/power,commit/push or deployment.
+
+## Prior polling RXMB0 verification record (2026-10-20)
+
+- [x] Standalone-only one64-byte RXMB0/exact0x710;polling vendor API,no RX FIFO
+  or RX interrupt. Busy deferred,overwrite dropped/counted;TX/wire unchanged.
+- [x] Actual vendor RXMB C90 model128mixed8/64-byte receives,busy/overwrite/
+  empty/error/DLC/flags/length,index/null,bounds/saturation/no FIFO pop PASS.
+  Actual config/timing preprocessing and PC/protocol trace0/1 models PASS.
+- [x] Standalone clean build0errors/2existing license warnings;HEX matches
+  audited MOT delivery range,RXMB banner and linked RXMB-only API verified.
+- [x] Boot/App effective config/backend preprocessing identical to task entry;
+ 517protected hashes unchanged.9artifact/compact HAL/metadata/block checks PASS.
+- [x] Transfer CheckOnly,canonical MD/web projections,310refs/public-content/
+ 26safe-clean PASS.9-page PDF/2diagrams rendered and all pages visually checked.
+- [ ] Physical RXMB repeated-session/FD64/fault/root-cause acceptance: NOT RUN.
+  No agent COM/Flash/reset/power,commit/push or deployment.
+
+## FD Transfer official FIFO receiver (2026-10-20)
+
+- [x] Transfer-only R_CAN_ReadRXFIFO adapter; original non-Transfer production
+  preprocessing identical to task entry,excluding blank lines.
+- [x] Actual vendor FIFO function/tables/RX types compiled in C90 /Za /W4 /WX;
+ 128 modeled dequeues,16-entry wrapping,8/64-byte data,empty/lost/error/DLC/
+ flags/length checks and no extra adapter pop PASS. Trace0/1 PC models PASS.
+- [x] Three Transfer clean builds:0errors/2existing license warnings; final startup
+  string identifies the vendor receiver.9artifact guards/production compact
+ HAL and metadata/CRC/block models PASS; no Boot/App rebuild.
+- [x]517task-entry hashes unchanged:512Classical files plus Tool/Host/FD
+ Boot/App deliveries. Actual HEX banner and linked vendor API call verified.
+- [x] MD/web/CheckOnly/public-content/310refs/anchors/26safe-clean/PowerShell
+ syntax PASS;9-page PDF/two diagrams rendered and every page visually inspected.
+- [ ] Physical repeated Transfer Test beyond16/32/64 RX and root cause: NOT RUN.
+
+## FD Transfer runtime diagnosis (2026-10-19)
+
+- [x] Returned21 TIMEOUT retains raw error and decodes valid8-byte attempts/TX
+  detail; malformed/unknown/signed cases,guidance classification and GET_STATS context.
+- [x] Actual C90 protocol trace0/1; runtime INIT/RX checkpoints,three bounded
+  idle samples,TX timeout/abort. HAL snapshots do not mutate observed registers;
+ 128software pop writes and pre-clear TX status preservation PASS.
+- [x] FD Transfer clean build0errors/2existing license warnings;Tool0096
+  Release/Debug x64 build/start/responding/normal close PASS.
+- [x] Native Debug/Release Classical/serial/bridge/I2C/UI regression,FD9artifact
+  guards and actual HAL/metadata/block RAM models PASS.
+- [x]512 Classical hashes,Host/FD Boot/App products unchanged;preprocessed
+  non-Transfer backend unchanged.24safe-clean/310refs/content/projections PASS.
+- [x] Canonical MD/web/README/protocol/architecture and9-page PDF aligned;
+  every page rendered/inspected,final changed flowchart page reinspected.
+- [ ] Physical diagnostic capture and root-cause confirmation: NOT RUN.
+  User evidence establishes Discover/base/FD64 success,not the full stats test.
+  No agent COM/Flash/reset operation,Git commit/push or deployment.
+
+## CAN FD Custom Transfer (2026-10-19)
+
+- [x] FD Discover UI/click/client path; BIN-independent Transfer preflight.
+- [x] Strict response ID/mode/BRS/DLC/length before shared v1 parsing;
+  capability bit6 and command07/full64-byte three-pattern echo/CRC checks.
+- [x] Actual device C90 protocol + production PC client model trace0/1;
+  discovery/base/stats,full replay,sequence wrap and invalid frames/replies.
+- [x] Two isolated FD Transfer clean builds,0errors/2existing license warnings;
+  explicit FD helper/preinclude/hooks and retained standalone programmer HEX.
+- [x] Tool0095 Release/Debug x64 build/start/responding/normal close;
+  native Debug/Release Classical and FD upgrade regressions PASS.
+- [x]512 Classical baseline hashes and Host/FD Boot/App products unchanged.
+- [x] Five PowerShell syntax checks,Transfer CheckOnly,24safe-clean scripts,
+ 310web references/public checks; MD/web/8-page PDF synchronized/visually checked.
+- [ ] Physical FD Transfer/64-byte analyzer/IRQ/timing/fault evidence: NOT RUN.
+  No COM open,Flash operation,Git commit/push or deployment performed.
+
+## CAN FD profile (2026-10-19)
+
+- [x] Isolated FD Boot/App clean builds;8KiB Boot/spare522>=512,
+  complete IRQ/AA55,metadata/CRC,partition and RAM-only RFD guards.
+- [x] Actual FD HAL C90 model,DLC15/64bytes,FD/BRS/RTR/IDE/filter bounds.
+- [x] Actual FD BIN through production PC client/host codec/device RAM:
+  ENTER/INFO/health,all truncations,CRC/missing/conflict/padding,retry/replay,
+  wrong mode/BRS/ID/DLC and disconnect. No modeled Flash write before checks.
+- [x] Host App clean build,bit13/version2 generic burst;Classical v1 unchanged.
+- [x] Tool Release0094 x64 build/start/normal close;full native Debug/Release
+  Classical/serial/bridge/I2C/UI models PASS.
+- [x] All512 Classical baseline file hashes unchanged;Host Boot unchanged.
+- [x] FD MD/web projection/protocol/architecture/English READMEs and5-page PDF,
+  rendered/visually checked;310 local references/public checks and24safe-clean
+  audit PASS.
+- [ ] Physical FD CAN/RFD/App-reset/IRQ/fault/power/throughput: NOT RUN.
+- [ ] No Git publication or actual firmware installation performed.
+
 ## F24 English repository READMEs (2026-10-19)
 
 - [x] Three F24 device READMEs now English, structured by the corresponding

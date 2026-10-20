@@ -228,6 +228,7 @@ public:
 class Client final : public UpdateClient {
 public:
     void SetCanClient(can_host::Client* client);
+    void SetCanFd(bool fd) { if (fd_ != fd) block_data_id_ = 0U; fd_ = fd; }
     bool SetCanIdentifiers(std::uint32_t request_id,
                            std::uint32_t response_id,
                            bool extended,
@@ -277,6 +278,7 @@ private:
     std::uint32_t response_id_ = kResponseId;
     std::uint16_t block_data_id_ = 0U;
     bool extended_id_ = false;
+    bool fd_ = false;
     std::uint32_t application_start_ = kApplicationStart;
     std::uint32_t application_capacity_ = kMaximumUpdateImageSize;
     std::uint32_t erase_block_size_ = kEraseBoundaryBytes;

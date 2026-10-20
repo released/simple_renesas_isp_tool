@@ -23,6 +23,7 @@ struct can_host_tx_diagnostic_t {
     uint8_t ram_dlc_register,ram_fd_control;
 };
 #define CAN_FDCTR_CLASSICAL 0
+#define CAN_FDCTR_FD 6
 #define CAN_TXB_TRANSMITTING 0
 #define CAN_TXB_END 1
 #define CAN_HOST_RESULT_OK 0
@@ -146,6 +147,25 @@ int TestF24CanProcess() {
     Check(received.size()==1 && !g_can_transaction.rx_matched,"UART backpressure does not consume response");
     uart_free=256; received.push_front({0x702,8,{}}); completions.push_back(CAN_TXB_END); process_can_transaction();
     Check(events==1 && finishes==1 && finished_status==0,"unmatched RX event does not steal matching ACK");
+    Prepare(1);
+    transmitted.clear();
+    std::vector<uint8_t> fd{2,3,244,1,1,7,255,7,8,12,0,0};
+    for(unsigned i=0;i<3;++i) {
+        fd.push_back(i==1U?0x20U:0U);fd.push_back(7U);fd.push_back(i==1U?15U:8U);
+        for(unsigned j=0;j<(i==1U?64U:8U);++j)fd.push_back(static_cast<uint8_t>(j));
+    }
+    Check(cb_decode(&g_can_transaction.burst,fd.data(),static_cast<uint16_t>(fd.size()))!=0,"FD burst fixture");
+    next_burst_frame();CAN_HostTransmit(&g_can_transaction.tx_frame);
+    for(unsigned i=0;i<2;++i) {
+        completions.push_back(CAN_TXB_END);process_can_transaction();process_can_transaction();
+    }
+    Check(transmitted.size()==3 && transmitted[1].Head.Bits.ID==0x720U &&
+        transmitted[1].Head.Bits.DLC==15U && transmitted[1].Data.DB[63]==63U &&
+        std::all_of(transmitted.begin(),transmitted.end(),[](const auto& f){return f.Head.Bits.FDCTR==6U;}),
+        "actual host progression forwards full FD64 and sets FD+BRS for all three frames");
+    received.push_back({0x701,8,{0x0C,0,0,0,0x40,0x20,0,0}});
+    completions.push_back(CAN_TXB_END);process_can_transaction();
+    Check(finishes==1 && finished_status==0,"FD progression waits for final ACK once");
     std::cout<<"Actual F24 nonblocking CAN progression / fast ACK / timeout / abort / gap / wrap HAL model: "<<(failures?"FAIL":"PASS")<<'\n';
     return static_cast<int>(failures);
 }

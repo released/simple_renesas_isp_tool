@@ -10,6 +10,28 @@ def read(path):
 
 
 class UpdateCompletion(unittest.TestCase):
+    def test_restart_wait_precedes_read_only_health_and_shares_budget(self):
+        source = read("src/worker_can_workflows.cpp")
+        confirm = source.split("bool WorkerSession::ConfirmDeviceApp", 1)[1]
+        self.assertLess(confirm.index("AwaitAppProbe"), confirm.index("GetAppHealth"))
+        self.assertIn("timing.ProbeFinished(elapsed())", confirm)
+        self.assertIn("app_reset_quiet_ms", confirm)
+        self.assertIn("app_health_probes", confirm)
+        self.assertIn("ConfirmApp(image,live,health)", confirm)
+        for forbidden in ("Program(", "EnterBootloader(", "serial_port_.Close", "SetTransactionPolicy"):
+            self.assertNotIn(forbidden, confirm)
+
+    def test_counter_assessment_precedes_reports_and_completion(self):
+        source = read("src/worker_session.cpp")
+        report = source.split("if(report_update) {", 1)[1]
+        self.assertLess(report.index("RefreshHostStatsBestEffort"), report.index("ObserveHostCounters"))
+        self.assertLess(report.index("WithHostCounterWarning"), report.index("ReportResult"))
+        self.assertLess(report.index("ReportResult"), report.index("SaveReportPair"))
+        for field in ("host_counter_assessment", "host_counter_note", "host_deltas"):
+            self.assertIn(field, report)
+        self.assertIn("view.result=report_result", report)
+        self.assertIn("completion.update_result=success ? update_result_", report)
+
     def test_can_stop_is_after_app_confirmation_and_retains_com(self):
         source = read("src/worker_can_workflows.cpp")
         finish = source.split("const bool confirmed=ConfirmDeviceApp(metadata,error);", 1)[1]
@@ -64,7 +86,7 @@ class UpdateCompletion(unittest.TestCase):
     def test_public_guide_explains_each_completion_and_both_discovery_modes(self):
         guide = read("docs/UPDATE_VALIDATION_zh-TW.md")
         model = read("src/ui/update_feedback.h")
-        for title in ("Device App update complete", "Device App updated / CAN stop not confirmed",
+        for title in ("Device App update complete", "Device App updated / Host counter warning", "Device App updated / CAN stop not confirmed",
                       "Host App update complete - RUN required", "Host App startup confirmed"):
             self.assertIn(title, guide)
             self.assertIn(title, model)

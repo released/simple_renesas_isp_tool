@@ -25,7 +25,8 @@ inline std::wstring HtmlEscape(const std::wstring& value) {
     return out;
 }
 inline std::wstring RenderReport(const ReportView& r) {
-    const std::wstring tone=r.result==L"PASS"?L"pass":r.result==L"CANCELED"?L"canceled":L"fail";
+    const std::wstring tone=r.result==L"PASS"?L"pass":
+        (r.result==L"CANCELED" || r.result==L"PASS_WITH_WARNINGS")?L"canceled":L"fail";
     std::wstring out=LR"(<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">

@@ -1,5 +1,472 @@
 # Development Handoff
 
+## FD publication scope / portable project metadata (2026-10-20)
+
+github_push.bat now includes FD Transfer/Boot/App before Tool: nine repositories,
+eleven delivery files and ten DefaultBuild archive groups. Path resolution,
+ignored local configuration and the device ignore example include all three FD
+projects. Missing .git/main/initial commit/origin still refuses before cleanup;
+the preflight error now distinguishes this from a partial publication failure.
+No real repository was initialized, staged, committed or pushed in this task.
+
+FD MTPJ generator bookkeeping uses local filenames and a relative output folder.
+The known iodefine generator command comment omits machine locations; its license,
+SFR definitions and complete non-comment C text are unchanged. The FD Boot helper
+and preparation checks enforce this on later generation. App/Transfer READMEs
+explicitly retain their same-parent FD Boot source/helper dependency. Standard
+CS+ installation settings are not private workspace paths and remain unchanged.
+
+User133221 confirms Discover App->ENTER->FD update->APP_READY/live image and
+CAN_STOP with Tool0097: 75 FD64 blocks, END CRC and UART completed/V1 counter;
+all seven Host error deltas zero. Four supplied evidence files were copied into
+ignored tmp/internal/benchmarks/fd_update_20261020_133221 without removing the
+originals. This complements, not replaces, the earlier130843 warning record.
+Normal hardware results, source layout, publication guide and canonical MD/web
+sections are synchronized. Stress, other rates and power/fault acceptance remain
+separate from these normal request/reply and update results.
+
+Verification: 19 isolated Git publication cases PASS; four workspace path tests
+PASS; PowerShell syntax, portable comment/XML tests and all three preparation
+CheckOnly gates PASS. A relocated sibling source copy passes the same checks.
+Tool EXE and16 existing firmware artifact hashes are unchanged. MD/web CheckOnly,
+310 local references/anchors,18-file public-content checks and33 workspace clean
+scripts PASS. CAN FD PDF:13 pages/four diagrams, rendered and all pages visually
+reviewed. No Tool/MCU rebuild or version bump; manual CS+ GUI/SC regeneration and
+compiler rebuild NOT RUN for this publication-only task.
+
+Actual read-only preview stops at uninitialized FD Transfer .git before any
+archive/index/commit/remote mutation; all three FD projects still require Git
+setup. The user's trimmed DefaultBuild folders retain each required delivery;
+remaining map/MOT/programmer intermediates were not removed by the agent.
+
+## Tool restart wait / Host counter evidence (2026-10-20)
+
+User130843 evidence:FD Boot1.2.0/App1.0.4,4756bytes/CRC9819B975,
+500K/2M/BRS,75FD64 data frames and75block ACKs,zero Host Link retries.
+END CRC,APP_READY/live identity and CAN_STOP ACK passed;UART completed,
+RXMB interrupt banner and V1 counter0..11 observed. Transfer2418ms,
+metadata-through-END3556ms,operation4648ms. This is one initial Boot update,
+not App->ENTER->repeat or stress/power acceptance. Host warning/passive each
+increased1:46raw UART error/state events arrived after END/during first health
+query at13:09:30,though aggregate display followed at13:09:36. A reset-window
+ACK gap is a hypothesis,not an analyzer-established error type. Four supplied
+logs/reports copied without deleting originals into ignored
+tmp/internal/benchmarks/fd_update_20261020_130843.
+
+Changed files/components:
+- src/core/app_confirmation_timing.h:shared1000ms no-CAN-request restart wait,
+  20ms cancel slices,100ms spacing after completed health probes,within the
+  original12-second probe budget. Worker ConfirmDeviceApp uses this actual
+  wait loop,records quiet setting/probe count;existing identity/health gates,
+  wire transaction timeouts/retries,STOP/cancel ownership unchanged.
+- src/core/host_counter_evidence.h:seven monotonic error deltas including
+  warning/passive,explicit saturation/reset/missing-snapshot availability.
+  worker_session.cpp supplies JSON/HTML assessment/note and counter summary.
+- src/ui/update_feedback.h and core/update_report_view.h:confirmed device
+  updates with increased Host errors get typed amber completion and
+  PASS_WITH_WARNINGS. STOP warning retains precedence;FAIL/CANCELED cannot
+  inherit success. Existing cumulative errors alone do not warn again.
+- tests/tool_experience_tests.cpp,console_bridge_tests.cpp and
+  test_update_completion.py:test production timing/counter/feedback/render
+  helpers and worker integration. test_update_observability.py changes only
+  the canonical diagram count after splitting the flow for readability.
+- README/AGENTS/ARCHITECTURE/checklist/self-check,UPDATE_VALIDATION and CAN_FD
+  guides,two canonical web projections and two PDFs synchronized. No Host or
+  device firmware/runtime/protocol change;16existing firmware artifact hashes
+  unchanged. Pre-existing unrelated dirty changes preserved.
+
+Verification:Release0097 and Debug x64 builds0errors/0warnings;both main
+windows/title0097/startup/normal close exit0. Full Debug/Release native tests
+PASS(including real RichEdit and Win32 serial models),production FD PC/host
+codec/device RAM models PASS. Seven completion integration tests and five PDF
+renderer tests PASS. MD/web CheckOnly,310refs/anchors,18-file public-content
+checks and33workspace clean scripts PASS. PDFs16pages/2flows and13pages/4flows
+rendered and allpages visually reviewed;no clipped diagrams/one-row final
+table spill. No full live-DPI screenshot/physical update on0097 was run.
+Delivery build/FirmwareUpgradeTool.exe SHA256
+1AA1EF4849A117C9AA58BDD9E36787EF0E9473EE847F953B6C8D760F82BF11EB.
+
+Existing unrelated test gap:test_update_observability has3PASS/1FAIL/1SKIP.
+FAIL requires F24 Classical App DefaultBuild/flash_app_variable_CRC.hex (a
+pruned compiler/programmer intermediate);SKIP is the absent F13 map. No
+golden firmware rebuild or missing intermediate restoration was performed
+just to satisfy this check;its artifact-name assertion remains unchanged.
+
+Next physical acceptance:use0097 with existing Host/device firmware and
+CAN FD500K/2M;Detailed trace on,Discover App->Enter Boot->Start Device Update.
+Require >=1000ms restart-wait log before first07/1B,END CRC,APP_READY/live
+identity,CAN_STOP ACK,UART V1/V2 counter and new warning/passive deltas.
+Compare repeated updates without clearing historical counters. Nonzero
+deltas remain warnings;retain raw trace/analyzer evidence to diagnose type.
+No agent COM/Flash/reset/power,Git commit/push or web deployment.
+
+## FD device Boot/App RXMB interrupt delivery (2026-10-20)
+
+The user supplied112409 Tool/UART logs verify the standalone interrupt image:
+one Discover,four full tests,79 device RX/TX/IRQ/queued/dequeued,zero drops/
+overwrites/API errors,depth0/peak1 and12FD64 echo exchanges. This is normal
+request/reply evidence,not queue-full,Flash or power-fault evidence. Logs/HEX
+are archived under ignored tmp/internal/benchmarks/fd_transfer_rxmb_irq_20261020_112409.
+
+Requested continuation implemented only the independent FD device pair:
+- FD Boot common/device_can.c and f24_device_config.h:compact no-vect
+  Device_CanRxIsr,RXMB0/64bytes,exact700/720 Boot or700 App,8-entry SPSC queue;
+  no FIFO or main-loop hardware polling. Vendor vect ISR generation stays0,
+  hardware RMIEC1/CPU source enabled after ready. Full queue drops newest;
+  overwrite/header faults drop that read,sticky fault bits and discard count
+  saturating255 reset only at init. APIs are in common/device_board.h.
+- tools/prepare_projects.ps1 owns Boot4C route in AA/55 full dispatcher and
+  preserves App-local table generation;App app_irq_handlers.h registers4C.
+  Derived f24_boot_vectors.asm/App IRQ table/MTPJ outputs regenerated.
+- can_boot_transport.c:Boot sender supplies eight response bytes;HAL fixes
+  standard configured response ID/FD+BRS/DLC8. No incoming routing/header is
+  reused. App/Transfer retain generic TX;all Flash/metadata/version/CRC gates
+  stay intact. RFD busy chain remains RAM-only under DI/EI with ACK pacing.
+- common/device_app_vectors.h + boot_main.c:all64 aligned BR words decoded
+  as32-bit little-endian EC/address values after metadata/CRC. Opcode/range
+  checks preserved. This and fixed Boot TX keep8KiB/512-byte spare guard.
+- App app_main.c logs explicit receiver plus nonzero faults/drops beside V1
+  counter. Boot identity1.2.0/App1.0.4,build20261020;App minimum Boot1.2.0.
+  Identity sources:image_metadata_config.h and App app_image_config.h.
+- tools/package_images.ps1 validates actual Boot4C dispatch,ISR RETI,App4C
+  slot and no competing vendor vector. tools/test_device.ps1 corrupts these
+  routes/RETI as negative tests,without hardcoded RFD runtime addresses.
+- tools/tests/fd_pair_can_tests.c,transfer_mock/platform.h,test.ps1:strict C90
+  actual compact adapter + RAM block helpers and profile config probes.
+- Project READMEs/agent/handoff/self-check,Tool README/architecture/checklists,
+  canonical CAN_FD_UPDATE and two Web sections/PDF synchronized.
+
+Final clean build:Boot0errors/2license warnings,end1DBF,576bytes spare;
+App0errors/5existing warnings(two license,three generated option-byte notices).
+App4756bytes,CRC9819B975,actual BIN4C slot2098 ->ISR02211. Boot delivery HEX
+matches audited MOT range;all packaging/vector/metadata/range/RFD checks PASS.
+Boot SHA256 CA52B280B10864726C4D562B9566B3B98A336B396F920370FC033BAE7F49D9D9.
+App SHA256 8D0A7DB3146D6DA84FECC49A0D897DDF734FDA3E60960E06203DD1FB7478BBB7.
+
+Verification commands:FD Boot test.ps1 -CModels(PASS9artifact checks,actual
+Boot/App config,512modeled captures per profile,queue full/order/wrap,masked
+IRQ/no polling fallback,overwrite/header/length/drop saturation,stop/reinit,
+three-frame queue/CRC helper boundaries and64-slot opcode/range mutations).
+Tool scripts/test_can_fd.ps1 -DeviceBoot/-DeviceApp PASS production PC/host
+codec/device RAM CRC/padding/retry/replay/lost-ACK/disconnect models.
+test_fd_transfer.ps1 trace0/1 and actual vendor ISR models PASS. Transfer
+production backend preprocessing unchanged;516protected Classical/Tool/Host/
+Transfer hashes unchanged. Neither Tool/Host nor Transfer rebuilt.
+MD/Web CheckOnly,310local refs/public-content,33safe-clean scripts,PowerShell
+syntax/changed-source whitespace PASS.13-page PDF/4diagrams rendered and all
+pages visually inspected. No Git commit/push/deployment or COM/Flash/reset.
+
+Physical FD Boot/App update and power/fault acceptance NOT RUN. Next:program
+FD Boot DefaultBuild/boot0000_1FFF.hex;Tool CAN Upgrade/CAN FD/500K/2M,
+load RL78_F24_Boot_loader_CAN_FD_app_update.bin,Discover Boot then Start Update.
+Require END CRC/APP_READY/live identity and UART completed/receiver/V1 counter.
+Then Discover App ->Enter Boot ->repeat update and retain Tool report/log/UART.
+Tool0096/Host App1.7.0 remain usable;no Misc Host update for this work.
+
+## FD Transfer RXMB0 interrupt / RAM queue (2026-10-20)
+
+Scope: standalone FD Transfer only. The user accepted polling RXMB0 on hardware
+in teraterm.log and firmware_upgrade_tool_20261020_103228.log:one Discover plus
+four complete Transfer Tests,79 RX/TX,all12 stats per run and FD64 patterns.
+Those logs and polling HEX are preserved under ignored
+tmp/internal/benchmarks/fd_transfer_rxmb_polling_20261020_103228.
+That evidence does not establish physical acceptance of this interrupt image
+or identify the earlier FIFO failure's cause.
+
+Changed runtime files in the sibling FD projects:
+- FD Boot common/device_can.c:Transfer-only unchanged vendor RXMB ISR callback,
+  InHandler capture and8-entry SPSC queue;main-loop has no polling fallback.
+  Full queue drops newest;overwrite/API errors drop that read. IRQ/counter
+  snapshots mask/restore only RXMB source,without acknowledging/consuming data.
+- FD Boot common/f24_device_config.h:Transfer-only RMIEC bit0 and RXMB interrupt;
+  FIFO disabled. Non-Transfer effective settings/backend unchanged.
+- FD Boot common/device_board.c:comment corrected to describe profile-specific
+  CAN IRQ ownership;no board runtime change.
+- FD Transfer transfer_diagnostics.h,can_transfer_protocol.c,transfer_main.c:
+  IRQ/queued/dequeued/depth/peak/drops/API-error fields and explicit startup ID.
+  Clock/500K/2M/BRS/IDs/TX/wire remain unchanged;no ISR printf/CRC/protocol/TX wait.
+- FD Boot tools/tests/{prepare_rxmb_model.ps1,fd_can_tests.c,transfer_mock/platform.h}
+  and Tool scripts/test_fd_transfer.ps1,tests/fd_transfer_tests.cpp:actual vendor
+  ISR/InHandler extraction,C90 queue/IRQ models,config guards and trace fixtures.
+- Transfer README,Tool README/docs/CAN_FD_UPDATE/docs/ARCHITECTURE_V2,
+  local agent/handoff/checklist rules and canonical Web/PDF explain operation,
+  source ownership,queue limits and diagnostic interpretation.
+
+Verification:CC-RL standalone clean rebuild0errors/2existing license warnings.
+Actual HEX matches audited MOT delivery range;vector4C points to linked ISR00FC,
+timer2E to01B9;InHandler linked,polling RXMB/RXFIFO APIs not linked. Vendor SHA
+unchanged. Delivery SHA256:
+B37E9BCE4F360DD392AECF78540F0D419920BE19D4E7C00B0219A0B199F8CFAA.
+Actual vendor ISR/InHandler native C90 /Za /W4 /WX:512mixed8/64-byte receives,
+queue wrap/full/newest-drop/order,masked IRQ/no polling fallback,RMND acknowledge,
+overwrite/errors/length/index/null/canaries,saturation,stop/reinit and RAM-window
+restore PASS. Production PC + actual C protocol trace0/1 PASS.9artifact checks,
+compact HAL and metadata/CRC/block models PASS. Boot/App backend/config PP equal
+to task entry;517protected hashes unchanged. No Boot/App/Host/Tool rebuild.
+MD/Web CheckOnly,310refs/public-content/26safe-clean PASS;11-page PDF/3diagrams
+rendered and every page visually reviewed. Tool stays0096.
+
+Hardware interrupt acceptance NOT RUN;no COM/Flash/reset/power,Git commit/push
+or deployment. Next:program only FD Transfer HEX,confirm startup
+RXMB0 interrupt -> RAM queue=8 -> main; payload=64 TX=polling.
+Discover once,run four complete Transfer Tests in the same session,retain
+Tool detailed trace and device UART. Check all12 stats/FD64 per run,IRQ and
+queued/dequeued progressing beyond16/32/64,drops/overwritten/api_errors=0,
+depth=0 after drain. This is not evidence for FD Boot/App update or stress/fault.
+
+## Prior polling RXMB0 implementation record (2026-10-20)
+
+User selected a Transfer-only RX Message Buffer comparison. The adapter now
+polls the selected unchanged vendor R_CAN_ReadRXMB(CAN_RXBUF0),not InHandler:
+the main loop owns reception,not a CAN ISR. F24_DEVICE_TRANSFER configures
+one64-byte RXMB0,disables receive FIFOs/RM interrupts,and routes exact standard
+0x710/mask0x7FF only to RXMB0. Busy waits for a later loop;overwrite drops the
+unstable read and increments a saturating counter. FD/BRS/DLC/length validation,
+clock/rates/IDs/TX and wire protocol stay unchanged. Diagnostics now show
+RMNB/RMND,reads/overwritten and before/after RMND; bounded snapshots remain
+read-only. Startup:CAN RX backend: R_CAN_ReadRXMB RXMB0 payload=64 polling.
+
+Clean standalone build PASS:0errors/2existing CC-RL license warnings.
+Actual vendor RXMB body/table/types in C90 /Za /W4 /WX:128 mixed8/64-byte
+receptions,empty/busy/overwrite/error/length/flag/index/null guards,buffer
+sentinels,counter saturation and no FIFO-pointer write PASS. Actual effective
+Transfer configuration/timing guard and production PC/protocol trace0/1 PASS.
+Nine artifact guards,original compact HAL and metadata/CRC/block models PASS.
+Preprocessed Boot/App adapter and effective configuration match task entry
+excluding blank lines.517protected SHA256 values unchanged (512Classical
+files plus Tool/Host/FD Boot/App deliveries). No protected product rebuilt.
+Delivery HEX matches audited MOT delivery range,contains the startup string,
+and its map links RXMB while RXFIFO is removed by linker optimization.
+HEX SHA256:7F751524F18F5C3A8BFCFCB5D97A4DBABD27D7F3D0EC1B48A137ED4BF79D1FF0.
+
+Canonical FD guide/Transfer and Tool READMEs/Architecture and local web
+projections synchronized;CheckOnly,310refs/navigation/public-content and26
+safe-clean scripts PASS. PDF9pages/2Mermaid diagrams rendered,all pages visually
+inspected. Hardware RXMB acceptance/root cause NOT RUN. User's supplied
+Classical run completes22RX/TX/all12stats;FD prior capture stops after16,
+but does not include the FIFO backend startup identifier.
+
+Runtime changes:FD common/device_can.c,f24_device_config.h;Transfer
+transfer_main.c,transfer_diagnostics.h and diagnostic print in
+can_transfer_protocol.c. Tests:FD tools/tests/fd_can_tests.c,transfer_mock/
+platform.h,prepare_rxmb_model.ps1 (renamed from prepare_fifo_model.ps1),Tool
+scripts/test_fd_transfer.ps1 and tests/fd_transfer_tests.cpp fixture.
+No Tool UI/client/EXE,Host,Classical or FD Boot/App image changes;no COM,
+programmer/reset/power operation,commit/push or deployment performed.
+
+Reproduce:Transfer/build.ps1;Tool/scripts/test_fd_transfer.ps1 -DeviceProject
+<FD Transfer>;FD Boot/test.ps1 -CModels. Extra preprocessing/baseline evidence
+is disposable under tmp/internal/tests/fd_transfer. Next board check:program
+only standalone HEX,capture the RXMB startup identifier/RMNB0701,Discover once,
+then four Transfer Tests in the same session,all12stats each. Save full UART/
+Tool traces and reads/overwritten;do not infer success from the build/models.
+
+## FD Transfer official FIFO receiver (2026-10-20)
+
+User approved only a standalone Transfer comparison after supplied references.
+common/device_can.c now uses R_CAN_ReadRXFIFO behind F24_DEVICE_TRANSFER;
+the vendor function owns window/lost/pop. The adapter requires standard data,
+FDF/BRS,wire DLC0..8 or15 and exact returned length before copying at most64
+bytes. No second pop,drain,reset,timeout/TX/rate/filter/CRC change. pops now
+counts consumed success/lost-success API returns (saturating),not bus proof.
+transfer_main.c startup prints the backend/depth/payload to identify the HEX.
+
+tools/tests/prepare_fifo_model.ps1 extracts the selected unchanged vendor
+function/tables/RX types into disposable test includes; actual C90 /Za /W4 /WX
+tests model128 consumed entries/eight16-entry wraps and8/64-byte data with
+empty/lost/error/DLC/flags/length/no-extra-pop checks. Production PC/protocol
+trace0/1 models PASS. test.ps1 -CModels:9artifact guards,original compact HAL
+and actual metadata/CRC/block models PASS. Three clean Transfer builds PASS,
+0errors/2existing CC-RL license warnings; final build09:19:57 includes banner.
+Non-Transfer adapter preprocessing is identical to task entry except blank
+lines. Tool EXE/Host/FD Boot/App are not rebuilt. No agent COM/programmer/reset/
+power operation or Git publication. Physical root cause is not established.
+
+Public FD guide/Transfer README describe current API ownership,continuous
+session checks and UART reconnect/init evidence. Canonical MD and both web
+projections/CheckOnly PASS;PDF9pages/2Mermaid diagrams rendered and all pages
+visually inspected.310local references/anchors/public-content and26safe-clean
+scripts PASS;PowerShell syntax PASS.517task-entry SHA256 values unchanged:
+512Classical files plus Tool EXE,Host Boot/App and FD Boot/App deliveries.
+Linked map calls R_CAN_ReadRXFIFO and actual HEX contains its startup banner.
+HEX SHA256:11056982D797FAE3D39CF31A158CB1CDABBA5B42730ACA00DC1DA3F766503536.
+Tool remains0096;no Host update is needed. Next hardware check:program only
+standalone Transfer HEX,capture init/banner,Discover once and run Transfer
+Test four times without disconnecting;normal cumulative RX crosses64.
+All12statistics must complete per run;partial success is not acceptance.
+
+Changed runtime files:FD Boot common/device_can.c (Transfer-only branch),
+FD Transfer transfer_main.c and transfer_diagnostics.h. Changed test files:
+FD Boot tools/tests/fd_can_tests.c,transfer_mock/platform.h,new
+prepare_fifo_model.ps1,and Tool scripts/test_fd_transfer.ps1. Documentation:
+FD guide/Architecture,Transfer README and both projects'agent/check/handoff
+records plus web projections/PDF. Tool UI/client and all Host sources untouched.
+Reproduce from standalone Transfer:build.ps1. From Tool: scripts/test_fd_transfer.ps1
+-DeviceProject <FD Transfer checkout>. From FD Boot:test.ps1 -CModels and
+tools/prepare_projects.ps1 -Kind transfer -Project <Transfer checkout> -CheckOnly.
+No MCU startup/hardware smoke run was performed;only offline models/builds.
+
+## FD Transfer runtime diagnosis / Tool0096 (2026-10-19)
+
+User Tool0095/Host1.7.0/device UART traces show successful FD discovery,
+PING/ECHO/PATTERN and three full64-byte FD+BRS echoes. Both runs stop after
+16 processed requests,at GET_STATS index3; the next request is absent from
+device UART. Host21 returns status06,payload0200000002000000:two attempts,
+last TX_END. This is partial hardware evidence,not complete Transfer acceptance
+or proof of FIFO exhaustion. Physical root cause remains unresolved.
+
+FD Transfer can_transfer_protocol.c/config and transfer_diagnostics.h add
+STATE/REGS at INIT/every16 RX/TX failures and bounded idle sampling:one group
+per second,three groups until more RX. Snapshot includes software state/last
+sequence/command,counters,RFCC0/RFSTS0/RFPCTR0,pop-write count,last pop before/
+after,GSTS/C0STSL/C0ERFLL,TMC0/TMSTS0 and last pre-clear TX status/window/STB.
+FD common/device_can.c implements observations under F24_DEVICE_TRANSFER only;
+no extra FIFO pop/flag clear/reset,retry or timeout-policy change.
+Preprocessed non-Transfer backend is byte-for-byte text-identical to task entry
+after removing blank lines; protected FD Boot/App products are unchanged.
+
+Tool changes: src/core/can_host_client.cpp decodes validated returned21 timeout
+attempts/result while preserving exact error; operation_guidance.h separates
+CAN transaction TIMEOUT from a missing UART response; worker_can_workflows.cpp
+adds failed GET_STATS index. Host firmware is unchanged and needs no reflash.
+tests/tool_experience_tests.cpp and tests/fd_transfer_tests.cpp cover guidance,
+valid/truncated/reserved/invalid-attempt/unknown/signed timeout detail,bounded
+idle snapshots,more than16 requests and TX/abort timeouts. Extended FD HAL model
+checks read-only observations,128 software pop writes and pre-clear TX status.
+scripts/test_fd_transfer.ps1 runs actual C90 protocol trace0/1 and the HAL model.
+
+Verification PASS: FD Transfer clean build0errors/2existing license warnings;
+Tool one-click Release0096 x64 build0warnings/0errors,Debug build,and both
+startup/responding-window/normal-close smoke checks. Native Debug/Release
+Classical/serial/bridge/I2C/UI regressions PASS. FD9artifact checks,actual HAL
+and metadata/block RAM models PASS. All512 Classical baseline hashes and Host/
+FD Boot/App deliveries unchanged.24safe-clean scripts,310web references,
+FD projection/public-content checks PASS. Canonical FD operation/protocol/
+architecture/README/web updated;9-page/2-Mermaid PDF rendered/visually checked.
+All latest rendered pages match the inspected images; only updated flowchart
+page2 changed during final pagination and was inspected again.
+
+Reproduce: scripts/test_fd_transfer.ps1 -DeviceProject <FD Transfer>;
+FD Boot/test.ps1 -CModels; native HostLinkProtocolTests Debug/Release with
+explicit F13BootProject. FD Transfer/build.ps1 rebuilds only standalone Transfer.
+Logs: tmp/internal/tests/fd_transfer/trace0.log and trace1.log.
+Next board check:program new Transfer HEX,use Tool0096 FD500K/2M with detailed
+trace,repeat Discover/Transfer,retain last RX/TX and STATE/REGS for3seconds
+after failure before reset. New diagnostics not yet physically tested.
+No agent COM open/Flash/reset/fault/power test,Git commit/push or deployment.
+SHA256 Tool:E3F38689E044CC3E2CB5EFA1933327CBF9D22FBF589CF5FEBBE42982FE5E3E90;
+Transfer HEX:802E83153A86B493C60E369A7BCCC856C24D8CFE72A5DB717D35E1F2E215DFF9.
+
+## CAN FD Custom Transfer (2026-10-19)
+
+Tool0094's Classical-only UI/client guard and the copied FD Transfer project's
+Classical backend/hooks both caused the reported issue. Tool0095 now permits
+FD discovery and sends/validates FD+BRS control8 and ECHO_FD64/command07.
+The latter verifies three64-byte patterns,all59echo bytes and CRC8; capability
+bit6 is required. Preflight does not require a BIN/Boot/burst for Custom Transfer.
+Existing cached OFFLINE BIN remains distinct from the live Transfer identity.
+Bridge Self Test remains a separate Classical-only function.
+
+FD Transfer now references FD common/preinclude/pre/post hooks,has its own
+build.ps1 and programmer HEX,and caches full64-byte replies for exact replay.
+No target Flash commands were added. Same-sequence conflicting FD64 requests
+and malformed/CRC-invalid FD64 requests are counted/dropped. Generic host21
+is used; Host Boot/App and FD Boot/App products are unchanged from task entry.
+Default FD helper -Kind all remains Boot/App only; transfer is explicit.
+
+Changed PC files: src/core/f13_transfer_profile.h/.cpp,
+src/main_frame_workflow.cpp,src/main_frame_evidence.cpp,
+src/worker_can_workflows.cpp; shared wire header firmware/common/custom_transfer_fd.h.
+Changed device files: FD Transfer can_transfer_protocol.c/.h,
+can_transfer_config.h,transfer_main.c,build.ps1,.gitignore,README,MTPJ and
+generated projection/vectors; FD Boot build.ps1/tools/prepare_projects.ps1
+extend the existing isolated build helpers without rebuilding the FD pair.
+New verification: tests/fd_transfer_tests.cpp,scripts/test_fd_transfer.ps1.
+
+Two FD Transfer clean builds PASS,0errors/2existing CC-RL license warnings.
+Strict C90 actual-device protocol + production PC/client models PASS with
+trace0/1:7-page discovery,base commands,FD64 patterns,replay,sequence wrap,
+bad format/CRC/conflict and wrong response ID/mode/BRS/sequence/data/length.
+Existing full native Debug/Release Classical/bridge/I2C/serial/UI tests and
+FD upgrade PC/host codec/device RAM model PASS. Release0095 x64 build has
+0warnings/0errors; Release and Debug startup/responding-window/normal-close
+smoke PASS,without COM.
+All512 Classical baseline SHA256 files and four protected Host/FD products
+are unchanged. Five affected PowerShell scripts parse; FD Transfer CheckOnly
+PASS. Workspace safe-clean24scripts and web310references/public checks PASS.
+
+Canonical FD guide now projects FD_TRANSFER/FD_UPDATE/FD_DEVICE into the
+respective single-owner web sections; protocol/architecture/README updated.
+Its8-page/2-Mermaid PDF was rendered and every page visually inspected.
+No COM open,physical FD/Flash/reset/fault/power test,Git commit/push or deploy.
+Use the new Tool AND reprogram the standalone FD Transfer HEX for board testing.
+Reproduce from Tool: scripts/test_fd_transfer.ps1 -DeviceProject <FD Transfer>;
+scripts/test_can_fd.ps1 -DeviceBoot <FD Boot> -DeviceApp <FD App>.
+Native regression: MSBuild tests/HostLinkProtocolTests.vcxproj with explicit
+F13BootProject and Configuration=Debug/Release,Platform=x64,then run its EXE.
+Device clean build: FD Transfer/build.ps1; only that standalone project builds.
+Final SHA256: Tool975970C13B26418207E48B15F367363553D372D3EC138AC56106A75976D1F528;
+FD Transfer5A1D0A375626925B7D589D66C9C723AD487AC1D894AB55812A7AF402CDBEEEFC.
+
+## CAN FD Boot/App and generic bridge burst (2026-10-19)
+
+User selected500K nominal/2M data,BRS and64-byte data frames.
+Independent FD projects build only their own Boot/App; inherited Classical
+includes,hooks,package paths and test inputs were corrected before compilation.
+No Classical source/project/delivery change:512 baseline SHA256 files identical.
+Host Boot source/common contract/delivery unchanged; MOT SHA256
+C193D1174ACC99540E0C88F141FAA3BBBBBBFBE8180EEDD95DE458ADA8F2518F.
+
+FD device HAL uses64-byte FIFO,strict FD+BRS/standard/data validation,
+0..8-byte control and wireDLC15->64byte data. One raw0x720 frame replaces
+indexed Classical segments. Tail FF padding is validated; CRC covers true
+length. Metadata/seal,version policy/force,AA55 IRQ,range/CRC/launch and replay
+gates are retained. Clean Boot0errors/2existing license warnings,end1DF5,
+spare522>=512; App0errors/5existing license/device-file warnings,4284bytes,
+CRC087ADA53. FD App BIN remains separate from Classical mode metadata.
+
+Host App1.7.0 adds generic command22 version2/feature bit13 and full validation
+before TX. The12-byte header plus compact standard records uses101bytes for
+BEGIN8/DATA64/COMMIT8; all records/ACK are FD+BRS. Version1/bit12 is unchanged.
+Clean Host App0errors/2existing license warnings,43924B/CRC8DF89886.
+Tool0.1.0.0094 Release x64 build0warnings/0errors and startup/normal close PASS.
+Final Debug x64 build0warnings/0errors and startup/normal close also PASS.
+Mode-specific UI/preflight/worker capability gates share BurstFeatureFor.
+Responses are checked for ID/mode/BRS/DLC before protocol normalization.
+
+Nine FD PowerShell artifact/negative checks,strict-C90 actual HAL register
+model,production metadata/block/CRC/Tool parser and explicit native end-to-end
+FD upload models PASS. Models cover1-byte ENTER/2-byteACK,INFO/health,64-byte
+packing,all truncations,wrong mode/BRS/ID/DLC,CRC/conflict/missing/FF padding,
+lost ACK/replay and disconnect. Existing full native Debug and Release
+Classical/bridge/I2C/serial/UI models PASS.24-script safe-clean audit PASS.
+
+Changed runtime sources: firmware/common/can_burst.h/.inc; Host App
+host_link_protocol.c,host_link_can_process.inc,app_image_config.h/generated
+identity/deliveries; src/core can_host_client.h/.cpp,f13_boot_profile.h/.cpp,
+host_link_protocol.h; worker_can_workflows.cpp; main_frame_workflow.cpp and
+main_frame_evidence.cpp. Native FD tests are tests/can_fd_upgrade_tests.cpp,
+scripts/test_can_fd.ps1 and extended f24_can_process_tests.cpp.
+FD project changes cover build.ps1,test.ps1,tools prepare/package/metadata/
+tests,common device_can/device_board/config,can_boot_config/block/transport,
+image_metadata_profile,App control log/config references,MTPJs/generated
+metadata/vectors and packaged products. English READMEs and local ignores added.
+Unused copied Transfer-only test entry/model removed from the FD project;
+its Classical originals are preserved.
+
+Canonical FD guide has two single-owner web projections,protocol/architecture
+specs and5-page/1-Mermaid PDF; all PDF pages rendered and visually inspected.
+310 local references/anchors/fences/public-content checks PASS.
+No agent board/COM/Flash/reset/fault/power operation,Git commit/push or deployment.
+Physical FD transceiver/timing/update/App confirmation/throughput remain NOT RUN.
+Final delivery SHA256: Tool5A2939536C845079D4E875B1CC10AC70B439629BF4D0CF443F386EB316BD3967;
+Host AppBEED67ED894D0840BF334DAEC5C2146438F0561ABFD27A5FE4C7930CDB6F12FA;
+FD BootC43B8A78ECE3E8B95950570F08C7A9C355956B17FC2EF5F4697F386DE36E64F0;
+FD AppD6910726DFE20B4C1A1F80C42307C12146FD6F576797B8EE52AF3DCFA7C13C2A.
+Baseline hashes are retained in ignored tmp/internal/can_fd/golden_sha256.json.
+Next lab use: update Host App via Misc,program FD device Boot with programmer,
+then matching FD update BIN via CAN FD500K/2M and save report/UART/analyzer trace.
+
 ## English F24 device README alignment (2026-10-19)
 
 User-supplied SourceCode_Avery_Renesas spelling does not exist; edits use the

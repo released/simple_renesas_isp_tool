@@ -6,4 +6,7 @@
     F24TransferProject = '<F24-device-Transfer-checkout>'
     F24BootProject = '<F24-device-Boot-checkout>'
     F24AppProject  = '<F24-device-App-checkout>'
+    F24FdTransferProject = '<F24-device-FD-Transfer-checkout>'
+    F24FdBootProject = '<F24-device-FD-Boot-checkout>'
+    F24FdAppProject  = '<F24-device-FD-App-checkout>'
 }

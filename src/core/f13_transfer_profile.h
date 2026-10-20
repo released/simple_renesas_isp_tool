@@ -5,6 +5,7 @@
 #include <string>
 
 #include "can_host_client.h"
+#include "../../firmware/common/custom_transfer_fd.h"
 
 namespace firmware_upgrade::f13_transfer {
 
@@ -82,6 +83,8 @@ private:
 class Client {
 public:
     void SetCanClient(can_host::Client* client);
+    void SetCanFd(bool enabled) { fd_ = enabled; }
+    bool IsCanFd() const { return fd_; }
     void SetTransactionPolicy(std::uint16_t timeout_ms,
                               std::uint8_t retry_count);
 
@@ -98,8 +101,12 @@ public:
                  std::uint16_t* value,
                  std::wstring* error);
     bool ClearStats(std::wstring* error);
+    bool EchoFd64(const std::array<std::uint8_t, CT_FD64_PAYLOAD>& input,
+                  std::wstring* error);
 
 private:
+    bool Exchange(can_host::Frame request, std::uint8_t expected_dlc,
+                  can_host::Frame* received, std::wstring* error);
     bool Execute(Command command,
                  const std::array<std::uint8_t, 3>& payload,
                  Response* response,
@@ -110,6 +117,7 @@ private:
     std::uint16_t timeout_ms_ = 500U;
     std::uint8_t retry_count_ = 1U;
     std::uint8_t last_sequence_ = 0U;
+    bool fd_ = false;
 };
 
 } // namespace firmware_upgrade::f13_transfer

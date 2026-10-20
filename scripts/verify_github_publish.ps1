@@ -25,9 +25,11 @@ function New-TestCase([string]$Name) {
     $targets=@(Get-GithubPublishTargets (Join-Path $case 'simple_renesas_isp_tool') `
         (Join-Path $case 'RL78_F13_Boot_loader_CAN') (Join-Path $case 'RL78_F13_Boot_loader_CAN_app') `
         (Join-Path $case 'RL78_F24_CAN_Transfer') (Join-Path $case 'RL78_F24_Boot_loader_CAN') `
-        (Join-Path $case 'RL78_F24_Boot_loader_CAN_app'))
-    Assert-Test ($targets.Count -eq 6) 'production catalog must contain six repositories'
-    Assert-Test (@($targets | ForEach-Object {$_.Groups | ForEach-Object {$_.Keep}}).Count -eq 8) 'production catalog must retain eight deliveries'
+        (Join-Path $case 'RL78_F24_Boot_loader_CAN_app') `
+        (Join-Path $case 'RL78_F24_CAN_FD_Transfer') (Join-Path $case 'RL78_F24_Boot_loader_CAN_FD') `
+        (Join-Path $case 'RL78_F24_Boot_loader_CAN_FD_app'))
+    Assert-Test ($targets.Count -eq 9) 'production catalog must contain nine repositories'
+    Assert-Test (@($targets | ForEach-Object {$_.Groups | ForEach-Object {$_.Keep}}).Count -eq 11) 'production catalog must retain eleven deliveries'
     foreach($target in $targets) {
         $target.Root=Join-Path $case $target.Name
         $target.Remote=Join-Path $case ($target.Name+'.git')
@@ -70,7 +72,7 @@ foreach($target in $plan) {
     Assert-Test ((Invoke-PublishGit $target.Root @('ls-remote','origin','refs/heads/main')).Text.Split("`t")[0] -ceq $target.Head) 'wrong remote head'
     Assert-Test (!(Invoke-PublishGit $target.Root @('ls-remote','origin','refs/tags/*')).Text) 'unrequested tag published'
 }
-Pass 'eight delivery files, tracked output removal, tmp exclusion, backup, quoted arguments and verified six-repo push'
+Pass 'eleven delivery files, tracked output removal, tmp exclusion, backup, quoted arguments and verified nine-repo push'
 $heads=@($plan | ForEach-Object {$_.Head})
 $plan=New-PublishPlan $case.Targets
 Invoke-GithubPublication $plan (Join-Path $case.Targets[-1].Root 'tmp\internal\github_publish\second-archive') 'no-op'
@@ -173,7 +175,7 @@ Write-Fixture (Join-Path $case.Targets[1].Remote 'hooks\pre-receive') "#!/bin/sh
 Expect-Stop { Invoke-GithubPublication $plan $case.Backup 'partial push test' } 'failed'
 $actual=@($plan | ForEach-Object {(Invoke-PublishGit $_.Root @('ls-remote','origin','refs/heads/main')).Text.Split("`t")[0]})
 Assert-Test ($actual[0] -ceq $plan[0].Head -and $actual[0] -cne $old[0]) 'first successful push lost'
-foreach($index in 1..5) { Assert-Test ($actual[$index] -ceq $old[$index]) 'continued after rejection' }
+foreach($index in 1..($plan.Count-1)) { Assert-Test ($actual[$index] -ceq $old[$index]) 'continued after rejection' }
 Assert-Test (Test-Path -LiteralPath (Join-Path $case.Backup 'f13_boot\diagnostic.map')) 'backup lost on push failure'
 Pass 'partial push stops, retains local commits/backup, never force-pushes remaining repos'
 
@@ -187,9 +189,21 @@ foreach($target in $case.Targets) {
         Assert-Test (Test-Path -LiteralPath (Join-Path $target.Root ($group.Relative+'\diagnostic.map'))) 'pruning occurred on uninitialized repo'
     }
 }
-Pass 'uninitialized F24 device stops all six before pruning or staging'
+Pass 'uninitialized F24 device stops all nine before pruning or staging'
 
-foreach($index in 2..4) {
+$case=New-TestCase 'uninitialized-fd-device'
+$gitDirectory=Join-Path $case.Targets[5].Root '.git'
+Assert-PublishTree $case.Root $gitDirectory -Recursive
+Move-Item -LiteralPath $gitDirectory -Destination (Join-Path $case.Root 'saved-fd-device-git')
+Expect-Stop { New-PublishPlan $case.Targets } 'not initialized'
+foreach($target in $case.Targets) {
+    foreach($group in $target.Groups) {
+        Assert-Test (Test-Path -LiteralPath (Join-Path $target.Root ($group.Relative+'\diagnostic.map'))) 'pruning occurred on uninitialized FD repo'
+    }
+}
+Pass 'uninitialized FD device stops all nine before pruning or staging'
+
+foreach($index in 2..7) {
     $case=New-TestCase ('missing-device-'+$index)
     $path=Join-Path $case.Targets[$index].Root ('DefaultBuild\'+$case.Targets[$index].Groups[0].Keep[0])
     Assert-PublishTree $case.Root $path
@@ -197,7 +211,7 @@ foreach($index in 2..4) {
     Expect-Stop { New-PublishPlan $case.Targets } 'Cannot find|does not exist|Missing'
     Assert-Test (Test-Path -LiteralPath (Join-Path $case.Targets[$index].Root 'DefaultBuild\diagnostic.map')) 'pruned on missing F24 delivery'
 }
-Pass 'each F24 device delivery is mandatory before any cleanup'
+Pass 'each Classical and FD F24 delivery is mandatory before any cleanup'
 
 $case=New-TestCase 'empty-device-origin'
 $empty=Join-Path $case.Root 'initial-device.git'

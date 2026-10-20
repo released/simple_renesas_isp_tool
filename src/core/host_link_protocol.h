@@ -12,6 +12,7 @@ constexpr std::uint8_t kSof0 = 0x55;
 constexpr std::uint8_t kSof1 = 0xAA;
 constexpr std::uint8_t kVersion = 0x02;
 constexpr std::uint32_t kCanBurstFeature = CB_FEATURE;
+constexpr std::uint32_t kCanFdBurstFeature = CB_FD_FEATURE;
 constexpr std::size_t kHeaderSize = 12;
 constexpr std::size_t kPayloadCrcSize = 2;
 constexpr std::size_t kMaximumPayloadSize = HOST_WIRE_MAX_PAYLOAD;

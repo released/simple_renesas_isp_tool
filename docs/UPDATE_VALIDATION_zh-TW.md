@@ -22,21 +22,47 @@ CAN device 更新完成後由 Tool 自動確認 App；Misc 的 RUN 仍由使用�
 CAN 確認沿用現有 Host Link 與 CAN 路由，不會重新掃描其他 COM。
 版本等摘要與健康回覆是目前執行的韌體回報，不是簽章或功能完整性的認證。
 
+<a id="app-restart-confirmation"></a>
+
+### 重啟等待與 App 確認
+
+END CRC 通過後，Tool 先保留 1 秒的重啟等待，再開始 APP_READY 唯讀查詢。
+等待期間不送出 CAN 請求，不切換 COM 或重送 END；Cancel 仍可結束確認流程。
+這段等待包含在原有 12 秒的探測期限內，後續未就緒的查詢間隔至少 100 ms。
+單次通訊仍有自身的逾時邊界；等待值不是所有 App 的最長啟動時間保證。
+
+`phases_ms.app_confirmation` 包含重啟等待及 App 確認耗時。
+`details` 的 `app_reset_quiet_ms` 與 `app_health_probes` 分別記錄等待設定及實際健康查詢次數。
+逾時、取消或 live 資訊不符時，保留 END 已通過的事實，不自動重寫映像。
+
+### 寫入與啟動確認流程
+
 ```mermaid
 flowchart TD
-    A["Tool 驗證 BIN 與 live metadata"] --> M["1 Metadata 暫存與 seal"]
-    M --> S["2 START：接受更新宣告"]
-    S --> B["3 Transfer：逐區塊驗證與寫入"]
-    B --> E["4 END：完整映像 CRC"]
-    E -->|通過| R["MCU CAN device reset，Boot 驗證後交接 App"]
-    R --> H{"5 APP_READY 與 live INFO 相符？"}
-    H -->|是| SC["App confirmed；停止 Host CAN，保留 COM"]
-    SC --> CS{"CAN STOP 已確認？"}
-    CS -->|是| OK["完成提示；檢查 App；保存報告"]
-    CS -->|否| CW["App 已確認／CAN 停止未確認；顯示警告並保存報告"]
-    H -->|逾時或不符| NO["已寫入／App 未確認；保存報告，不自動重寫"]
-    M -->|取消或錯誤| C["嘗試 ABORT／停止 CAN；保存結果"]
+    A["驗證 BIN／live；1 Metadata 與 2 START"] --> B["3 Transfer：區塊驗證與寫入"]
+    B --> E{"4 END：完整 CRC 通過？"}
+    E -->|是| W["5 device reset／Boot 交接 App；Tool 重啟等待"]
+    W --> H{"APP_READY 與 live INFO 相符？"}
+    H -->|是| SC["App confirmed；進入完成結果判定"]
+    H -->|逾時或不符| NO["END 已通過／App 未確認；保存結果，不自動重寫"]
+    W -->|取消| NO
+    A -->|取消或錯誤| C["停止更新／清理；保存結果"]
     B -->|取消或錯誤| C
+    E -->|否| C
+```
+
+### 完成結果與計數判定流程
+
+```mermaid
+flowchart TD
+    A["App confirmed；請求停止 Host CAN"] --> CS{"CAN STOP 已確認？"}
+    CS -->|是| CT{"本次 Host 錯誤計數增加？"}
+    CT -->|未見增加| OK["完成提示；保留計數比較範圍"]
+    CT -->|是| HW["完成／計數警告；保留差值與 trace"]
+    CS -->|否| CW["完成／CAN 停止未確認；保留 CAN 狀態"]
+    OK --> R["保留 Host COM；保存報告；檢查 App"]
+    HW --> R
+    CW --> R
 ```
 
 <a id="update-completion"></a>
@@ -50,6 +76,7 @@ flowchart TD
 | 操作結果 | 畫面提示 | 下一步 |
 | --- | --- | --- |
 | CAN device 更新且 App 啟動確認通過 | `Device App update complete`；CRC／App 已確認，Host CAN 停止，COM 保留 | 可檢查 App code 與板上功能；再次更新時重新 Discover Target |
+| App 已確認、CAN 已停止，但本次 Host 錯誤計數增加 | `Device App updated / Host counter warning`；黃色 `[COMPLETE / WARNING]` | 更新成功；查看報告的 counter 差值與 detailed trace，不以重寫 App 清除警告 |
 | App 啟動已確認，但 Host CAN STOP 未確認 | `Device App updated / CAN stop not confirmed`；黃色 `[COMPLETE / WARNING]` | 更新已成功，CAN 可能仍在運作；查看 Shared Log，使用 Disconnect／Close COM 清理後再調整介面，不以重寫 App 處理停止警告 |
 | Misc Host App 寫入與驗證通過 | `Host App update complete - RUN required`；Host 停留 Boot | 按 `Run Validated Bridge App`；若按鈕不可用，先 Read Bridge Update Info／Probe Host |
 | Misc 明確 RUN 並重連確認通過 | `Host App startup confirmed`；同一 COM、board 與已安裝映像核對完成 | 可檢查 Host App 或切換至 device 介面 |
@@ -348,13 +375,14 @@ HTML 報告無外部腳本或資源需求。
 
 | 報告欄位 | 內容／範圍 |
 | --- | --- |
-| operation／result／message | 更新目的地、PASS／FAIL／CANCELED、完成範圍或失敗原因 |
+| operation／result／message | 更新目的地、PASS／PASS_WITH_WARNINGS／FAIL／CANCELED、完成範圍或失敗原因 |
 | recorded_at_utc | 報告建立時間，UTC ISO 8601 |
 | failure_guidance | 保留原始錯誤、作業／COM／Host Baud／階段及對應檢查建議；成功時為空 |
 | host／port／host_baud／can | 本次選定的 Host 身分、COM 與速度、CAN 設定 |
 | elapsed_ms／phases_ms | 整次作業與各階段耗時；不是 analyzer 測得的 bus time |
 | details | 映像 CRC／大小／版本／build、已 ACK 區塊、ABORT 與 App 確認結果 |
-| host_deltas | 本次 CAN 更新前後的 UART overflow、CAN lost／TX failure／bus-off／recovery 差值 |
+| host_deltas | 本次 CAN 更新前後的 UART overflow、CAN lost／warning／error-passive／TX failure／bus-off／recovery 差值 |
+| host_counter_assessment／host_counter_note | 本次計數比較的判定及範圍；與映像寫入／App 確認結果分開記錄 |
 | host_peaks | Host 自開機或 CLEAR_STATS 起的 queue 高水位、最長等待／交易／dispatcher 時間；不是本次區間峰值 |
 | link_retries | 本次 Host Link 重試；已知重連重設時為 null，不當成零 |
 
@@ -419,6 +447,17 @@ Host 計數器飽和、可辨識的重設（例如計數回退）或缺少有效
 Misc 會跨 Boot／App reset，故不將這兩邊的 counter 相減。
 時間診斷單位為 1 ms，低於解析度的值可以是 0；queue 水位以 bytes 或 frames／pending transactions 表示。
 
+| 計數判定 | 意義 |
+| --- | --- |
+| `NO_RECORDED_ERRORS` | 可比較的上述七項錯誤計數均未增加；不等於分析儀波形或 device queue 壓力測試通過 |
+| `WARNING` | 至少一項可比較的錯誤計數增加；其他欄位若無法比較，仍保留 unavailable |
+| `UNAVAILABLE` | 尚無可確認的增加，但快照缺少、倒退或飽和，無法完整比較；不是零錯誤結論 |
+
+更新及 App 確認成功，但 Host 錯誤計數增加或 CAN STOP 未確認時，報告為 `PASS_WITH_WARNINGS`，HTML 使用黃色提示。
+失敗／取消仍分別記為 `FAIL`／`CANCELED`，不會被計數判定改成成功。
+非零累計值不單獨觸發本次警告；Tool 比較的是操作前後的增加量，不會自動清除 Host 計數或重啟板子。
+非同步事件的文字可能稍後才顯示；定位發生階段時可對照 detailed trace 的原始 `TRACE UART EVENT`，不只看彙整訊息的顯示時間。
+
 | Host Boot 停留原因 | 判定 |
 | --- | --- |
 | No valid App | 尚無有效映像標記 |
@@ -482,13 +521,13 @@ CAN 波形、電氣特性與斷電復原仍需對應量測或故障測試，不�
 
 | 項目 | 測試方式 | 驗收證據 | 狀態 |
 | --- | --- | --- | --- |
-| 正常 CAN device App 更新 | Host Link 115200／Classical CAN 500K；配對 Boot／App | F13／F24：寫入、END CRC、reset 後 APP_READY／live INFO；F24 UART counter 遞增 | PASS |
-| Host Link 三種速度 | 115200／460800／921600 各連續更新 50 次；CAN 速度依 device BIN | 每次 END／APP_READY／live identity、報告；overflow／lost／bus-off 無增加 | NOT RUN |
-| Misc 速度邊界 | 高速 Host App → ENTER → Boot 115200 → 更新 → 明確 RUN → 自動確認 | 同 COM／board、metadata 一致，確認 App 啟動 | NOT RUN |
+| 正常 CAN device App 更新 | Host Link 115200／Classical CAN 500K；配對 Boot／App | 寫入／END CRC／reset 後 APP_READY／live INFO；F24 UART counter | PASS |
+| Host Link 三種速度 | 115200／460800／921600 各連續更新 50 次；CAN 依 BIN | END／APP_READY／live identity／報告；overflow／lost／bus-off 無增加 | NOT RUN |
+| Misc 速度邊界 | 高速 Host App → ENTER → Boot 115200 → 更新 → RUN／確認 | 同 COM／board／metadata；App 啟動 | NOT RUN |
 | 獨立取消 | Metadata、Transfer、END／確認等階段取消 | ABORT／cleanup 記錄，COM 不由 UI 直接關閉，可重新操作 | NOT RUN |
 | 拔線／重連 | 代表性傳輸點拔除 Host Link，重新接回同一板子 | 不自動續寫；重新 Probe／Discover，安全重做更新 | NOT RUN |
 | CAN 故障 | 代表性區塊期間斷 CAN／bus-off，再恢復 | 錯誤／counter／有限重試，恢復後重新驗證 | NOT RUN |
-| Device 斷電 | START 前、首 erase、中段 write、END、reset 交接時斷電 | 重啟只有在 Boot 的映像／metadata／CRC 啟動檢查通過後進 App，否則停 Boot | NOT RUN |
+| Device 斷電 | START 前／首 erase／write 中段／END／reset 交接時斷電 | Boot 的映像／metadata／CRC 檢查通過才進 App，否則停 Boot | NOT RUN |
 | Host 斷電／SW1 | BEGIN、write、END marker、RUN 前後斷電；按 SW1 | Boot 原始碼／雜湊不變，停留原因及再次更新恢復 | NOT RUN |
 | A／B App IRQ | 分別更新 A、B，觸發各自使用的中斷 | ISR 行為與 mapping 相符，Boot 不重燒 | NOT RUN |
 

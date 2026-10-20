@@ -5,6 +5,8 @@ DefaultBuild/*
 !DefaultBuild/RL78_F24_CAN_Transfer.hex
 !DefaultBuild/boot0000_1FFF.hex
 !DefaultBuild/RL78_F24_Boot_loader_CAN_app_update.bin
+!DefaultBuild/RL78_F24_CAN_FD_Transfer.hex
+!DefaultBuild/RL78_F24_Boot_loader_CAN_FD_app_update.bin
 *.mtud
 QualityReport*.txt
 *.obj
