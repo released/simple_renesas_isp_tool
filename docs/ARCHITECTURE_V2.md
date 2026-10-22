@@ -46,14 +46,29 @@ Log follow defaults on and persists as ui/log_auto_scroll in the portable INI.
 The isolated RichEdit append helper preserves pixel viewport/selection when
 follow is off, with a visible-line fallback for large histories. File logging,
 worker queues, update acceptance and the existing text limit are unchanged.
+CAN image mode/rate blockers take priority over discovery/ENTER/completion
+instructions in the prerequisite card. Their explicit blocked/action text is
+black and bold while retaining the error background/border. Returning to a
+matching image, active operation or other workflow clears this emphasis;
+button gates and all protocol/Flash checks remain unchanged.
+Idle discovered-App guidance also emphasizes Next: Enter Boot only while its
+button is enabled; entering Boot clears it. Explicit Open+Probe acceptance
+and closed-to-open serial State clear stale progress/caption/completion.
+Same-session State never resets progress, and saved report paths are retained.
 
 Update completion now distinguishes END acceptance from post-reset APP_READY
 and matching live identity/version/build/size. Misc END remains Boot; only an
 explicit RUN triggers bounded same-COM115200 automatic App confirmation.
 After CAN App confirmation, the worker requests CAN_STOP and retains Host COM.
-END ACK starts a cancel-aware1000ms no-CAN-request restart wait within the
-existing12-second probe budget; health probes are paced100ms after each
-completed attempt. This is a PC scheduling guard,not a target startup guarantee.
+END ACK starts a cancel-aware,size/CRC-dependent no-CAN-request restart wait
+within the existing12-second probe budget. DeviceRestartQuietMs takes the
+larger of ceil(image bytes/1024)*8ms and measured END CRC time,adds500ms,and
+clamps to1000..6000ms. ENTER uses the live installed image size with two
+size-estimated validation passes,not the incoming BIN;unknown size uses6000ms.
+The8ms/KiB baseline is a conservative current-sample estimate,not an MCU speed
+contract. Both use20ms cancel slices;health probes remain paced100ms after
+completed attempts. This is PC scheduling,not a target startup guarantee;
+transaction timeouts/retries,CRC/identity gates and counter warnings stay intact.
 Counter evidence includes warning/error-passive deltas and distinguishes
 unavailable snapshots from zero. A confirmed update with increased Host error
 counters,or unconfirmed STOP,is PASS_WITH_WARNINGS with amber completion/report
@@ -267,7 +282,7 @@ wire protocol requires a separate PC workflow.
 Image capacity and application start are never global tool constants. The
 format-3 application manifest and CAN Upgrade v5 INFO pages declare size range,
 MCU/layout identity, integrity algorithm, address range, CAN capabilities and
-wire protocol. The current F13 build declares a 120-KiB capacity; another target
+wire protocol. The current F13 build declares a 119-KiB capacity; another target
 can use different values without adding an MCU-specific UI profile.
 
 ## 4. PC module target structure

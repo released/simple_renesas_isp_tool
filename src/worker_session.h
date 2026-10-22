@@ -190,7 +190,8 @@ private:
     bool ProcessEnterF13Bootloader(const Command& command,
                                    std::wstring* error);
     bool ProcessProgramF13Boot(const Command& command, std::wstring* error);
-    bool ConfirmDeviceApp(const firmware_update::ImageInfo& image, std::wstring* error);
+    bool ConfirmDeviceApp(const firmware_update::ImageInfo& image,
+                          std::uint64_t end_crc_ms, std::wstring* error);
     bool StopCanAfterAppConfirmation();
     bool ProcessCanTxTest(const Command& command, std::wstring* error);
     bool ProcessResetHost(std::wstring* error);

@@ -17,6 +17,9 @@ class UpdateCompletion(unittest.TestCase):
         self.assertIn("timing.ProbeFinished(elapsed())", confirm)
         self.assertIn("app_reset_quiet_ms", confirm)
         self.assertIn("app_health_probes", confirm)
+        self.assertIn("DeviceRestartQuietMs(image.image_size,end_crc_ms)", confirm)
+        self.assertIn("timing.QuietMs()", confirm)
+        self.assertIn("ConfirmDeviceApp(metadata,report.end_ms,error)", source)
         self.assertIn("ConfirmApp(image,live,health)", confirm)
         for forbidden in ("Program(", "EnterBootloader(", "serial_port_.Close", "SetTransactionPolicy"):
             self.assertNotIn(forbidden, confirm)
@@ -34,7 +37,7 @@ class UpdateCompletion(unittest.TestCase):
 
     def test_can_stop_is_after_app_confirmation_and_retains_com(self):
         source = read("src/worker_can_workflows.cpp")
-        finish = source.split("const bool confirmed=ConfirmDeviceApp(metadata,error);", 1)[1]
+        finish = source.split("const bool confirmed=ConfirmDeviceApp(metadata,report.end_ms,error);", 1)[1]
         finish = finish.split("bool WorkerSession::ConfirmDeviceApp", 1)[0]
         self.assertIn("} else {\n        const bool stopped=StopCanAfterAppConfirmation();", finish)
         stop = finish.split("bool WorkerSession::StopCanAfterAppConfirmation()", 1)[1]
@@ -66,7 +69,7 @@ class UpdateCompletion(unittest.TestCase):
         self.assertIn("IsI2cTab()", feedback)
         self.assertIn("SelectedProfile()!=L\"CAN Upgrade\"", feedback)
         workflow = read("src/main_frame_workflow.cpp")
-        self.assertIn("UpdateBusUi();\n    UpdateCompletionFeedback();", workflow)
+        self.assertIn("UpdateBusUi();\n    if (!boot_profile || image_blocker.empty()) UpdateCompletionFeedback();", workflow)
         self.assertIn("UpdateMiscUi(); UpdateCompletionFeedback();", workflow)
         for path in ("src/main_frame.cpp", "src/main_frame_image.cpp", "src/main_frame_bus.cpp"):
             self.assertIn("last_update_result_=firmware_upgrade::feedback::Result::None;", read(path))
@@ -82,6 +85,30 @@ class UpdateCompletion(unittest.TestCase):
         program = bridge.split("if (command.type!=CommandType::BridgeProgram)", 1)[1]
         self.assertIn("update_result_=feedback::Result::HostAppWritten", program)
         self.assertNotIn("BU_RUN_COMMAND", program)
+
+    def test_enter_wait_uses_installed_image_not_incoming_bin(self):
+        source=read("src/worker_can_workflows.cpp")
+        enter=source.split("bool WorkerSession::ProcessEnterF13Bootloader",1)[1].split("bool WorkerSession::ValidateF13BootTarget",1)[0]
+        self.assertIn("installed_bytes=state_.target_metadata.installed_app_size",enter)
+        self.assertIn("DeviceRestartQuietMs(installed_bytes,0U,true)",enter)
+        self.assertNotIn("command.image",enter)
+        self.assertLess(enter.index("EnterBootloader(error)"),enter.index("AwaitAppProbe"))
+        self.assertLess(enter.index("AwaitAppProbe"),enter.index("ValidateF13BootTarget(error)"))
+        self.assertIn("IsCancelRequested",enter)
+
+    def test_reconnect_resets_progress_and_enter_action_is_emphasized(self):
+        ui = read("src/main_frame.cpp")
+        state = ui.split("case WorkerEventKind::State:", 1)[1].split("case WorkerEventKind::Progress:", 1)[0]
+        self.assertIn("if (!session_state_.serial_open && event.state.serial_open)", state)
+        self.assertIn('SetProgress(0,L"Progress");', state)
+        workflow = read("src/main_frame_workflow.cpp")
+        queued_open = workflow.split("bool CMainFrame::QueueOpenSelectedCom()", 1)[1].split("void CMainFrame::QueueDisconnect()", 1)[0]
+        self.assertLess(queued_open.index("worker_session_.OpenAndProbe"), queued_open.index('SetProgress(0,L"Progress")'))
+        self.assertIn("!busy && enter_bootloader_btn_.IsWindowEnabled()", workflow)
+        self.assertIn("Next: Enter Boot. App mode detected", read("src/ui/update_feedback.h"))
+        guide = read("docs/UPDATE_VALIDATION_zh-TW.md")
+        self.assertIn("進度條與階段標籤歸零", guide)
+        self.assertIn("粗體黑字 `Next: Enter Boot.", guide)
 
     def test_public_guide_explains_each_completion_and_both_discovery_modes(self):
         guide = read("docs/UPDATE_VALIDATION_zh-TW.md")

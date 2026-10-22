@@ -285,8 +285,8 @@ foreach ($symbol in $loadedEndSymbols) {
     }
 }
 Require ($linkedEnd -ge $appCodeStart -and
-         $linkedEnd -le ($flashEnd - 3)) `
-    ('Application map-derived linked end 0x{0:X5} fits code flash' -f
+         $linkedEnd -le ($appStart + $maximumUpdateSize - 4)) `
+    ('Application map-derived linked end 0x{0:X5} fits writable App region' -f
         $linkedEnd)
 
 [byte[]]$image = [System.IO.File]::ReadAllBytes($appBinary)
@@ -294,6 +294,9 @@ $updateSize = $image.Length
 $crcOffset = $updateSize - 4
 $crcAddress = $appStart + $crcOffset
 $updateEnd = $appStart + $updateSize - 1
+Require ($appStart -eq 0x2000 -and $maximumUpdateSize -eq 0x1DC00 -and
+         $codeFlashSize - ($appStart + $maximumUpdateSize) -eq 0x400) `
+    'Default F13 App capacity is 119 KiB; final 1-KiB erase block is protected'
 $expectedCrcAddress = [uint32](($linkedEnd + 3) -band -4)
 Require ($updateSize -ge $minimumUpdateSize -and
          $updateSize -le $maximumUpdateSize -and
@@ -305,6 +308,11 @@ Require ($crcAddress -eq $expectedCrcAddress) `
         $crcAddress, $linkedEnd)
 
 $appMemory = Read-IntelHex $appHex
+$combinedMemory = Read-IntelHex (Join-Path $AppProject 'boot_app.hex')
+$combinedBytes = [IO.File]::ReadAllBytes((Join-Path $AppProject 'boot_app.bin'))
+Require ($combinedBytes.Length -eq ($appStart + $maximumUpdateSize) -and
+         @($combinedMemory.Keys | Where-Object { [uint32]$_ -ge ($appStart + $maximumUpdateSize) }).Count -eq 0) `
+    'Combined programmer BIN/HEX omit the protected final erase block'
 $appAddresses = @($appMemory.Keys | ForEach-Object { [uint32]$_ })
 Require (($appAddresses | Measure-Object -Minimum).Minimum -eq $appStart) `
     'Application update HEX begins at APP_FLASH_START'

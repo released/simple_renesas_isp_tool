@@ -140,6 +140,7 @@ Custom Transfer 搭配 device 的獨立 Transfer 工程。
 
 Request 使用 standard `0x710`，response 使用 `0x711`，DLC8。
 Payload Byte7 為 CRC-8/ATM。
+
 <!-- TRANSFER_EXAMPLES_END -->
 
 MCU CAN device 的 Boot 啟動條件與 App 工程設定，見 [MCU CAN device 章節](https://released.github.io/slide_boot_loader_for_RL78/)。

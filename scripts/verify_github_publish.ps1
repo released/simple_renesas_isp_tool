@@ -27,9 +27,9 @@ function New-TestCase([string]$Name) {
         (Join-Path $case 'RL78_F24_CAN_Transfer') (Join-Path $case 'RL78_F24_Boot_loader_CAN') `
         (Join-Path $case 'RL78_F24_Boot_loader_CAN_app') `
         (Join-Path $case 'RL78_F24_CAN_FD_Transfer') (Join-Path $case 'RL78_F24_Boot_loader_CAN_FD') `
-        (Join-Path $case 'RL78_F24_Boot_loader_CAN_FD_app'))
-    Assert-Test ($targets.Count -eq 9) 'production catalog must contain nine repositories'
-    Assert-Test (@($targets | ForEach-Object {$_.Groups | ForEach-Object {$_.Keep}}).Count -eq 11) 'production catalog must retain eleven deliveries'
+        (Join-Path $case 'RL78_F24_Boot_loader_CAN_FD_app') (Join-Path $case 'RL78_F13_CAN_Transfer'))
+    Assert-Test ($targets.Count -eq 10) 'production catalog must contain ten repositories'
+    Assert-Test (@($targets | ForEach-Object {$_.Groups | ForEach-Object {$_.Keep}}).Count -eq 12) 'production catalog must retain twelve deliveries'
     foreach($target in $targets) {
         $target.Root=Join-Path $case $target.Name
         $target.Remote=Join-Path $case ($target.Name+'.git')
@@ -40,6 +40,7 @@ function New-TestCase([string]$Name) {
         [void](Invoke-PublishGit $target.Root @('config','user.email','publication@example.invalid'))
         Write-Fixture (Join-Path $target.Root '.gitignore') "tmp/`ngithub_push.local.psd1`n"
         Write-Fixture (Join-Path $target.Root 'README.md') "initial`n"
+        if($target.DeferredPattern) { Write-Fixture (Join-Path $target.Root 'docs\RH850_tracked.md') "initial RH850`n" }
         foreach($group in $target.Groups) {
             foreach($name in $group.Keep) { Write-Fixture (Join-Path $target.Root ($group.Relative+'\'+$name)) ('delivery '+$name) }
             # Start tracked to verify that pruning removes files from the remote index.
@@ -52,6 +53,12 @@ function New-TestCase([string]$Name) {
         [void](Invoke-PublishGit $target.Root @('push','origin','main'))
         Write-Fixture (Join-Path $target.Root 'README.md') "updated 'quoted' message`n"
         Write-Fixture (Join-Path $target.Root 'tmp\local.log') 'never publish'
+        if($target.DeferredPattern) {
+            Write-Fixture (Join-Path $target.Root 'docs\RH850_tracked.md') "local changed RH850`n"
+            Write-Fixture (Join-Path $target.Root 'docs\RH850_NEW.md') 'local RH850 draft'
+            Write-Fixture (Join-Path $target.Root 'scripts\build_rh850.ps1') 'local RH850 script'
+            Write-Fixture (Join-Path $target.Root 'tests\rh850_mock\r_port.h') 'local RH850 mock'
+        }
     }
     @{Root=$case;Targets=$targets;Backup=(Join-Path $targets[-1].Root 'tmp\internal\github_publish\test-archive')}
 }
@@ -72,7 +79,15 @@ foreach($target in $plan) {
     Assert-Test ((Invoke-PublishGit $target.Root @('ls-remote','origin','refs/heads/main')).Text.Split("`t")[0] -ceq $target.Head) 'wrong remote head'
     Assert-Test (!(Invoke-PublishGit $target.Root @('ls-remote','origin','refs/tags/*')).Text) 'unrequested tag published'
 }
-Pass 'eleven delivery files, tracked output removal, tmp exclusion, backup, quoted arguments and verified nine-repo push'
+Pass 'twelve delivery files, tracked output removal, tmp exclusion, backup, quoted arguments and verified ten-repo push'
+$tool=$plan[-1]
+Assert-Test ((Invoke-PublishGit $tool.Root @('show','HEAD:docs/RH850_tracked.md')).Text -ceq 'initial RH850') 'tracked RH850 change was published'
+foreach($path in @('docs/RH850_NEW.md','scripts/build_rh850.ps1','tests/rh850_mock/r_port.h')) {
+    Assert-Test (!(Invoke-PublishGit $tool.Root @('ls-tree','--name-only','HEAD','--',$path)).Text) 'new RH850 file was published'
+    Assert-Test (Test-Path -LiteralPath (Join-Path $tool.Root $path)) 'RH850 local file was removed'
+}
+Assert-Test ([IO.File]::ReadAllText((Join-Path $tool.Root 'docs/RH850_tracked.md')) -ceq "local changed RH850`n") 'RH850 local draft changed'
+Pass 'tracked and untracked RH850 development stays local with content preserved'
 $heads=@($plan | ForEach-Object {$_.Head})
 $plan=New-PublishPlan $case.Targets
 Invoke-GithubPublication $plan (Join-Path $case.Targets[-1].Root 'tmp\internal\github_publish\second-archive') 'no-op'
@@ -93,10 +108,10 @@ Expect-Stop { New-PublishPlan $case.Targets } 'Existing staged'
 Pass 'pre-existing index preserved'
 
 $case=New-TestCase 'tracked-local-data'
-$localFile=Join-Path $case.Targets[3].Root 'tmp\build\app_rebuild.log'
+$localFile=Join-Path $case.Targets[4].Root 'tmp\build\app_rebuild.log'
 Write-Fixture $localFile 'retain this local log'
-[void](Invoke-PublishGit $case.Targets[3].Root @('add','-f','--','tmp/build/app_rebuild.log'))
-[void](Invoke-PublishGit $case.Targets[3].Root @('commit','-m','seed tracked local data'))
+[void](Invoke-PublishGit $case.Targets[4].Root @('add','-f','--','tmp/build/app_rebuild.log'))
+[void](Invoke-PublishGit $case.Targets[4].Root @('commit','-m','seed tracked local data'))
 $heads=@($case.Targets | ForEach-Object {(Invoke-PublishGit $_.Root @('rev-parse','HEAD')).Text})
 Expect-Stop { New-PublishPlan $case.Targets } 'Local-only data is tracked.*RL78_F24_Boot_loader_CAN.*app_rebuild'
 foreach($target in $case.Targets) {
@@ -109,18 +124,18 @@ Assert-Test ((@($case.Targets | ForEach-Object {(Invoke-PublishGit $_.Root @('re
 Pass 'tracked local-only data refuses before any archive, stage or commit'
 
 $localHash=(Get-FileHash -LiteralPath $localFile).Hash
-[void](Invoke-PublishGit $case.Targets[3].Root @('rm','--cached','--','tmp/build/app_rebuild.log'))
+[void](Invoke-PublishGit $case.Targets[4].Root @('rm','--cached','--','tmp/build/app_rebuild.log'))
 $plan=New-PublishPlan $case.Targets
 Invoke-GithubPublication $plan $case.Backup 'remove local-data tracking'
 Assert-Test ((Get-FileHash -LiteralPath $localFile).Hash -ceq $localHash) 'local file changed during tracking removal'
-Assert-Test (!(Invoke-PublishGit $case.Targets[3].Root @('ls-tree','-r','--name-only','HEAD','--','tmp/')).Text) 'local data still committed'
+Assert-Test (!(Invoke-PublishGit $case.Targets[4].Root @('ls-tree','-r','--name-only','HEAD','--','tmp/')).Text) 'local data still committed'
 Pass 'explicit staged local-only deletion can publish without deleting the local file'
 
 $case=New-TestCase 'unignored-local-data'
-Write-Fixture (Join-Path $case.Targets[3].Root '.gitignore') "github_push.local.psd1`n"
+Write-Fixture (Join-Path $case.Targets[4].Root '.gitignore') "github_push.local.psd1`n"
 Expect-Stop { New-PublishPlan $case.Targets } 'Local-only data is not ignored'
-Assert-Test (Test-Path -LiteralPath (Join-Path $case.Targets[3].Root 'DefaultBuild\diagnostic.map')) 'archived before ignore refusal'
-Assert-Test (!(Invoke-PublishGit $case.Targets[3].Root @('diff','--cached','--name-only')).Text) 'index changed on ignore refusal'
+Assert-Test (Test-Path -LiteralPath (Join-Path $case.Targets[4].Root 'DefaultBuild\diagnostic.map')) 'archived before ignore refusal'
+Assert-Test (!(Invoke-PublishGit $case.Targets[4].Root @('diff','--cached','--name-only')).Text) 'index changed on ignore refusal'
 Pass 'unignored local-only file refuses before cleanup or staging'
 
 $case=New-TestCase 'wrong-remote'
@@ -189,7 +204,7 @@ foreach($target in $case.Targets) {
         Assert-Test (Test-Path -LiteralPath (Join-Path $target.Root ($group.Relative+'\diagnostic.map'))) 'pruning occurred on uninitialized repo'
     }
 }
-Pass 'uninitialized F24 device stops all nine before pruning or staging'
+Pass 'uninitialized device stops all ten before pruning or staging'
 
 $case=New-TestCase 'uninitialized-fd-device'
 $gitDirectory=Join-Path $case.Targets[5].Root '.git'
@@ -201,9 +216,9 @@ foreach($target in $case.Targets) {
         Assert-Test (Test-Path -LiteralPath (Join-Path $target.Root ($group.Relative+'\diagnostic.map'))) 'pruning occurred on uninitialized FD repo'
     }
 }
-Pass 'uninitialized FD device stops all nine before pruning or staging'
+Pass 'uninitialized device stops all ten before pruning or staging'
 
-foreach($index in 2..7) {
+foreach($index in 2..8) {
     $case=New-TestCase ('missing-device-'+$index)
     $path=Join-Path $case.Targets[$index].Root ('DefaultBuild\'+$case.Targets[$index].Groups[0].Keep[0])
     Assert-PublishTree $case.Root $path

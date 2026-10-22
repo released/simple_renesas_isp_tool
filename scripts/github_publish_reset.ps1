@@ -55,6 +55,7 @@ function New-PublishPlan($Targets) {
         }
         $roots+= $target.Root
         $target.Plan=@(Get-PublishGroups $target)
+        $target.DeferredPaths=@(Get-PublishDeferredPaths $target)
         foreach($group in $target.Plan) {
             if($group.Archive -in $archives) { throw 'Duplicate archive label.' }
             $archives+=$group.Archive
@@ -86,6 +87,11 @@ function Move-PublishOutputs($Target,[string]$Backup) {
 }
 
 function Assert-PublishIndex($Target) {
+    foreach($path in (Invoke-PublishGit $Target.Root @('diff','--cached','--name-only','-z')).Text.Split([char]0)) {
+        if($path -and $Target.DeferredPattern -and $path -match $Target.DeferredPattern) {
+            throw "Deferred development file entered the index: $path"
+        }
+    }
     foreach($group in $Target.Plan) {
         $relative=$group.Relative.Replace('\','/')
         $tracked=@((Invoke-PublishGit $Target.Root @('ls-files','-z','--',$relative)).Text.Split([char]0) | Where-Object {$_})
@@ -128,7 +134,11 @@ function Invoke-GithubPublication($Targets,[string]$Backup,[string]$Message) {
     }
     foreach($target in $Targets) { Move-PublishOutputs $target $Backup }
     foreach($target in $Targets) {
-        [void](Invoke-PublishGit $target.Root @('add','--all','--','.'))
+        $stageArguments=@('add','--all','--','.')
+        foreach($deferred in @(Get-PublishDeferredPaths $target)) {
+            $stageArguments+= ':(literal,exclude)'+$deferred
+        }
+        [void](Invoke-PublishGit $target.Root $stageArguments)
         foreach($group in $target.Plan) {
             foreach($keep in $group.Keep) {
                 [void](Invoke-PublishGit $target.Root @('add','-f','--',($group.Relative+'/'+$keep.Name)))

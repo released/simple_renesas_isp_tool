@@ -1,5 +1,17 @@
 # Firmware Upgrade Tool Development Checklist
 
+## Publication scope and FD timing (2026-10-22)
+
+Publication catalog now covers10repositories/12DefaultBuild deliveries,
+including F13 Transfer MOT. Tool RH850-named paths are deferred from staging;
+dedicated RH850 repositories are not targets. Public engineering chapters and
+navigation are deferred while their local drafts/snapshot remain preserved.
+Web publishing supports selection, read-only site hooks, PUSH confirmation,
+all-repo preflight and explicit SHA-verified non-force pushes. No actual
+publication or product/firmware rebuild is authorized by these script edits.
+FD timing source is the six182748 reports,not a new0100hardware run;rough
+totals5.5/7.2/15.6/32.2/65.5/134.2seconds. See HANDOFF/SELF_CHECK for results.
+
 Public documentation follows docs/PUBLIC_CONTENT_GUIDELINES_zh-TW.md.
 This is a generated copy of the generic /web root policy; keep MCU/project
 rules local. F13/F24 CAN device Boot/App are joint golden samples; metadata
@@ -14,6 +26,78 @@ This document is the ordered implementation and verification checklist for the
 PC tool, the RL78/F24 CAN host firmware, and the RL78/F13 target projects.
 
 ## Status legend
+
+Tool0100 uses App size plus measured END CRC for a bounded1..6s quiet wait,
+retaining12s probe budget/cancel/acceptance and counter warnings. ENTER uses
+installed size/two estimated checks. Native timing/source/startup gates PASS;
+new physical247KiB warning/retry acceptance remains NOT RUN. See HANDOFF.
+
+Tool0099 resets old progress/caption/result at explicit Open+Probe/new serial
+connection,retains report paths and same-session progress,and emphasizes the
+available Enter Boot next step after App discovery. Both native MFC fixture
+configurations and builds pass;physical/desktop acceptance remains separate.
+
+CAN image mode/rate conflicts now own a bold-black BLOCKED prerequisite with
+an actionable BIN/Interface-Rate check and no contradictory Discover hint.
+Discovery/update gates are unchanged. Actual hidden-frame native fixtures
+pass in Release/Debug, including emphasis reset and GDI lifetime; desktop
+visual verification remains unavailable. See HANDOFF/SELF_CHECK for scope.
+
+App update timing reference is canonical in the device workshop at
+device-update-timing. User trace-off F13 reports24/56/119KiB PASS:rough totals
+15.8/32.3/65.8s. F24 Classical original/8/24/56/120/247KiB now have rough
+5.2/7.3/15.6/32.2/65.5/136.2s. F24 FD reports are supplied but their public
+timing projection is pending;F13 original-App remains unsupplied.
+The Bootloader page owns the table;ISP has a jump only. No median/range,
+projection or firmware rebuild is part of this timing documentation update;
+the independent requested UI changes have their own Tool build above.
+
+F13 default capacity is119KiB,matching F24's final1KiB erase-block protection
+(247KiB App). F13 Boot1.7.2 retains810bytes spare. Targeted native/artifact/
+generator tests and clean Boot/App builds pass;the saved user reports now
+verify normal119KiB update/reset/APP_READY. Installation-method comparison,
+physical readback and fault/power acceptance remain separate.
+The porting guide owns the full-capacity120/248KiB RFP-only installation
+warning;Tool operation links to it. Six affected MD/web/PDF guides synchronized.
+
+Device CRC traversal uses integer-address carry across64KiB. F13/F24 Classical/
+F24 FD Boot/App clean builds and existing artifact/native models pass;new
+CRC checks cover real timing BINs and target assembly,including rejected
+far-pointer-increment mutations. Boot reserves remain8KiB with892/512/574
+spare bytes. MD/web/PDF synchronized;physical120KiB retest remains NOT RUN.
+
+IRQ cost documentation:the device workshop owns nominal RL78 dispatch clocks,
+CPU load/stack and GPIO measurement boundaries;RH850 hardware table-reference
+handoff has a short linked explanation. MD/web and both PDFs synchronized;
+15web/5PDF tests and seven source-path estimates pass. No firmware rebuild
+or physical timing claim. Details in HANDOFF/SELF_CHECK.
+
+RH850 EVM multi-port implementation is built offline for documented
+R7F701684/100pins/16MHz/1MiB. CAN1/CAN4 default,any nonemptyCAN0..5 subset,
+independent FIFO/queue/TX/Transfer state and owner-locked Boot staging.
+All six clean builds,63configuration checks,10port models,both production
+PC/engine models and27Boot hashes per App-only build PASS. App capacity960KiB.
+Six READMEs/MD/web and9-pageRH850/18-pageMultiBus PDFs synchronized and reviewed.
+See HANDOFF/SELF_CHECK for metrics/warnings. Hardware/browser tests NOT RUN.
+
+App-local FF test-BIN generation uses the same mirrored PowerShell/.NET helper
+in F13 Classical/F24 Classical/F24 FD. Preserve formal products and update
+gates; generated test_bins stay local. See the device workshop for generation,
+and SELF_CHECK for actual offline verification. No ISP timing chapter is added.
+
+RH850 Classical and CAN FD Transfer/Boot/App are implemented for offline
+verification:64KiB Boot,App10000,metadata10100,independent512-entry tables,
+FCL256-byte page aggregation,500K/FD2M/BRS. Actual C90 engine/production PC
+models include maximum960KiB image,replay,policy and fault paths. Physical
+CAN/IRQ/FCL/ECC/reset/launch/power tests remain NOT RUN. See the RH850 guide
+and current HANDOFF/SELF_CHECK;RL78 golden and F24 host firmware unchanged.
+
+Historical pre-EVM offline gates:Classical/FD Boot ROM high836B/8357,App158E3/22760B;
+FD Transfer54B9. C90/production-PC/max448KiB/fault/IRQ models PASS;
+10-extraIRQ App-only variants pass with original Boot SHA unchanged.
+RH8507-page/2-flow and MultiBus17-page/5-flow PDFs visually checked;
+13guide/5writing/5PDF tests,310refs,19-file public-content,PS/mirror/path/diff
+and safe-clean237protected hashes PASS. Hardware and browser/DPI NOT RUN.
 
 2026-10-20 three-entry review:ISP/Bootloader/knowledge-base page intros classify
 Classical F13/F24,CAN FD F24,and Custom Transfer across all three. Canonical

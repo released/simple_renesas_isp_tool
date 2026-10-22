@@ -53,12 +53,21 @@ class ToolUiFieldGuide(unittest.TestCase):
     def test_error_examples_exist_in_production_parsers(self):
         messages = re.findall(r"\| `([^`]+\.)` \|", self.section)
         self.assertGreaterEqual(len(messages), 5)
-        source = re.sub(r'"\s*L"', "", read("src/core/firmware_update_profile.cpp"))
+        source = re.sub(r'"\s*L"', "", read("src/core/firmware_update_profile.cpp") +
+                        read("src/ui/update_feedback.h"))
         for message in messages:
             self.assertIn(message, source)
         self.assertIn("App Start Override does not match image metadata (",
                       read("src/main_frame_image.cpp"))
         self.assertEqual(0x2000 + 8192 - 1, 0x3FFF)
+
+    def test_can_mode_rate_blocker_has_action_and_emphasis_reference(self):
+        for kind in ("mode", "bitrate"):
+            message = f"Selected CAN {kind} is not supported by the image."
+            self.assertIn(message, read("src/ui/update_feedback.h"))
+            self.assertIn(message, self.section)
+        for text in ("粗體黑字", "Check BIN supported CAN mode", "此時不接續顯示 Discover 指引"):
+            self.assertIn(text, self.section)
 
     def test_stable_links_and_single_web_owner(self):
         web = companion_path("Web")

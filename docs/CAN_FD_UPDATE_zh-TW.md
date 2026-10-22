@@ -349,8 +349,8 @@ Boot 與 App 各自連結 `common/device_can.c`，使用精簡 RXMB0 ISR 與 8 �
 | App owner=55 | 同一實體 vector → App table 的 0x2098 槽位 → App `Device_CanRxIsr` |
 | App 編輯來源 | `app_irq_handlers.h` 的 `X(0x4C, Device_CanRxIsr)`；函式使用 global、無 `vect=` 的 interrupt pragma，以 RETI 返回 |
 
-App 槽位位址為 `IMAGE_APPLICATION_START + physical_vector × 2`；此例為 `0x2000 + 0x4C × 2 = 0x2098`。
-Boot 與 App 是不同映像，可以使用相同 ISR 函式名稱。
+槽位換算、Boot／App ISR 名稱及一般 IRQ 轉送規則見
+[中斷所有權與向量轉送](https://released.github.io/slide_boot_loader_for_RL78/#device-irq-ownership)。
 建置會檢查完整向量、實際 CAN ISR 槽位、RETI 及實體 vector 所有權。
 
 queue 使用 9 個儲存槽提供 8 筆容量；producer 發布 head、consumer 釋放 tail 都在完成複製後進行。

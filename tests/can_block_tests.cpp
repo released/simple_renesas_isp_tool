@@ -84,7 +84,7 @@ public:
             if(page==0x1BU) return Ack(cmd,0,static_cast<uint16_t>(page|(app_mode?0x0100U:0x0200U)),app_mode?0x30701U:0U);
             if(page==0x1CU) return Ack(cmd,0,static_cast<uint16_t>(page|(app_mode?0x0100U:0x0200U)),app_mode?1U:7U);
             const uint32_t info[]={0x0605F13BU,IMAGE_BOOT_VERSION,IMAGE_BOOT_BUILD,0xFFFFFFFFU,0xFFFFFFFFU,
-                0x2000U,0x1E000U,0x20000U,0x2000U,1024U,0x01010001U,4U,0U,0x700U,0x701U,
+                0x2000U,IMAGE_APPLICATION_CAPACITY,0x20000U,0x2000U,1024U,0x01010001U,4U,0U,0x700U,0x701U,
                 IMAGE_MCU_PART_0,IMAGE_MCU_PART_1,0U,0U,IMAGE_MCU_FAMILY_0,
                 IMAGE_MCU_FAMILY_1,0U,0xFFFFFFFFU,516U,IMAGE_POLICY_WORD,IMAGE_IRQ_ABI,CAN_BOOT_BLOCK_INFO};
             if(page==CAN_BOOT_INFO_PAGE_VERSION_POLICY) value=BootValid() ? 1U|(IP_Read32(flash.data()+0x174U)<<1U) : 0U;
@@ -203,6 +203,8 @@ void Run(const std::vector<uint8_t>& image, Fault fault, bool expected_success,
     link.SetTransport(&target); can.SetHostLinkClient(&link); device.SetCanClient(&can);
     f13_boot::TargetInfo info; std::wstring error;
     Check(device.GetTargetInfo(&info,&error),"v5 live INFO capability validated");
+    Check(device.SetTargetLayout(info.application_start,info.application_capacity,
+        info.erase_block_size,&error),"use probed layout, not constructor defaults");
     uint32_t flags=0;
     Check(device.GetDiagnostics(&flags,&error) && flags==7U,"live Boot advertises diagnostics; not inferred from MCU/version");
     f13_boot::UpdateReport report; f13_boot::UpdateCallbacks callbacks;
@@ -257,6 +259,8 @@ int TestCanBlock(const char* actual_image) {
         f13_boot::TargetInfo live; std::wstring error;
         Check(device.GetTargetInfo(&live,&error) && live.version_policy==3U && live.app_version==0x10600U,
             "live protected installed identity read before force update");
+        Check(device.SetTargetLayout(live.application_start,live.application_capacity,
+            live.erase_block_size,&error),"protected update uses the live partition");
         f13_boot::UpdateReport report;f13_boot::UpdateCallbacks normal,force;
         Check(!f13_boot::RunUpdate(&device,older,normal,&report,&error) && target.writes==0U && target.flash==installed,
             "normal downgrade rejected at START before erase/write");
@@ -309,3 +313,9 @@ int TestCanBlock(const char* actual_image) {
               << (failures?"FAIL":"PASS") << '\n';
     return static_cast<int>(failures);
 }
+
+#ifdef F13_BLOCK_TEST_STANDALONE
+int main(int argc, char** argv) {
+    return TestCanBlock(argc > 1 ? argv[1] : nullptr);
+}
+#endif

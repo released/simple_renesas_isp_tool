@@ -17,6 +17,7 @@
 #include "ui/console_geometry.h"
 
 class CMainFrame : public CFrameWnd {
+    friend struct CanPrerequisiteUiFixture;
 public:
     CMainFrame();
     ~CMainFrame() override;

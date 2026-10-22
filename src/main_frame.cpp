@@ -792,6 +792,10 @@ void CMainFrame::ApplyWorkerEvent(
             AppendLog(event.text);
             break;
         case WorkerEventKind::State:
+            if (!session_state_.serial_open && event.state.serial_open) {
+                SetProgress(0,L"Progress");
+                last_update_result_=firmware_upgrade::feedback::Result::None;
+            }
             session_state_ = event.state;
             if (event.state.busy)
                 last_update_result_=firmware_upgrade::feedback::Result::None;

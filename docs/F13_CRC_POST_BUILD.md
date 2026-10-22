@@ -47,7 +47,7 @@ It also checks every linked App BR slot against this App's IRQ mapping and map,
 including mapped ISR RETI bytes. Fresh generated text cannot legitimize stale
 linked vectors. This App-only check does not require a Boot map.
 The script reads layout/identity constants emitted by `ftable.inc`; it does not
-own a duplicate `0x2000` app start, `0x1E000` capacity, or target-ID rule. It:
+own a duplicate `0x2000` app start, `0x1DC00` capacity, or target-ID rule. It:
 
 1. Parses and validates every Intel HEX record and checksum.
 2. Rejects duplicates, boot-range content, out-of-range content, malformed

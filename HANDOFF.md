@@ -1,5 +1,598 @@
 # Development Handoff
 
+## Publication boundaries and complete FD timing (2026-10-22)
+
+User requested publication-script changes,not actual commit/push. Explicitly
+defer RH850 until hardware verification. No product/MCU firmware rebuild,
+COM/programmer operation,actual index edit/commit/push or site deployment.
+Tool0100 EXE SHA256 remains104CFDBDFD72018AB6FB2D5C77605AAACDA8A7D577547212A619C5DB637E8D62.
+
+github_push.bat/push_github/catalog/path reader now include F13 Transfer,
+keeping its actual RL78_F13_CAN_Transfer.mot:10repos/12DefaultBuild deliveries.
+Tool deferred-path matching is case-insensitive RH850 anywhere in the path;
+negative literal pathspecs prevent staging new/modified/deleted deferred files.
+Assert-PublishIndex rejects any deferred diff. No override,ignore/tracking
+repair or separate RH850 repository. Remaining changes are still all included
+and require explicit PUSH. Local eight-path configuration gains F13Transfer.
+
+Web root push-all supports -Repository comma-separated direct children,
+PUSH confirmation and optional site-owned read-only verify_publish hooks.
+Generic web_publish.ps1 checks exact origins/branches/upstreams/staged/index
+operations,remote ancestry and approved content hashes before writes;explicit
+non-force SHA pushes suppress implicit tags and stop on first error. Local
+push-all.local.psd1 supplies ReferenceRoot only;root helpers have no Git root
+and are not themselves published by the child-repository batch. Generic
+PUBLISHING.md documents dry-run/initialization/partial-failure boundaries.
+
+Dedicated RH850 source/guide/test files stay local. Public Tool README,
+Transfer reference/workshop/MultiBus and three Web entry points omit RH850
+CAN-development material. Existing unrelated RH850 knowledge-base entries
+remain. RH850_DEVICE catalog is deferred and projects empty markers;generic
+tests no longer require unshipped RH850 files. Private canonical RH850 guide
+and sources remain intact. Before editing mixed public drafts,original source
+copies were preserved under tmp/internal/publication_scope_b2739b20.
+
+Workshop owns the completed six FD timing rows. Actual182748 JSON/HTML
+input_bytes/elapsed_ms/CRC match;rough5.5/7.2/15.6/32.2/65.5/134.2s,Tool0099,
+Host115200,FD500K/2M/BRS,Boot1.2.1/App1.0.4. Raw247KiB result remains
+PASS_WITH_WARNINGS;no warning/counter/retry data were hidden or rewritten.
+No physical0100 timing retest is implied. F13 original-App timing still absent.
+MD/web and29-page workshop/16-page MultiBus PDFs regenerated. All-page contact
+review and full timing pages21/23 checked. FD source table kept on one page
+by shortening repeated condition prose;no shared renderer change. A stale
+unused MultiBus diagram5 was moved to the private snapshot,not deleted.
+
+Verification so far:21public guide tests,5PDF renderer/output checks,
+10isolated Web publication cases plus3focused actual-hook argument/status
+checks PASS. The PDF test's stale F13 tail address was corrected from1FFFC
+to the already-documented protected profile1FBFC;Flash guide itself unchanged.
+Final Tool integration:20checks PASS using isolated ten-repository fixtures
+and local bare remotes only. Actual three-Web cancellation preserved all HEAD/
+index hashes;selected3-Web and Tool10-repo plans PASS. Tool source/deferred
+files remain unstaged;public13repo existence/content checks were read-only
+in the preceding review. No remote freshness/ancestry claim from dry-run;
+actual execution performs that check after confirmation. Final full19-Web
+dry-run PASS,including the three site content hooks,310resource references,
+18-file content audit and source projections. Scoped clean-script scan2PASS,
+publication PowerShell parse/path/diff checks PASS. No actual publication.
+
+## Size/CRC-aware CAN restart scheduling (2026-10-22)
+
+Tool0100/build18:47:38 changes PC scheduling only. DeviceRestartQuietMs uses
+S=ceil(App bytes/1024)*8ms;after END clamp(max(S,measured END ms)+500,1000,6000).
+ENTER uses live installed_app_size and clamp(2*S+500,1000,6000),never the
+incoming BIN. Unknown0/FFFFFFFF size selects6000;64-bit calculations/measured
+clamp prevent overflow.8ms/KiB is a current-sample conservative estimate,not
+a portable startup guarantee. Future slow targets still need hardware review.
+The12-second App probe budget,20ms cancel slices,100ms post-attempt spacing,
+wire retries/timeouts,metadata/CRC/identity/version gates and warning outcomes
+are unchanged. Report app_reset_quiet_ms now records the selected wait.
+
+Production files:src/core/app_confirmation_timing.h,src/worker_can_workflows.cpp,
+src/worker_session.h;build header/version and delivery EXE regenerated.
+ConfirmDeviceApp receives actual report.end_ms. ENTER uses the same wait-loop
+before its existing bounded validation attempts;current F24 Boot validates
+once before CAN initialization and again on session entry. No Boot/App/host
+firmware,metadata contract,generated device artifacts or test BINs changed.
+Public operation source,README/ARCHITECTURE/AGENTS/checklists and web/PDF synced.
+
+Evidence reviewed:FD user182748.log/six1028..1035 JSON/HTML reports match.
+FD original/8/24/56/120/247KiB totals5516/7240/15559/32188/65515/134185ms.
+All confirm CRC/APP_READY/live identity/CAN_STOP;last remains PASS_WITH_WARNINGS,
+host warning/passive/TX failure deltas1 each,link retry1,health probes2.
+First five have zero recorded error deltas and one health probe.247KiB END
+1778ms exceeds the former1000ms quiet period;Boot calls whole-image CRC before
+App/CAN startup. This supports the early-probe hypothesis,not analyzer proof
+of a specific ACK error. New policy selects1460ms for120KiB/865ms END and2476ms
+for247KiB/1778ms END;ENTER for an installed247KiB App selects4452ms.
+Raw reports/logs and existing timing tables are not rewritten. FD public timing
+projection is pending separately;F13 original-App timing remains unsupplied.
+
+Verification:focused new native app_restart_timing_tests.cpp via
+scripts/test_app_restart_timing.ps1 PASS8368checks(real six size/END inputs,
+slower CRC,rounding,unknown/extreme sizes,clamps,cancel,pacing/budget),no COM.
+Nine source-integration/completion and six field-guide checks PASS;no full
+unrelated suite/firmware builds. One-click Release build0warnings/errors;
+normal closure of exact delivery Tool PID88416,not forced. Final delivery SHA256
+104CFDBDFD72018AB6FB2D5C77605AAACDA8A7D577547212A619C5DB637E8D62 matches
+Release output. Actual hidden-frame startup/state/font fixture PASS at
+can_prerequisite_Release_7c29d1e2,using production objects and closed SerialPort.
+Debug not rebuilt:worker scheduling only,no MFC HWND/layout changes;previous
+Debug lifecycle evidence is reused only for those unchanged paths.
+
+Source/web CheckOnly,310local refs and19-file public-content audit PASS.
+Operation PDF final17pages/2diagrams rendered. Initial four-row example split
+across pages;replaced with two concise examples and Chinese outside code font.
+Final first-page schedule/diagram/all-page review completed. No new UI visual
+or physical COM/IRQ/reset tests,Git commit/push or publication. New247KiB
+Classical/FD warning/retry behavior requires user hardware retest;do not claim
+the source/native models establish physical warning elimination.
+
+## Reconnect progress, Enter Boot action and F24 Classical timing (2026-10-22)
+
+Tool0099/build18:22:17:accepted explicit Open+Probe and closed-to-open serial
+State reset the old percentage/caption and completion result. Same-session
+State leaves active/completed progress intact. Saved report paths are retained.
+Idle discovered-App guidance begins Next: Enter Boot and uses black bold
+text while ENTER is enabled; Boot/busy clear emphasis. BIN mode/rate blockers
+still take priority and all write gates remain unchanged. This extends the
+previous inventory only for the requested Enter Boot action,not all candidates.
+
+Production changes:src/main_frame.cpp,src/main_frame_workflow.cpp,
+src/ui/update_feedback.h;build version/header and delivery EXE regenerated.
+tests/can_prerequisite_ui_tests.cpp now injects real frame State events for
+reconnect/same-session progress/report retention and exercises Enter Boot
+availability/priority/emphasis recovery. Tests never open the actual SerialPort.
+README/AGENTS/ARCHITECTURE,UPDATE_VALIDATION/workshop,web projections and both
+PDFs synchronized. No firmware or wire protocol changes.
+
+User supplied six F24 Classical500K/Host115200 reports from180801.log.
+Actual JSON/HTML input_bytes/elapsed_ms agree:4224/5222,8192/7272,24576/15556,
+57344/32198,122880/65453,252928/136242. Public rough seconds5.2/7.3/15.6/
+32.2/65.5/136.2 added only to the existing Bootloader-owned timing table;
+ISP retains its jump. Six records confirm CRC,APP_READY/live identity,CAN_STOP.
+Per user direction the timing table has no per-row diagnostic warning labels;
+raw reports are not rewritten. The247KiB source remains PASS_WITH_WARNINGS,
+link retry1,Host warning/passive/TX failure deltas1 each;the other five PASS.
+Do not summarize all six as error-free. F24 FD timing/F13 original-App timing
+remain absent. No installation-method comparison or physical fault inference.
+
+Release/Debug one-click builds PASS,0warnings/errors;normal build closure only
+of exact delivery Tool PID55528,no forced termination. Delivery SHA256 matches
+final Release output:1C3ED3719A82ED8016ECE66F9410474622113D856184B9DC5DF9E780D7FB4318.
+Both actual hidden-frame MFC fixtures PASS (Release_ec6d1a1d/Debug_562d1198).
+Six field-guide/two timing tests PASS,including all six real JSON/HTML records.
+Completion runner initially had a stale unconditional-completion source-string
+assertion from the prior blocker change;updated for current precedence. Its
+six unchanged tests passed in that run;the corrected assertion/new reconnect
+test pass on focused rerun. No full unrelated suite or firmware rebuild.
+Source/web CheckOnly,310local refs and19-file content checks PASS.
+
+Operation17-page/workshop29-page PDFs rendered;all-page contacts and changed
+operation4/7,workshop21-23 reviewed. Computer Use pipe unavailable despite
+lightweight retry/reset;desktop/browser visual and actual COM/board tests
+NOT RUN. Native frame tests do not establish physical reconnect behavior.
+No Git commit/push or publication. Original user reports/logs preserved.
+
+## Actionable CAN image blockers and emphasis inventory (2026-10-22)
+
+Tool0098 implements only CAN image mode/rate emphasis: black bold text, error
+background/border, BLOCKED plus check direction; mode precedes rate. Existing
+discovery/update gates stay unchanged. A stale previous COMPLETE result cannot
+replace the current image blocker. Matching BIN/profile changes and busy/Misc/
+I2C paths clear emphasis. No host/device firmware or protocol changes.
+
+Changed production files: main_frame_workflow.cpp, main_frame_bus.cpp,
+ui/update_feedback.h, ui/status_card.cpp/.h; main_frame.h and status_card.h
+grant one narrowly named native fixture access without a product command.
+README/ARCHITECTURE/UPDATE_VALIDATION, checklist/self-check and affected web/PDF
+are aligned. test_can_prerequisite_ui.ps1 compiles its test-only frame runner
+against the selected product objects in an isolated ignored tmp directory.
+
+Canonical Release build gracefully closed only the matching Tool PID77764;
+version0098/build2026-10-22 17:53:24. Final incremental Release/Debug builds
+pass with no compiler warnings/errors; delivery build/FirmwareUpgradeTool.exe
+matches the final Release output. Actual MFC hidden frames load real F24
+Classical/FD BINs and check opposite mode conflicts, rate conflicts, disabled
+gates, recovery, old completion priority, Custom Transfer, Misc/I2C/busy reset,
+100/125-percent font-size text fit and300paint GDI stability. Both fixtures
+PASS; these are not screenshots, physical DPI or board acceptance.
+
+Initial test-only private/public macro failed MSVC access-decorated linking;
+replaced with fixture friendship. Final fixture runner uses explicit argument
+arrays and configuration-specific link options; both configurations pass
+without linker warnings. Document tests need FIRMWARE_WEB_ROOT explicitly;
+the initial default-companion-path error was corrected in the invocation.
+Final6field-guide tests,UPDATE_EVIDENCE sync/CheckOnly,310local references
+and19-file mechanical public-content check PASS. Updated17-page operation
+PDF rendered;all-page contacts and changed pages7/11 visually reviewed.
+
+Computer Use native pipe failed after documented retry/reset recovery, so
+desktop GUI appearance/browser preview NOT RUN. No COM open, board erase,
+power/reset, Git commit/push or publication. Native fixture state is synthetic;
+its idle worker owns no open SerialPort. Only normal read-only COM enumeration.
+
+Additional bold-black candidates below are an inventory, NOT implemented or
+published as current UI behavior. Prefer one short outcome/blocker plus an
+available next action; keep exact protocol details in Error Details/Log.
+
+| Candidate state | Existing source | Proposed action emphasis |
+| --- | --- | --- |
+| Invalid BIN/CRC or wrong update destination | main_frame_image.cpp, main_frame_workflow.cpp | Load matching packaged BIN; check File/integrity and selected workflow |
+| MCU/partition/IRQ/minimum-Boot mismatch | main_frame_workflow.cpp, main_frame_evidence.cpp | Open Preflight/Compare Metadata; identify the differing contract |
+| Host not verified/no CAN port/missing burst capability | main_frame_bus.cpp, main_frame_workflow.cpp | Probe selected Host; check mode/capability or Misc Boot state |
+| Older App blocked by installed policy | main_frame_workflow.cpp | Use same/newer; explicit force maintenance only if intended |
+| App running/Boot entry expired | ui/update_feedback.h, worker_can_workflows.cpp | Refresh live state; Enter Boot before Start if App mode |
+| CAN transaction timeout versus UART response timeout | core/operation_guidance.h | Preserve exact layer; check bus settings/wiring versus selected COM/Host |
+| END passed but APP_READY not confirmed | core/operation_guidance.h | Preserve image/report, check initialization/live INFO; no automatic rewrite |
+| Host App written but RUN required | ui/update_feedback.h | Run Validated Bridge App; distinguish written from running |
+| App confirmed but CAN stop/counter warning | ui/update_feedback.h | Review report; Disconnect/Close COM before CAN setup changes as applicable |
+| Cancel/cleanup still pending | core/operation_guidance.h, main_frame_bus.cpp | Wait for worker cleanup; re-probe before another write |
+
+Ordinary versions,addresses,TRACE/counter lines and every generic Missing item
+should not all become bold. Completion may emphasize its short confirmed
+result without making green success and red blockers look semantically equal.
+
+## Device App timing reference (2026-10-22)
+
+Documentation only:no Tool/firmware rebuild,version change,COM or board access.
+User-supplied trace-off F13 reports from firmware_upgrade_tool_20261022_172301.log
+all report PASS,matching END CRC,APP_READY/live image and CAN_STOP;link retries
+and recorded Host error deltas are0. This accepts normal24/56/119KiB updates,
+not installation-method comparisons,physical readback,power/fault or full App
+functional acceptance. The separate canceled Host-reset operation is not one
+of these three updates. No TRACE UART/CAN or UI queue overflow in this log.
+
+Report identifiers (prefix update_20261022_):
+
+- `092335_621_54044_695182765_1`:24576B,15845ms,CRC CA0DE29D.
+- `092427_590_54044_695234734_2`:57344B,32281ms,CRC8BF223B3.
+- `092553_622_54044_695320765_3`:121856B,65793ms,CRC7A2A9624.
+
+JSON/HTML size/elapsed values agree. Public values round to15.8/32.3/65.8s;
+not medians,ranges or extrapolation. Earlier trace-on figures are not mixed.
+
+Canonical docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md now owns
+device-update-timing directly after FF test-image generation. It groups F13
+Classical500K,F24 Classical500K and F24 FD nominal500K/data2M/BRS;unmeasured
+cells are dashes,not failures. Original BIN reference sizes20308/4224/4756B
+were read from the current packaged images;their timing is not supplied.
+Links reuse protocol/IRQ/dispatch-cost/debug-monitor explanations. Default
+119/247KiB and full120/248KiB paired-contract/RFP-only conditions remain.
+
+sync_device_workshop.ps1 projects the full table only to Bootloader;the catalog
+adds an ISP jump within its existing workshop entry,no ISP timing chapter.
+Bootloader navigation and both site READMEs document that ownership. Workshop
+PDF regenerated with six unchanged diagrams. Tests compare the public rows
+against the actual local reports when available;missing private reports skip
+that evidence check,never synthesize board acceptance. The evergreen-version
+test excludes only this bounded measurement record,which retains its actual
+environment versions. Remaining guide/navigation pin checks stay active.
+
+F24 Classical/FD timing reports and original-App timing remain unsupplied.
+No publication or Git action performed.
+Final checks:source/web CheckOnly,19public-guide tests,310local references
+and19-file public-content audit PASS. Updated28-page workshop PDF rendered;
+timing tables/links on pages21-22 reviewed at130dpi and all-page contacts.
+Web browser UI preview NOT RUN;no JS/CSS/layout implementation changed.
+
+## F13 final erase-block protection (2026-10-22)
+
+Default F13 capacity is now119KiB (0x1DC00):App2000..1FBFF;block127,
+1FC00..1FFFF,is outside metadata capacity,CAN DATA bounds and FSL erase/write
+wrappers. This matches the existing F24 Classical/FD247KiB policy. F13 Boot
+1.7.2/20261022 and App were clean rebuilt:0errors,4/3existing warnings;
+Boot highest1CD5,810bytes spare (minimum512). App20308bytes,CRC0C297B5E;
+App version/build unchanged. Programmer combined images now also omit the
+protected tail. No F24/host firmware or Tool runtime change.
+
+New real F13 timing batch:20261022_165542_92a0a978,24/56/119KiB. Old batches
+are preserved,not valid substitutes for this paired contract. Actual Tool/
+Boot parser and generator tests:3images,12negative cases,batch/no-overwrite;
+actual FSL wrapper19invalid calls rejected before vendor access;artifact/
+real-HEX IRQ tests PASS. Standalone production-PC/F13 block model PASS on
+the real119KiB BIN including lost ACK,CRC/replay/cancel/fault cases. Its INFO
+fixture now derives capacity and applies the probed layout,as the real worker
+does;the previous fixture assumed the constructor's120KiB default.
+
+The user's earlier RFP-installed full-capacity profile reports24/56/120KiB
+PASS,including APP_READY;these are hardware evidence for that prior profile,
+not hardware acceptance of the new119KiB layout. CS+ Debug installation used
+512-byte F13 monitor at1FE00..1FFFF;F24 projects reserve256bytes at3FF00..3FFFF.
+Full120/248KiB engineering profiles require paired capacity changes and RFP
+Boot installation only. Debug re-download reinstalls the monitor. END CRC
+passing does not establish a valid reset/debug-monitor path.
+
+Canonical important warning:RL78 porting guide#device-debug-monitor;
+Tool operation has a short warning/link. Six MD/web projections and PDFs
+were synchronized. New119KiB board update/power-cycle/CS+vsRFP/readback tests
+NOT RUN. No COM access,erase,reset,commit or push performed.
+Final documentation verification:17web+6Flash-reference tests,310local refs,
+19-file content audit and six source/web mirror checks PASS. Six PDFs have
+123pages total;all-page contacts and both important-warning pages were
+rendered/reviewed. An obsolete Mermaid PNG from an earlier porting guide
+render was archived locally before rerendering;no source or user image removed.
+
+## RL78 device CRC across64KiB (2026-10-22)
+
+User F13 reports show24/56KiB PASS and two120KiB END CRC_ERROR outcomes:
+1920blocks ACKed,expected1B510831,returned41C2B1EB,no recorded Host error
+counter increases. CC-RL far-pointer arithmetic updates only the low16bits;
+sw_crc32.c used data++. This source defect is confirmed by compiler assembly,
+not by a physical Flash readback. A local HEX-based wrap model does not
+reproduce the exact device-returned CRC;do not label it a readback match.
+
+Three identical sw_crc32.c copies now cast the pointer to a32-bit integer,
+increment,then cast back. Native models use size_t to retain their x64 pointer
+width. Shared shift/conditional polynomial and8-step down-counter keep the
+table-free ISO-HDLC result while fitting the existing budget. Initial larger
+cursor candidates failed the unchanged spare guard;the final implementation
+adds only2bytes to each F24 Boot. No validation,Flash partition,wire contract,
+CAN timing,host firmware,Tool runtime or test BIN was changed.
+
+Clean CS+/CC-RL builds0errors:Boot F13 1.7.1/20261022 end1C83/spare892;
+F24 Classical1.1.1 end1DFF/spare512;FD1.2.1 end1DC1/spare574. Existing warnings
+remain4/2/2 for Boot and3/5/5 for App,including CC-RL license warnings.
+App release identities/code unchanged;regenerated minimum-Boot metadata and
+CRC/combined programmer images reflect the paired Boot versions. App BINs:
+F13 20308/23BF3C1A,Classical4224/4837111E,FD4756/2244D36A.
+
+Boot HEX SHA256:F13 788DC6AF79A91D7D95CD11456657DD98B7A6D419FE2B08953A3FD6AC765F742D;
+Classical D4D06E0D6929C7E90D42E43F4723F56C7F6319832CC460CF5502541B485EC16A;
+FD3783E65E49C6E9EE020357A01C4CA49A4744B7F4CDC57BD4295543ECE1013522.
+F13 timing inputs in20261021_100427_fc2dc6fe retain all three baseline hashes;
+the120KiB CRC remains1B510831 and its minimumBoot1.7.0 is accepted by1.7.1.
+
+PASS:327native CRC checks across aligned64KiB boundaries,FF/mixed patterns,
+upper-Flash corruption and the real three BINs;all three strict-C90/-Olite
+target assemblies carry to the high address/reload ES. All three compiled
+unsafe-pointer mutations are rejected. New reusable test entry:
+scripts/test_device_crc_boundary.ps1 -DeviceBootProjects <three Boot paths>
+-InputBin <test BIN paths>. Evidence in tmp/internal/tests/crc_boundary.
+Existing native HostLink/PC/F13 block/policy/120KiB and both F24 artifact/HAL/
+metadata/RAM models pass;F13 real-HEX IRQ/stack checks pass. Public guide
+owns the CRC address section;all256 example byte rows regenerated from the
+new formal BINs without modifying the selected inputs.
+
+Hardware/COM open/Flash/reset/power tests NOT RUN;no Git push/deployment.
+After programming the corrected F13 Boot-only HEX,use the retained120KiB
+test BIN and verify END1B510831 plus reset/APP_READY. The observed secondary
+cleanup ABORT timeout has not been independently fixed or physically retested.
+
+Final verification:16web tests,5PDF tests,310local references and19-file
+public-content check PASS. Flash reference PDF27pages rendered and all-page
+contact sheets/changed page reviewed;updated metadata/CRC/hash rows match
+the actual new formal BINs. FD production PC/device retry/replay/mode/CRC/
+padding/disconnect model PASS. Two-script clean audit and17protected-file
+fixture/idempotence/junction checks PASS;actual project clean NOT RUN.
+CS+ cosmetic Classic MTPJ serialization was restored to its original bytes.
+Scoped diff checks PASS;Tool EXE and MCU host products were not rebuilt.
+
+## IRQ dispatch cost documentation (2026-10-22)
+
+Workshop device-irq-dispatch-cost owns RL78 per-accepted-IRQ latency,nominal
+S3 instruction accounting,CPU load examples,temporary stack and GPIO A/B
+measurement boundaries. RH850 rh850-irq-entry links it and explains hardware
+table reference/one-time EBASE-INTBP handoff,not a per-IRQ Boot owner check.
+No firmware/Tool source,configuration,EXE or programming image was rebuilt.
+
+Read-only source/manual path audit in tmp/internal/irq_dispatch_20261022:
+App paths are22instructions/38clocks for F13,F24 Classical and F24 FD;
+Boot F13 timer43,F24 timer40,FD CAN RX45clocks. Calculation uses manual
+R01US0015EJ0230 Table5-7,S3 Code Flash execution and RAM stack/owner;ROM
+literal read5clocks,taken BZ4. App38clocks ->1.1875us at32MHz/0.950us at40MHz.
+These are generated-assembly/manual estimates,not linked opcode verification,
+physical measurement or WCET;hardware response,ISR code,mask/priority waits
+remain separate. Dispatcher temporary stack10bytes is released before App ISR.
+
+MD and Bootloader/ISP projections synchronized;cross-document links are full
+web URLs so standalone PDFs have no unresolved local destinations. Workshop
+PDF27pages/6diagrams and RH8509pages/3diagrams rendered/all-page contact sheets
+reviewed,plus full timing-table pages. Fifteen web tests and five PDF tests
+pass;PDF tests now include timing text and all six workshop diagrams.
+Scoped safe-clean static check2scripts and local web310reference checks PASS.
+Physical GPIO timing and browser/DPI are NOT RUN. No Git commit/push.
+
+## RH850 EVM multi-port offline implementation (2026-10-22)
+
+The supplied BLDC V2/ASK V3 manuals identify R7F701684/100pins/16MHz.
+All six projects now select that EVM device and SC oscillator,with1MiB Code
+Flash,64KiB Boot,960KiB App and38 FCL blocks. ECC startup beginsFEDE0000.
+The owned clock projection uses PLL1C1031D for VCO480/CPU120/CAN40;App inherits
+clocks and defines the SC synchronization readback without linking CGC again.
+User confirmed R7F701684/16MHz as the target on2026-10-22. This matches the
+current six builds;no firmware changes or rebuild are needed for confirmation.
+Physical board/chip-marking inspection and hardware acceptance remain NOT RUN.
+
+Identical can_port_config.h and rh850_can_ports.c/.h in both Boot common
+directories and standalone Classical Transfer default to CAN1/CAN4. Numeric
+ENABLE_PORT_CAN0..5 supports any nonempty subset. FIFO[channel],16-slot queues,
+filters,counters and local TX0/status32*channel are independent. Shared RX23
+has a16-frame total round-robin budget;no main RX polling. No RXMB/commonFIFO.
+FD RAM two-port2432/all-six7296 bytes fits21504-byte shared budget;Classical
+uses320bytes/port. CPU queue storage is compact and separate from CAN RAM.
+
+Transfer owns per-bus protocol/replay/statistics. Boot metadata RESET0A claims
+one bus;another can query discovery/INFO but cannot change staging,START or
+raw blocks. Pre-START idle30s releases RAM;active updates require ownerABORT
+or reset. ever_started survives ABORT;Flash/CRC/policy/IRQ gates are unchanged.
+
+Actual CC-RH clean builds:Classical Boot high8973,FD895F;both Apps158BF and
+22724-byte packaged BIN;Classical Transfer59A5,FD5A69. Boot HEX SHA256:
+Classical A1848DB61D6DFF4658470A00BD3332C656A8BDDB49FB9208AABD610E7D31AC4F;
+FD109B34AF5B47C778CEB49DCC3DB9AA04A81F69761FEE1640494E9CE2310382F7.
+CC-RH reports0errors and existing W0561017 license/W0561322 alignment warnings;
+license checks were not bypassed or suppressed. Logs remain under tmp/internal.
+
+PASS:63 nonempty configurations/3invalid cases;10C90 port-model runs for
+masks1,2,16,18,63 in Classical/FD. Both actual wrappers plus production PC
+Transfer/Boot models pass,including source-bus replies,independent caches,
+cross-bus staging/ABORT rejection,owner release,960KiB image,replay/version/
+Flash-failure/disconnect/partial-image models. App-only rebuilds preserve27
+Boot source/config/image hashes per pair. Core triple parity,13PowerShell AST,
+six-target/ECC/generated-comment and actual MOT/map/512-pointer guards pass.
+
+Six English READMEs,canonical RH850/Transfer MD and both web projections are
+synchronized. RH850 PDF9pages/3flows and MultiBus18pages/5flows were rendered
+and visually checked;RH850 orphan paragraph corrected without changing gates.
+14web/5PDF tests,310local references and19-file mechanical content checks pass.
+
+Hardware CAN/FD/IRQ/FCL/ECC/reset/launch/power and browser/DPI are NOT RUN.
+No COM/programmer/Git commit/push action. Tool EXE,F24 host and RL78 golden
+firmware are unchanged. Historical single-port evidence below is not EVM
+hardware acceptance. Next:separate CAN1 and CAN4 Transfer tests on the EVM,
+then each matching Boot/App update,with board jumpers/termination verified.
+
+## App-local FF test images (2026-10-21)
+
+F13 CAN/F24 CAN/F24 FD App now carry identical generate_test_bins.ps1/.bat,
+mirrored from scripts/device_test_bins.* by sync_device_test_bins.ps1.
+Windows PowerShell5.1/.NET and the existing sibling Boot C-header reader are
+the user prerequisites; no Python/MSVC/Tool checkout is required to generate.
+The formal packaged BIN is validated against App identity,metadata/CRC/vector
+ranges,then extended with FF from its former CRC. Only image_size and the
+final CRC change; executable/version/policy/Boot contract remain unchanged.
+Default Flash budgets16/32/64/128/256/512KiB skip unsupported/truncating cases.
+New ignored test_bins batches contain BINs,manifest.csv,skipped.csv and notes;
+all three existing App/Boot checkouts and protected host/Tool products survive.
+
+PASS:13 current-size inputs;three real batch entries in relocated space/CJK
+fixtures;repeat/no-overwrite;36 failures;CRC known answer;source preservation.
+Three /W4 /WX native builds use production PC parser plus paired Boot C parsers;
+actual App-local files also pass independent native/vector/negative checks.
+PASS:mirrors/PS syntax,310web refs/anchors,19public files,13web tests(with
+FIRMWARE_WEB_ROOT configured),5PDF-renderer tests,17safe-clean fixture/junction
+guards and10protected-product SHA checks. Workshop PDF25pages/6flows rendered;
+all-page contact and changed full pages18/19 visually checked.
+Only the existing Bootloader workshop owns this usage;ISP projection unchanged.
+Physical updates/timing,GUI smoke,product rebuild,actual clean and Git/website
+publication NOT RUN. User will provide operation JSON for later result curation.
+
+## Historical RH850 Classical and CAN FD baseline (2026-10-21)
+
+All six Transfer/Boot/App projects are implemented. Active device is1692,
+R7F7016924AFP-C/512KiB;ECU CAN0 P0_0 Alt2/P0_1 Alt7,X1=8MHz/CPU120/CAN40.
+Classical500K and FD500K/2M/BRS have separate projects and image mode gates.
+Boot64KiB;App10000/metadata10100/EBASE10200/INTBP10400/code11000.
+App authoring uses six-field app_image_config.h and app_irq_handlers.h,
+local identical golden app_config.ps1,independently compiled common metadata.
+Prebuild produces identity/full512 table and no-channel timer projection;
+postbuild checks actual MOT/map/metadata/table/RAM reader/FCL copy extents.
+App-only source/build work never rewrites Boot images.
+
+FCL2.13 internal handler uses initialized RRAM FEDF8000..FEDFEFFF;data reader
+uses FEDF7000..7FFF. E2 monitor reserved at FEDF4800..6DFF(globalFEBF4800),
+ordinary RAM/stack below4800,cookieFEDFFFF0..FFFF,PowerUp ECC initialized.
+Flash geometry queried as22blocks;Boot0..7=8KiB,App8..21=32KiB,write256B.
+Erase happens at first accepted64B block of each32KiB region,matching PC erase
+timeout. Four RAM blocks form one page;tail FF;replay uses cached bytes without
+Flash reprogramming. ACK is accepted-in-session,not64-byte durability.
+No raw blank reads:copied call-free reader saves/restores VCI data ECC with DI;
+PE instruction ECC unchanged. This is not blank/ECC hardware acceptance.
+
+Normal START checks only valid installed App's version policy;FORCE0E skips
+ordering only for that request. Full metadata,CRC,entry/32exceptions/512IRQ
+checks gate END and Boot launch. Valid ENTER inactivity30s applies before
+accepted START;ABORT does not automatically RUN/restore erased contents.
+App inherits clocks,changes EBASE/INTBP,logs V1 counter and reports APP_READY.
+
+Offline models use actual C90 engine/image/parser/geometry/IRQ adapter plus
+production PC Host Link/burst/update client. Both modes pass normal,retry,
+lostACK,conflict/missing/CRC,policy/force,wrong contract,Flash failure,
+abort,pre-stage disconnect,partial-image reboot and full448KiB cases.
+FD64 Transfer validates59payload bytes/CRC8 and base discovery/stats.
+Isolated App variants add10IRQ entries;actual linked vectors/packages pass.
+Private model/build outputs remain under tmp/internal/rh850 and tests.
+User explicitly scoped offline:CAN/IRQ/FCL/ECC/reset/launch/physical-power
+tests NOT RUN. TJA1042T/1J/FD2M electrical suitability remains a board gate.
+CC-RH builds have0errors,2W0561017 license warnings and1W0561322 text
+alignment warning;no warning/license suppression. Actual destination and
+section boundaries are checked. Firmware is not presented as board-validated.
+
+New guide RH850_CAN_DEVICE_GUIDE is single-owner Bootloader content;
+sync_rh850_device.ps1 and Transfer synchronization own web projections.
+Three web entries link the RH850 engineering/operation scope without guessed
+RH850 GitHub repositories. No Tool EXE/F24 host/RL78 golden changes,no Git
+init/commit/push or website deployment. Historical stage1 notes follow.
+
+Final production ROM highs:Classical Boot836B,FD Boot8357;App158E3 in both
+modes(22760-byte packaged BIN),FD Transfer54B9. Boot spare is31892/31912B.
+Classical App CRC35196A21,FD App CRCE03D90FE. Classical Transfer retains
+0E2088FF9C735F2CA2C672BD6F6F3C4426F3AC9BAB9DC108AD004E8FF9272E0E;
+Tool EXE retains1AA1EF4849A117C9AA58BDD9E36787EF0E9473EE847F953B6C8D760F82BF11EB.
+Isolated IRQ App repeats leave original Boot SHA unchanged and do not create
+fixture Boot DefaultBuild. Final guides:RH8507pages/2flows,MultiBus17/5;
+contact/full-size visual checks. MD/Web/310refs/19-file public gates,13guide/
+5writing/5PDF tests,7PS syntax,mirrors/path scans/diffs and safe-clean
+17fixture/junction/237actualprotected-file hashes/2script scan PASS.
+No browser/DPI or hardware preview was performed. Native tests do not execute
+the real FCL or peripheral driver;RAM CPU execution remains a hardware gate.
+
+## Historical RH850 stage1: standalone Transfer (2026-10-21)
+
+At this historical stage the request was larger: Classical Transfer/Boot/App,
+then CAN FD. Only Transfer is implemented here; RH850 Boot/App remain the
+original shells and must not be treated as update-ready firmware. No host
+firmware, Tool runtime/EXE, RL78 golden sources, Git repositories or boards
+were changed. User selected ECU CANH1/CANL1 and offline work only.
+
+Actual existing project root is the normal _Avery_Renesas/CS+ workspace;
+the user-typed SourceCode_Avery_Renesas path does not exist. Schematic MCU and
+selected CS+ device are R7F7016924AFP-C/1692,64pins,512KiB Code Flash.
+X1=8MHz,PLL1N=59/M=0 gives VCO480/CPU120/PPLL80; PERI2=PPLLCLK2 supplies
+RS-CANFD clkc40MHz. ECU is CAN0 P0_0 Alt2/P0_1 Alt7. Diagnostic UART0
+P0_2/115200 shares the board's Camera1 TX net; RX is not armed.
+
+Added portable C90 Custom Transfer core, independent CAN0 IRQ adapter and
+main-loop runtime. RX FIFO0/EIINT23 has an SPSC16-slot queue(15usable),drop-
+newest diagnostics,full-batch software IRQ re-request and no RX polling.
+OSTM0 channel84 ticks1ms. Main owns CRC/sequence/cache/12stats/trace/TX.
+UART Start/masking is atomic; UART has no ISR output or RX pointer exposure.
+Generated512-entry table replaces copied per-slot dummy bodies; actual SC
+files are preserved/excluded,not deleted. RAM ECC init is FEDF0000..FEDFFFFF.
+
+New build/test/verify_rh850_transfer PowerShell scripts take an explicit
+DeviceProject. Prepare backs up MTPJ in tmp/internal/rh850,adds only owned
+files,removes demo compile registrations,sets C90 and compact vector layout.
+The saved project remains directly buildable in CS+. MOT is standalone from0,
+not an App update BIN. .gitignore preserves that delivery file and excludes
+compiler/personal/log data; no material output was deleted.
+
+Validation: CC-RH2.07 clean rebuild0errors; two W0561017 license warnings
+(paid license not found/evaluation expired),not source warnings. Final ROM high
+0x5403; MOT SHA256
+0E2088FF9C735F2CA2C672BD6F6F3C4426F3AC9BAB9DC108AD004E8FF9272E0E.
+Final rebuild log is under tmp/internal/rh850. Native actual C90 protocol +
+production PC client tests PASS; actual queue/IRQ/TX adapter models PASS.
+S-record count/checksum/range and all512 linked MOT vector destinations PASS.
+These models do not run the vendor driver or prove physical IRQ/CAN behavior.
+MD/ISP/PDF contain only the implemented Transfer scope,not RH850 update claims.
+Three PowerShell syntax checks,source/block CheckOnly,310 local references/
+anchors,18-file public-content and diff checks PASS. MultiBus PDF17pages/five
+diagrams rendered;contact sheet and full-size changed pages5/6 inspected.
+No browser preview or website deployment was performed. Generated vector
+comments contain no local absolute path. There are no cleanup/publish changes.
+
+### Historical next-stage checklist (completed by current implementation above)
+
+1. Preserve current Transfer binary/source verification; do not reuse RL78
+   instructions or the UART reference's R7F701684/1MiB/FEDE0000 memory layout.
+   User authorized64KiB Boot provisionally. Exact1692 LRAM is32KiB atFEDF0000,
+   RRAM32KiB atFEDF8000; descriptor/copy area/stack/handoff must fit these.
+2. Separate image_metadata_config.h,CAN config,handoff and independent neutral
+   C metadata module. Preserve format6 region256 at App+100h,core128,reservedFF,
+   policy3/version-control semantics and the two user C-header workflow.
+3. RH850 exception RESET area is512B; do not overlap its +100h priority vectors
+   with metadata. Proposed App base10000,entry prefix10000,metadata10100,
+   EBASE exception table10200,INTBP512x4 table10400..10BFF,code>=10C00/11000.
+   Verify alignment,PSW.EBV/EBASE/INTBP/interrupt masking and independent App
+   generation before finalizing the contract/IRQ ABI. Full table default+local
+   mapping must permit App IRQ additions without rebuilding Boot. AA/55 owner
+   remains a handoff marker; RH850 uses EIRET/FERET and hardware vector bases.
+4. FCL reference is available in Sample_Project_RH850_S1_Boot_loader_UART and
+   Code_Flash/TestFLMD0. Preserve vendor licensing. Its descriptor CPU120 is
+   relevant;RAM FEDE0000,1MiB end and32KiB copy allocation are not valid1692
+   defaults. Check actual copied FCL section extent,FLMD control,geometry and
+   RAM-only P/E call chain with interrupts masked. Never copy XMODEM update
+   semantics or erase-on-App-entry from that reference.
+5. Code Flash has256-byte programming units and8KiB/32KiB erase blocks.
+   Reconcile CAN v5 64-byte blocks with page staging,duplicate replay,tailFF,
+   metadata validation before erase and exact ACK durability semantics. Do
+   not program the same256-byte ECC unit four times or assume64-byte writes.
+   Verify first App erase block,full512KiB bounds and debug/work-RAM use.
+6. Implement independent Boot CRC/range/vector/version gates,ENTER/no-valid-App
+   recovery/30s inactivity/START disarm/ABORT/END/App health; preserve valid-
+   installed-App-only version floor and transaction-local FORCE_START.
+   App V1/V2 counter/APP_READY must be actual main-loop health,not INFO alone.
+7. Add PowerShell pre/post generation,actual-linked metadata/vector checks,
+   App-only A/B builds with Boot hash unchanged,256-byte Flash/fault models and
+   real Tool image/client tests. Keep C90,no JSON authoring/Python build dep.
+   Inspect PC profile's assumptions; generic host forwarding should stay
+   unchanged. Do not enable an unvalidated update path in Tool.
+8. Complete Classical offline gates before CAN FD; hardware/COM/Flash/power
+   acceptance requires a separate scoped board session. Update current MD/web/
+   PDF with implemented behavior,not this planning discussion.
+
 ## Workspace layout / clean audit (2026-10-21)
 
 - Scope: Retained the integrated PC/firmware/public-guide release profile: root RC/res, diagrams/reference images and tmp workflow paths are not blindly moved. Raw captures remain private; current public documentation assets keep their established paths. New clean helper is scoped to tmp/internal/build.

@@ -60,6 +60,8 @@ and [App UART tags/counters](https://released.github.io/slide_boot_loader_for_RL
 Each App post-build also produces DefaultBuild/app_build_report.html with the
 actual BIN identity, metadata byte addresses, CRC/SHA-256 and complete vector
 table. See the [build-summary guide](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build-report).
+Each RL78 CAN/FD App also carries a one-click FF-filled test-BIN generator;
+see [App test images](https://released.github.io/slide_boot_loader_for_RL78/#device-test-images).
 
 Device App version control is disabled by default in app_image_config.h.
 When enabled, normal updates allow the same/newer version. The separate
@@ -127,6 +129,15 @@ only after App confirmation and keeps Host COM open; Misc writing remains in
 Boot until explicit RUN. Discover Target works in Boot/App; Enter Boot is
 needed only for a discovered running App. See the
 [completion guide](https://released.github.io/slide_isp_tool_for_RL78/#update-completion).
+CAN mode/rate conflicts with the loaded BIN show a bold black `[BLOCKED]`
+notice naming `Interface / Rate` and the settings to check, without suggesting
+an unavailable Discover action. Existing discovery/update safety gates remain.
+After discovery finds a running App, the available Enter Boot next step is
+also bold black. Reconnecting resets the previous percentage/caption to zero
+without deleting saved reports or resetting an active same-session operation.
+CAN restart waits use App size and measured END CRC time, bounded to1..6s
+inside the12-second App probe budget. ENTER uses the live installed size;
+Cancel remains available. See the [restart confirmation guide](https://released.github.io/slide_isp_tool_for_RL78/#app-restart-confirmation).
 Operation reports also include an offline HTML view; Open Last Report opens
 the last HTML created in the current session. Preflight summarizes current
 update gates without sending commands. Error Details preserves exact errors
@@ -274,12 +285,13 @@ MSBuild `
 ## GitHub source / delivery publication
 
 Double-click `github_push.bat` to review, archive non-delivery DefaultBuild
-outputs and commit/push F13 device Boot/App, F24 Classical Transfer/Boot/App,
-F24 CAN FD Transfer/Boot/App and Tool in order (nine repositories, eleven
+outputs and commit/push F13 device Boot/App/Transfer, F24 Classical Transfer/Boot/App,
+F24 CAN FD Transfer/Boot/App and Tool in order (ten repositories, twelve
 DefaultBuild deliveries).
 The Tool includes F24 CAN host Bridge Boot/App. Type PUSH to confirm; no force
 push, automatic merge, build or web deployment. Local tmp/INI/log/report data
-are excluded. For a read-only preview run scripts/push_github.ps1 without flags.
+are excluded. RH850-named development paths remain local and are not staged.
+For a read-only preview run scripts/push_github.ps1 without flags.
 See the [publication and recovery guide (zh-TW)](./docs/GITHUB_PUBLISH_zh-TW.md).
 The shared catalog is scripts/github_publish_catalog.ps1. Checkouts must
 already have main, an initial local commit and matching origin; missing Git

@@ -66,9 +66,13 @@ automatic reports include failed/canceled outcomes, phase durations and honest
 counter reset/saturation/peak scope. Query live diagnostic capabilities rather
 than guessing from model/version. No hardware evidence is implied by models.
 See docs/UPDATE_VALIDATION_zh-TW.md; sync_update_evidence.ps1 owns its web block.
-After END use the shared AppConfirmationTiming/AwaitAppProbe policy:1000ms
-without CAN requests,20ms cancel slices,100ms between completed health probes,
-within the12-second probe budget. Do not extend wire timeouts or repeat END.
+After END use DeviceRestartQuietMs(new image bytes,measured END CRC ms) and
+AppConfirmationTiming/AwaitAppProbe:1000..6000ms without CAN requests,20ms
+cancel slices,100ms between completed health probes,within the12-second probe
+budget. ENTER uses live installed size/two estimated validation passes,not
+the incoming BIN;unknown size waits6000ms. Keep size estimate8ms/KiB plus500ms
+margin explicit as scheduling,not a hardware guarantee. Do not extend wire
+timeouts,skip CRC,hide counter warnings or repeat END.
 Host counter evidence includes warning/passive;increases on confirmed device
 updates produce typed amber feedback/PASS_WITH_WARNINGS. Preserve unavailable,
 failure/cancel and STOP-warning distinctions. Native timing/counter tests do
@@ -80,6 +84,10 @@ STOP failure is App-confirmed/cleanup-warning with CAN state retained. Misc
 write completion remains Boot/explicit RUN; failed or canceled operations never
 inherit success feedback. Discovery is valid in Boot/App; UI ENTER requires
 a discovered App. Do not turn a completion banner into write authorization.
+Accepted explicit Open+Probe and a closed-to-open serial State reset the old
+progress/caption/completion, not saved reports; same-session State must not
+erase progress. Emphasize the actionable Enter Boot hint for a discovered App
+only while idle and ENTER-enabled; image mode/rate blockers stay higher priority.
 
 First engineering delivery is frozen at Tool0082/F24 Boot1.2.0-App1.5.0/F13
 Boot-App1.5.0. User182253 verifies one normal115200/500K v5 update/END, not
@@ -243,6 +251,54 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 
 ### Target firmware
 
+- RH850 has independent Classical and CAN FD Transfer/Boot/App projects.
+  EVM R7F701684(100pins,1MiB),CAN1 TX P10_7/RX P10_6 Alt4,
+  CAN4 TX P0_10/RX P0_9 Alt5,X1=16MHz,CPU120MHz,CAN40MHz;
+  500K,FD data2M/BRS. ENABLE_PORT_CAN0..5 are numeric0/1,default1/4.
+  Boot reserve64KiB with512-byte spare;App10000,metadata10100/256bytes,
+  EBASE10200/512bytes,INTBP10400/512entries,code11000 onward.
+  Keep neutral metadata/profile/parser,CAN config and handoff separate.
+  Boot and App have independent full tables,EIRET ISRs and AA/55 handoff;
+  App changes never derive Boot mappings or rewrite Boot products.
+  Format6/policy3,valid-installed-App-only floor and transaction FORCE0E
+  match the golden authoring/validation workflow. Do not add persistent policy.
+  FCL App erase32KiB on first accepted CAN block;64-byte blocks accumulate
+ 256-byte aligned programming pages. ACK is RAM-session acceptance until
+  page flush;last-block replay never erases/programs again. Guard actual FCL
+  copy ordering/extent in28KiB RAM and safe reader in4KiB,plus debugger/cookie.
+  Read unknown/blank Flash only through copied call-free RAM reader with
+  saved/restored VCI ECC;do not describe it as hardware blank/ECC validation.
+  tools/device_build.ps1 owns CS+ pre/post,actual metadata/512IRQ/map checks,
+  BIN/HEX/HTML. App/FD Transfer require matching sibling Boot sources.
+  scripts/build_rh850_can_device.ps1 selects Kind explicitly;tests compile
+  actual C90 engine/adapter and production PC client,max960KiB/replay/faults.
+  docs/RH850_CAN_DEVICE_GUIDE_zh-TW.md owns RH850_DEVICE;sync_rh850_device.ps1
+  projects it only to Bootloader. ISP/home use short linked entries.
+  User scoped this work to offline builds/models; no COM/programmer action.
+  Keep RL78 golden projects and F24 host firmware unchanged.
+  Three identical can_port_config/rh850_can_ports copies own independent
+  FIFO[channel]/16-slot queues/15usable and channel-local TX0/status32*channel.
+  Compact CPU storage only for enabled ports;no RXMB/commonFIFO allocation.
+  RX/FIFO RAM budget21504bytes,worst FD all-six7296bytes;unique FIFO/rules.
+  Shared EIINT23 round-robin drain has16-frame total budget and next IRQ.
+  Transfer protocol contexts/counters/replay caches are per physical port.
+  Boot staging RESET0A claims a bus;other buses remain discovery/INFO-only.
+  Pre-START idle30s releases RAM ownership;active updates require owner ABORT
+  or reset. Never merge raw blocks across buses or clear ever_started on ABORT.
+  Full512-entry table defaults to one handler; never restore hundreds of
+  duplicate dummy ISR bodies. OSTM0 channel84 supplies the1-ms tick.
+  UART TX is optional/bounded with its CPU IRQs masked atomically after Start.
+  No UART/protocol/TX wait in CAN ISR. Tests use the actual C90 protocol and
+  queue adapter plus production PC client; mock API/register boundaries are
+  not electrical or vendor-driver acceptance. Guard actual MOT pointers,
+  R7F701684 FEDE0000 RAM ECC extent and generated comments. EVM helper keeps
+  PLL480/CPU120/CAN40 from16MHz and excludes raw SC CGC in owned projections;
+  App inherits clocks and supplies the SC synchronization variable only.
+  CC-RH license warnings
+  remain explicit; do not suppress/bypass them.
+  The Transfer web block is canonical inside MULTIBUS_TOOL_GUIDE's
+  TRANSFER_EXAMPLES; sync_transfer_diagnostics maintains it. No guessed repo URL.
+
 - F24 CAN device source/build/model baseline is documented in
   docs/F24_CAN_DEVICE_DESIGN_zh-TW.md. It is not the 20MHz F24 host.
   Keep device Boot8KiB/App2000,512-byte spare,F2V1,targetF24B,last1KiB protected,
@@ -335,12 +391,12 @@ logic outside generated files except in preserved user-code sections.
 
 - github_push.bat / scripts/push_github.ps1 is the explicit maintainer publish
   entry. Plain invocation is read-only; -Execute requires PUSH or -Yes.
-  Shared catalog github_publish_catalog.ps1 owns nine repos: F13 Boot/App,
+  Shared catalog github_publish_catalog.ps1 owns ten repos: F13 Boot/App/Transfer,
   F24 Classical and FD device Transfer/Boot/App and Tool including its F24 CAN host projects.
   User requests scripts/checks only: do not initialize/create/commit/push actual
   repositories without a separate request. Missing .git stops before pruning.
 - DefaultBuild release pruning is a recoverable move to ignored tmp/internal/
-  github_publish, never normal clean/build. Preserve the exact eleven delivery
+  github_publish, never normal clean/build. Preserve the exact twelve delivery
   files in the catalog; validate bounds/reparse points, remote ancestry and
   index before commit/push. Never force push, auto-merge or publish web sites.
   Reject tracked or unignored local-only data before archiving/staging. Permit
@@ -350,6 +406,10 @@ logic outside generated files except in preserved user-code sections.
   Read docs/GITHUB_PUBLISH_zh-TW.md and run verify_github_publish.ps1 plus the
   workspace safe-clean audit after changing this workflow. No product rebuild
   or version bump for publication-script-only changes.
+  Tool paths containing RH850 (case-insensitive) are deferred: exclude them
+  from staging and reject any such staged diff. Preserve local tracked/untracked
+  drafts; no override flag. Keep public navigation/projections free of their
+  unpublished engineering chapters. RH850_DEVICE remains a deferred empty block.
 
 - PC: Visual Studio 2022 with MFC, x64 Release is the release target.
 - F24/F13: CS+ with the project-selected CC-RL toolchain.
@@ -382,6 +442,11 @@ do not replace contextual review or permit removing technical safety limits.
 
 F13/F24 CAN device editing tutorial is canonical in
 docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md (DEVICE_WORKSHOP block).
+App-local generate_test_bins.ps1/.bat mirror scripts/device_test_bins.ps1/.bat
+via sync_device_test_bins.ps1. Keep FF-only extension, source/version/IRQ
+preservation, size/CRC resealing, no overwrite, ignored test_bins batches and
+PowerShell/.NET-only runtime. Never rebuild Boot/Host/Tool to generate inputs;
+physical timing results remain separate from offline image validation.
 sync_device_workshop.ps1 projects the full workshop only to the Bootloader page and a link on ISP; keep source C headers,
 generated outputs, App-only commands and verification boundaries distinct.
 Do not use host BUR1/Misc or host IRQ scripts for F24 CAN device examples.
@@ -408,6 +473,11 @@ keep direct consumers, artifact guards, CS+ registrations and both golden
 samples aligned. Do not restore metadata under CAN config or duplicate values.
 Device runtime parsing/validation is independently compiled image_metadata.c/.h,
 mirrored from firmware/common/device_metadata with sync_device_metadata.ps1.
+Device sw_crc32.c traversal uses integer-address carry before far-pointer cast;
+CC-RL far-pointer arithmetic wraps at64KiB. Keep F13/F24 Classical/F24 FD
+copies identical and run scripts/test_device_crc_boundary.ps1 with all three
+Boot paths plus real test BINs. Native flat-pointer CRC checks alone cannot
+establish target address carry; retain the target-assembly guard.
 Each project owns image_metadata_profile.c and config. Preserve C90/word-width/
 endian/alignment/extent boundaries; decoding alone is not metadata/CRC validity.
 Compact/detailed status changes labels only, never acceptance. Boot calls the

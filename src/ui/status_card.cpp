@@ -18,6 +18,11 @@ void CStatusCard::SetTone(firmware_upgrade::visual::Tone tone) {
     tone_ = tone;
     if (GetSafeHwnd() != nullptr) Invalidate(FALSE);
 }
+void CStatusCard::SetEmphasized(bool emphasized) {
+    if (emphasized_ == emphasized) return;
+    emphasized_ = emphasized;
+    if (GetSafeHwnd() != nullptr) Invalidate(FALSE);
+}
 void CStatusCard::OnPaint() {
     CPaintDC dc(this);
     CRect rectangle; GetClientRect(&rectangle);
@@ -30,6 +35,17 @@ void CStatusCard::OnPaint() {
     CString text; GetWindowTextW(text);
     CFont* previous = GetFont() == nullptr ? nullptr : dc.SelectObject(GetFont());
     dc.SetBkMode(TRANSPARENT); dc.SetTextColor(info_style_ ? GetSysColor(COLOR_WINDOWTEXT) : palette.text);
+    CFont emphasis_font;
+    CFont* before_emphasis = nullptr;
+    if (emphasized_ && heading_.empty()) {
+        LOGFONT spec = {};
+        if (GetFont() != nullptr && GetFont()->GetLogFont(&spec)) {
+            spec.lfWeight = FW_BOLD;
+            if (emphasis_font.CreateFontIndirect(&spec))
+                before_emphasis = dc.SelectObject(&emphasis_font);
+        }
+        dc.SetTextColor(RGB(0,0,0));
+    }
     if (heading_.empty()) {
         dc.DrawTextW(text, rectangle, DT_LEFT | DT_WORDBREAK | DT_NOPREFIX);
     } else {
@@ -51,6 +67,7 @@ void CStatusCard::OnPaint() {
         rectangle.top = value_rect.bottom;
         dc.DrawTextW(detail_.c_str(), rectangle, DT_LEFT | DT_WORDBREAK | DT_END_ELLIPSIS | DT_NOPREFIX);
     }
+    if (before_emphasis != nullptr) dc.SelectObject(before_emphasis);
     if (previous != nullptr) dc.SelectObject(previous);
 }
 void CStatusCard::SetContent(const std::wstring& heading, const std::wstring& value,

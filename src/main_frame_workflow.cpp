@@ -249,6 +249,8 @@ bool CMainFrame::QueueOpenSelectedCom() {
     }
 
     worker_command_pending_ = true;
+    SetProgress(0,L"Progress");
+    last_update_result_=firmware_upgrade::feedback::Result::None;
     CString display;
     com_combo_.GetWindowTextW(display);
     AppendLog(L"Queued host open/probe for " + std::wstring(display.GetString()) + L".");
@@ -324,6 +326,7 @@ void CMainFrame::UpdateUi() {
     RefreshNominalChoices();
 
     const bool busy = worker_command_pending_ || session_state_.busy;
+    firmware_prerequisites_label_.SetEmphasized(false);
     const bool port_open = session_state_.serial_open;
     const bool host_ready = session_state_.host_validated;
     const bool can_started = session_state_.can_started;
@@ -428,6 +431,8 @@ void CMainFrame::UpdateUi() {
             (session_state_.target_metadata.diagnostics&2U)) ||
         (transfer_profile && session_state_.target_profile == firmware_upgrade::ui::TargetProfile::F13Transfer)));
 
+    const auto image_blocker = firmware_upgrade::feedback::CanImageBlocker(
+        selected_mode_supported, selected_bitrate_supported);
     std::vector<std::wstring> missing;
     if (boot_profile) {
         if (busy) {
@@ -448,9 +453,9 @@ void CMainFrame::UpdateUi() {
             missing.push_back(
                 L"selected CAN bitrate is not supported by the image");
         }
-        if (!update_target_ready) {
+        if (!update_target_ready && selected_mode_supported && selected_bitrate_supported) {
             missing.push_back(L"Discover Target with CAN Upgrade");
-        } else if (!session_state_.f13_bootloader_ready) {
+        } else if (update_target_ready && !session_state_.f13_bootloader_ready) {
             missing.push_back(L"App is running: select Enter Boot");
         }
         if (binary_data_.empty()) {
@@ -477,7 +482,10 @@ void CMainFrame::UpdateUi() {
         force_old_firmware_btn_.EnableWindow(missing.empty() && version_blocked);
         if(version_blocked) missing.push_back(L"older version blocked; use force upgrade old version firmware for this update only");
         start_firmware_update_btn_.EnableWindow(missing.empty());
-        if (missing.empty()) {
+        if (!busy && !image_blocker.empty()) {
+            firmware_prerequisites_label_.SetWindowTextW(image_blocker.c_str());
+            firmware_prerequisites_label_.SetEmphasized(true);
+        } else if (missing.empty()) {
             firmware_prerequisites_label_.SetWindowTextW(
                 L"Ready: Boot mode detected; Enter Boot is not needed. "
                 L"Image, target, address and CRC32 are compatible. Next: Start Device Update.");
@@ -491,6 +499,8 @@ void CMainFrame::UpdateUi() {
                 text += missing[index];
             }
             firmware_prerequisites_label_.SetWindowTextW(text.c_str());
+            firmware_prerequisites_label_.SetEmphasized(
+                !busy && enter_bootloader_btn_.IsWindowEnabled());
         }
     } else {
         start_firmware_update_btn_.EnableWindow(FALSE);
@@ -507,7 +517,7 @@ void CMainFrame::UpdateUi() {
     UpdateFirmwareImageInfoText();
     UpdateTargetMetadataText();
     UpdateBusUi();
-    UpdateCompletionFeedback();
+    if (!boot_profile || image_blocker.empty()) UpdateCompletionFeedback();
 }
 
 void CMainFrame::OnBnClickedConnectTarget() {

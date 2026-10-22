@@ -83,8 +83,21 @@ inline std::wstring ReportResult(bool success, bool canceled, Result result) {
 inline std::wstring CanNextStep(bool host, bool discovered, bool boot) {
     if (!host) return L"Next: Open + Probe Host, then Discover Target.";
     if (!discovered) return L"Next: Discover Target (available in Boot or App mode).";
-    if (!boot) return L"App mode detected. Next: Enter Boot, then Start Device Update when the image is ready.";
+    if (!boot) return L"Next: Enter Boot. App mode detected; then Start Device Update when the image is ready.";
     return L"Boot mode detected. Enter Boot is not needed; Start Device Update when the image is ready.";
+}
+
+// Image-setting blockers precede discovery/ENTER hints; they do not change gates.
+inline std::wstring CanImageBlocker(bool mode_supported, bool bitrate_supported) {
+    if (!mode_supported) {
+        return L"[BLOCKED] Selected CAN mode is not supported by the image.\r\n"
+               L"Check BIN supported CAN mode (Interface / Rate); load a BIN matching the device Boot and CAN Mode.";
+    }
+    if (!bitrate_supported) {
+        return L"[BLOCKED] Selected CAN bitrate is not supported by the image.\r\n"
+               L"Check BIN supported nominal/data bitrate (Interface / Rate) against the device Boot and CAN settings.";
+    }
+    return {};
 }
 
 } // namespace firmware_upgrade::feedback

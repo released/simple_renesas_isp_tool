@@ -59,6 +59,8 @@ class GuideMarkdownTests(unittest.TestCase):
 
     def test_final_guide_outputs(self):
         expected = {
+            "FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.pdf": (0,['CRC 的連續 Flash 位址','0x1FBFC','0x3FBFC','32-bit']),
+            "DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.pdf": (6,['38','1.1875','0.950','0.095%','GPIO pulse','RL78-S3']),
             "FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf": (20,['BUR1','f24_board','115200','App 工程','Device App 更新操作圖','Host App 更新操作圖','F24','log(timer)-V1']),
             "FirmwareUpgradeTool_MultiBus_Guide_zh-TW.pdf": (8,['下載與操作總覽','CRC16','100 kHz','128','Custom Transfer','0xF24B','OFFLINE']),
             "F13_CAN_Bootloader_Update_Guide_zh-TW.pdf": (10,['UPD1','0x2100','30','SEAL']),

@@ -462,13 +462,22 @@ bool WorkerSession::ProcessEnterF13Bootloader(const Command& command,
         return false;
     }
 
-    PostLog(L"ENTER acknowledged; waiting for application reset.");
-    for (unsigned wait_slice = 0U; wait_slice < 4U; ++wait_slice) {
-        if (IsCancelRequested()) {
-            *error = L"Enter bootloader canceled.";
-            return false;
-        }
-        Sleep(50U);
+    const auto installed_bytes=state_.target_metadata.installed_app_size;
+    const evidence::AppConfirmationTiming enter_timing(
+        evidence::DeviceRestartQuietMs(installed_bytes,0U,true));
+    PostLog(L"ENTER acknowledged; waiting "+std::to_wstring(enter_timing.QuietMs())+
+        L" ms without CAN requests for installed App "+
+        (installed_bytes==0U || installed_bytes==0xFFFFFFFFU ? L"unknown size" :
+            std::to_wstring(installed_bytes)+L" bytes")+L".");
+    const auto enter_started=std::chrono::steady_clock::now();
+    const auto enter_elapsed=[&]() { return static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now()-enter_started).count()); };
+    if (evidence::AwaitAppProbe(enter_timing,enter_elapsed,
+        [this]() { return IsCancelRequested(); },[](std::uint32_t ms) { Sleep(ms); })!=
+        evidence::AppConfirmationTiming::Action::Probe) {
+        *error=IsCancelRequested()?L"Enter bootloader canceled.":L"Enter bootloader wait expired.";
+        return false;
     }
 
     for (unsigned attempt = 1U; attempt <= 3U; ++attempt) {
@@ -669,7 +678,7 @@ bool WorkerSession::ProcessProgramF13Boot(
     state_.f13_bootloader_ready=false;
     state_.target_validated=false;
     const auto confirm_started=std::chrono::steady_clock::now();
-    const bool confirmed=ConfirmDeviceApp(metadata,error);
+    const bool confirmed=ConfirmDeviceApp(metadata,report.end_ms,error);
     update_timings_.push_back({L"app_confirmation",static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now()-confirm_started).count())});
     update_details_+=L"; app_confirmation="+std::wstring(confirmed?L"PASS":L"NOT CONFIRMED")+
@@ -712,16 +721,19 @@ bool WorkerSession::StopCanAfterAppConfirmation() {
     return true;
 }
 
-bool WorkerSession::ConfirmDeviceApp(const firmware_update::ImageInfo& image,std::wstring* error) {
+bool WorkerSession::ConfirmDeviceApp(const firmware_update::ImageInfo& image,
+                                    std::uint64_t end_crc_ms,std::wstring* error) {
     const auto started=std::chrono::steady_clock::now();
     const auto elapsed=[&]() { return static_cast<std::uint64_t>(
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started).count()); };
-    evidence::AppConfirmationTiming timing;
+    evidence::AppConfirmationTiming timing(evidence::DeviceRestartQuietMs(image.image_size,end_crc_ms));
     std::uint32_t probes=0U;
     const auto record=[&]() { update_details_+=L"; app_reset_quiet_ms="+
-        std::to_wstring(evidence::AppConfirmationTiming::quiet_ms)+L"; app_health_probes="+std::to_wstring(probes); };
-    PostLog(L"App restart wait: "+std::to_wstring(evidence::AppConfirmationTiming::quiet_ms)+
-        L" ms without CAN requests, included in the "+std::to_wstring(evidence::AppConfirmationTiming::budget_ms)+
+        std::to_wstring(timing.QuietMs())+L"; app_health_probes="+std::to_wstring(probes); };
+    PostLog(L"App restart wait: "+std::to_wstring(timing.QuietMs())+
+        L" ms without CAN requests (image "+std::to_wstring(image.image_size)+
+        L" bytes, END CRC "+std::to_wstring(end_crc_ms)+L" ms), included in the "+
+        std::to_wstring(evidence::AppConfirmationTiming::budget_ms)+
         L" ms confirmation window; Cancel remains available.");
     while(evidence::AwaitAppProbe(timing,elapsed,[this]() { return IsCancelRequested(); },
         [](std::uint32_t ms) { Sleep(ms); })==evidence::AppConfirmationTiming::Action::Probe) {

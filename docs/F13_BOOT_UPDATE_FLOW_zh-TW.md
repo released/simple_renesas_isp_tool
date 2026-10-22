@@ -27,7 +27,7 @@ flowchart LR
 - Classical CAN 500 kbit/s，不使用 CAN FD。
 - Request ID `0x700`；response ID `0x701`；兩者皆為 standard data frame。
 - Host使用exact response filter701；F13用control700 exact與raw data720..727／mask7F8，無receive-all。
-- app 起點為 `0x2000`、容量為 `0x1E000`；兩者都是此 build 的 metadata，
+- app 起點為 `0x2000`、容量為 `0x1DC00`（119 KiB）；兩者都是此 build 的 metadata，
   不是 tool 常數。update image 實際長度為 4-byte aligned，且必須落在
   metadata 的 minimum/capacity 範圍。
 - 每區塊最多64 bytes，PC交易數為ceil(actual_image_size/64)；區塊內8筆raw frame
@@ -39,6 +39,8 @@ flowchart LR
   `metadata.application_start + actual_image_size - 4`；CRC 範圍不含這 4 bytes。
 - 此工程未啟用 WDT。復原依靠 bounded timeout、明確錯誤回覆、
   software reset、boot-mode retention，以及 manifest/CRC 驗證。
+
+Boot 安裝方式與滿容量限制見 [Flash 尾端保護的重要事項](https://released.github.io/slide_boot_loader_for_RL78/#device-debug-monitor)。
 
 ### 1.1 可變長度 F13 image 的產生與接受條件
 
@@ -175,9 +177,9 @@ P12 控制的是 S/silent mode，LOW 才能正常 TX；不是 standby。這塊�
 | Metadata header | `0x2100` magic=`0x004E4143`；format6、core length128、flags=`0x0003`；protocol ID1／version5、checksum type1（CRC32）、target=`0xF13B`、Classical CAN／standard ID 格式全部匹配 |
 | Metadata reserved | 整區256 bytes 中後128 bytes（`0x2180..0x21FF`）全部為 `0xFF` |
 | Metadata policy | UPD1 version3／size32、DEVICE_APP／CAN、F1V1 IRQ ABI；minimum Boot 不高於目前 Boot；`0x74..0x77` version control 為0或1，UART baud 與其餘保留欄位為0 |
-| Image size | manifest size 含尾端 CRC4 bytes，介於516與122880 bytes，且4-byte aligned |
+| Image size | manifest size 含尾端 CRC4 bytes，介於516與121856 bytes，且4-byte aligned |
 | App version | `0x00MMmmpp`；啟動時驗證欄位有效。更新版本比較在 START 執行，依目前有效 App 的 version control 判斷；build 不參與比較 |
-| Flash layout | app start=`0x2000`、capacity=`0x1E000`、code Flash=`0x20000`、boot reserve=`0x2000`、erase=`0x400`、minimum=`0x204`，均等於 boot 編譯設定 |
+| Flash layout | app start=`0x2000`、capacity=`0x1DC00`、code Flash=`0x20000`、boot reserve=`0x2000`、erase=`0x400`、minimum=`0x204`，均等於 boot 編譯設定 |
 | CAN contract | nominal mask=`0x04`（500K）、data mask=0、request ID=`0x700`、response ID=`0x701`，均等於 boot 編譯設定 |
 | CRC32 | 對 `[app_start, app_start + image_size - 4)` 計算 CRC32，等於該 image 最後4 bytes 的 LE32 stored CRC |
 
@@ -502,7 +504,7 @@ flowchart TD
 下列項目尚未因 source review、clean build 或 mock test 而自動完成：
 
 - [ ] Classical CAN 500K、實體 exact filter、wrong-ID/extended/RTR rejection。
-- [ ] 分別以 32/60/80 KiB、接近目前 F13 120 KiB 容量，以及不同合法
+- [ ] 分別以 32/60/80 KiB、接近目前 F13 119 KiB 容量，以及不同合法
       app-start/capacity metadata 的映像完成更新、reset、重新 discover app；
       確認START size、ceil(size/64)區塊數、raw frame DLC與END word count均依實際長度。
 - [ ] 在 START 前、每個代表性 erase/write 點、END 驗證與 reset 時斷電。

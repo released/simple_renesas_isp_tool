@@ -57,6 +57,10 @@ Misc 的 BOOT／APP 卡改為 host bridge 自己的資訊，且目的地卡明�
 <!-- TOOL_DEVICE_MEDIA_BEGIN -->
 <a id="device-update-example"></a>
 
+> **重要：預設 App 容量為 F13 119 KiB、F24 247 KiB，均保護 Flash 最後 1 KiB。**
+> **若工程改為用滿 120／248 KiB，Boot 只能以 RFP 安裝；使用 CS+ Debug 下載 Boot 後做滿容量更新，可能導致 App 異常。**
+> 配對工程設定、monitor 位址及安裝步驟見 [Boot 燒錄方式與 Flash 尾端保護](https://released.github.io/slide_boot_loader_for_RL78/#device-debug-monitor)。
+
 ### Device App 更新操作圖
 
 先完成 Host Probe，在 CAN 頁選取 `CAN Upgrade`、Bridge port 與 device 使用的 bitrate。

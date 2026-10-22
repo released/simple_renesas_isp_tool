@@ -5,6 +5,9 @@ function Get-WebGuideProjection {
     $entry = $catalog.PSObject.Properties[$Section]
     if (!$entry) { throw "Unknown guide section: $Section" }
     $config = $entry.Value
+    if ($config.PSObject.Properties['deferred'] -and $config.deferred) {
+        return "<!-- ${Section}_BEGIN -->`n<!-- ${Section}_END -->"
+    }
     if ($Folder -ceq $config.owner) { return $Canonical }
     $url = 'https://released.github.io/'+$config.owner+'/#'+$config.anchor
     $linkText=[regex]::Unescape('\u95B1\u8B80\u5B8C\u6574\u7AE0\u7BC0')

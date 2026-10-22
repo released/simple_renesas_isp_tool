@@ -44,6 +44,12 @@ function Test-PublishLocalOnlyPath([string]$Path) {
     return $Path -match '^(tmp/|github_push\.local\.psd1$|build/(?:reports/|logs/|.*\.(?:ini|log)$))'
 }
 
+function Get-PublishDeferredPaths($Target) {
+    if(!$Target.DeferredPattern) { return }
+    $paths=(Invoke-PublishGit $Target.Root @('ls-files','--cached','--others','--exclude-standard','-z')).Text.Split([char]0)
+    $paths | Where-Object { $_ -and $_ -match $Target.DeferredPattern } | Sort-Object -Unique
+}
+
 function Assert-PublishLocalOnlyData($Target) {
     foreach($path in (Invoke-PublishGit $Target.Root @('ls-files','-z')).Text.Split([char]0)) {
         if(Test-PublishLocalOnlyPath $path) {

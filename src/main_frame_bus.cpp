@@ -143,7 +143,8 @@ void CMainFrame::UpdateBusUi() {
     } else {
         CString prerequisites; firmware_prerequisites_label_.GetWindowTextW(prerequisites);
         firmware_prerequisites_label_.SetTone(prerequisites.Find(L"Ready:") == 0 ? Tone::Ready :
-            (!binary_data_.empty() && !binary_image_valid_ && SelectedProfile() == L"CAN Upgrade" ? Tone::Error : Tone::Pending));
+            (prerequisites.Find(L"[BLOCKED]") == 0 ||
+             (!binary_data_.empty() && !binary_image_valid_ && SelectedProfile() == L"CAN Upgrade") ? Tone::Error : Tone::Pending));
     }
     if (!i2c && session_state_.host_validated && session_state_.can_ports.empty()) {
         CWnd* unavailable[]={&can_mode_combo_,&can_bitrate_combo_,&can_data_combo_,&can_tx_test_btn_,

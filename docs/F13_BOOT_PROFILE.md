@@ -92,15 +92,17 @@ These are values emitted by the current R5F10BMG projects, not PC-tool limits.
 | Logical target | `0xF13B` |
 | Code flash | `0x20000` bytes |
 | Boot reserved / app start | `0x2000` / `0x2000` |
-| Application capacity | `0x1E000` bytes |
+| Application capacity | `0x1DC00` bytes, 119 KiB |
+| Protected final erase block | `0x1FC00..0x1FFFF`, 1 KiB |
 | Erase block | `0x400` bytes |
 | Update image size | Variable, 4-byte aligned, metadata-defined |
 | Integrity | CRC32/ISO-HDLC in the final four image bytes |
 
-The post-build app used in the latest software check is only about 17 KiB.
-The automated suite also covers aligned 32/60/80/120-KiB images, an alternate
-start/layout, and an image larger than 256 KiB. Capacity is a maximum writable
-region, not a required padded BIN length.
+Capacity is a maximum writable region, not a required padded BIN length.
+The default profile accepts up to 119 KiB. Generic Tool tests also exercise
+other valid engineering layouts; they do not expand this Boot's writable range.
+Full 120-KiB profiles require matching Boot/App settings and RFP installation
+of Boot only; see [Flash tail protection](https://released.github.io/slide_boot_loader_for_RL78/#device-debug-monitor).
 
 ## Commands and address range
 

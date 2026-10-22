@@ -29,13 +29,13 @@ crc_bin_offset = image_size - 4
 | --- | --- | --- |
 | Code Flash | 0x00000..0x1FFFF | 0x00000..0x3FFFF |
 | Boot | 0x00000..0x01FFF | 0x00000..0x01FFF |
-| App 可用範圍 | 0x02000..0x1FFFF | 0x02000..0x3FBFF |
+| App 可用範圍 | 0x02000..0x1FBFF | 0x02000..0x3FBFF |
 | App 固定跳轉表 | 0x02000..0x020FF | 0x02000..0x020FF |
 | Metadata 整區 | 0x02100..0x021FF | 0x02100..0x021FF |
 | 已定義 core／含 UPD1 | 0x02100..0x0217F | 0x02100..0x0217F |
 | Reserved FF | 0x02180..0x021FF | 0x02180..0x021FF |
 | Linked code 起點 | 0x02200 | 0x02200 |
-| 額外保留 | debug trace RAM | Flash 0x3FC00..0x3FFFF |
+| Flash 尾端保護 | 0x1FC00..0x1FFFF | 0x3FC00..0x3FFFF |
 | Image CRC32 | 實際 BIN 最後4 bytes | 實際 BIN 最後4 bytes |
 
 ### CRC 類型、計算範圍與用途
@@ -52,6 +52,34 @@ crc_bin_offset = image_size - 4
 
 Image／metadata／block採CRC32/ISO-HDLC，reflected polynomial0xEDB88320，init及xorout0xFFFFFFFF。
 CRC提供完整性，不是簽章、認證或防回滾。image_size隨linker結果改變，所以CRC實際address必須重新計算。
+
+<a id="image-crc-linear-address"></a>
+
+### CRC 的連續 Flash 位址
+
+Boot 在 END 與啟動判斷時，依 metadata 的 `image_size` 讀取整個 App 映像並計算 CRC32。
+讀取範圍可以跨越多個 64 KiB 區域；末端四個 CRC bytes 不參與計算。
+
+| 範例映像 | 映像 Flash 範圍 | CRC32 儲存位址 |
+| --- | --- | --- |
+| App 24 KiB | `0x02000..0x07FFF` | `0x07FFC..0x07FFF` |
+| App 56 KiB | `0x02000..0x0FFFF` | `0x0FFFC..0x0FFFF` |
+| App 119 KiB | `0x02000..0x1FBFF` | `0x1FBFC..0x1FBFF` |
+| App 247 KiB | `0x02000..0x3FBFF` | `0x3FBFC..0x3FBFF` |
+
+表中的 App 起點為 `0x2000`；可用容量仍由各工程的 Flash 配置決定。
+滿容量 120／248 KiB 的 RFP 安裝條件，見 [Flash 尾端保護的重要事項](https://released.github.io/slide_boot_loader_for_RL78/#device-debug-monitor)。
+
+CC-RL 的 `__far` 指標加法只更新低 16 位。
+連續讀取使用 32-bit 整數位址運算，再轉回 `__far` 指標，讓 `0x0FFFF` 的下一個 byte 為 `0x10000`。
+此規則也適用於後續的 `0x1FFFF`、`0x2FFFF` 邊界。
+來源為 [CC-RL 記憶體配置與 Pointer operation](https://tool-support.renesas.com/autoupdate/support/onlinehelp/csp/V8.15.00/CS%2B.chm/Compiler-CCRL.chm/Output/ccrl04c0206y0003.html)。
+
+各 Boot 工程的 `sw_crc32.c` 以 `F13_Crc32Bytes()` 實作上述讀取及 CRC 運算，
+`caculate_crc32_checksum()` 提供 Flash 起點／長度入口。
+移植時一併核對目標編譯器的整數寬度、指標運算與可讀 Flash 範圍。
+實板驗證可使用[各 App 的測試 BIN 產生流程](https://released.github.io/slide_boot_loader_for_RL78/#device-test-images)，
+分別檢查跨界映像的 END CRC 與重啟後 APP_READY；離線 CRC 測試不代替 Flash 擦寫驗證。
 
 ## 2. 每個metadata byte：address、範例值與來源
 
@@ -127,15 +155,15 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 | 0x0D | 0x0210D | F1 | target_id[1] | 0x0210D | F2 | target_id[1] |
 | 0x0E | 0x0210E | 01 | can_mode_mask[0] | 0x0210E | 01 | can_mode_mask[0] |
 | 0x0F | 0x0210F | 00 | can_id_format[0] | 0x0210F | 00 | can_id_format[0] |
-| 0x10 | 0x02110 | 01 | app_version[0] | 0x02110 | 02 | app_version[0] |
+| 0x10 | 0x02110 | 01 | app_version[0] | 0x02110 | 03 | app_version[0] |
 | 0x11 | 0x02111 | 06 | app_version[1] | 0x02111 | 00 | app_version[1] |
 | 0x12 | 0x02112 | 01 | app_version[2] | 0x02112 | 01 | app_version[2] |
 | 0x13 | 0x02113 | 00 | app_version[3] | 0x02113 | 00 | app_version[3] |
-| 0x14 | 0x02114 | 99 | app_build[0] | 0x02114 | 99 | app_build[0] |
+| 0x14 | 0x02114 | 99 | app_build[0] | 0x02114 | 9B | app_build[0] |
 | 0x15 | 0x02115 | 28 | app_build[1] | 0x02115 | 28 | app_build[1] |
 | 0x16 | 0x02116 | 35 | app_build[2] | 0x02116 | 35 | app_build[2] |
 | 0x17 | 0x02117 | 01 | app_build[3] | 0x02117 | 01 | app_build[3] |
-| 0x18 | 0x02118 | 54 | image_size[0] | 0x02118 | 38 | image_size[0] |
+| 0x18 | 0x02118 | 54 | image_size[0] | 0x02118 | 80 | image_size[0] |
 | 0x19 | 0x02119 | 4F | image_size[1] | 0x02119 | 10 | image_size[1] |
 | 0x1A | 0x0211A | 00 | image_size[2] | 0x0211A | 00 | image_size[2] |
 | 0x1B | 0x0211B | 00 | image_size[3] | 0x0211B | 00 | image_size[3] |
@@ -147,7 +175,7 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 | offset | F13 device address | value | F13欄位[byte] | F24 device address | value | F24欄位[byte] |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0x20 | 0x02120 | 00 | app_capacity[0] | 0x02120 | 00 | app_capacity[0] |
-| 0x21 | 0x02121 | E0 | app_capacity[1] | 0x02121 | DC | app_capacity[1] |
+| 0x21 | 0x02121 | DC | app_capacity[1] | 0x02121 | DC | app_capacity[1] |
 | 0x22 | 0x02122 | 01 | app_capacity[2] | 0x02122 | 03 | app_capacity[2] |
 | 0x23 | 0x02123 | 00 | app_capacity[3] | 0x02123 | 00 | app_capacity[3] |
 | 0x24 | 0x02124 | 00 | flash_size[0] | 0x02124 | 00 | flash_size[0] |
@@ -228,7 +256,7 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 | 0x69 | 0x02169 | 31 | irq_abi[1] | 0x02169 | 32 | irq_abi[1] |
 | 0x6A | 0x0216A | 56 | irq_abi[2] | 0x0216A | 56 | irq_abi[2] |
 | 0x6B | 0x0216B | 31 | irq_abi[3] | 0x0216B | 31 | irq_abi[3] |
-| 0x6C | 0x0216C | 00 | minimum_boot[0] | 0x0216C | 00 | minimum_boot[0] |
+| 0x6C | 0x0216C | 02 | minimum_boot[0] | 0x0216C | 01 | minimum_boot[0] |
 | 0x6D | 0x0216D | 07 | minimum_boot[1] | 0x0216D | 01 | minimum_boot[1] |
 | 0x6E | 0x0216E | 01 | minimum_boot[2] | 0x0216E | 01 | minimum_boot[2] |
 | 0x6F | 0x0216F | 00 | minimum_boot[3] | 0x0216F | 00 | minimum_boot[3] |
@@ -391,12 +419,12 @@ F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.
 ### 本表範例BIN與CRC位置
 | 項目 | F13 (MCU CAN device) | F24 (MCU CAN device) |
 | --- | --- | --- |
-| image_size | 0x4F54 | 0x1038 |
-| stored image CRC32 | 0xD30CFB79 | 0x6ABF121D |
-| CRC32 Flash address | 0x06F50..0x06F53 | 0x03034..0x03037 |
-| metadata staging CRC32 | 0xAAAC5BDC | 0x3CDCA2BA |
-F13 device 範例BIN SHA-256：`8E46743D2A30389E47519EDADB63CEA34A412E9999121B3730EC65175426E633`。
-F24 device 範例BIN SHA-256：`4690E533111BEA3F709F5011D739917C07D1F920E0294EB89D63AC857B3CBF4C`。
+| image_size | 0x4F54 | 0x1080 |
+| stored image CRC32 | 0x0C297B5E | 0x4837111E |
+| CRC32 Flash address | 0x06F50..0x06F53 | 0x0307C..0x0307F |
+| metadata staging CRC32 | 0x6305ABC5 | 0x1EFB688C |
+F13 device 範例BIN SHA-256：`EBF2B63264968F7D9609C9D99EE4F23DD5AE49F4AB9D15CD4EE2B8FEC136B125`。
+F24 device 範例BIN SHA-256：`CD2B4A51038888FF7E35C0C70A250C598BFCBE1A5760530645C5B6F91E36388C`。
 <!-- METADATA_BYTES_END -->
 
 ### 欄位的語意與修改限制

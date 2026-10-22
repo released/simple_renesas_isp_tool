@@ -107,8 +107,8 @@ per-frame trace is required. It adds:
 - CAN TX/RX records with direction, ID, IDE/RTR/FDF/BRS flags, DLC, timestamp,
   and exact data bytes.
 
-A maximum-size 120 KiB F13 update contains 30,720 DATA transactions; shorter
-images contain `actual image size / 4` transactions. Detailed trace can
+A maximum-size 119 KiB F13 update contains 1,904 64-byte blocks. The four-byte
+DATA path would contain 30,464 transactions. Detailed trace can
 therefore slow an update and overwhelm the bounded UI event queue. For release
 timing measurements leave it off and capture CAN with external hardware.
 

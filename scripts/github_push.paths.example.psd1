@@ -1,6 +1,7 @@
 @{
     # Copy to ../github_push.local.psd1; use local absolute checkout paths.
     # This local configuration is ignored by Git. No tokens/passwords here.
+    F13TransferProject = '<F13-device-Transfer-checkout>'
     F13BootProject = '<F13-Boot-checkout>'
     F13AppProject  = '<F13-App-checkout>'
     F24TransferProject = '<F24-device-Transfer-checkout>'

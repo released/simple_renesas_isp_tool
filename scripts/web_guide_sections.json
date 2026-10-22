@@ -1,4 +1,11 @@
 {
+  "RH850_DEVICE": {
+    "deferred": true,
+    "owner": "slide_boot_loader_for_RL78",
+    "anchor": "rh850-can-device",
+    "title": "RH850 MCU CAN device 工程",
+    "description": "RH850 Classical／FD Boot、App、metadata、EIINT、Flash page及離線驗證集中於Device指南。"
+  },
   "FD_TRANSFER": {
     "owner": "slide_isp_tool_for_RL78",
     "anchor": "can-fd-custom-transfer",
@@ -27,7 +34,7 @@
     "owner": "slide_boot_loader_for_RL78",
     "anchor": "device-metadata-vector-workshop",
     "title": "Device App：Metadata 與 IRQ 設定",
-    "description": "F13 與 F24 CAN device 使用兩份 C header 管理映像資訊與中斷對應，並共同作為後續 MCU 的工程基準。完整範例、產生命令及驗證步驟集中於 Bootloader 頁。"
+    "description": "F13 與 F24 CAN device 使用兩份 C header 管理映像資訊與中斷對應，並共同作為後續 MCU 的工程基準。完整範例、產生命令及驗證步驟集中於 Bootloader 頁；不同 BIN 大小的等待時間見 [App 更新耗時參考](https://released.github.io/slide_boot_loader_for_RL78/#device-update-timing)。"
   },
   "F24_DEVICE": {
     "owner": "slide_boot_loader_for_RL78",

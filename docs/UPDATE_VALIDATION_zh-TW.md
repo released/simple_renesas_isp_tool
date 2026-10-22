@@ -26,10 +26,24 @@ CAN 確認沿用現有 Host Link 與 CAN 路由，不會重新掃描其他 COM�
 
 ### 重啟等待與 App 確認
 
-END CRC 通過後，Tool 先保留 1 秒的重啟等待，再開始 APP_READY 唯讀查詢。
+END CRC 通過後，Tool 依新 App BIN 大小與本次 END CRC 實測耗時，安排 1～6 秒的重啟等待，再開始 APP_READY 唯讀查詢。
 等待期間不送出 CAN 請求，不切換 COM 或重送 END；Cancel 仍可結束確認流程。
 這段等待包含在原有 12 秒的探測期限內，後續未就緒的查詢間隔至少 100 ms。
 單次通訊仍有自身的逾時邊界；等待值不是所有 App 的最長啟動時間保證。
+
+大小估算 S：將 App BIN bytes 除以 1024、向上取整，再乘以 8 ms。
+更新後等待為 `max(S, END CRC ms) + 500 ms`，限制在 1000～6000 ms。
+每 KiB 8 ms 是現有範例的保守排程基準；較慢的實測 END CRC 可提高等待值，並非 MCU 效能規格。
+
+`Enter Boot` 後則以 live INFO 的「目前已安裝 App 大小」估算 `2 × S + 500 ms`，同樣限制在 1～6 秒。
+此段預留兩輪檢查，不使用即將更新的新 BIN 大小；未知已安裝大小時使用 6 秒。
+兩種等待均以最多 20 ms 的短段檢查 Cancel。
+
+例如，假設 END CRC 耗時不高於 S：120 KiB 更新後等待 1460 ms、Enter Boot 後等待 2420 ms；
+247 KiB 分別為 2476 ms 與 4452 ms。實際值以 Log 與報告為準。
+
+排程定義見 [等待時間原始碼](https://github.com/released/simple_renesas_isp_tool/blob/main/src/core/app_confirmation_timing.h)。
+這項設定不修改 CAN／UART 交易逾時、重試次數或 Device 的 CRC／啟動檢查，也不隱藏通訊計數。
 
 `phases_ms.app_confirmation` 包含重啟等待及 App 確認耗時。
 `details` 的 `app_reset_quiet_ms` 與 `app_health_probes` 分別記錄等待設定及實際健康查詢次數。
@@ -72,6 +86,8 @@ flowchart TD
 百分比表示當前階段的進度。
 完整更新條件通過後，Tool 顯示一次完成對話框，並在狀態列與共用映像區保留 `[COMPLETE]` 及下一步操作。
 開始其他作業、切換 TAB 或載入檔案後，畫面回到目前操作的條件判定；歷史結果可從 Log 與報告查看。
+斷線後重新執行 `Open + Probe Host` 時，進度條與階段標籤歸零；不沿用上次的 100%。
+同一連線內的狀態更新不會清除正在執行的進度；`Open Last Report` 仍可查看本次開啟 Tool 後保存的報告。
 
 | 操作結果 | 畫面提示 | 下一步 |
 | --- | --- | --- |
@@ -97,7 +113,7 @@ App 啟動確認涵蓋必要初始化與映像身分，板上的應用功能仍�
 | 尚未 Probe Host | `Next: Open + Probe Host, then Discover Target.` | Probe → Discover |
 | 已 Probe，尚未 Discover | `Next: Discover Target (available in Boot or App mode).` | Discover → 依回報模式繼續 |
 | Discover 回報 Boot | `Boot mode detected. Enter Boot is not needed` | 核對 BIN／條件 → Start Device Update；有無已安裝 App 都依實際模式判斷 |
-| Discover 回報 App | `App mode detected. Next: Enter Boot` | Discover → Enter Boot → 核對 BIN／條件 → Start Device Update |
+| Discover 回報 App | 粗體黑字 `Next: Enter Boot. App mode detected` | Discover → Enter Boot → 核對 BIN／條件 → Start Device Update；進入 Boot 或作業執行中時，回復一般提示 |
 
 App 的 INFO／ENTER 回覆由該 App 實作。
 若自行開發的 App 未提供更新協定，可使用專案定義的 reset／recovery 方式停留 Boot，再 Discover；Tool 不以未回覆推定裝置已進入 Boot。
@@ -192,6 +208,8 @@ log_auto_scroll=1
 | `Ready:`／prerequisite | 綠 | 目前操作的前置條件已符合 | 可開始操作；不是已完成更新 |
 | `[COMPLETE]`／狀態與共用映像區 | 綠；CAN 停止未確認時為黃色警告 | 更新／啟動核對已完成，保留本次結果與下一步 | 依 [完成提示](#update-completion) 檢查 App 或明確 RUN；不把下一次更新需要進入 Boot 當成這次失敗 |
 | `Missing:`／prerequisite，或停用按鈕 | 黃；不相容時可為紅 | 缺少連線、Boot 模式、映像、能力或其他條件；作業執行中也會停用按鈕 | 先讀該區文字，再開 Preflight；不一定是 BIN 錯誤 |
+| `[BLOCKED] Selected CAN mode/bitrate...`／前置條件區 | 粗體黑字、錯誤底色與邊框 | 已載入 BIN 不支援所選 CAN 模式或速率 | 依 `Check BIN supported...` 提示，核對 `Interface / Rate`、Device Boot 與 CAN 設定；相容後才顯示 Discover／Enter Boot 等下一步 |
+| `Next: Enter Boot.`／前置條件區 | 粗體黑字、等待底色 | Discover 已確認 App 模式，且 Enter Boot 可操作 | 先 Enter Boot，再依 BIN／條件執行 Start Device Update；BIN 模式／速率不符時，優先顯示阻擋原因 |
 
 `Update Policy` 與 `Boot / IRQ ABI` 的背景色目前表示映像角色／允許介面與所選 TAB 是否相符。
 兩欄呈綠色不代表已與 live Boot 版本或 IRQ ABI 比對成功；實際契約比較見 [Metadata 差異表](#tool-metadata-comparison)。
@@ -230,7 +248,7 @@ CRC 範例 `0x12345678` 僅示意兩欄相等，不是這份示例的實測 chec
 | UI 欄位 | 資料來源與用途 | 顯示範例 | 判讀與處理 |
 | --- | --- | --- | --- |
 | App Range | 整份映像的起點／最後一個 byte 位址 | `0x00002000 / 0x00003FFF` | 結束位址為 start + image size - 1，包含尾端 CRC；不是 C 程式入口或整個可用分區的終點 |
-| Image / Capacity | 本份映像大小／可用 App 映像容量 | `8192 / 122880 B` | 前者不得超過後者；Capacity 不是剩餘空間，兩者不必相等 |
+| Image / Capacity | 本份映像大小／可用 App 映像容量 | `8192 / 121856 B` | 前者不得超過後者；Capacity 不是剩餘空間，兩者不必相等 |
 | Flash / Boot | MCU code Flash 大小／Boot 保留大小 | `131072 / 8192 B` | 來自工程契約，不是目前 Boot 消耗量；須與 live 配置一致 |
 | Minimum / Erase | 最小完整映像長度／Flash 擦除單位 | `516 / 1024 B` | 最小長度含向量、metadata 與 CRC；Erase 不是 CAN 資料區塊大小，也不是本次總擦除量 |
 
@@ -272,6 +290,8 @@ Misc 更新與明確 RUN 的操作見 [Host App 更新](https://released.github.
 | `VALID` + `MISMATCH` | CAN metadata 通過，但檔案 checksum 不符 | 重新取得或封裝 BIN；不進行更新 |
 | `MATCH` + `INVALID (see log)` | checksum 相符，但映像契約未通過 | 檔案種類、metadata 配置與 log 原因；CRC 不能取代格式檢查 |
 | `VALID` + `MATCH`，更新仍停用 | 檔案通過離線檢查，仍可能缺少 live 條件或有相容性差異 | [Preflight](#tool-preflight)、[Metadata 差異表](#tool-metadata-comparison)與 prerequisite 文字 |
+| `Selected CAN mode is not supported by the image.` | BIN 允許的模式與 Tool 選擇不符；例如 CAN FD BIN 搭配 Classical CAN | 依 `Check BIN supported CAN mode` 核對 BIN 的 `Interface / Rate`，載入與 Device Boot 及 CAN Mode 一致的 BIN；此時不接續顯示 Discover 指引 |
+| `Selected CAN bitrate is not supported by the image.` | BIN 允許的 nominal／data bitrate 與選項不符 | 核對 BIN `Interface / Rate`、Device Boot 設定與所選速率；Tool 設定不會改變 Device Boot 的速率 |
 | `App Start Override does not match image metadata (...)` | 手動起點與 BIN 不同；括號內為實際位址 | 回到 `Auto`，或使用與工程配置相符的值；不以此欄搬移 BIN |
 | `CAN Upgrade image metadata magic is invalid.` | 映像識別值不符 | 是否載入正確的封裝產物，而不是 HEX、raw BIN 或其他角色映像 |
 | `Image update policy is missing, malformed or unsupported.` | 更新角色／介面等 policy 無法通過解析 | App／工程 header、產生流程及封裝輸出 |
