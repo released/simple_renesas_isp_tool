@@ -14,10 +14,10 @@ For the full integration workflow rather than CRC packaging alone, read the
 
 The active embedded-CRC example is:
 
-[RL78/F24 CRC Boot/App reference](https://released.github.io/slide_boot_loader_for_RL78/)
-(the historical `RL78_F24_Boot_loader_app_CRC` sample).
+[RL78/F24 Basic CRC Boot/App reference](https://released.github.io/slide_boot_loader_for_RL78/basic_uart_i2c/#basic-projects)
+(`RL78_F24_Basic_Boot_loader_app_CRC`).
 
-- `RL78_F24_Boot_loader_app.mtpj` runs `boot_flash.bat` after a successful
+- `RL78_F24_Basic_Boot_loader_app_CRC.mtpj` runs `boot_flash.bat` after a successful
   build.
 - `2generateChecksum.cmd` crops the configured app range and applies
   SRecord `-crc32-l-e`.

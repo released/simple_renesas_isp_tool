@@ -275,7 +275,7 @@ class PublicWebGuides(unittest.TestCase):
 
     def test_public_pages_have_no_draft_or_delivery_pins(self):
         for path in [NAV, NAV.with_suffix('.html'), ISP / 'index.md', BOOT / 'index.md',
-                     BOOT / 'uart_i2c/index.md',
+                     BOOT / 'basic_uart_i2c/index.md',
                      ISP / 'README.md', BOOT / 'README.md']:
             text = path.read_text(encoding='utf-8-sig')
             self.assertNotRegex(text, r'尚未發布|未發布|尚未公開發布|本機稿|本機編輯稿|本機製作稿|工程第一版')
@@ -301,8 +301,8 @@ class PublicWebGuides(unittest.TestCase):
 
     def test_uart_i2c_scope_and_preserved_anchor_links(self):
         main = (BOOT / 'index.md').read_text(encoding='utf-8-sig')
-        examples = (BOOT / 'uart_i2c/index.md').read_text(encoding='utf-8-sig')
-        self.assertTrue((BOOT / 'uart_i2c/index.html').is_file())
+        examples = (BOOT / 'basic_uart_i2c/index.md').read_text(encoding='utf-8-sig')
+        self.assertTrue((BOOT / 'basic_uart_i2c/index.html').is_file())
         self.assertIn('參考工程', examples)
         self.assertIn('不是依 MCU 型號固定的最小 Boot 容量', examples)
         self.assertNotIn('MUST set bigger or equal', examples)
@@ -313,7 +313,7 @@ class PublicWebGuides(unittest.TestCase):
             ids = re.findall(r'<a id="([^"]+)"></a>', prose)
             self.assertEqual(len(ids), len(set(ids)))
             self.assertNotRegex(text, r'[\uE000-\uF8FF\uFFFD]')
-        targets = re.findall(r'\]\(uart_i2c/#([^)]+)\)', main)
+        targets = re.findall(r'\]\(basic_uart_i2c/#([^)]+)\)', main)
         self.assertGreater(len(targets), 10)
         for anchor in ('target_MCU_flash_type', 'ram_flag', 'FALSH_TABLE', 'ftable_inc',
                        'map_const', 'boot_main', 'boot_hdwinit', 'fsy_file',
@@ -324,6 +324,22 @@ class PublicWebGuides(unittest.TestCase):
             self.assertEqual(main.count(f'<a id="{anchor}"></a>'), 1)
             self.assertNotIn(f'<a id="{anchor}"></a>', folded)
             self.assertEqual(examples.count(f'<a id="{anchor}"></a>'), 1)
+
+    def test_basic_names_redirects_and_engineering_notes(self):
+        main = (BOOT / 'index.md').read_text(encoding='utf-8-sig')
+        examples = (BOOT / 'basic_uart_i2c/index.md').read_text(encoding='utf-8-sig')
+        redirect = (BOOT / 'uart_i2c/index.html').read_text(encoding='utf-8-sig')
+        self.assertIn('location.search + location.hash', redirect)
+        self.assertIn('../basic_uart_i2c/', redirect)
+        for role in ('UART', 'app'):
+            for suffix in ('', '_CRC', '_e2', '_HW_CRC'):
+                self.assertIn(f'https://github.com/released/RL78_F24_Basic_Boot_loader_{role}{suffix}', examples)
+        self.assertNotIn('RL78_F24_Boot_loader_', examples)
+        for anchor in ('basic-vs-golden', 'flash-ram-execution', 'crc-backends'):
+            self.assertEqual(main.count(f'<a id="{anchor}"></a>'), 1)
+            self.assertIn(f'../#{anchor}', examples)
+        for term in ('RFD_CMN', 'SMP_CF', 'DRAM', 'CRC32/ISO-HDLC', '0xCBF43926', '0x1021'):
+            self.assertIn(term, main)
 
     def test_device_update_operation_includes_automatic_confirmation(self):
         text = (ISP / 'index.md').read_text(encoding='utf-8-sig')
