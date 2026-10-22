@@ -1,5 +1,22 @@
 # Host Link v2 Self-Check
 
+## F24 Basic rename and porting notes (2026-10-22)
+
+- [x] Eight repository names, original IDs, branch SHAs and remote README
+  blobs checked; old GitHub URLs redirect to the corresponding Basic repos.
+- [x] Eight renamed MTPJ files parse as XML; eight isolated CS+ rebuilds
+  complete with zero errors, five to seven existing warnings each.
+- [x] FSY copying is anchored to the script directory; e2 App packaging
+  uses its DefaultBuild working directory in both IDE configurations.
+- [x] Existing working C/header/ASM/INC files match pre-rename snapshots;
+  dirty generated sources and the original missing Pin.c remain uncommitted.
+- [x] Three focused public-guide tests pass;314local references, anchors,
+  canonical porting projection and common public-content checks pass.
+- [x] Ten-page porting PDF generated with two Mermaid diagrams; changed
+  comparison, RAM table/flow and CRC pages rendered and visually checked.
+- [ ] Physical Basic downloader/Flash and native e2 studio build: NOT RUN;
+  this task changes names/build paths/documentation, not those implementations.
+
 ## Publication scope and FD timing (2026-10-22)
 
 - [x] F13 Transfer added;10repositories/12DefaultBuild deliveries,actual MOT keeper.

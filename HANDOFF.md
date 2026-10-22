@@ -1,5 +1,27 @@
 # Development Handoff
 
+## F24 Basic example identity and guide publication (2026-10-22)
+
+Eight standalone examples now use `RL78_F24_Basic_Boot_loader_` followed by
+`UART` or `app`, with suffix empty, `_CRC`, `_e2` or `_HW_CRC`.
+Local folders, GitHub repositories/origins, CS+ MTPJ/RCPE/SCFG identities,
+e2 configuration names, paired FSY and packaging references are aligned.
+Each renamed main branch matches its remote; existing dirty IDE/generated
+source/FSY changes remain local and were not included in publication.
+Eight clean release-source copies rebuilt in CS+ with zero errors and five
+to seven existing warnings per project. No COM/programmer or e2-native build.
+CAN golden firmware and the Tool EXE/version were not changed.
+
+The porting guide owns `basic-vs-golden`, `flash-ram-execution` and
+`crc-backends`; its two-diagram PDF has been regenerated and visually checked.
+The Basic page is `slide_boot_loader_for_RL78/basic_uart_i2c/`; `uart_i2c/`
+keeps a hash-preserving redirect. Eight old GitHub URLs redirect to the same
+repository IDs. Tool documentation and both affected Web repos are published.
+Three focused document tests and314local-reference checks passed.
+Snapshot/history/index backups and detailed build logs remain local under
+`tmp/internal/basic_rename`. Four other local development projects received
+only dependent-path repairs; none were published, including RH850.
+
 ## Publication boundaries and complete FD timing (2026-10-22)
 
 User requested publication-script changes,not actual commit/push. Explicitly
