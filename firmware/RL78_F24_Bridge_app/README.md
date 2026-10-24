@@ -1,10 +1,24 @@
-# F24 bridge app (CAN / I2C plus UART self-update entry)
+# F24 bridge app (CAN / I2C / device UART plus self-update entry)
 
 Actual MCU R7F124FLJ3xFB, existing X1 20M -> PLL80 -> CPU/CAN40.
 This is the only normal App product. It owns main/custom_func, Host Link
 dispatch and CAN services; canonical hardware/drivers/Smart Configurator
 sources are shared from ../f24_board. That directory is not a third product.
 Portable I2C staging is in ../common; layout/update support in ../f24_bridge_common.
+
+Device UART forwarding uses UART1 TX P74 / RX P75,8-N-1,default115200;
+numeric nominal baud300..2000000 is advertised in port bit31. The40MHz
+SAU1 divisor must meet the2percent nominal-error guard before acceptance.
+Host Link remains independent on UART0 P15/P16. The non-generated
+`../f24_board/f24_uart_backend.c` owns SAU1 and PIOR42=1, with interrupt-driven
+RX capture and TX. `../common/bridge_uart.c/.h` stages up to512bytes before
+one physical EXEC; it has no device metadata or Flash interpretation.
+App-local IRQ mapping includes INTST1=3E and INTSR1=40. The existing fixed
+Boot table forwards these slots, so adding the App handlers does not rebuild Boot.
+See [the optional UART wire contract](../../docs/HOST_LINK_PROTOCOL_V2.md#17-optional-device-uart-forwarding).
+IICA0 remains SCL P62/SDA P63;port rates advertise100/400kHz(default100).
+Selected timing is retained after abort/recreate. Verify connector wiring, common ground,
+voltage and pull-ups before use; forwarding models are not electrical tests.
 
 CAN_BURST_WAIT_RX22 / feature bit12 sends up to10 standard
 Classical frames per128-byte request, one matching reply after the last TX.

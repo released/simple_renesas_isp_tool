@@ -1,4 +1,16 @@
 {
+  "UART_TOOL_GUIDE": {
+    "owner": "slide_isp_tool_for_RL78",
+    "anchor": "uart-device-operation",
+    "title": "UART／Xmodem／I2C device 操作",
+    "description": "四系列串列 ISP、獨立診斷 UART、接線、更新與 Custom Transfer 集中於 ISP Tool 頁。"
+  },
+  "SERIAL_DEVICE_GUIDE": {
+    "owner": "slide_boot_loader_for_RL78",
+    "anchor": "serial-device-engineering",
+    "title": "MCU 串列 ISP 工程配置",
+    "description": "F13／F24／G16／G22 UART、I2C與Xmodem的獨立工程、C header、Flash／IRQ、metadata與封包契約集中於Bootloader頁。"
+  },
   "RH850_DEVICE": {
     "deferred": true,
     "owner": "slide_boot_loader_for_RL78",

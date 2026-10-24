@@ -30,22 +30,29 @@ class ClassicConsole(unittest.TestCase):
         self.assertIn('fwrite(',frame)
         self.assertIn('fflush(',frame)
 
-    def test_all_fields_in_four_semantic_groups(self):
+    def test_compact_fields_and_complete_readonly_details(self):
         layout=read('src/main_frame_layout.cpp')
-        groups=layout.split('const FirmwareFieldIndex groups[4][5]=')[1].split(';',1)[0]
+        groups=layout.split('const FirmwareFieldIndex groups[3][4]=')[1].split(';',1)[0]
         fields=re.findall(r'kFirmwareField\w+',groups)
-        self.assertEqual(len(fields),20)
-        self.assertEqual(len(set(fields)),20)
+        self.assertEqual(len(fields),12)
+        self.assertEqual(len(set(fields)),12)
         self.assertIn('layout.metadata_panes[group]',layout)
+        self.assertIn('Move(firmware_overview_cards_[2],layout.loaded_bin)',layout)
+        self.assertIn('Move(bin_details_btn_,layout.bin_details)',layout)
+        details=read('src/main_frame_evidence.cpp').split('CMainFrame::BuildBinDetails() const')[1].split('void CMainFrame::SaveUpdateReport')[0]
+        self.assertIn('field<kFirmwareFieldCount',details)
+        self.assertIn('GetWindowTextW(value)',details)
+        self.assertNotIn('QueueCommand',details)
         self.assertIn('MinimumClientHeight(metric.tmHeight)',layout)
         self.assertIn('Move(log_auto_scroll_check_,log_tools.auto_scroll)',layout)
 
     def test_classic_system_colors_and_five_groups(self):
         theme=read('src/main_frame_status.cpp')
-        for title in ('1. HOST CONNECTION','2. BIN / DEVICE INFORMATION','3. PERIPHERAL / TARGET',
+        for title in ('1. HOST CONNECTION','2. INFORMATION','3. PERIPHERAL / TARGET',
                       '4. LOAD / UPDATE IMAGE','5. MESSAGE LOG'):
             self.assertIn(title,theme)
-        self.assertIn('CPen pen(PS_SOLID,2,GetSysColor(COLOR_3DSHADOW))',theme)
+        self.assertIn('CPen pen(PS_SOLID,2,border)',theme)
+        self.assertIn('border=GetSysColor(COLOR_3DSHADOW)',theme)
         self.assertIn('OnSysColorChange()',theme)
         self.assertNotIn('RGB(245,247,251)',theme)
         self.assertIn('GetSysColor(COLOR_WINDOW)',read('src/ui/status_card.cpp'))

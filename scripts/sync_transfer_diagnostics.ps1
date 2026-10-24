@@ -2,9 +2,10 @@ param([string]$WebRoot='', [switch]$CheckOnly)
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'workspace_paths.ps1')
+. (Join-Path $PSScriptRoot 'web_guide_layout.ps1')
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
 $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\MULTIBUS_TOOL_GUIDE_zh-TW.md'))
-$path=Join-Path $WebRoot 'slide_isp_tool_for_RL78\index.md'
+$path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_isp_tool_for_RL78 -Section TRANSFER_EXAMPLES
 $web=[IO.File]::ReadAllText($path)
 $updated=$web
 # Validate both canonical sections before writing the page once.

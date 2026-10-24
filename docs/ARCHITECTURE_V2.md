@@ -2,6 +2,56 @@
 
 Status: implementation baseline
 
+RH850 CAN/FD device triplets use a self-contained `can_v4` mirror of the
+standalone v4 service/register driver,with separate EVM684 config/board/ISP
+adapters. The protocol wrapper services foreground TX/status,never polls
+IRQ-owned RX FIFOs,and accepts reply success only on matching DONE. Unconfirmed
+TX faults that bus without auto restart/replay. Exact filters,source-port
+responses,single-owner staging,metadata/FCL/CRC/vector/policy and independent
+Boot/App tables remain protocol-owned. Hardware error evidence is retained.
+See [RH850 CAN service](RH850_CAN_DEVICE_GUIDE_zh-TW.md#rh850-can-service).
+
+The independent UART/I2C/Xmodem device projects are described in
+[ISP_UART_DEVICE_DESIGN_zh-TW.md](ISP_UART_DEVICE_DESIGN_zh-TW.md).
+F24/G16/G22 serial projects own their editable SCFG and actual generated
+peripheral output. A local pre-build validator binds MCU/pins/clock/format,
+UART baud or IICA SVA/rate to the C contract and emits a project-local header.
+Runtime consumes those checked initialization values while retaining its
+bounded ISR/queue/mailbox and startup/vector ownership. No generated callback
+ISR or second startup is linked. Normal builds never reset or regenerate SC;
+initialization profiles are explicit maintainer inputs. G16 uses HOCO16/RFSP16,
+G22 HOCO32;F13 retains Code Generator. See the single-owner SC workflow there.
+Device bus settings are an immutable queued ISP BusConfiguration(port,rate,
+7-bit address). UI edits invalidate prior discovery;worker rechecks settings,
+INFO and metadata before START. INFO has no I2C address field:the selected
+transaction address binds the session. Numeric UART uses advertised bit31,
+not Host Link baud negotiation;I2C clocks follow advertised port capabilities.
+Low UART rates use a byte-count wire deadline and three-character idle floor.
+It separates byte framing, update state, neutral metadata and RL78 board/Flash
+adapters. The selected route is PC Host Link UART0 -> F24 bridge UART1 ->
+MCU device; I2C devices use the bridge IICA0. No direct device COM is opened.
+Optional bit14/commands60..62 implement generic UART staging and diagnostics;
+the register backend owns UART1 only. The UART tab routes the worker-owned
+native ISP client through that raw host client. It shares the image/metadata,
+cancel/progress and report console, with full installed metadata and bounded
+App-ready confirmation after END. Device UART0 remains diagnostic text; each
+Boot project supports one update protocol. See [UART operation](ISP_UART_TOOL_GUIDE_zh-TW.md).
+UART and Xmodem use separate workflows under UART / Xmodem; I2C ISP and its
+Custom Transfer use the I2C tab. F13/F24/G16/G22 retain independent Boot/App/
+Transfer projects for each contract. The G16 reference workflow stays read-only.
+Xmodem App/Transfer command24 is a no-Flash CRC32 sink using the actual
+main-loop receiver; Boot programming keeps its full-image checks and one EOT.
+Native builds/client/register/frame models do not establish physical UART,
+Flash, IRQ or reset acceptance. No device COM is opened directly by the Tool.
+
+Device UART diagnostics are optional INFO capability0x40/command25,24bytes.
+Only App/Transfer registers the read-only board callback;compact Boot retains
+its existing capabilities. Worker logs Device observations separately from
+Bridge UART1 deltas and retains them in report details after App confirmation.
+RL78 Xmodem clears streaming/pending reset on local control-TX failure;only a
+successfully transmitted final ACK permits reset. Actual RL78 runtime tests
+cover all four families/protocols/roles,not just engine/receiver callbacks.
+
 CAN FD updates use a separate device Boot/App pair with compiled FD-only
 mode metadata. Host command22 version2/feature bit13 forwards three standard
 FD+BRS records per64-byte block in101 payload bytes. The PC target profile
@@ -40,8 +90,20 @@ destinations remain validated after metadata/CRC by device_app_vectors.h.
 
 The console uses five system-color MFC groups: Host connection, BIN/live-device
 information, peripheral/target, shared load/update actions and message log.
-Metadata owns four semantic groups above the actions; tabs own only peripheral
-settings. Geometry and font-aware minimum height remain separate from protocol.
+Four live cards occupy the first analysis row. The loaded-BIN card and three
+four-field metadata groups occupy the second row. All20 cached field values
+remain refreshed. Loaded BIN paints heading/value plus two single-line detail
+rows with ellipses,never a partial fifth line;full detail remains in window
+text/tooltips and the read-only details snapshot. Other cards retain wrapping.
+Twelve fields are visible and BIN Details exposes the complete read-only
+snapshot,including explicitly labeled Device LIVE policy and route errors.
+The details dialog does not open COM or grant update authorization and is
+disabled while busy. Tabs own only peripheral settings. Geometry and font-aware
+minimum height remain separate from protocol.
+Provenance is independent of acceptance: Host live uses blue-gray, related
+Device live cards use teal, and offline BIN/header groups use tan borders.
+Misc live cards switch to Host provenance; errors retain their red status.
+Device LIVE policy is explicitly labeled as live among offline BIN fields.
 Log follow defaults on and persists as ui/log_auto_scroll in the portable INI.
 The isolated RichEdit append helper preserves pixel viewport/selection when
 follow is off, with a visible-line fallback for large histories. File logging,
@@ -118,8 +180,8 @@ command. See HOST_LINK_BAUD_zh-TW.md for baseline and physical A/B limits.
 0077 adds optional APP Host Link baud negotiation (bit11 /05..07), isolated
 from target protocol and port rates. Upper Host Baud selects115200/460800/
 921600; boot self-update stays at its fixed descriptor rate. DEVICE UART
-policy version2 fixes its separate UART baud at compile time; no UART target
-driver/update adapter is enabled. See HOST_LINK_BAUD_zh-TW.md.
+policy fixes its separate UART baud at compile time; UART ISP uses its own
+image/transport contract and does not inherit Host Baud. See HOST_LINK_BAUD_zh-TW.md.
 
 Host Link now uses shared128-byte payload/142-byte frame limits;96-byte hosts
 are explicitly incompatible. Metadata Flash extent is256 bytes, independent
@@ -486,7 +548,7 @@ device metadata.
 - Host UART TX P15, RX P16.
 - SW1 P32/INTP7, SW2 P70/INTP8.
 - LED1 P80, LED2 P81, LED3 P82.
-- IICA0 SCL P62/SDA P63 provides the generic100kHz I2C backend. The preserved
+- IICA0 SCL P62/SDA P63 provides the generic100/400kHz I2C backend(default100). The preserved
   user ISR hook dispatches to Bridge_I2cBackend_Irq; generated callbacks are
   not used for owned transfers because they cannot retain repeated-start.
 
@@ -532,4 +594,71 @@ Tool confirms a request-local FORCE_START with a public maintenance password,
 not a persistent unlock or authentication. See UPDATE_VALIDATION_zh-TW.md.
 The device bootloader still requires valid identity, manifest, and full
 image CRC before entering the application.
+
+## 11. Independent serial ISP device contracts
+
+Each device Boot selects one update protocol. UART0 diagnostic text is separate
+from binary UART1 or IICA0. Tool and bridge keep their existing ownership split;
+the host forwards bytes and never interprets device metadata or Flash addresses.
+
+| Device contract | INFO byte0 | Metadata protocol ID | Update transport | Link settings |
+| --- | --- | --- | --- | --- |
+| UART ISP | 1 | 0x55 | UART,0x04 | UART1,115200/8-N-1 |
+| I2C ISP | 2 | 0x49 | I2C,0x02 | IICA0,7-bit0x20,100kHz |
+| XMODEM-CRC128 | 3 | 0x58 | UART,0x04 | UART1,115200/8-N-1;128-byte CRC blocks |
+
+The shared IS framing and256-byte ISP-NUL metadata remain in the device layer.
+IRQ architecture is independent of serial framing. RL78 F1V1/F2V1/G6V1/G2V1
+requires a516-byte minimum image and checked BR slots. RH850 R8V1 requires
+0x1004bytes,entry/EBASE branches and all512 INTBP pointers. The PC validator
+rejects unknown serial IRQ ABIs rather than skipping architecture validation.
+The live client checks the architecture-specific minimum as well as the
+installed metadata;transport selection never substitutes for this check.
+I2C metadata words0x30/0x34 contain compiled bus Hz/7-bit address(default100000/0x20);its UART policy field0x70 is0.
+UART/Xmodem link words0x30..0x3F are0;policy UART baud0x70 is compiled(default115200),not fixed by the Tool.
+Live contract, transport, identity, geometry, IRQ ABI and minimum Boot are
+checked independently of an offline BIN and before any Flash write.
+
+I2C uses a STOP-delimited request of14..110bytes and a separate111-byte read:
+byte0 is00BUSY orA5READY; remaining bytes hold the IS reply thenFF padding.
+The main loop parses requests and performs Flash work. The IICA ISR only moves
+bounded bytes/state. A published reply stays immutable through a complete
+ready read, final master NACK and STOP; only then may ENTER/END reset the MCU.
+Short reads retain the reply. An abandoned mailbox has a bounded2s lease.
+
+Xmodem retains framed INFO/metadata/START/version gates, followed by'C', SOH,
+block/complement,128data bytes and CRC16/XMODEM. A final partial block uses1A
+padding. The receiver commits each block once and compares duplicate payloads
+byte-for-byte; one EOT invokes the full-image CRC32/launch gate once. A missing
+EOT ACK is an unknown result, never authorization to resend END or rewrite.
+App/Transfer command24 provides an explicit CRC streaming sink without Flash.
+Inter-byte expiry and CAN/CAN cancellation are distinct from framed ABORT.
+
+All four RL78 serial device families reserve8KiB for Boot with a minimum512-byte
+spare. App software vectors start at2000, metadata at2100 and code at2200.
+The Xmodem main loop passes complete128-byte blocks to the same checked update
+engine, without constructing a second framed WRITE/END transaction. Framed
+WRITE/END are rejected in that Boot protocol. The Flash verification adapter
+checks expected size, stored CRC trailer, actual CRC, metadata and every App
+jump slot before requesting reset. The Tool still confirms the App separately.
+
+The RL78 Xmodem Boot binding owns one fixed device/request/reply context;
+receiver and framed-control input share RAM only while the other is inactive.
+Small state fields precede large arrays, and RAM payload helpers use explicit
+RAM pointers. Flash reads retain full integer-address/far access. Boot omits
+unadvertised diagnostic accounting; App/Transfer retain their counters. None
+of these internal RAM layouts is a serialized metadata or wire-format change.
+
+The production client selects the transport adapter, while metadata parsing,
+version policy and image validation remain common. Source/model checks,
+target linker/package checks and physical acceptance are separate evidence.
+
+The RH850 serial runtime separately owns framing,Flash-page accumulation and
+post-reply actions. Its Xmodem completion checks IspBusReplyComplete before
+reset;control-TX failure cancels streaming and clears pending reset. Action
+consumes pending state once. UART's synchronous send and RIIC's full read/
+NACK/STOP are separate implementations of that completion boundary. Actual
+RuntimePoll compiled-role tests complement engine and HAL models;none of
+these substitute for target electrical/startup/FCL acceptance. RH850 source/
+SC/runtime details remain in its dedicated local engineering guides.
 

@@ -12,6 +12,7 @@
 
 #include "core/firmware_update_profile.h"
 #include "core/serial_port_catalog.h"
+#include "core/update_evidence.h"
 #include "worker_session.h"
 #include "ui/status_card.h"
 #include "ui/console_geometry.h"
@@ -48,6 +49,7 @@ protected:
     afx_msg void OnCancelOperation();
     afx_msg void OnCompareMetadata();
     afx_msg void OnPreflight();
+    afx_msg void OnBinDetails();
     afx_msg void OnOpenLatestReport();
     afx_msg void OnErrorDetails();
     afx_msg BOOL OnDeviceChange(UINT event_type, DWORD_PTR data);
@@ -68,6 +70,7 @@ protected:
     afx_msg void OnBusPortChanged();
     afx_msg void OnI2cProbe();
     afx_msg void OnI2cSettingsChanged();
+    afx_msg void OnUartSettingsChanged();
     afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnClose();
     afx_msg LRESULT OnWorkerEvent(WPARAM wParam, LPARAM lParam);
@@ -107,10 +110,22 @@ private:
     void UpdateUi();
     void InitializeThemeBrushes();
     void UpdateCompletionFeedback();
+    std::vector<firmware_upgrade::evidence::Difference> BuildBinDetails() const;
     void StartDeviceUpdate(bool force_old_version);
     bool ConfirmForceOldFirmware();
     bool InitializeBusUi();
     bool IsI2cTab() const;
+    bool IsUartTab() const;
+    bool IsIspTab() const;
+    bool IsI2cIsp() const;
+    std::uint8_t SelectedIspContract() const;
+    firmware_upgrade::firmware_update::Profile SelectedIspProfile() const;
+    bool UartTransferSelected() const;
+    bool IsUartSelectionCurrent() const;
+    bool SelectedUartSettings(firmware_upgrade::isp::BusConfiguration* configuration) const;
+    void UpdateUartUi();
+    void QueueUartAction(unsigned action,bool force=false);
+    std::wstring BuildUartSummary() const;
     bool IsMiscTab() const;
     bool IsI2cSelectionCurrent() const;
     void UpdateMiscUi();
@@ -181,6 +196,7 @@ private:
     CButton cancel_btn_;
     CButton compare_metadata_btn_;
     CButton preflight_btn_;
+    CButton bin_details_btn_;
     CStatic build_info_label_;
 
     CStatusCard host_info_label_;
@@ -237,10 +253,15 @@ private:
     CButton i2c_probe_btn_;
     CStatusCard i2c_notes_;
     std::vector<firmware_upgrade::bridge::Port> displayed_ports_;
-    bool displayed_i2c_ = false;
+    int displayed_bus_ = -1;
     int active_tab_ = 0;
     std::uint8_t preferred_can_port_ = 0U;
     std::uint8_t preferred_i2c_port_ = 0U;
+    std::uint8_t preferred_uart_port_ = 0U;
+    CStatic uart_baud_label_,uart_workflow_label_;
+    CComboBox uart_baud_combo_,uart_workflow_combo_;
+    CStatic i2c_workflow_label_;
+    CComboBox i2c_workflow_combo_;
     std::uint8_t preferred_i2c_speed_ = 0U;
     std::wstring last_operation_error_;
     firmware_upgrade::feedback::Result last_update_result_ = firmware_upgrade::feedback::Result::None;

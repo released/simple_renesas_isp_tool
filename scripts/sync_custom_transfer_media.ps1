@@ -2,11 +2,12 @@ param([string]$WebRoot='', [switch]$CheckOnly)
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'workspace_paths.ps1')
+. (Join-Path $PSScriptRoot 'web_guide_layout.ps1')
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
 $sourceRoot=Join-Path $repo 'docs'
 $source=[IO.File]::ReadAllText((Join-Path $sourceRoot 'MULTIBUS_TOOL_GUIDE_zh-TW.md'))
 $site=Join-Path $WebRoot 'slide_isp_tool_for_RL78'
-$page=Join-Path $site 'index.md'
+$page=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_isp_tool_for_RL78 -Section CUSTOM_TRANSFER_MEDIA
 $text=[IO.File]::ReadAllText($page)
 $pattern='(?s)<!-- CUSTOM_TRANSFER_MEDIA_BEGIN -->.*?<!-- CUSTOM_TRANSFER_MEDIA_END -->'
 $canonical=[regex]::Matches($source,$pattern)

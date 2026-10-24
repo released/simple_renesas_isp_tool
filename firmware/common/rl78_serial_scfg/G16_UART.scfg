@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<smc>
+  <general version="2.0.0.0">
+    <configuration active="true" id="com.renesas.smc.toolchain.ccrl.configuration.release">
+      <property id="com.renesas.smc.service.project.buildArtefactType" values="com.renesas.smc.service.project.buildArtefactType.exe" />
+      <property id="com.renesas.smc.service.project.buildType" values="com.renesas.smc.service.project.buildType.release" />
+      <toolchain id="com.renesas.smc.toolchain.ccrl.toolchain.ccrl">
+        <option id="com.renesas.smc.toolchain.option.language" key="com.renesas.smc.toolchain.option.language.c" />
+        <option id="com.renesas.smc.toolchain.option.buildArtefactType" key="com.renesas.smc.toolchain.option.buildArtefactType.exe" />
+      </toolchain>
+    </configuration>
+    <platform id="R5F121BCxFP" />
+    <option id="board" value="user_board" />
+  </general>
+  <tool id="Clock">
+    <option enabled="true" id="operationModeComb" selection="vdd40">
+      <item id="vdd40" />
+      <item id="vdd27" />
+      <item id="vdd24" />
+    </option>
+    <option enabled="true" id="highSpeedOCOenable" selection="hococlock_fihp">
+      <item id="hococlock_fihp" />
+      <item id="uncheck" />
+    </option>
+    <option enabled="true" id="hsocofrequency" selection="frq16">
+      <item id="frq16" />
+      <item id="frq8" />
+      <item id="frq4" />
+      <item id="frq2" />
+      <item id="frq1" />
+    </option>
+    <option enabled="true" id="hssclockenable" selection="uncheck">
+      <item id="check" />
+      <item id="uncheck" />
+    </option>
+    <option enabled="false" id="cmbhssoperation" selection="x1oscillation">
+      <item id="x1oscillation" />
+      <item id="externalclock" />
+    </option>
+    <option enabled="false" id="cmbhsstabletime" selection="18">
+      <item id="8" input="" value="54.4" />
+      <item id="9" input="" value="105.6" />
+      <item id="10" input="" value="208" />
+      <item id="11" input="" value="412.8" />
+      <item id="13" input="" value="1641.6" />
+      <item id="15" input="" value="6556.8" />
+      <item id="17" input="" value="26217.6" />
+      <item id="18" input="" value="52432" />
+    </option>
+    <option enabled="false" id="hssfrequency" selection="textinputitem">
+      <item id="textinputitem" input="5" value="5" />
+    </option>
+    <option enabled="true" id="enablesubClock" selection="uncheck">
+      <item id="check" />
+      <item id="uncheck" />
+    </option>
+    <option enabled="true" id="cmbsuboperation" selection="xt1oscillation">
+      <item id="xt1oscillation" />
+      <item id="externalclock" />
+    </option>
+    <option enabled="true" id="lblsubmode" selection="low">
+      <item id="low" />
+      <item id="normal" />
+      <item id="ultralow" />
+    </option>
+    <option enabled="true" id="subclockmode" selection="enable">
+      <item id="enable" />
+      <item id="stop" />
+    </option>
+    <option enabled="true" id="subfrequency" selection="textoutputitem">
+      <item id="textoutputitem" input="" value="32.768" />
+    </option>
+    <option enabled="true" id="fmainswitcher" selection="grphococlock_fmainswitcher">
+      <item id="grphococlock_fmainswitcher" input="" value="16" />
+      <item id="grphssclock_fmainswitcher" input="" value="5" />
+    </option>
+    <option enabled="true" id="fclkswitcher" selection="fmainswitcher_fclkswitcher">
+      <item id="fmainswitcher_fclkswitcher" input="" value="16000" />
+      <item id="subclock_fclkswitcher" input="" value="32.768" />
+    </option>
+    <option enabled="true" id="fsxlswitcher" selection="subclock_fsxlswitcher">
+      <item id="lococlock_fsxlswitcher" input="" value="15" />
+      <item id="subclock_fsxlswitcher" input="" value="32.768" />
+    </option>
+    <option enabled="true" id="fmain" selection="textoutputitem">
+      <item id="textoutputitem" input="" value="16" />
+    </option>
+    <option enabled="true" id="fclk" selection="textoutputitem">
+      <item id="textoutputitem" input="" value="16000" />
+    </option>
+    <option enabled="true" id="fil" selection="textoutputitem">
+      <item id="textoutputitem" input="" value="15" />
+    </option>
+    <option enabled="true" id="fsxl" selection="textoutputitem">
+      <item id="textoutputitem" input="" value="32.768" />
+    </option>
+    <option enabled="true" id="fsub" selection="textoutputitem">
+      <item id="textoutputitem" input="" value="32.768" />
+    </option>
+  </tool>
+  <tool id="Interrupt"></tool>
+  <tool id="Pins">
+    <pinItem id="RxD0" allocation="23" comments="" direction="None" isUsedBySoftware="true" locked="false" operationMode="" status="0" />
+    <pinItem id="RxD1" allocation="11" comments="" direction="None" isUsedBySoftware="true" locked="false" operationMode="" status="0" />
+    <pinItem id="TxD0" allocation="22" comments="" direction="None" isUsedBySoftware="true" locked="false" operationMode="" status="0" />
+    <pinItem id="TxD1" allocation="12" comments="" direction="None" isUsedBySoftware="true" locked="false" operationMode="" status="0" />
+  </tool>
+  <tool id="Summary"></tool>
+  <tool id="SWComponent" version="1.0.0.0">
+    <configuration inuse="true" name="r_bsp">
+      <component description="Dependencies : None&#xA;The r_bsp package provides a foundation for code to be built on top of. It provides startup code, iodefines, and MCU information for different boards. There are 2 folders that make up the r_bsp package. The 'mcu' folder contains files that are common to a MCU group. These files provide functionality such as easy register access, CPU functions, and a file named 'mcu_info.h' for each MCU group. The 'mcu_info.h' file has information about the MCU on the board and is configured based on the information given in r_bsp_config.h. The information in 'mcu_info.h' is used to help configure Renesas middleware that uses the r_bsp package. The 'board' folder has a folder with startup code for each supported board.  Which MCU and board is chosen is decided by the settings in 'platform.h'. The user can choose which board they are using by uncommenting the include path that applies to their board. For example, if you are using the RSK+RX64M then you would uncomment the #include &quot;./board/generic_rx64m/r_bsp.h&quot; include path. Users are encouraged to add their own boards to the 'board' directory. BSPs are configured by using the r_bsp_config.h file. Each board will have a reference configuration file named r_bsp_config_reference.h. The user should copy this file to their project, rename it to r_bsp_config.h, and use the options inside the file to configure the BSP for their project." detailDescription="Board Support Packages. - v1.62" display="r_bsp" id="r_bsp1.62" version="1.62">
+        <gridItem id="BSP_CFG_STARTUP_DISABLE" selectedIndex="0" />
+        <gridItem id="BSP_CFG_RAM_GUARD_FUNC" selectedIndex="0" />
+        <gridItem id="BSP_CFG_PORT_FUNCTION_GUARD" selectedIndex="0" />
+        <gridItem id="BSP_CFG_INT_FUNCTION_GUARD" selectedIndex="0" />
+        <gridItem id="BSP_CFG_CHIP_STATE_CTRL_GUARD" selectedIndex="0" />
+        <gridItem id="BSP_CFG_CONFIGURATOR_SELECT" selectedIndex="1" />
+        <gridItem id="BSP_CFG_CLOCK_OPERATION_API_FUNCTIONS_DISABLE" selectedIndex="1" />
+        <gridItem id="BSP_CFG_GET_FREQ_API_FUNCTIONS_DISABLE" selectedIndex="0" />
+        <gridItem id="BSP_CFG_SET_CLOCK_SOURCE_API_FUNCTIONS_DISABLE" selectedIndex="1" />
+        <gridItem id="BSP_CFG_CHANGE_CLOCK_SETTING_API_FUNCTIONS_DISABLE" selectedIndex="1" />
+        <gridItem id="BSP_CFG_SOFTWARE_DELAY_API_FUNCTIONS_DISABLE" selectedIndex="1" />
+        <gridItem id="BSP_CFG_PARAM_CHECKING_ENABLE" selectedIndex="1" />
+        <gridItem id="BSP_CFG_USER_WARM_START_CALLBACK_PRE_INITC_ENABLED" selectedIndex="0" />
+        <gridItem id="BSP_CFG_USER_WARM_START_PRE_C_FUNCTION" selectedIndex="my_sw_warmstart_prec_function" />
+        <gridItem id="BSP_CFG_USER_WARM_START_CALLBACK_POST_INITC_ENABLED" selectedIndex="0" />
+        <gridItem id="BSP_CFG_USER_WARM_START_POST_C_FUNCTION" selectedIndex="my_sw_warmstart_postc_function" />
+        <gridItem id="BSP_CFG_WDT_REFRESH_ENABLE" selectedIndex="0" />
+      </component>
+      <source description="RL78 Software Integration System" display="RL78 Software Integration System" id="com.renesas.smc.tools.swcomponent.rl78.sis.source" />
+      <source description="RL78 Software Integration System" display="RL78 Software Integration System" id="com.renesas.smc.tools.swcomponent.rl78.sis.source" />
+    </configuration>
+    <configuration apiMode="FULL_API" id="e54a0f56-693c-47b1-8df9-303a911f89d1" inuse="true" name="Config_TAU0_1">
+      <allocatable id="TAU01">
+        <isocket id="CountingClock" selection="Clock.tool_clock_fCLK" value="1.6E7" />
+        <option enabled="true" id="OperationClock" selection="CK0">
+          <item id="CK0" input="" vlaue="0" />
+          <item id="CK1" input="" vlaue="0" />
+          <item id="CK2" input="" vlaue="0" />
+          <item id="CK3" input="" vlaue="0" />
+        </option>
+        <option enabled="true" id="ClockSource" selection="FCLK1">
+          <item id="FCLK1" input="1" vlaue="0" />
+          <item id="FCLK2" input="2" vlaue="0" />
+          <item id="FCLK4" input="4" vlaue="0" />
+          <item id="FCLK8" input="8" vlaue="0" />
+          <item id="FCLK16" input="16" vlaue="0" />
+          <item id="FCLK32" input="32" vlaue="0" />
+          <item id="FCLK64" input="64" vlaue="0" />
+          <item id="FCLK128" input="128" vlaue="0" />
+          <item id="FCLK256" input="256" vlaue="0" />
+          <item id="FCLK512" input="512" vlaue="0" />
+          <item id="FCLK1024" input="1024" vlaue="0" />
+          <item id="FCLK2048" input="2048" vlaue="0" />
+          <item id="FCLK4096" input="4096" vlaue="0" />
+          <item id="FCLK8192" input="8192" vlaue="0" />
+          <item id="FCLK16384" input="16384" vlaue="0" />
+          <item id="FCLK32768" input="32768" vlaue="0" />
+        </option>
+        <option enabled="true" id="IntervalValue16bits" selection="intervalValueText16bits">
+          <item id="intervalValueText16bits" input="1" vlaue="1" />
+        </option>
+        <option enabled="true" id="IntervalUnit16bits" selection="ms">
+          <item id="ms" input="" vlaue="0" />
+          <item id="us" input="" vlaue="0" />
+          <item id="ns" input="" vlaue="0" />
+          <item id="count" input="" vlaue="0" />
+        </option>
+        <option enabled="true" id="StartInt" selection="disable">
+          <item id="enable" input="" vlaue="0" />
+          <item id="disable" input="" vlaue="0" />
+        </option>
+        <option enabled="true" id="InterruptEnable" selection="enable">
+          <item id="enable" input="" vlaue="0" />
+          <item id="disable" input="" vlaue="0" />
+        </option>
+        <option enabled="true" id="Priority" selection="Level3">
+          <item id="Level0" input="" vlaue="0" />
+          <item id="Level1" input="" vlaue="0" />
+          <item id="Level2" input="" vlaue="0" />
+          <item id="Level3" input="" vlaue="0" />
+        </option>
+        <option enabled="true" id="FilterMode" selection="16bitCountMode">
+          <item id="8bitCountMode" input="" vlaue="0" />
+          <item id="16bitCountMode" input="" vlaue="0" />
+          <item id="16bitCaptureMode" input="" vlaue="0" />
+          <item id="32bitCountMode" input="" vlaue="0" />
+        </option>
+      </allocatable>
+      <component description="The interval timer function is timer that generating timer interrupt at regular intervals. It also can measure the interval of the input signals." detailDescription="" display="Interval Timer" id="com.renesas.smc.tools.swcomponent.codegenerator.rl78.intervaltimer" version="1.8.0" />
+      <allocator channelLevel0="0" channelLevel1="1" channelLevel2="" channelLevel3="" channelLevel4="" channelLevel5="" description="Timer array unit 0 channel 1" display="TAU0_1" id="com.renesas.smc.tools.swcomponent.codegenerator.rl78.intervaltimer.tau01" type="TAU">
+        <context>
+          <option enabled="true" id="FilterMode" selection="16bitCountMode">
+            <item enabled="true" id="8bitCountMode" />
+            <item enabled="true" id="12bitCountMode" />
+            <item enabled="true" id="16bitCountMode" />
+          </option>
+        </context>
+      </allocator>
+      <source description="Code generator components provide peripheral drivers with customized generated source geared towards small code size" display="Code Generator" id="com.renesas.smc.tools.swcomponent.codegenerator.source" />
+    </configuration>
+    <configuration apiMode="FULL_API" id="66f4f737-7a2c-41c6-a419-904599f337e5" inuse="true" name="Config_UART0">
+      <allocatable id="UART0">
+        <allocatable id="transmit">
+          <isocket id="CountingClock" selection="Clock.tool_clock_fCLK" value="1.6E7" />
+          <option enabled="true" id="Operation" selection="CK0">
+            <item id="CK0" input="0" vlaue="0" />
+            <item id="CK1" input="1" vlaue="0" />
+          </option>
+          <option enabled="true" id="Prescaler" selection="FCLK1">
+            <item id="FCLK0" input="1" vlaue="0" />
+            <item id="FCLK1" input="2" vlaue="0" />
+            <item id="FCLK2" input="4" vlaue="0" />
+            <item id="FCLK3" input="8" vlaue="0" />
+            <item id="FCLK4" input="16" vlaue="0" />
+            <item id="FCLK5" input="32" vlaue="0" />
+            <item id="FCLK6" input="64" vlaue="0" />
+            <item id="FCLK7" input="128" vlaue="0" />
+            <item id="FCLK8" input="256" vlaue="0" />
+            <item id="FCLK9" input="512" vlaue="0" />
+            <item id="FCLK10" input="1024" vlaue="0" />
+            <item id="FCLK11" input="2048" vlaue="0" />
+            <item id="FCLK12" input="4096" vlaue="0" />
+            <item id="FCLK13" input="8192" vlaue="0" />
+            <item id="FCLK14" input="16384" vlaue="0" />
+            <item id="FCLK15" input="32768" vlaue="0" />
+          </option>
+          <option enabled="true" id="transferSetting" selection="singleMode">
+            <item id="singleMode" input="" vlaue="0" />
+            <item id="continuousMode" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="dataLength" selection="8bits">
+            <item id="7bits" input="" vlaue="0" />
+            <item id="8bits" input="" vlaue="0" />
+            <item id="9bits" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="directionSetting" selection="lsb">
+            <item id="lsb" input="" vlaue="0" />
+            <item id="msb" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="paritySetting" selection="none">
+            <item id="none" input="" vlaue="0" />
+            <item id="zero" input="" vlaue="0" />
+            <item id="odd" input="" vlaue="0" />
+            <item id="even" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="stopBitSetting" selection="1bit">
+            <item id="1bit" input="" vlaue="0" />
+            <item id="2bits" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="dataLevelSetting" selection="normal">
+            <item id="normal" input="" vlaue="0" />
+            <item id="reverse" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="baudrateSetting" selection="input">
+            <item id="input" input="115200" vlaue="115200" />
+            <item id="9600" input="9600" vlaue="0" />
+            <item id="19200" input="19200" vlaue="0" />
+            <item id="31250" input="31250" vlaue="0" />
+            <item id="38400" input="38400" vlaue="0" />
+            <item id="76800" input="76800" vlaue="0" />
+            <item id="153600" input="153600" vlaue="0" />
+            <item id="312500" input="312500" vlaue="0" />
+          </option>
+          <option enabled="true" id="txPriority" selection="Level3">
+            <item id="Level0" input="" vlaue="0" />
+            <item id="Level1" input="" vlaue="0" />
+            <item id="Level2" input="" vlaue="0" />
+            <item id="Level3" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="txCallback" selection="enable">
+            <item id="enable" input="" vlaue="0" />
+            <item id="disable" input="" vlaue="0" />
+          </option>
+        </allocatable>
+        <allocatable id="receive">
+          <isocket id="CountingClock" selection="Clock.tool_clock_fCLK" value="1.6E7" />
+          <option enabled="true" id="Operation" selection="CK0">
+            <item id="CK0" input="0" vlaue="0" />
+            <item id="CK1" input="1" vlaue="0" />
+          </option>
+          <option enabled="true" id="Prescaler" selection="FCLK1">
+            <item id="FCLK0" input="1" vlaue="0" />
+            <item id="FCLK1" input="2" vlaue="0" />
+            <item id="FCLK2" input="4" vlaue="0" />
+            <item id="FCLK3" input="8" vlaue="0" />
+            <item id="FCLK4" input="16" vlaue="0" />
+            <item id="FCLK5" input="32" vlaue="0" />
+            <item id="FCLK6" input="64" vlaue="0" />
+            <item id="FCLK7" input="128" vlaue="0" />
+            <item id="FCLK8" input="256" vlaue="0" />
+            <item id="FCLK9" input="512" vlaue="0" />
+            <item id="FCLK10" input="1024" vlaue="0" />
+            <item id="FCLK11" input="2048" vlaue="0" />
+            <item id="FCLK12" input="4096" vlaue="0" />
+            <item id="FCLK13" input="8192" vlaue="0" />
+            <item id="FCLK14" input="16384" vlaue="0" />
+            <item id="FCLK15" input="32768" vlaue="0" />
+          </option>
+          <option enabled="true" id="dataLength" selection="8bits">
+            <item id="7bits" input="" vlaue="0" />
+            <item id="8bits" input="" vlaue="0" />
+            <item id="9bits" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="directionSetting" selection="lsb">
+            <item id="lsb" input="" vlaue="0" />
+            <item id="msb" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="paritySetting" selection="none">
+            <item id="none" input="" vlaue="0" />
+            <item id="zero" input="" vlaue="0" />
+            <item id="odd" input="" vlaue="0" />
+            <item id="even" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="stopBitSetting" selection="1bit">
+            <item id="1bit" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="dataLevelSetting" selection="normal">
+            <item id="normal" input="" vlaue="0" />
+            <item id="reverse" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="baudrateSetting" selection="input">
+            <item id="input" input="115200" vlaue="115200" />
+            <item id="9600" input="9600" vlaue="0" />
+            <item id="19200" input="19200" vlaue="0" />
+            <item id="31250" input="31250" vlaue="0" />
+            <item id="38400" input="38400" vlaue="0" />
+            <item id="76800" input="76800" vlaue="0" />
+            <item id="153600" input="153600" vlaue="0" />
+            <item id="312500" input="312500" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxPriority" selection="Level3">
+            <item id="Level0" input="" vlaue="0" />
+            <item id="Level1" input="" vlaue="0" />
+            <item id="Level2" input="" vlaue="0" />
+            <item id="Level3" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxErrorFunction" selection="enable">
+            <item id="enable" input="" vlaue="0" />
+            <item id="disable" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxErrorPriority" selection="Level3">
+            <item id="Level0" input="" vlaue="0" />
+            <item id="Level1" input="" vlaue="0" />
+            <item id="Level2" input="" vlaue="0" />
+            <item id="Level3" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxCallback" selection="enable">
+            <item id="enable" input="" vlaue="0" />
+            <item id="disable" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxErrorCallback" selection="enable">
+            <item id="enable" input="" vlaue="0" />
+            <item id="disable" input="" vlaue="0" />
+          </option>
+        </allocatable>
+        <osocket id="SendSetting" value="SingleTransfer" />
+        <osocket id="BothSetting" value="SingleTransfer" />
+        <option enabled="true" id="Mode" selection="both">
+          <item id="transmit" input="" vlaue="0" />
+          <item id="receive" input="" vlaue="0" />
+          <item id="both" input="" vlaue="0" />
+        </option>
+      </allocatable>
+      <component description="The universal asynchronous receiver/transmitter(UART) interface supports serial communication." detailDescription="" display="UART Communication" id="com.renesas.smc.tools.swcomponent.codegenerator.rl78.uart" version="1.10.0" />
+      <allocator channelLevel0="0" channelLevel1="" channelLevel2="" channelLevel3="" channelLevel4="" channelLevel5="" description="UART Communication" display="UART0" id="com.renesas.smc.tools.swcomponent.codegenerator.rl78.uart.uart0" type="UART">
+        <context>
+          <option enabled="true" id="Mode" selection="both">
+            <item enabled="true" id="transmit" />
+            <item enabled="true" id="receive" />
+            <item enabled="true" id="both" />
+          </option>
+        </context>
+      </allocator>
+      <source description="Code generator components provide peripheral drivers with customized generated source geared towards small code size" display="Code Generator" id="com.renesas.smc.tools.swcomponent.codegenerator.source" />
+    </configuration>
+    <configuration apiMode="FULL_API" id="305dac4f-4a9a-4629-ace3-0623e81f483d" inuse="true" name="Config_UART1">
+      <allocatable id="UART1">
+        <allocatable id="transmit">
+          <isocket id="CountingClock" selection="Clock.tool_clock_fCLK" value="1.6E7" />
+          <option enabled="true" id="Operation" selection="CK0">
+            <item id="CK0" input="0" vlaue="0" />
+            <item id="CK1" input="1" vlaue="0" />
+          </option>
+          <option enabled="true" id="Prescaler" selection="FCLK1">
+            <item id="FCLK0" input="1" vlaue="0" />
+            <item id="FCLK1" input="2" vlaue="0" />
+            <item id="FCLK2" input="4" vlaue="0" />
+            <item id="FCLK3" input="8" vlaue="0" />
+            <item id="FCLK4" input="16" vlaue="0" />
+            <item id="FCLK5" input="32" vlaue="0" />
+            <item id="FCLK6" input="64" vlaue="0" />
+            <item id="FCLK7" input="128" vlaue="0" />
+            <item id="FCLK8" input="256" vlaue="0" />
+            <item id="FCLK9" input="512" vlaue="0" />
+            <item id="FCLK10" input="1024" vlaue="0" />
+            <item id="FCLK11" input="2048" vlaue="0" />
+            <item id="FCLK12" input="4096" vlaue="0" />
+            <item id="FCLK13" input="8192" vlaue="0" />
+            <item id="FCLK14" input="16384" vlaue="0" />
+            <item id="FCLK15" input="32768" vlaue="0" />
+          </option>
+          <option enabled="true" id="transferSetting" selection="singleMode">
+            <item id="singleMode" input="" vlaue="0" />
+            <item id="continuousMode" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="dataLength" selection="8bits">
+            <item id="7bits" input="" vlaue="0" />
+            <item id="8bits" input="" vlaue="0" />
+            <item id="9bits" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="directionSetting" selection="lsb">
+            <item id="lsb" input="" vlaue="0" />
+            <item id="msb" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="paritySetting" selection="none">
+            <item id="none" input="" vlaue="0" />
+            <item id="zero" input="" vlaue="0" />
+            <item id="odd" input="" vlaue="0" />
+            <item id="even" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="stopBitSetting" selection="1bit">
+            <item id="1bit" input="" vlaue="0" />
+            <item id="2bits" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="dataLevelSetting" selection="normal">
+            <item id="normal" input="" vlaue="0" />
+            <item id="reverse" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="baudrateSetting" selection="input">
+            <item id="input" input="115200" vlaue="115200" />
+            <item id="9600" input="9600" vlaue="0" />
+            <item id="19200" input="19200" vlaue="0" />
+            <item id="31250" input="31250" vlaue="0" />
+            <item id="38400" input="38400" vlaue="0" />
+            <item id="76800" input="76800" vlaue="0" />
+            <item id="153600" input="153600" vlaue="0" />
+            <item id="312500" input="312500" vlaue="0" />
+          </option>
+          <option enabled="true" id="txPriority" selection="Level3">
+            <item id="Level0" input="" vlaue="0" />
+            <item id="Level1" input="" vlaue="0" />
+            <item id="Level2" input="" vlaue="0" />
+            <item id="Level3" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="txCallback" selection="enable">
+            <item id="enable" input="" vlaue="0" />
+            <item id="disable" input="" vlaue="0" />
+          </option>
+        </allocatable>
+        <allocatable id="receive">
+          <isocket id="CountingClock" selection="Clock.tool_clock_fCLK" value="1.6E7" />
+          <option enabled="true" id="Operation" selection="CK0">
+            <item id="CK0" input="0" vlaue="0" />
+            <item id="CK1" input="1" vlaue="0" />
+          </option>
+          <option enabled="true" id="Prescaler" selection="FCLK1">
+            <item id="FCLK0" input="1" vlaue="0" />
+            <item id="FCLK1" input="2" vlaue="0" />
+            <item id="FCLK2" input="4" vlaue="0" />
+            <item id="FCLK3" input="8" vlaue="0" />
+            <item id="FCLK4" input="16" vlaue="0" />
+            <item id="FCLK5" input="32" vlaue="0" />
+            <item id="FCLK6" input="64" vlaue="0" />
+            <item id="FCLK7" input="128" vlaue="0" />
+            <item id="FCLK8" input="256" vlaue="0" />
+            <item id="FCLK9" input="512" vlaue="0" />
+            <item id="FCLK10" input="1024" vlaue="0" />
+            <item id="FCLK11" input="2048" vlaue="0" />
+            <item id="FCLK12" input="4096" vlaue="0" />
+            <item id="FCLK13" input="8192" vlaue="0" />
+            <item id="FCLK14" input="16384" vlaue="0" />
+            <item id="FCLK15" input="32768" vlaue="0" />
+          </option>
+          <option enabled="true" id="dataLength" selection="8bits">
+            <item id="7bits" input="" vlaue="0" />
+            <item id="8bits" input="" vlaue="0" />
+            <item id="9bits" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="directionSetting" selection="lsb">
+            <item id="lsb" input="" vlaue="0" />
+            <item id="msb" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="paritySetting" selection="none">
+            <item id="none" input="" vlaue="0" />
+            <item id="zero" input="" vlaue="0" />
+            <item id="odd" input="" vlaue="0" />
+            <item id="even" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="stopBitSetting" selection="1bit">
+            <item id="1bit" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="dataLevelSetting" selection="normal">
+            <item id="normal" input="" vlaue="0" />
+            <item id="reverse" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="baudrateSetting" selection="input">
+            <item id="input" input="115200" vlaue="115200" />
+            <item id="9600" input="9600" vlaue="0" />
+            <item id="19200" input="19200" vlaue="0" />
+            <item id="31250" input="31250" vlaue="0" />
+            <item id="38400" input="38400" vlaue="0" />
+            <item id="76800" input="76800" vlaue="0" />
+            <item id="153600" input="153600" vlaue="0" />
+            <item id="312500" input="312500" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxPriority" selection="Level3">
+            <item id="Level0" input="" vlaue="0" />
+            <item id="Level1" input="" vlaue="0" />
+            <item id="Level2" input="" vlaue="0" />
+            <item id="Level3" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxErrorFunction" selection="enable">
+            <item id="enable" input="" vlaue="0" />
+            <item id="disable" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxErrorPriority" selection="Level3">
+            <item id="Level0" input="" vlaue="0" />
+            <item id="Level1" input="" vlaue="0" />
+            <item id="Level2" input="" vlaue="0" />
+            <item id="Level3" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxCallback" selection="enable">
+            <item id="enable" input="" vlaue="0" />
+            <item id="disable" input="" vlaue="0" />
+          </option>
+          <option enabled="true" id="rxErrorCallback" selection="enable">
+            <item id="enable" input="" vlaue="0" />
+            <item id="disable" input="" vlaue="0" />
+          </option>
+        </allocatable>
+        <osocket id="SendSetting" value="SingleTransfer" />
+        <osocket id="BothSetting" value="SingleTransfer" />
+        <option enabled="true" id="Mode" selection="both">
+          <item id="transmit" input="" vlaue="0" />
+          <item id="receive" input="" vlaue="0" />
+          <item id="both" input="" vlaue="0" />
+        </option>
+      </allocatable>
+      <component description="The universal asynchronous receiver/transmitter(UART) interface supports serial communication." detailDescription="" display="UART Communication" id="com.renesas.smc.tools.swcomponent.codegenerator.rl78.uart" version="1.10.0" />
+      <allocator channelLevel0="1" channelLevel1="" channelLevel2="" channelLevel3="" channelLevel4="" channelLevel5="" description="UART Communication" display="UART1" id="com.renesas.smc.tools.swcomponent.codegenerator.rl78.uart.allocator1" type="UART">
+        <context>
+          <option enabled="true" id="Mode" selection="both">
+            <item enabled="true" id="transmit" />
+            <item enabled="true" id="receive" />
+            <item enabled="true" id="both" />
+          </option>
+        </context>
+      </allocator>
+      <source description="Code generator components provide peripheral drivers with customized generated source geared towards small code size" display="Code Generator" id="com.renesas.smc.tools.swcomponent.codegenerator.source" />
+    </configuration>
+  </tool>
+  <tool id="System">
+    <section id="ocd">
+      <option enabled="true" id="operation" selection="useEmulate">
+        <item enabled="true" id="unused" />
+        <item enabled="true" id="useEmulate" />
+        <item enabled="true" id="useUART" />
+      </option>
+      <option enabled="true" id="Emulator" selection="E2lite">
+        <item enabled="true" id="E2" />
+        <item enabled="true" id="E2lite" />
+      </option>
+      <option enabled="true" id="pseudo" selection="unused">
+        <item enabled="true" id="unused" />
+        <item enabled="true" id="used" />
+      </option>
+      <option enabled="true" id="startstopfunction" selection="unused">
+        <item enabled="true" id="unused" />
+        <item enabled="true" id="used" />
+      </option>
+      <option enabled="false" id="monitor" selection="unused">
+        <item enabled="true" id="unused" />
+        <item enabled="true" id="used" />
+      </option>
+      <option enabled="true" id="enableSecurityId" selection="unchecked">
+        <item enabled="true" id="checked" />
+        <item enabled="true" id="unchecked" />
+      </option>
+      <option enabled="false" id="securityId" selection="input">
+        <item enabled="true" id="input" input="0x00000000000000000000" value="0" />
+      </option>
+    </section>
+    <section id="sprcFunction">
+      <option enabled="true" id="resetPin" selection="used">
+        <item enabled="true" id="unused" />
+        <item enabled="true" id="used" />
+      </option>
+      <option enabled="true" id="generationLevel" selection="item284">
+        <item enabled="true" id="item42" />
+        <item enabled="true" id="item284" />
+        <item enabled="true" id="item252" />
+        <item enabled="true" id="item211" />
+      </option>
+    </section>
+  </tool>
+</smc>

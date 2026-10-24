@@ -10,7 +10,10 @@
 /* Generated callbacks always emit STOP and cannot express repeated-start.
  * A preserved INTIICA0 hook routes owned transfers here instead. The bounded
  * IRQ handler only moves bytes and records state; protocol work stays in main.
- * IICA0 timing is generated for CPU40MHz,100kHz,SCL=P62,SDA=P63. */
+ * IICA0 CPU40MHz/fMCK20MHz,SCL=P62,SDA=P63. R01UH0944 section16.4.2:
+ * fast-mode low/high=0.52/0.48 of the requested cycle. Conservative26/24
+ * counts at400K assume zero edge time;real edges can only lower SCL rate.
+ * Keep generated100K timing94/106 unchanged. */
 #define BACK_IDLE (0U)
 #define BACK_START (1U)
 #define BACK_ADDRESS (2U)
@@ -27,20 +30,31 @@ static volatile uint8_t g_backend_owned;
 static uint8_t g_backend_read;
 static uint8_t g_backend_address;
 static uint8_t g_backend_hold;
+static uint8_t g_backend_speed;
 static uint16_t g_backend_length;
 static volatile uint16_t g_backend_count;
 static const uint8_t *g_backend_tx;
 static uint8_t *g_backend_rx;
 
+static void BackendCreate(void)
+{
+    R_Config_IICA0_Create();
+    IICAMK0 = 1U; IICE0 = 0U;
+    PRS0 = 1U;
+    SMC0 = g_backend_speed;
+    IICWL0 = g_backend_speed ? 26U : 94U;
+    IICWH0 = g_backend_speed ? 24U : 106U;
+    IICE0 = 1U;
+}
 uint8_t Bridge_I2cBackend_Open(uint8_t port, uint8_t speed)
 {
-    if ((port != 0U) || (speed != 0U)) return 3U;
+    if ((port != 0U) || (speed > 1U)) return 3U;
     if (F24_CanClockIsReady() == 0U) return BRIDGE_I2C_BUS_ERROR;
     g_backend_owned = 1U;
     g_backend_state = BACK_IDLE;
     g_backend_error = 0U;
-    R_Config_IICA0_Create();
-    IICAMK0 = 1U;
+    g_backend_speed = speed;
+    BackendCreate();
     return 0U;
 }
 
@@ -52,7 +66,7 @@ static uint8_t BackendStart(uint8_t address, uint16_t length, uint8_t read)
         (g_backend_state != BACK_HELD)) return 1U;
     if (IICE0 == 0U)
     {
-        R_Config_IICA0_Create();
+        BackendCreate();
     }
     IICAMK0 = 1U;
     if ((IICBSY0 != 0U) && (MSTS0 == 0U)) return 1U;

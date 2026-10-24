@@ -1,4 +1,5 @@
 #include "bridge_port_catalog.h"
+#include "../../firmware/common/device_uart_rates.h"
 #include <algorithm>
 
 namespace firmware_upgrade::bridge {
@@ -24,6 +25,7 @@ bool GetPorts(host_link::Client& client, const host_link::Capabilities& caps,
     if (ports == nullptr || !client.IsHostValidated())
         return Fail(error, L"Probe the bridge before enumerating bus ports.");
     ports->clear();
+    if (bus == Bus::Uart && (caps.feature_flags & kFeatureUart) == 0U) return true;
     if ((caps.feature_flags & kFeaturePortCatalog) == 0U) {
         if (bus == Bus::Can && (caps.feature_flags & 3U) != 0U)
             ports->push_back(Port{Bus::Can, 0U, 1U, caps.nominal_bitrate_mask,
@@ -67,6 +69,9 @@ bool GetPorts(host_link::Client& client, const host_link::Capabilities& caps,
              port.maximum_rx > caps.maximum_can_data_bytes)) ||
             (bus == Bus::I2c &&
              ((port.flags & 4U) != 0U || (port.rates & ~3U) != 0U ||
+              port.maximum_tx > 512U || port.maximum_rx > 512U)) ||
+            (bus == Bus::Uart &&
+             ((port.flags & ~1U) != 0U || (port.rates & ~DEVICE_UART_RATE_MASK) != 0U ||
               port.maximum_tx > 512U || port.maximum_rx > 512U)) ||
             std::any_of(ports->begin(), ports->end(), [&port](const Port& x) {
                 return x.id == port.id;

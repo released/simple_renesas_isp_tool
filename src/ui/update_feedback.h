@@ -8,6 +8,8 @@ namespace firmware_upgrade::feedback {
 enum class Result {
     None,
     DeviceAppConfirmed,
+    UartAppConfirmed,
+    UartAppConfirmedRxWarning,
     DeviceAppConfirmedBusWarning,
     DeviceAppConfirmedCanActive,
     HostAppWritten,
@@ -24,7 +26,7 @@ struct View {
 };
 
 inline bool IsDevice(Result result) {
-    return result == Result::DeviceAppConfirmed ||
+    return result == Result::UartAppConfirmed || result == Result::UartAppConfirmedRxWarning || result == Result::DeviceAppConfirmed ||
            result == Result::DeviceAppConfirmedBusWarning ||
            result == Result::DeviceAppConfirmedCanActive;
 }
@@ -36,6 +38,16 @@ inline Result WithHostCounterWarning(Result result, bool increased) {
 
 inline View Describe(Result result) {
     switch (result) {
+    case Result::UartAppConfirmedRxWarning:
+        return {L"UART device App updated / RX counter warning",
+            L"[COMPLETE / WARNING] UART App written, CRC verified and startup confirmed; bridge UART1 RX error/drop counters increased.",
+            L"The update succeeded. Review UART1 counter deltas, device UART0 Log and Open Last Report; do not repeat the update to clear counters.",
+            L"UART App confirmed",L"App confirmed; UART1 RX counter warning. Check Log / Open Last Report; COM open.",true};
+    case Result::UartAppConfirmed:
+        return {L"Device App update complete",
+            L"[COMPLETE] ISP device App written, CRC verified and startup confirmed. Host COM remains open.",
+            L"Check App code and the device UART0 Log.\r\nNext update: Discover Target > Enter Boot (App mode) > Start Device Update.\r\nOpen Last Report shows the saved evidence.",
+            L"ISP device update complete",L"App confirmed; device bus transaction released; COM open. Check App / UART0 Log."};
     case Result::DeviceAppConfirmed:
         return {L"Device App update complete",
             L"[COMPLETE] Device App written, CRC verified and App startup confirmed. CAN stopped; Host COM remains open.",

@@ -5,6 +5,7 @@
 #include "../core/firmware_update_profile.h"
 #include "../core/g16_i2c_reference.h"
 #include "../core/bridge_update_profile.h"
+#include "../core/isp_device_client.h"
 #include <array>
 
 namespace firmware_upgrade::overview {
@@ -17,6 +18,8 @@ struct Card {
 struct Input {
     bool host_current = false, target_current = false, i2c = false;
     bool misc = false, bridge_current = false;
+    bool uart=false;
+    isp::TargetInfo uart_target;
     bu_info_t bridge = {};
     bridge_update::Image bridge_image;
     host_link::HostInfo host;

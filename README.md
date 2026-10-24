@@ -1,5 +1,31 @@
 # Firmware Upgrade Tool
 
+PC Tool0109 keeps all existing functions with a smaller static x64 executable:
+3,369,472 to1,291,264 bytes. Unused automatic MFC dialog Feature Pack support
+is excluded; standard/custom controls and dialogs remain. No additional runtime
+installation, packer or firmware/protocol change. Release/Debug and isolated
+interface/paired-startup checks pass; physical device acceptance is separate.
+
+The overview separates four live-board cards from the second-row loaded BIN
+and12 key metadata fields. **BIN Details...** opens the complete read-only
+20-field snapshot without requiring a connected board;all update checks remain.
+The BIN card uses four summary lines with ellipses;hover shows the full text.
+
+Serial device operation covers independent F13/F24/G16/G22 UART, I2C and
+XMODEM-CRC128 Boot/App/Transfer projects. The **UART / Xmodem** tab offers
+UART ISP, Custom Transfer, XMODEM-CRC and Xmodem Transfer under Workflow;
+I2C ISP/Transfer are in I2C. Device UART0 is diagnostic text only.
+Device baud is editable;I2C uses a selected7-bit address and advertised100/400K
+clock. Match Boot/App initialization,live INFO and BIN metadata;see the
+[short requirements table](https://released.github.io/slide_isp_tool_for_RL78/#serial-update-requirements).
+See [serial operation](docs/ISP_UART_TOOL_GUIDE_zh-TW.md) and
+[engineering/metadata contract](docs/ISP_UART_DEVICE_DESIGN_zh-TW.md).
+F24/G16/G22 serial projects carry editable Smart Configurator settings and a
+pre-build check of actual generated peripheral registers. G16 uses HOCO16;
+the shared [SC workflow](docs/ISP_UART_DEVICE_DESIGN_zh-TW.md#serial-scfg-workflow)
+describes Generate Code, Rebuild and I2C seven-bit/SVA address conversion.
+Their build/model evidence is offline; physical board acceptance is separate.
+
 Native Windows tool and MCU-bridge firmware for CAN/CAN FD transfer testing,
 target firmware updates and staged I2C master communication.
 
@@ -116,6 +142,11 @@ F13 and F24 CAN devices each maintain independent Transfer/Boot/App projects.
 
 ## Operation and firmware development
 
+UART/Xmodem App and standalone Transfer may advertise Device UART diagnostic
+capability. The Tool records RX errors/drops,TX timeouts and RX queue peak/pending
+separately from bridge counters. Availability comes from live INFO,not the MCU
+model. See [serial diagnostics](docs/ISP_UART_TOOL_GUIDE_zh-TW.md#serial-device-diagnostics).
+
 The [metadata editor and cross-MCU/ISP portability design](docs/METADATA_EDITOR_PORTABILITY_DESIGN_zh-TW.md)
 maps all metadata fields to their sources and Boot/App/IRQ/Tool dependencies.
 It covers fixed-Boot App releases, MCU/interface migration and compatibility
@@ -184,6 +215,12 @@ whose generated copy here defines
 neutral wording, topic ownership, technical sources and release checks for
 MD/web/PDF/README. The root policy is product-neutral and reusable by future
 sites; both slide repositories include a synchronized local copy.
+
+The [ISP guide](https://released.github.io/slide_isp_tool_for_RL78/) and
+[Bootloader guide](https://released.github.io/slide_boot_loader_for_RL78/)
+use short overview pages and separate topic pages. Existing homepage chapter
+URLs continue to resolve through site-owned bookmark maps. Maintainer syncs
+use scripts/web_guide_layout.json;canonical technical MD/PDF sources stay shared.
 
 `docs` contains guides/specifications; `build` contains delivery/runtime files.
 Reproducible intermediates and diagnostic evidence are kept under `tmp/internal`.

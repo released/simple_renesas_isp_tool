@@ -12,7 +12,7 @@ $updates=@()
 # Validate both targets before writing either. Never insert a missing block.
 foreach($folder in @('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78')){
     $expected=Get-WebGuideProjection -Section DEVICE_WORKSHOP -Folder $folder -Canonical $blocks[0].Value
-    $path=Join-Path $WebRoot ($folder+'\index.md')
+    $path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder $folder -Section DEVICE_WORKSHOP
     $web=[IO.File]::ReadAllText($path)
     $matches=[regex]::Matches($web,$pattern)
     if($matches.Count -ne 1){throw "Expected one device workshop block: $folder"}

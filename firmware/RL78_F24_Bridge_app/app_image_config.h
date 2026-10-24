@@ -5,12 +5,12 @@
  * Example0x00010600UL is1.6.0. This identifies the App; it does not enforce
  * a downgrade policy. Boot and App release versions need not be equal.
  */
-#define APP_IMAGE_VERSION (0x00010700UL)
+#define APP_IMAGE_VERSION (0x00010801UL)
 
 /* App build identification. YYYYMMDD is the chosen convention, not a clock.
  * Example20261017UL. Values0..0xFFFFFFFE are allowed.
  */
-#define APP_IMAGE_BUILD (20261019UL)
+#define APP_IMAGE_BUILD (20261023UL)
 
 /* Local host board identity. Match F24_BRIDGE_BOARD_ID in the shared image
  * metadata config. Changing it alone fails pre-build, not MCU selection.

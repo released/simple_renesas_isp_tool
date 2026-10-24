@@ -65,13 +65,17 @@ void CMainFrame::ApplyComboSelection(CComboBox& combo,
 void CMainFrame::LoadUiSettings() {
     loading_ui_settings_ = true;
     const auto tab=ReadIniValue(L"bus_tab", L"CAN");
-    bus_tabs_.SetCurSel(tab == L"Misc" ? 2 : tab == L"I2C" ? 1 : 0);
+    bus_tabs_.SetCurSel(tab == L"Misc" ? 3 : tab == L"UART" ? 2 : tab == L"I2C" ? 1 : 0);
+    preferred_uart_port_=static_cast<std::uint8_t>(GetPrivateProfileIntW(kIniSectionUi,L"uart_port",0,ini_path_.c_str()));
+    ApplyComboSelection(uart_workflow_combo_,ReadIniValue(L"uart_workflow",L"UART ISP"));
+    uart_baud_combo_.SetWindowTextW(ReadIniValue(L"device_uart_baud",L"115200").c_str());
+    ApplyComboSelection(i2c_workflow_combo_,ReadIniValue(L"i2c_workflow",L"I2C ISP"));
     preferred_can_port_ = static_cast<std::uint8_t>(
         GetPrivateProfileIntW(kIniSectionUi, L"can_port", 0, ini_path_.c_str()));
     preferred_i2c_port_ = static_cast<std::uint8_t>(
         GetPrivateProfileIntW(kIniSectionUi, L"i2c_port", 0, ini_path_.c_str()));
     preferred_i2c_speed_ = ReadIniValue(L"i2c_speed", L"0") == L"1" ? 1U : 0U;
-    i2c_address_edit_.SetWindowTextW(ReadIniValue(L"i2c_address", L"0x09").c_str());
+    i2c_address_edit_.SetWindowTextW(ReadIniValue(L"i2c_address", L"0x20").c_str());
     preferred_com_port_ = ReadIniValue(L"com_port", L"");
     selected_com_instance_=ReadIniValue(L"com_device_hint",L"");
     verified_com_port_=ReadIniValue(L"com_verified_port",L"");
@@ -123,7 +127,13 @@ void CMainFrame::LoadUiSettings() {
 
 void CMainFrame::SaveUiSettings() {
     if (loading_ui_settings_ || ini_path_.empty()) return;
-    WriteIniValue(L"bus_tab", IsMiscTab() ? L"Misc" : IsI2cTab() ? L"I2C" : L"CAN");
+    WriteIniValue(L"bus_tab", IsMiscTab() ? L"Misc" : IsUartTab()?L"UART":IsI2cTab() ? L"I2C" : L"CAN");
+    WriteIniValue(L"uart_port",std::to_wstring(preferred_uart_port_));
+    CString uart_workflow;uart_workflow_combo_.GetWindowTextW(uart_workflow);
+    WriteIniValue(L"uart_workflow",uart_workflow.GetString());
+    CString device_baud;uart_baud_combo_.GetWindowTextW(device_baud);
+    WriteIniValue(L"device_uart_baud",device_baud.GetString());
+    CString i2c_workflow;i2c_workflow_combo_.GetWindowTextW(i2c_workflow);WriteIniValue(L"i2c_workflow",i2c_workflow.GetString());
     WriteIniValue(L"can_port", std::to_wstring(preferred_can_port_));
     WriteIniValue(L"i2c_port", std::to_wstring(preferred_i2c_port_));
     WriteIniValue(L"i2c_speed", std::to_wstring(preferred_i2c_speed_));

@@ -1,4 +1,5 @@
 # Shared single-owner web projection. Non-owner pages contain links, not copies.
+. (Join-Path $PSScriptRoot 'web_guide_layout.ps1')
 function Get-WebGuideProjection {
     param([string]$Section, [string]$Folder, [string]$Canonical)
     $catalog = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'web_guide_sections.json')) | ConvertFrom-Json
@@ -24,7 +25,7 @@ function Sync-WebGuideSection {
     $canonical = $blocks[0].Value
     $targets = @()
     foreach ($folder in @('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78')) {
-        $targets += @{Path=(Join-Path $WebRoot ($folder+'\index.md'));Folder=$folder}
+        $targets += @{Path=(Get-WebGuideSectionPath -WebRoot $WebRoot -Folder $folder -Section $Section);Folder=$folder}
     }
     foreach ($path in $DocTargets) { $targets += @{Path=$path;Folder='docs'} }
     $updates = @()

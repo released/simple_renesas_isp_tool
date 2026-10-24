@@ -2,15 +2,17 @@ param([string]$WebRoot='', [switch]$CheckOnly)
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'workspace_paths.ps1')
+. (Join-Path $PSScriptRoot 'web_guide_layout.ps1')
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
 $sourceRoot=Join-Path $repo 'docs'
 $source=[IO.File]::ReadAllText((Join-Path $sourceRoot 'SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md'))
 $site=Join-Path $WebRoot 'slide_isp_tool_for_RL78'
-$page=Join-Path $site 'index.md'
-$text=[IO.File]::ReadAllText($page)
+$updates=@{}
 $assets=@()
 # Validate every block and asset before changing the page or copying assets.
 foreach($section in @('TOOL_CONNECT_MEDIA','TOOL_DEVICE_MEDIA','TOOL_BRIDGE_MEDIA')) {
+    $page=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_isp_tool_for_RL78 -Section $section
+    $text=if($updates.ContainsKey($page)){$updates[$page]}else{[IO.File]::ReadAllText($page)}
     $pattern='(?s)<!-- '+$section+'_BEGIN -->.*?<!-- '+$section+'_END -->'
     $canonical=[regex]::Matches($source,$pattern)
     $current=[regex]::Matches($text,$pattern)
@@ -20,6 +22,7 @@ foreach($section in @('TOOL_CONNECT_MEDIA','TOOL_DEVICE_MEDIA','TOOL_BRIDGE_MEDI
         throw "Operation block differs: $section"
     }
     $text=[regex]::Replace($text,$pattern,[Text.RegularExpressions.MatchEvaluator]{param($m)$replacement})
+    $updates[$page]=$text
     foreach($match in [regex]::Matches($replacement,'!\[[^\]]*\]\((images/tool_operation/[A-Za-z0-9_.-]+\.(?:jpg|png))\)')) {
         $relative=$match.Groups[1].Value
         $path=Join-Path $sourceRoot $relative
@@ -39,6 +42,6 @@ if(!$CheckOnly) {
         [void](New-Item -ItemType Directory -Path (Split-Path -Parent $asset.Destination) -Force)
         Copy-Item -LiteralPath $asset.Source -Destination $asset.Destination -Force
     }
-    [IO.File]::WriteAllText($page,$text,(New-Object Text.UTF8Encoding($false)))
+    foreach($page in $updates.Keys){[IO.File]::WriteAllText($page,$updates[$page],(New-Object Text.UTF8Encoding($false)))}
 }
 Write-Host 'PASS: three canonical operation blocks and sixteen public screenshots synchronized/verified.'

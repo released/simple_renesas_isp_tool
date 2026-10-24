@@ -92,6 +92,10 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_WM_GETMINMAXINFO()
     ON_WM_DEVICECHANGE()
     ON_CBN_SELCHANGE(ID_I2C_SPEED_COMBO, &CMainFrame::OnI2cSettingsChanged)
+    ON_CBN_SELCHANGE(ID_UART_WORKFLOW_COMBO, &CMainFrame::OnUartSettingsChanged)
+    ON_CBN_SELCHANGE(ID_I2C_WORKFLOW_COMBO, &CMainFrame::OnUartSettingsChanged)
+    ON_CBN_SELCHANGE(ID_UART_BAUD_COMBO, &CMainFrame::OnUartSettingsChanged)
+    ON_CBN_EDITCHANGE(ID_UART_BAUD_COMBO, &CMainFrame::OnUartSettingsChanged)
     ON_EN_CHANGE(ID_I2C_ADDRESS_EDIT, &CMainFrame::OnI2cSettingsChanged)
     ON_BN_CLICKED(ID_TOP_REFRESH_COM_BTN, &CMainFrame::OnBnClickedRefreshCom)
     ON_BN_CLICKED(ID_TOP_OPEN_COM_BTN, &CMainFrame::OnBnClickedOpenCom)
@@ -100,6 +104,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_BN_CLICKED(ID_CANCEL_OPERATION, &CMainFrame::OnCancelOperation)
     ON_BN_CLICKED(ID_COMPARE_METADATA, &CMainFrame::OnCompareMetadata)
     ON_BN_CLICKED(ID_PREFLIGHT, &CMainFrame::OnPreflight)
+    ON_BN_CLICKED(ID_BIN_DETAILS, &CMainFrame::OnBinDetails)
     ON_BN_CLICKED(ID_LOG_OPEN_REPORT_BTN, &CMainFrame::OnOpenLatestReport)
     ON_BN_CLICKED(ID_ERROR_DETAILS_BTN, &CMainFrame::OnErrorDetails)
     ON_BN_CLICKED(ID_FORCE_OLD_FIRMWARE, &CMainFrame::OnForceOldFirmware)
@@ -233,6 +238,9 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
     if (!create_or_fail(preflight_btn_.Create(L"Preflight",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,
         CRect(),this,ID_PREFLIGHT),L"Preflight button")) return -1;
     cancel_btn_.SetFont(&ui_font_); compare_metadata_btn_.SetFont(&ui_font_); preflight_btn_.SetFont(&ui_font_);
+    if (!create_or_fail(bin_details_btn_.Create(L"BIN Details...",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,
+        CRect(),this,ID_BIN_DETAILS),L"BIN details button")) return -1;
+    bin_details_btn_.SetFont(&ui_font_);
     if (!create_or_fail(force_old_firmware_btn_.Create(L"force upgrade old version firmware",
         WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON|WS_TABSTOP,CRect(),this,ID_FORCE_OLD_FIRMWARE),L"Force older firmware button")) return -1;
     force_old_firmware_btn_.SetFont(&ui_font_);
@@ -375,7 +383,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
         L"App Version", L"Build", L"Target", L"Protocol / Format",
         L"App Range", L"Image / Capacity", L"Flash / Boot",
         L"Minimum / Erase", L"Interface / Rate", L"Routing / IDs",
-        L"Update Policy", L"Boot / IRQ ABI", L"BIN Version Policy", L"Installed Policy"
+        L"Update Policy", L"Boot / IRQ ABI", L"BIN Version Policy", L"Device LIVE policy"
     };
     for (std::size_t index = 0U; index < kFirmwareFieldCount; ++index) {
         if (!create_or_fail(firmware_field_labels_[index].Create(
@@ -544,6 +552,7 @@ void CMainFrame::AppendLog(const std::wstring& text) {
 }
 
 std::wstring CMainFrame::BuildSessionSummary() const {
+    if(IsIspTab())return BuildUartSummary();
     if (IsMiscTab()) return BuildBridgeSummary();
     std::wstringstream stream;
     CString mode;

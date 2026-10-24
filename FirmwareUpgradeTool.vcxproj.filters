@@ -49,6 +49,11 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\worker_bus.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\worker_uart.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\main_frame_uart.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\core\uart_host_client.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\core\isp_device_client.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="firmware\common\isp_device\isp_protocol.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\main_frame_bus.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\main_frame_i2c_image.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\main_frame_i2c_summary.cpp"><Filter>Source Files</Filter></ClCompile>
@@ -99,6 +104,9 @@
     <ClInclude Include="src\core\firmware_update_profile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\serial_image_vectors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\core\host_link_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -118,6 +126,9 @@
     <ClInclude Include="src\ui\overview_model.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\core\bridge_port_catalog.h"><Filter>Source Files</Filter></ClInclude>
     <ClInclude Include="src\core\i2c_host_client.h"><Filter>Source Files</Filter></ClInclude>
+    <ClInclude Include="src\core\uart_host_client.h"><Filter>Source Files</Filter></ClInclude>
+    <ClInclude Include="src\core\isp_device_client.h"><Filter>Source Files</Filter></ClInclude>
+    <ClInclude Include="src\core\isp_bus_settings.h"><Filter>Source Files</Filter></ClInclude>
     <ClInclude Include="src\core\g16_i2c_reference.h"><Filter>Source Files</Filter></ClInclude>
     <ClInclude Include="src\main_frame.h">
       <Filter>Header Files</Filter>

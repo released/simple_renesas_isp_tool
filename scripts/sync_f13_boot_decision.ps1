@@ -15,7 +15,7 @@ $targets = @('slide_isp_tool_for_RL78\index.md', 'slide_boot_loader_for_RL78\ind
 $updates = @()
 foreach ($relative in $targets) {
     $expected=Get-WebGuideProjection -Section F13_BOOT_DECISION -Folder ($relative.Split('\')[0]) -Canonical $blocks[0].Value
-    $path = Join-Path $WebRoot $relative
+    $path = Get-WebGuideSectionPath -WebRoot $WebRoot -Folder ($relative.Split('\')[0]) -Section F13_BOOT_DECISION
     $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
     if ([regex]::Matches($text, $pattern).Count -ne 1) { throw "Expected one managed block in $path" }
     if ($CheckOnly) {

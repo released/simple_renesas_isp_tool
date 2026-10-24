@@ -14,6 +14,8 @@
 #include "core/can_host_client.h"
 #include "core/bridge_port_catalog.h"
 #include "core/i2c_host_client.h"
+#include "core/uart_host_client.h"
+#include "core/isp_device_client.h"
 #include "core/g16_i2c_reference.h"
 #include "core/f13_boot_profile.h"
 #include "core/f13_boot_update.h"
@@ -37,6 +39,8 @@ enum class TargetProfile {
     None,
     F13Transfer,
     CanUpgrade,
+    UartUpgrade,
+    UartTransfer,
 };
 
 enum class FilterSelection {
@@ -79,6 +83,12 @@ struct SessionState {
     bu_info_t bridge_info = {};
     std::vector<bridge::Port> can_ports;
     std::vector<bridge::Port> i2c_ports;
+    std::vector<bridge::Port> uart_ports;
+    bool uart_valid=false;
+    std::uint8_t isp_contract=1U;
+    isp::BusConfiguration uart_configuration;
+    isp::TargetInfo uart_target;
+    std::wstring uart_summary;
     bool i2c_probe_validated = false;
     i2c_host::Configuration i2c_configuration;
     std::uint8_t i2c_address = 0U;
@@ -138,6 +148,9 @@ public:
     bool RequestDisconnect();
     bool RequestCancel();
     bool VerifyInstalled();
+    bool UartAction(unsigned action,const isp::BusConfiguration& configuration,
+        bool transfer=false,const std::vector<std::uint8_t>& image={},bool force=false,
+        std::uint32_t approved_version=0U,std::uint8_t contract=1U);
     void SetDetailedTrace(bool enabled);
 
     std::vector<WorkerEvent> DrainEvents();
@@ -155,6 +168,11 @@ private:
         CanTxTest,
         ResetHost,
         ProbeI2c,
+        UartDiscover,
+        UartEnter,
+        UartProgram,
+        UartTest,
+        UartVerify,
         BridgeInfo,
         BridgeEnter,
         BridgeProgram,
@@ -171,6 +189,9 @@ private:
         std::vector<std::uint8_t> image;
         i2c_host::Configuration i2c_configuration;
         std::uint8_t i2c_address = 0x09U;
+        isp::BusConfiguration uart_configuration;
+        bool uart_transfer=false;
+        std::uint8_t isp_contract=1U;
         bool force_old_version = false;
         std::uint32_t approved_installed_version = 0U;
     };
@@ -201,6 +222,9 @@ private:
     bool RefreshBridgePorts(std::wstring* error);
     bool PrepareCanPort(const CanSettings& settings, std::wstring* error);
     void AbortI2cBestEffort();
+    void AbortUartBestEffort();
+    bool ProcessUart(const Command& command,std::wstring* error);
+    bool ReadUartTarget(std::wstring* error);
     bool ConfigureF13Can(std::uint32_t response_id,
                          std::uint32_t response_mask,
                          const std::wstring& filter_description,
@@ -251,6 +275,8 @@ private:
     host_link::Client host_link_client_;
     can_host::Client can_client_;
     i2c_host::Client i2c_client_;
+    uart_host::Client uart_client_;
+    isp::Client isp_client_;
     f13_boot::Client boot_client_;
     f13_transfer::Client transfer_client_;
 };

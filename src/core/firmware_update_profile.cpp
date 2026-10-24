@@ -1,4 +1,6 @@
 #include "firmware_update_profile.h"
+#include "isp_bus_settings.h"
+#include "serial_image_vectors.h"
 
 namespace firmware_upgrade::firmware_update {
 namespace {
@@ -64,12 +66,16 @@ bool ParseMetadata(const std::vector<std::uint8_t>& image,
     }
 
     const std::uint8_t* manifest = &image[kManifestOffset];
-    if (ReadLe32(manifest) != kManifestMagic) {
-        return Fail(L"CAN Upgrade image metadata magic is invalid.", error);
+    const bool uart = ReadLe32(manifest) == 0x00505349U;
+    if (ReadLe32(manifest) != kManifestMagic && !uart) {
+        return Fail(L"Device image metadata magic is invalid (CAN or ISP required).", error);
     }
 
     ImageInfo parsed;
-    parsed.profile = Profile::CanUpgrade;
+    const auto isp_protocol=ReadLe16(manifest+8);
+    parsed.profile = !uart ? Profile::CanUpgrade : isp_protocol==0x49U ? Profile::I2cUpgrade :
+        isp_protocol==0x58U ? Profile::XmodemUpgrade : Profile::UartUpgrade;
+    const bool i2c=parsed.profile==Profile::I2cUpgrade;
     parsed.profile_name = DisplayName(parsed.profile);
     parsed.format = manifest[4];
     parsed.manifest_length = manifest[5];
@@ -100,10 +106,10 @@ bool ParseMetadata(const std::vector<std::uint8_t>& image,
     if (parsed.format != kImageFormatVersion ||
         parsed.manifest_length != kManifestSize ||
         parsed.flags != kRequiredFlags ||
-        parsed.protocol_id != kProtocolId ||
-        parsed.protocol_version != kProtocolVersion ||
+        (uart ? (parsed.protocol_id!=0x55U&&parsed.protocol_id!=0x49U&&parsed.protocol_id!=0x58U) : parsed.protocol_id!=kProtocolId) ||
+        parsed.protocol_version != (uart ? 1U : kProtocolVersion) ||
         parsed.checksum_type != kChecksumCrc32) {
-        return Fail(L"CAN Upgrade image metadata format, protocol, or "
+        return Fail(L"Device image metadata format, protocol, or "
                     L"checksum contract is incompatible.", error);
     }
     if (parsed.target_id == 0U || parsed.version > 0xFFFFFFU ||
@@ -141,15 +147,25 @@ bool ParseMetadata(const std::vector<std::uint8_t>& image,
         parsed.boot_reserved_size > parsed.application_start ||
         !IsPowerOfTwo(parsed.erase_block_size) ||
         (parsed.application_start % parsed.erase_block_size) != 0U ||
-        parsed.can_mode_mask == 0U ||
+        (!uart && (parsed.can_mode_mask == 0U ||
         (parsed.can_mode_mask & ~0x03U) != 0U ||
         parsed.nominal_bitrate_mask == 0U ||
         ((parsed.can_mode_mask & 0x02U) != 0U &&
-         parsed.data_bitrate_mask == 0U)) {
+         parsed.data_bitrate_mask == 0U)))) {
         return Fail(L"Firmware flash-layout or CAN bitrate metadata is "
                     L"invalid.", error);
     }
-    if (parsed.can_id_format == 0U) {
+    if (uart) {
+        if (parsed.can_mode_mask || parsed.can_id_format || parsed.request_id || parsed.response_id ||
+            (i2c?(!isp::ValidI2cRate(parsed.nominal_bitrate_mask)||!isp::ValidI2cAddress(parsed.data_bitrate_mask)):
+                (parsed.nominal_bitrate_mask||parsed.data_bitrate_mask)) ||
+            parsed.policy.transports != (i2c?IP_I2C:IP_UART) ||
+            (i2c?parsed.policy.device_uart_baud!=0U:!isp::ValidUartBaud(parsed.policy.device_uart_baud)))
+            return Fail(L"ISP metadata contains an invalid interface, device baud, I2C clock or7-bit address.",error);
+        if(parsed.policy.version!=IP_DEVICE_VERSION)
+            return Fail(L"UART ISP minimum image size / policy contract is invalid.",error);
+        if(!ValidateSerialVectors(image,parsed,error))return false;
+    } else if (parsed.can_id_format == 0U) {
         if (parsed.request_id > 0x7FFU || parsed.response_id > 0x7FFU) {
             return Fail(L"Firmware standard CAN identifier metadata is out "
                         L"of range.", error);
@@ -163,7 +179,7 @@ bool ParseMetadata(const std::vector<std::uint8_t>& image,
     } else {
         return Fail(L"Firmware CAN identifier format is invalid.", error);
     }
-    if (parsed.request_id == parsed.response_id) {
+    if (!uart && parsed.request_id == parsed.response_id) {
         return Fail(L"Firmware request and response CAN identifiers must "
                     L"differ.", error);
     }
@@ -186,11 +202,18 @@ Profile FromDisplayName(const std::wstring& display_name) {
     if (display_name == L"CAN Upgrade") {
         return Profile::CanUpgrade;
     }
+    if (display_name == L"UART ISP") return Profile::UartUpgrade;
+    if (display_name == L"I2C ISP") return Profile::I2cUpgrade;
+    if (display_name == L"XMODEM-CRC") return Profile::XmodemUpgrade;
     return Profile::None;
 }
 
 const wchar_t* DisplayName(Profile profile) {
     switch (profile) {
+        case Profile::I2cUpgrade: return L"I2C ISP";
+        case Profile::XmodemUpgrade: return L"XMODEM-CRC";
+        case Profile::UartUpgrade:
+            return L"UART ISP";
         case Profile::CanUpgrade:
             return L"CAN Upgrade";
         case Profile::None:
@@ -227,7 +250,8 @@ ImageInspection InspectImage(const std::vector<std::uint8_t>& image) {
     }
     result.metadata_available =
         image.size() >= kManifestOffset + 4U &&
-        ReadLe32(&image[kManifestOffset]) == kManifestMagic;
+        (ReadLe32(&image[kManifestOffset]) == kManifestMagic ||
+         ReadLe32(&image[kManifestOffset]) == 0x00505349U);
     result.metadata_valid = ParseMetadata(
         image, &result.metadata, &result.metadata_error);
     return result;
@@ -237,7 +261,8 @@ bool ValidateImage(Profile profile,
                    const std::vector<std::uint8_t>& image,
                    ImageInfo* info,
                    std::wstring* error) {
-    if (profile != Profile::CanUpgrade) {
+    if (profile != Profile::CanUpgrade && profile != Profile::UartUpgrade &&
+        profile != Profile::I2cUpgrade && profile != Profile::XmodemUpgrade) {
         return Fail(L"The selected target protocol does not support firmware "
                     L"updates.", error);
     }
@@ -245,13 +270,15 @@ bool ValidateImage(Profile profile,
     if (!ParseMetadata(image, &parsed, error)) {
         return false;
     }
+    if (parsed.profile != profile) return Fail(L"Loaded BIN protocol does not match the selected device workflow.",error);
     if (parsed.stored_crc32 != parsed.calculated_crc32) {
         return Fail(L"Firmware CRC32 trailer does not match the calculated "
                     L"CRC32.", error);
     }
-    if (!image_policy::Allows(parsed.policy, IP_ROLE_DEVICE_APP, IP_CAN, error)) return false;
+    if (!image_policy::Allows(parsed.policy, IP_ROLE_DEVICE_APP,
+        profile==Profile::I2cUpgrade ? IP_I2C : profile==Profile::CanUpgrade ? IP_CAN : IP_UART, error)) return false;
     if(parsed.policy.version!=IP_DEVICE_VERSION)
-        return Fail(L"CAN device image requires the version-control policy descriptor.",error);
+        return Fail(L"Device image requires the version-control policy descriptor.",error);
     if (info == nullptr) {
         return Fail(L"Firmware image information output is null.", error);
     }

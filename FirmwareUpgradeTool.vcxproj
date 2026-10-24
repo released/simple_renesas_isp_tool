@@ -120,7 +120,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>_WINDOWS;_UNICODE;UNICODE;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_AFX_NO_MFC_CONTROLS_IN_DIALOGS;_WINDOWS;_UNICODE;UNICODE;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -137,7 +137,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>_WINDOWS;_UNICODE;UNICODE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_AFX_NO_MFC_CONTROLS_IN_DIALOGS;_WINDOWS;_UNICODE;UNICODE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -174,6 +174,11 @@
     <ClCompile Include="src\main_frame.cpp" />
     <ClCompile Include="src\main_frame_evidence.cpp" />
     <ClCompile Include="src\worker_bus.cpp" />
+    <ClCompile Include="src\worker_uart.cpp" />
+    <ClCompile Include="src\main_frame_uart.cpp" />
+    <ClCompile Include="src\core\uart_host_client.cpp" />
+    <ClCompile Include="src\core\isp_device_client.cpp" />
+    <ClCompile Include="firmware\common\isp_device\isp_protocol.c" />
     <ClCompile Include="src\main_frame_bus.cpp" />
     <ClCompile Include="src\main_frame_status.cpp" />
     <ClCompile Include="src\main_frame_overview.cpp" />
@@ -207,6 +212,7 @@
     <ClInclude Include="src\core\f13_boot_update.h" />
     <ClInclude Include="src\core\f13_transfer_profile.h" />
     <ClInclude Include="src\core\firmware_update_profile.h" />
+    <ClInclude Include="src\core\serial_image_vectors.h" />
     <ClInclude Include="src\core\device_version_policy.h" />
     <ClInclude Include="src\core\host_link_client.h" />
     <ClInclude Include="src\core\host_link_protocol.h" />
@@ -220,6 +226,9 @@
     <ClInclude Include="src\ui\status_card.h" />
     <ClInclude Include="src\core\bridge_port_catalog.h" />
     <ClInclude Include="src\core\i2c_host_client.h" />
+    <ClInclude Include="src\core\uart_host_client.h" />
+    <ClInclude Include="src\core\isp_device_client.h" />
+    <ClInclude Include="src\core\isp_bus_settings.h" />
     <ClInclude Include="src\core\g16_i2c_reference.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\worker_session.h" />

@@ -125,7 +125,7 @@ App 的 INFO／ENTER 回覆由該 App 實作。
 
 畫面上的資訊分為離線 BIN、目前連線裝置與本次操作設定。
 `LOADED APP BIN | OFFLINE` 與共用映像區大多來自檔案，不代表板上已安裝相同內容。
-`Installed Policy` 則來自已探索的裝置；尚未取得的 live 資訊不以 BIN 補入。
+`Device LIVE policy` 則來自已探索的裝置；尚未取得的 live 資訊不以 BIN 補入。
 五張資訊卡的位置與來源見 [主畫面](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation)。
 
 <a id="tool-console-layout"></a>
@@ -133,19 +133,40 @@ App 的 INFO／ENTER 回覆由該 App 實作。
 #### 畫面群組與資料關聯
 
 畫面使用 Windows 系統灰底、白色資料欄與加粗群組邊框。
-一般資訊以標題、位置及 `OFFLINE`／`LIVE` 文字區分；綠、黃、紅集中表示判定結果。
+資訊來源以標題、同色系邊框與 `OFFLINE`／`LIVE` 文字區分；綠、黃、紅仍表示判定結果。
+
+| 來源識別 | 同色系區塊 | 資料來源 |
+| --- | --- | --- |
+| 藍灰 | HOST BRIDGE | Probe讀回的bridge身分／能力 |
+| 青綠 | DEVICE TARGET、DEVICE BOOT、DEVICE APP | 所選device的即時INFO；三張卡屬於同一device |
+| 米褐 | 第二排的LOADED APP BIN及右側三個BIN群組 | 載入檔案的metadata／CRC，不代表已寫入device |
+
+Misc更新的live卡片屬於bridge，會一併使用Host藍灰識別。
+`Device LIVE policy` 有明確LIVE標籤，是下方欄位中來自裝置的政策；其餘BIN欄位以檔案解析為主。
+來源色不表示成功或失敗；紅色錯誤底與狀態側條仍保留，避免來源與驗證結果混用。
 
 | 群組 | 位置與用途 | 資料關聯 |
 | --- | --- | --- |
 | 1. HOST CONNECTION | 最上方；COM、Host Baud、Probe、Close、Reset 與 Cancel | PC ↔ bridge 的連線；先 Probe 才取得 Host 身分與周邊能力 |
-| 2. BIN / DEVICE INFORMATION | 次上方；Host／Device／Boot／Installed App／BIN 摘要與完整欄位 | `LIVE` 是板上回覆；`OFFLINE` 是載入的檔案，兩者獨立核對 |
-| 3. PERIPHERAL / TARGET | 左下；CAN／I2C／Misc、port、速度、ID／位址及探索操作 | 決定通訊路徑與目前目標；TAB 僅涵蓋此群組 |
+| 2. INFORMATION | 第一排是Host／Device／Boot／App即時資訊；第二排是Loaded BIN及精簡metadata | 即時板端回覆與載入檔案獨立核對 |
+| 3. PERIPHERAL / TARGET | 左下；CAN／I2C／UART / Xmodem／Misc、port、速度、ID／位址及探索操作 | 決定通訊路徑與目前目標；TAB 僅涵蓋此群組 |
 | 4. LOAD / UPDATE IMAGE | 中下；載入 BIN、App Start、Compare Metadata、Preflight 與更新 | 載入後，群組 2 顯示解析結果；前置條件與完成後下一步顯示於此 |
 | 5. MESSAGE LOG | 右下；訊息、檔案紀錄、報告、詳細 trace 與自動捲動 | 記錄操作過程；可暫停跟隨新訊息來閱讀歷史內容 |
 
-群組 2 的 20 個欄位再分為 `File / integrity`、`Image identity`、`Flash layout / IRQ`、`Update contract`。
-先從完整性與 MCU 身分核對檔案，再查看分區與更新條件；[逐欄說明](#tool-ui-metadata)列出各欄位的意義。
-較長的值可停留滑鼠查看完整內容，或開啟 Compare Metadata／Preflight。
+| 第二排群組 | 主畫面欄位 |
+| --- | --- |
+| BIN check / layout | CRC Result、Metadata Status、App Range、Image / Capacity |
+| BIN interface / policy | Interface / Rate、Routing / IDs、Update Policy、Protocol / Format |
+| BIN compatibility / LIVE policy | Boot / IRQ ABI、BIN Version Policy、Device LIVE policy、Flash / Boot |
+
+Loaded BIN卡提供MCU、版本、build及檔案大小；下方的 `BIN Details...` 開啟唯讀視窗，保留全部20項欄位、完整檔案路徑及目前Workflow的檢查結果。
+卡片使用四行摘要；過長的單行或額外內容以省略號表示，滑鼠停留可查看全文。
+包含Calculated／Stored CRC、Target、Minimum／Erase等細節；不需連線，也可查看不符合目前路由的BIN。
+`Device LIVE policy`仍明確標示為裝置來源，不以離線BIN補成live資料。
+操作執行中暫停開啟詳情，不中斷worker或發送通訊命令。
+
+[逐欄說明](#tool-ui-metadata)列出各欄位的意義。
+較長的主畫面值可停留滑鼠查看全文；live差異與操作條件分別使用Compare Metadata／Preflight。
 主視窗不使用上下捲軸，只有 Log 歷史與下拉清單捲動；最小視窗高度依字型尺寸調整。
 
 <a id="tool-log-auto-scroll"></a>
@@ -217,7 +238,7 @@ log_auto_scroll=1
 
 <a id="tool-ui-metadata"></a>
 
-#### 共用映像區：20 個欄位
+#### BIN Details：20 項欄位參考
 
 以下數值是判讀範例，不是所有 MCU 專案的固定值。
 以一份 CAN device BIN 為例：檔案長 `8192` bytes，映像起點 `0x00002000`，最後一個 byte 位於 `0x00003FFF`。
@@ -260,8 +281,8 @@ CRC 範例 `0x12345678` 僅示意兩欄相等，不是這份示例的實測 chec
 | Routing / IDs | BIN 的 ID 格式、request／response ID | `STD 0x00000700 / 0x00000701` | 分別為更新請求與回覆，不是兩組 CAN port；與 Boot、接收 filter 及 live 契約核對 |
 | Update Policy | BIN 的角色與允許更新介面 | `DEVICE APP \| CAN` | CAN BIN 切到 I2C／Misc 不會自動變成可更新；不相容時先確認目的地與編譯契約 |
 | Boot / IRQ ABI | BIN 要求的最低 Boot 版本／IRQ 介面識別 | `1.0.0 / 0x31563146` | live Boot 須達最低版本，IRQ ABI 須相符；不要求 App 與 Boot 版號相等，數值與顏色不能取代 live 比較 |
-| BIN Version Policy | 本份 BIN 安裝成功後採用的版本順序政策 | `ENABLED \| same / newer` 或 `DISABLED \| any version` | 不決定本次是否能降版；由目前有效 App 的 Installed Policy 決定 |
-| Installed Policy | live device 回報的目前有效 App 政策 | `ENABLED \| same / newer`；未探索時 `Discover Target required` | 一般更新依此判斷；`RECOVERY \| no valid App` 與 `N/A` 不當成已取得 disabled 政策 |
+| BIN Version Policy | 本份 BIN 安裝成功後採用的版本順序政策 | `ENABLED \| same / newer` 或 `DISABLED \| any version` | 不決定本次是否能降版；由目前有效 App 的 Device LIVE policy 決定 |
+| Device LIVE policy | live device 回報的目前有效 App 政策 | `ENABLED \| same / newer`；未探索時 `Discover Target required` | 一般更新依此判斷；`RECOVERY \| no valid App` 與 `N/A` 不當成已取得 disabled 政策 |
 
 欄位編輯與產生方式見 [App 設定與建置](https://released.github.io/slide_boot_loader_for_RL78/#device-app-config)。
 每個 byte 的 offset／Flash address 與對應程式見 [Metadata 位址對照](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。

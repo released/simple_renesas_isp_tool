@@ -7,14 +7,15 @@
 畫面以1366×768配置呈現上方連線、BIN／裝置資訊，以及下方周邊設定、載入／更新、Message Log 五個群組。
 使用 Windows 系統灰白配色與加粗邊框；狀態色保留於判定結果與提示。
 主視窗沒有上下捲軸，Log 歷史與下拉清單可捲動；最小視窗高度隨字型尺寸調整。
-五張摘要卡同列顯示，hover 可讀全文。
+第一排是Host／Device／Boot／App四張即時資訊卡；Loaded BIN卡移至第二排，hover可讀全文。
 
-BIN、檔案路徑、20個metadata欄位與Log由各TAB共用。
+BIN、檔案路徑、metadata與Log由各TAB共用。
+主畫面顯示12項常用欄位，`BIN Details...`提供全部20項唯讀資料與Workflow檢查結果。
 
-CAN 與 I2C TAB 提供 port、speed、ID／mask 或 slave address 等介面參數及適用的 image contract。
+CAN、I2C與UART / Xmodem TAB提供port、speed、ID／mask或slave address等介面參數及適用的image contract。
 最後一個 TAB 是 Misc，更新目的地為 host bridge。
 
-CAN／I2C／Misc TAB 只位於左下 PERIPHERAL / TARGET 群組。
+CAN／I2C／UART / Xmodem／Misc TAB只位於左下PERIPHERAL / TARGET群組。
 上方 BIN 資訊、中下 LOAD / UPDATE IMAGE 與右下 MESSAGE LOG 固定獨立，切換 TAB 保留共用資料。
 完整[群組與欄位對照](https://released.github.io/slide_isp_tool_for_RL78/#tool-console-layout)及
 [Auto scroll down／INI 設定](https://released.github.io/slide_isp_tool_for_RL78/#tool-log-auto-scroll)集中於 Tool operation。
@@ -33,7 +34,10 @@ COM 清單的 USB friendly name 用於辨識轉接器。
 `Open + Probe Host` 取得實際 bridge board 的 board ID、韌體版本、能力與可選 port。
 UI 依 Host Link／backend 回報的能力顯示功能與 port。
 
-CAN／I2C 模式的 BOOT／INSTALLED APP 卡來自外部 device 的 live INFO；LOADED BIN 是離線檔案。Custom Transfer 不提供 boot/app metadata，所以顯示 N/A。G16 範例回報的版本是常數，使用黃色；其 erase/write/jump 仍封鎖。
+Device workflow的DEVICE BOOT／DEVICE APP卡來自外部device的live INFO；LOADED BIN是離線檔案。
+Host、相關Device卡與BIN群組的來源識別見[畫面群組與資料關聯](https://released.github.io/slide_isp_tool_for_RL78/#tool-console-layout)。
+Custom Transfer不提供boot/app metadata，所以顯示N/A。
+I2C的G16 Reference (read-only)回報常數，其erase／write／jump仍封鎖；I2C ISP是另一個獨立契約。
 
 Misc 的 BOOT／APP 卡改為 host bridge 自己的資訊，且目的地卡明確顯示 HOST BRIDGE。離線 BIN 仍獨立。CRC 是完整性檢查，不是簽章、授權或防回滾。
 

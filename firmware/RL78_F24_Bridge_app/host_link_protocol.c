@@ -26,6 +26,7 @@ const volatile uint32_t __far g_host_app_image_contract[5] = {
 #include "f24_can_clock.h"
 #include "f24_can_timing.h"
 #include "bridge_i2c.h"
+#include "bridge_uart.h"
 #include "../common/can_burst.h"
 #include "../common/can_burst.inc"
 #include "../common/diagnostic_clock.h"
@@ -87,7 +88,7 @@ const volatile uint32_t __far g_host_app_image_contract[5] = {
                                                 HOST_LINK_FEATURE_TX_WAIT_RX | \
                                                 HOST_LINK_FEATURE_ASYNC_RX | \
                                                 HOST_LINK_FEATURE_AUTO_BUS_OFF | \
-                                                0x00000300UL | BRIDGE_SELF_UPDATE_FEATURE | HL_BAUD_FEATURE | CB_FEATURE | CB_FD_FEATURE)
+                                                0x00000300UL | BRIDGE_SELF_UPDATE_FEATURE | HL_BAUD_FEATURE | CB_FEATURE | CB_FD_FEATURE | BRIDGE_UART_FEATURE)
 
 #define HOST_LINK_NOMINAL_BITRATE_MASK         F24_CAN_NOMINAL_MASK
 #define HOST_LINK_DATA_BITRATE_MASK            (0x00000002UL)
@@ -206,6 +207,10 @@ static uint16_t g_i2c_payload_crc;
 static uint8_t g_i2c_result_waiting;
 static uint8_t g_i2c_result_status;
 static uint16_t g_i2c_result_received;
+static uint8_t g_uart_request_active, g_uart_result_waiting, g_uart_result_status;
+static uint16_t g_uart_sequence, g_uart_payload_crc, g_uart_result_received;
+static uint16_t g_uart_replay_length;
+static uint8_t g_uart_replay_payload[HOST_LINK_MAX_PAYLOAD];
 
 static uint16_t read_le16(const uint8_t *data)
 {
@@ -1028,6 +1033,34 @@ static void dispatch_request(void)
     payload_crc = HostLink_Crc16CcittFalse(payload, payload_length);
     response_payload = g_dispatch_payload;
 
+    if (g_uart_request_active != 0U)
+    {
+        if (sequence == g_uart_sequence)
+        {
+            if (command == BRIDGE_UART_TRANSACTION_COMMAND &&
+                payload_length == 1U && payload[0] == 2U) return;
+            send_response(sequence, command, HOST_LINK_STATUS_SEQUENCE_ERROR,
+                          (const uint8_t *)0, 0U, 0U, payload_crc);
+            return;
+        }
+        if (command == BRIDGE_UART_TRANSACTION_COMMAND &&
+            payload_length == 1U && payload[0] == 4U)
+        {
+            Bridge_UartAbort();
+            send_response(g_uart_sequence, BRIDGE_UART_TRANSACTION_COMMAND,
+                          HOST_LINK_STATUS_BAD_STATE, (const uint8_t *)0,
+                          0U, 0U, g_uart_payload_crc);
+            g_uart_request_active = 0U;
+            g_uart_result_waiting = 0U;
+        }
+        else
+        {
+            send_response(sequence, command, HOST_LINK_STATUS_BUSY,
+                          (const uint8_t *)0, 0U, 0U, payload_crc);
+            return;
+        }
+    }
+
     if (g_i2c_request_active != 0U)
     {
         if (sequence == g_i2c_sequence)
@@ -1091,7 +1124,10 @@ static void dispatch_request(void)
     if ((g_replay.valid != 0U) && (sequence == g_replay.sequence))
     {
         if ((command == g_replay.command) &&
-            (payload_crc == g_replay.payload_crc))
+            (payload_crc == g_replay.payload_crc) &&
+            ((command < BRIDGE_UART_CONFIG_COMMAND || command > BRIDGE_UART_STATS_COMMAND) ||
+             (payload_length == g_uart_replay_length &&
+              memcmp(payload, g_uart_replay_payload, payload_length) == 0)))
         {
             if (HostLinkUart_Write(g_replay.response,
                                    g_replay.response_length) != 0U)
@@ -1122,9 +1158,26 @@ static void dispatch_request(void)
     defer_response = 0U;
     reset_after_response = 0U;
 
+    if (command >= BRIDGE_UART_CONFIG_COMMAND && command <= BRIDGE_UART_STATS_COMMAND)
+    {
+        g_uart_replay_length = payload_length;
+        memcpy(g_uart_replay_payload, payload, payload_length);
+    }
+
     if ((Bridge_I2cReserved() != 0U) &&
-        (command >= HOST_LINK_CMD_SET_CAN_CONFIG) &&
-        (command <= CB_COMMAND))
+        (((command >= HOST_LINK_CMD_SET_CAN_CONFIG) && (command <= CB_COMMAND)) ||
+         command == BRIDGE_UART_CONFIG_COMMAND || command == BRIDGE_UART_TRANSACTION_COMMAND ||
+         command == BU_ENTER_COMMAND))
+    {
+        send_response(sequence, command, HOST_LINK_STATUS_BUSY,
+                      (const uint8_t *)0, 0U, 1U, payload_crc);
+        return;
+    }
+
+    if (Bridge_UartReserved() &&
+        (((command >= HOST_LINK_CMD_SET_CAN_CONFIG) && command <= CB_COMMAND) ||
+         command == HOST_LINK_CMD_SET_I2C_CONFIG || command == HOST_LINK_CMD_I2C_TRANSACTION ||
+         command == BU_ENTER_COMMAND))
     {
         send_response(sequence, command, HOST_LINK_STATUS_BUSY,
                       (const uint8_t *)0, 0U, 1U, payload_crc);
@@ -1161,7 +1214,7 @@ static void dispatch_request(void)
                 break;
             case HL_BAUD_SET:
                 if (payload_length != 4U) status = HOST_LINK_STATUS_BAD_ARGUMENT;
-                else if (CAN_HostIsRunning() || Bridge_I2cReserved()) status = HOST_LINK_STATUS_BUSY;
+                else if (CAN_HostIsRunning() || Bridge_I2cReserved() || Bridge_UartReserved()) status = HOST_LINK_STATUS_BUSY;
                 else
                 {
                     status = HostLinkUart_PrepareBaud(read_le32(payload));
@@ -1177,7 +1230,7 @@ static void dispatch_request(void)
                 }
                 break;
             case HOST_LINK_CMD_GET_PORT_INFO:
-                if ((payload_length != 2U) || (payload[0] > 1U) ||
+                if ((payload_length != 2U) || (payload[0] > 2U) ||
                     (payload[1] != 0U))
                 {
                     status = HOST_LINK_STATUS_BAD_ARGUMENT;
@@ -1188,16 +1241,18 @@ static void dispatch_request(void)
                     response_payload[0] = payload[0];
                     response_payload[1] = 1U;
                     response_payload[2] = 0U;
-                    response_payload[3] = (payload[0] == 0U) ? 5U : 3U;
+                    response_payload[3] = (payload[0] == 0U) ? 5U : ((payload[0] == 1U) ? 3U : 1U);
                     write_le32(&response_payload[4], (payload[0] == 0U) ?
-                               HOST_LINK_NOMINAL_BITRATE_MASK : 1UL);
+                               HOST_LINK_NOMINAL_BITRATE_MASK :
+                               ((payload[0] == 1U) ? 3UL : DEVICE_UART_RATE_MASK));
                     write_le16(&response_payload[8], (payload[0] == 0U) ?
                                64U : BRIDGE_I2C_LIMIT);
                     write_le16(&response_payload[10], (payload[0] == 0U) ?
                                64U : BRIDGE_I2C_LIMIT);
-                    memcpy(&response_payload[12], (payload[0] == 0U) ?
-                           "CAN0 P10/P11" : "IICA0 SCL62/SDA63",
-                           (payload[0] == 0U) ? 12U : 17U);
+                    if (payload[0] == 2U) memcpy(&response_payload[12], "UART1 TX74/RX75", 15U);
+                    else memcpy(&response_payload[12], (payload[0] == 0U) ?
+                                "CAN0 P10/P11" : "IICA0 SCL62/SDA63",
+                                (payload[0] == 0U) ? 12U : 17U);
                     response_payload_length = 32U;
                 }
                 break;
@@ -1249,6 +1304,37 @@ static void dispatch_request(void)
                         defer_response = 1U;
                     }
                 }
+                break;
+
+            case BRIDGE_UART_CONFIG_COMMAND:
+                if (payload_length != 8U || payload[1] != 0U ||
+                    payload[2] != 0U || payload[3] != 0U)
+                    status = HOST_LINK_STATUS_BAD_ARGUMENT;
+                else if (CAN_HostIsRunning()) status = HOST_LINK_STATUS_BAD_STATE;
+                else
+                {
+                    status = Bridge_UartConfigure(payload[0], read_le32(payload + 4U));
+                    if (!status) { memcpy(response_payload, payload, 8U); response_payload_length = 8U; }
+                }
+                break;
+            case BRIDGE_UART_TRANSACTION_COMMAND:
+                if (CAN_HostIsRunning()) status = HOST_LINK_STATUS_BAD_STATE;
+                else
+                {
+                    status = Bridge_UartCommand(payload, payload_length,
+                        response_payload, &response_payload_length, get_tick());
+                    if (status == BRIDGE_UART_PENDING)
+                    {
+                        g_uart_request_active = 1U; g_uart_sequence = sequence;
+                        g_uart_payload_crc = payload_crc; g_uart_result_waiting = 0U;
+                        LED_SetState(F24_LED_STATE_TRANSFER_ACTIVE);
+                        status = 0U; defer_response = 1U;
+                    }
+                }
+                break;
+            case BRIDGE_UART_STATS_COMMAND:
+                if (payload_length) status = HOST_LINK_STATUS_BAD_ARGUMENT;
+                else { Bridge_UartBackend_Stats(response_payload); response_payload_length = 24U; }
                 break;
 
 #ifdef BRIDGE_SPLIT_APP
@@ -1304,6 +1390,7 @@ static void dispatch_request(void)
                 else
                 {
                     Bridge_I2cAbort();
+                    Bridge_UartAbort();
                     reset_after_response = 1U;
                 }
                 break;
@@ -1700,6 +1787,28 @@ void HostLink_Init(void)
     g_i2c_request_active = 0U;
     g_i2c_result_waiting = 0U;
     Bridge_I2cInit();
+    g_uart_request_active = 0U;
+    g_uart_result_waiting = 0U;
+    Bridge_UartInit();
+}
+
+static void process_uart_transaction(void)
+{
+    uint8_t payload[2];
+    if (!g_uart_result_waiting) Bridge_UartPoll(get_tick());
+    if (!g_uart_request_active) return;
+    if (!g_uart_result_waiting)
+    {
+        if (!Bridge_UartTakeResult(&g_uart_result_status, &g_uart_result_received)) return;
+        g_uart_result_waiting = 1U;
+    }
+    write_le16(payload, g_uart_result_received);
+    if (send_response(g_uart_sequence, BRIDGE_UART_TRANSACTION_COMMAND,
+                      g_uart_result_status, payload, 2U, 1U, g_uart_payload_crc))
+    {
+        g_uart_request_active = 0U; g_uart_result_waiting = 0U;
+        LED_SetState(!g_uart_result_status ? F24_LED_STATE_CONNECTED : F24_LED_STATE_ERROR);
+    }
 }
 
 static void process_i2c_transaction(void)
@@ -1754,6 +1863,7 @@ static void host_link_process_once(void)
 
     process_can_transaction();
     process_i2c_transaction();
+    process_uart_transaction();
     process_can_error_events();
     processed = 0U;
     while (processed < HOST_LINK_PROCESS_BUDGET)
@@ -1772,6 +1882,7 @@ static void host_link_process_once(void)
     }
     process_can_transaction();
     process_i2c_transaction();
+    process_uart_transaction();
     process_can_error_events();
     process_can_rx_event();
 }

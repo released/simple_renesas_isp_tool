@@ -52,7 +52,7 @@ ASCII route label. Flags bit0=enabled, bit1=I2C repeated-start, bit2=CAN FD. Cou
 for an unavailable bus (index must0), bounded max16 ports per bus.
 SELECT_CAN_PORT (14): [id], echo response, CAN stopped only.
 SET_I2C_CONFIG (40): [port,speed,reserved0,reserved0], echo response;
-speed0=100kHz,1=400kHz. Initial F24 advertises only100kHz.
+speed0=100kHz,1=400kHz. F24 advertises both rates,default100kHz.
 
 I2C_TRANSACTION (41) has suboperations:
 

@@ -46,6 +46,73 @@ not authorize Git commit/push, publishing, or fabricated UI/hardware evidence.
 
 ## Product boundaries
 
+F24/G16/G22 serial Boot/App/Transfer own same-name editable SCFG inputs.
+Normal builds validate existing SC/actual registers and project-local peripheral
+projection;never initialize/regenerate/reset user SC settings from pre-build.
+Keep ISP_SCFG_REQUIRED/preinclude,16MHz G16 /32MHz G22,independent UART0 and
+the actual timer/IICA source clock. G16 RFSP_Init uses16;IICA has no PRS bit.
+Runtime owns bounded ISR/queue/mailbox/STOP/NACK/reset and fixed vectors;do not
+link a second generated callback/vector/startup implementation. Initial profiles
+and local validator are maintained in firmware/common/rl78_serial_scfg.
+App-only projection stays in the selected App,never its paired Boot. F13 keeps
+Code Generator;CAN golden and host/RH850 firmware are outside this SC change.
+
+RL78 Xmodem local control-TX failure clears streaming and pending reset;
+perform_action consumes it once. Preserve eight-KiB/min512spare. Actual RL78
+runtime tests compile project globals/config and UART/I2C/Xmodem main loops
+for all four MCU families and all three roles;do not substitute engine-only
+coverage. Device diagnostic bit6/command25 is App/Transfer-only,optional and
+read-only;separate Device lifetime snapshots from Bridge deltas. Maintain
+isp_bus_contract/isp_uart_timing guards and RH850 generated-register baud
+validation. sync_isp_runtime owns mirrors,not editable project configuration.
+Actual SC tests use isolated copies and original-source manifests;projects
+without .scfg are N/A,not simulated generation. Do not modify original audited
+projects until source-preservation checks finish.
+
+Device serial settings are editable,not Tool-fixed115200/I2C20/100K.
+Queue isp::BusConfiguration(port,baud,address);edits invalidate discovery.
+Bind selected rate/protocol to INFO and BIN;INFO has no I2C address field.
+Selected7-bit08..77 must match BIN/readback address. Numeric UART bit31 and
+300..2000000 limits are in device_uart_rates.h;bit0 remains115200 support.
+F24 host App alone owns divisor/error<=2percent and IICA100/400K timing;
+default device firmware and Host Boot/CAN stay untouched. Low baud uses
+three-character/min5ms RX idle and byte-count+250ms deadline,max30s.
+serial-update-requirements owns the brief public compatibility table;link it
+elsewhere rather than duplicating. Hardware timing remains separately tested.
+
+RH850 serial completion uses test_rh850_isp_runtime for all nine compiled roles:
+actual RuntimePoll/config/Action/page/stream code, not a substitute decoder.
+Keep reset gated by successful complete reply transmission; Xmodem control-TX
+failure aborts streaming and clears the pending reset. Keep per-role state
+declarations. verify_rh850_build_warnings permits reviewed license/alignment
+categories only; never call these zero-warning target builds. Actual SC
+roundtrip uses installed headless generation in isolated sibling copies and
+compares original sources/App-only Boot hashes. Do not mutate originals in
+parallel with that preservation audit. test_web_browser uses a private installed
+Chromium profile and loopback server; RH850 preview routes are local only and
+must not turn into public navigation/publication authorization.
+
+RH850 serial preparation uses independent Sample_Project_RH850_S1_ISP_*
+UART/I2C/Xmodem triplets;never overwrite the pre-existing basic UART/CAN/FD
+projects. Keep R7F701684/16MHz/CPU120,64-KiB Boot,256-byte metadata,R8V1
+entry/EBASE/full512INTBP validation,FCL-RAM and ECC-safe reader gates. UART
+RLIN31 data and RLIN30 Log are independent;RIIC1 mailbox uses a latched NACK
+until STOP and accounts for DRT prefetch before releasing a reply/reset.
+Keep ISR/plain-helper separation;CC-RH rejects direct calls to interrupt
+functions. All3 App-only builds must preserve paired Boot SHA manifests.
+prepare_rh850_serial_scfg is explicit one-time initialization,not an automatic
+build reset of user SC settings. No physical or publication acceptance is
+implied by native models. Public RH850 projection stays deferred.
+
+Serial operation/engineering guides cover all four RL78 families and all three
+independent UART/I2C/Xmodem contracts. sync_isp_uart_guide owns UART_TOOL_GUIDE
+(ISP page) and SERIAL_DEVICE_GUIDE (Bootloader page); non-owner pages link.
+Host/Device/offline BIN provenance is independent of result Tone. Misc uses
+Host provenance for its live cards. Keep UART / Xmodem workflows discoverable,
+natural-width tabs,live policy labeling and no-Flash Transfer gates.
+test_isp_xmodem_client includes actual App/Transfer transport-loop CRC sinks,
+not just Boot models. No hardware/publication is authorized by native tests.
+
 Tool update reports are a worker-owned JSON/HTML pair, flushed to exclusive
 partial files before non-overwriting publication. UI consumes paths/errors only;
 never render reports from parsed/untrusted HTML or auto-launch a browser.
@@ -152,7 +219,9 @@ CAN v5 uses64-byte blocks: BEGIN0B, raw standard IDs720..727, COMMIT0C/one ACK;
 CRC/bitmap/metadata checks precede Flash. Last committed block replay never
 rewrites. Generic bridge22/bit12 has no target-specific interpretation. Require
 bit12 in UI/worker; do not restore v4 DATA03. Expose bounded log queue drops.
-Keep8KiB ROM and512-byte spare guards; G16 new boot/app development is deferred.
+Keep8KiB ROM and512-byte spare guards for the CAN golden samples. Serial ISP
+G16/G22 projects use their own device SDK/Flash drivers and RAM budgets; do not
+transplant F13/F24 hardware adapters or silently relax a new Boot partition.
 CAN device UPD1 policy3 stores APP_IMAGE_VERSION_CONTROL at metadata116/0x74.
 The valid installed App controls normal START:0 permits any version,1 permits
 same/newer. Compare packed major/minor/patch, never build or Boot version.
@@ -166,8 +235,16 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 
 ### PC tool
 
-- Keep the native system-gray/white five-group console and four semantic
-  metadata groups. Status colors indicate results, not entire identity panels.
+- Keep the native system-gray/white five-group console. Analysis has four
+  live cards on row1;row2 owns the offline BIN card/details button and three
+  four-field metadata groups. Refresh all20 cached fields;show12 in the main
+  view and all20 in read-only BIN Details. Details preserve current workflow
+  guidance and labeled Device LIVE policy;never grant update permission or
+  open COM,require no live target,and stay disabled while busy.
+  Loaded BIN paints four complete rows with single-line detail ellipses;
+  preserve full text/tooltips/details and verify actual font text height,
+  including wrong-route diagnostics,not just non-overlapping rectangles.
+  Status colors indicate results, not entire identity panels.
   Font-aware minimum height must keep1366-class normal/125-percent layouts
   within one screen; only log/dropdowns scroll. Log follow is ui/log_auto_scroll,
   default1; disabled appends preserve viewport/selection, not just the scrollbar
@@ -196,7 +273,7 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 - After child layout/visibility changes, erase exposed parent pixels and
   invalidate the child tree after final layout. The parent has no scrollbar;
   only the shared log history and dropdown lists scroll.
-- CAN/I2C and future UART device adapters share one BIN/metadata/log/progress
+- CAN/I2C/UART device adapters share one BIN/metadata/log/progress
   console. Misc is last and targets HOST BRIDGE APP over UART, not device flash.
   Confine the TAB strip to the left settings column; persistent shared-image
   and shared-log headings/panes must remain outside its horizontal bounds.
@@ -247,9 +324,46 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
   bootstrap, including TX stall. BOOT remains fixed and advertises no bit11.
   Never bind this session rate to a device BIN. DEVICE UART policy version2
   stores compile-time baud at metadata112; existing CAN/HOST version1 stays
-  byte-compatible. UART device adapter/second-port firmware remains deferred.
+  byte-compatible. Optional UART forwarding bit14/commands60..62 owns UART1
+  P74/P75 with PIOR42=1, while Host Link UART0 remains independent. Preserve
+  generic512-byte staging, exact immediate EXEC replay, RELEASE vs ABORT,
+  bus reservations and bounded IRQ queues/counters. The raw UART client is
+  offline-tested. UART tab/worker uses the native ISP target client, not a
+  direct device COM; UART1 binary and UART0 Log stay separate. Xmodem remains
+  a separate device project/protocol. See HOST_LINK_PROTOCOL_V2.md section17
+  and docs/ISP_UART_TOOL_GUIDE_zh-TW.md. sync_isp_uart_guide.ps1 owns its web block.
 
 ### Target firmware
+
+- RH850 CAN ISP now uses self-contained can_v4 mirrors: byte-identical v4
+  service/driver,ISP-owned EVM/config/wrapper. sync_rh850_can_v4 checks the
+  three owners without replacing user port/SC/metadata/startup inputs.
+  Set-CanV4Project registers one driver only,with local includes before stale
+  demo headers. CanPorts_Read calls Process but never drains IRQ FIFOs;
+  reply success requires matching DONE,not queued. Preserve explicit channel
+  controls,no auto restart/replay,retained hardware errors and protocol owner.
+  test_rh850_can_v4 compiles actual core/config/driver/board/wrapper and is
+  used by the existing multi-port/device/Transfer test runners.
+
+- Each ISP device Boot project supports exactly one update interface/protocol.
+  UART ISP, Xmodem and I2C have independent Boot/App/Transfer projects, not one
+  multi-interface device Boot. Bridge host remains a generic multi-bus router.
+  Device UART0 is dedicated diagnostic text (IspLog/printf routing); UART1
+  carries only binary ISP/Xmodem. Never parse text or format logs in an ISR.
+
+- Serial ISP common sources are mirrored under each independent Boot/isp.
+  Keep8KiB/min512spare and App2000 for UART/I2C/Xmodem on all four families.
+  RAM-only copy/equality helpers must retain exact bytes and bounded0..128
+  extents, never substitute a hash for replay equality. Xmodem Boot has one
+  fixed device/request/reply context and receiver/control-input union; do not
+  allocate a second context or share it across physical buses. App/Transfer
+  diagnostics remain available; Boot does not advertise STATS. Internal
+  IspDeviceWrite/Finish share range/staged-metadata/Flash/CRC gates; Xmodem
+  rejects framed WRITE/END. The verify adapter must check expected size,
+  stored trailer, full CRC, metadata and all App IRQ slots before success.
+  Run test_isp_transports and test_isp_xmodem_client for dynamic/direct/fixed
+  binding regressions. G22 Xmodem copies RFD toFF420 (UART/I2C useFF400), with
+  linker RAM/stack bounds checked; this is not a Flash partition change.
 
 - RH850 has independent Classical and CAN FD Transfer/Boot/App projects.
   EVM R7F701684(100pins,1MiB),CAN1 TX P10_7/RX P10_6 Alt4,
@@ -389,6 +503,13 @@ logic outside generated files except in preserved user-code sections.
 
 ## Build and verification
 
+- PC0109 x64 Debug/Release uses `_AFX_NO_MFC_CONTROLS_IN_DIALOGS` only because
+  this product uses standard CDialog/Win32/custom controls, not CMFC/Feature Pack
+  controls. Keep static runtime, /O2 /GL /GS and security/exception settings.
+  Native fixture compiler must match this macro. Reassess before introducing
+  extended MFC controls; never remove real controls or change firmware for size.
+  Detailed slimming measurements stay in tmp/internal, with concise current
+  SELF_CHECK/HANDOFF records. Reuse unchanged device/guide evidence explicitly.
 - github_push.bat / scripts/push_github.ps1 is the explicit maintainer publish
   entry. Plain invocation is read-only; -Execute requires PUSH or -Yes.
   Shared catalog github_publish_catalog.ps1 owns ten repos: F13 Boot/App/Transfer,
@@ -431,6 +552,16 @@ file, log prefix, and documentation aligned with that identifier. Do not read
 or write the copied legacy INI filename.
 
 ## Public documentation
+
+Web entry pages are short overviews;web_guide_layout.json owns each marker's
+chapter destination. Get-WebGuideSectionPath is mandatory for synchronizers;
+never hardcode index.md for complete chapters. Preserve guide-map.json legacy
+aliases and refresh guide-routes.js when adding stable anchors. The optional
+shared renderer data-markdown/guide:ready contract preserves default consumers.
+Verify all chapter assets/markers and actual legacy destination IDs. Splitting
+HTML alone does not require rebuilding identical PDF sources or MCU/Tool images.
+Publish the shared notices_can renderer together with both guide repositories
+when separately authorized. Keep RH850 projection deferred in the overview.
 
 The canonical public-writing policy is /web/PUBLIC_CONTENT_GUIDELINES_zh-TW.md,
 entered through the common /web/AGENTS.md. Keep it generic for every present

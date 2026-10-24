@@ -16,6 +16,11 @@ bool WorkerSession::OpenHostLink(const std::wstring& port, std::uint32_t desired
         if (!serial_port_.Open(port,rate,error)) return false;
         host_link_client_.BeginSession();
         if (!host_link_client_.Probe(0U,host,caps,error)) { serial_port_.Close(); continue; }
+        if(caps->feature_flags&bridge::kFeatureUart) {
+            // Recover a stale bridge-only reservation on explicit Open/Probe.
+            // CAN-running hosts can reject this harmless UART-only ABORT.
+            std::wstring ignored;uart_client_.Abort(&ignored);
+        }
         if (!(caps->feature_flags&HL_BAUD_FEATURE)) {
             if (desired!=rate) {
                 bu_info_t boot={};
@@ -37,6 +42,7 @@ bool WorkerSession::OpenHostLink(const std::wstring& port, std::uint32_t desired
                 // Recover stale reservations after an abnormal PC exit. An
                 // initial I2C ABORT may be rejected while CAN is running.
                 std::wstring ignored;
+                if (caps->feature_flags&bridge::kFeatureUart) uart_client_.Abort(&ignored);
                 if (caps->feature_flags&bridge::kFeatureI2c) i2c_client_.Abort(&ignored);
                 std::uint32_t stopped=0;
                 if (caps->maximum_can_data_bytes && !can_client_.Stop(&stopped,error)) {

@@ -104,7 +104,8 @@ bool CMainFrame::LoadBinaryFromPath(const std::wstring& path, bool silent) {
     binary_bridge_inspection_ = firmware_upgrade::bridge_update::Inspect(binary_data_);
     binary_inspection_ =
         firmware_upgrade::firmware_update::InspectImage(binary_data_);
-    if (!IsMiscTab() && !IsI2cTab() && binary_inspection_.metadata_valid) {
+    if (!IsMiscTab() && !IsI2cTab() && !IsUartTab() && binary_inspection_.metadata_valid &&
+        binary_inspection_.metadata.profile==firmware_upgrade::firmware_update::Profile::CanUpgrade) {
         if (!session_state_.can_started) {
             const int workflow_index =
                 profile_combo_.FindStringExact(-1, L"CAN Upgrade");
@@ -151,7 +152,7 @@ void CMainFrame::ValidateLoadedFirmwareImage(bool emit_log) {
     const bool known=binary_inspection_.metadata_available || binary_bridge_inspection_.available;
     if (known && (binary_data_.size()<0x200U || !firmware_upgrade::image_policy::Parse(binary_data_.data()+0x100U,&policy) ||
         !firmware_upgrade::image_policy::Allows(policy, IsMiscTab()?IP_ROLE_BRIDGE_APP:IP_ROLE_DEVICE_APP,
-            IsMiscTab()?IP_UART:(IsI2cTab()?IP_I2C:IP_CAN), &binary_image_validation_error_))) {
+            IsMiscTab()||IsUartTab()?IP_UART:(IsI2cTab()?IP_I2C:IP_CAN), &binary_image_validation_error_))) {
         binary_image_valid_=false;
         if (!policy.role) binary_image_validation_error_=L"Missing or unsupported common image update policy.";
         if (emit_log) AppendLog(binary_image_validation_error_);
@@ -164,7 +165,7 @@ void CMainFrame::ValidateLoadedFirmwareImage(bool emit_log) {
             L"Bridge app rejected: "+binary_image_validation_error_);
         return;
     }
-    if (IsI2cTab()) {
+    if (IsI2cTab()&&!IsI2cIsp()) {
         binary_image_valid_ = false;
         binary_image_validation_error_ = firmware_upgrade::g16_i2c::ProgrammingBlocker();
         if (emit_log && !binary_data_.empty())
@@ -180,7 +181,7 @@ void CMainFrame::ValidateLoadedFirmwareImage(bool emit_log) {
     firmware_upgrade::firmware_update::ImageInfo image_info;
     binary_image_validation_error_.clear();
     binary_image_valid_ = firmware_upgrade::firmware_update::ValidateImage(
-        firmware_upgrade::firmware_update::Profile::CanUpgrade,
+        IsIspTab()?SelectedIspProfile():firmware_upgrade::firmware_update::Profile::CanUpgrade,
         binary_data_, &image_info,
         &binary_image_validation_error_);
     if (binary_image_valid_) {
@@ -227,7 +228,7 @@ void CMainFrame::UpdateFirmwareImageInfoText() {
         }
         return;
     }
-    if (IsI2cTab() && !binary_inspection_.metadata_available) { UpdateI2cImageFields(IsI2cSelectionCurrent()); return; }
+    if (IsI2cTab() && !IsI2cIsp() && !binary_inspection_.metadata_available) { UpdateI2cImageFields(IsI2cSelectionCurrent()); return; }
     firmware_field_labels_[kFirmwareFieldCalculatedCrc].SetWindowTextW(L"Calculated CRC32");
     firmware_field_labels_[kFirmwareFieldStoredCrc].SetWindowTextW(L"Stored CRC32");
     for (std::size_t index = 0U; index < kFirmwareFieldCount; ++index) {
@@ -286,7 +287,7 @@ void CMainFrame::UpdateFirmwareImageInfoText() {
     firmware_field_values_[kFirmwareFieldTarget].SetWindowTextW(
         Hex32(image.target_id).c_str());
     firmware_field_values_[kFirmwareFieldProtocolFormat].SetWindowTextW(
-        (std::to_wstring(image.protocol_id) + L"." +
+        ((image.profile==firmware_upgrade::firmware_update::Profile::UartUpgrade ? std::wstring(L"UART ISP ") : std::to_wstring(image.protocol_id)+L".") +
          std::to_wstring(image.protocol_version) + L" / " +
          std::to_wstring(image.format) + L" / " +
          (image.checksum_type == 1U ? L"CRC32" : L"Unknown")).c_str());
@@ -310,9 +311,26 @@ void CMainFrame::UpdateFirmwareImageInfoText() {
         ((image.can_id_format == 1U ? L"EXT " : L"STD ") +
          Hex32(image.request_id) + L" / " +
          Hex32(image.response_id)).c_str());
+    if(image.profile==firmware_upgrade::firmware_update::Profile::UartUpgrade||image.profile==firmware_upgrade::firmware_update::Profile::XmodemUpgrade||image.profile==firmware_upgrade::firmware_update::Profile::I2cUpgrade) {
+        firmware_field_values_[kFirmwareFieldCanRates].SetWindowTextW(
+            (L"UART / "+std::to_wstring(image.policy.device_uart_baud)+L" / 8-N-1").c_str());
+        firmware_field_values_[kFirmwareFieldCanIds].SetWindowTextW(L"PC > bridge UART1 > device UART1");
+        firmware_field_values_[kFirmwareFieldProtocolFormat].SetWindowTextW((std::wstring(firmware_upgrade::firmware_update::DisplayName(image.profile))+L" / format6 / CRC32").c_str());
+        if(image.profile==firmware_upgrade::firmware_update::Profile::I2cUpgrade) {
+            firmware_field_values_[kFirmwareFieldCanRates].SetWindowTextW((L"I2C / "+std::to_wstring(image.nominal_bitrate_mask/1000U)+L" kHz").c_str());
+            firmware_field_values_[kFirmwareFieldCanIds].SetWindowTextW((L"7-bit address 0x"+Hex32(image.data_bitrate_mask).substr(8U)).c_str());
+        }
+        const bool live=IsUartSelectionCurrent();const auto& t=session_state_.uart_target;
+        firmware_field_values_[kFirmwareFieldInstalledVersionPolicy].SetWindowTextW(!live?L"Discover Target required":
+            !t.valid?L"RECOVERY | no valid App":t.version_control?L"ENABLED | same / newer":L"DISABLED | any version");
+    }
 }
 
 void CMainFrame::UpdateTargetMetadataText() {
+    if(IsIspTab()) {
+        target_metadata_label_.SetWindowTextW(IsUartSelectionCurrent()?session_state_.uart_summary.c_str():
+            L"ISP device: Discover Target; UART0 is diagnostic Log. Select the matching I2C/UART/Xmodem workflow.");return;
+    }
     if (IsI2cTab() || IsMiscTab()) return;
     if (target_metadata_label_.GetSafeHwnd() == nullptr) {
         return;

@@ -18,6 +18,10 @@ inline Advice Explain(const std::wstring& message) {
         return {L"App confirmation",L"Keep the current image and report. Check power and App initialization, then read live INFO. Do not repeat erase or RUN to resolve an unknown result."};
     if(has(L"host returned timeout for command 0x21."))
         return {L"Host / device bus",L"Host UART returned a CAN transaction timeout, not a PC serial-response timeout. Check attempts/last TX result, then compare the CAN request/reply with device UART FIFO/TX snapshots and analyzer trace. Check mode/BRS/rates/IDs and transceiver wiring. TX_END does not prove device software processed the request. Save the failure before resetting; do not erase or increase timeouts as a diagnosis."};
+    if(has(L"device bus rate")||has(L"selected port/rate/address"))
+        return {L"Device bus settings",L"Match the selected Device baud or I2C rate/7-bit address to Boot/App initialization, live INFO and BIN metadata; check the bridge port capability and Discover again."};
+    if(has(L"uart device")||has(L"device uart")||has(L"isp response")||has(L"command 0x61."))
+        return {L"Bridge / UART device",L"Check selected UART1 port, crossed TX/RX, common ground, voltage and selected Device baud/8-N-1 (Boot/App and BIN must agree). Device UART0 is diagnostic Log only. Save the exact response and device Log; do not repeat erase/END or increase timeouts as a diagnosis."};
     if(has(L"downgrade") || (has(L"version") && has(L"older")))
         return {L"Device version policy",L"Use the same/newer App version, or the explicit force upgrade old version firmware maintenance action. Other image checks remain required."};
     if(has(L"metadata") || has(L"image") || has(L"irq abi") || has(L"geometry") || has(L"policy") || has(L"crc32"))

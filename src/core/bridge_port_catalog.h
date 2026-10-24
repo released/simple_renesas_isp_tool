@@ -4,7 +4,8 @@
 namespace firmware_upgrade::bridge {
 constexpr std::uint32_t kFeatureI2c = 0x100U;
 constexpr std::uint32_t kFeaturePortCatalog = 0x200U;
-enum class Bus : std::uint8_t { Can = 0U, I2c = 1U };
+constexpr std::uint32_t kFeatureUart = 0x4000U;
+enum class Bus : std::uint8_t { Can = 0U, I2c = 1U, Uart = 2U };
 struct Port {
     Bus bus = Bus::Can;
     std::uint8_t id = 0U;

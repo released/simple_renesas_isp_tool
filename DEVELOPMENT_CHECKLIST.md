@@ -1,5 +1,209 @@
 # Firmware Upgrade Tool Development Checklist
 
+## PC0109 slimming (2026-10-25)
+
+- [x] Fresh comparable baseline and original delivery/settings preserved.
+- [x] Standard/custom-control prerequisite checked before x64 MFC exclusion;
+  no new runtime dependency, security/optimization or firmware/protocol change.
+- [x] Canonical Release/Debug0warnings/errors, actual formal isolated lifecycle
+  and dialog cancel, native frame/font/metadata fixtures, calibrated7-pair
+  performance and actual allowlist clean pass. Broader unchanged evidence reused.
+- [x] Retail1,291,264B; exact hashes/scope/limitations in SELF_CHECK and detailed
+  internal tmp record. Private INI unchanged. No physical acceptance inferred.
+- [x] Tool-only publication preflight/index/local-data/ancestry guards pass;
+  retain RH850 deferral and exclude private/tmp/runtime logs. No companion/web
+  push or force-add. Final remote SHA is recorded in the shared batch progress.
+
+## RL78 serial SC follow-up (2026-10-24)
+
+- [x] Derive same-device F24/G16 settings and device-specific G22 resources;
+  exercise six minimal profiles with the actual installed vendor generator.
+- [x] Supply24missing SCFG and clean F24UART3;associate all27 CS+ projects,
+  preserving F13 Code Generator and existing metadata/IRQ authoring headers.
+- [x] Bind actual SC register output to board initialization through a checked
+  generated header;pre-build fails before metadata/vector output on mismatch.
+- [x] Correct G16HOCO16/SAU8MHz/RFSP16;retain independent Log UART and existing
+  runtime/ISR/queue/mailbox/Flash/vector/reset-policy ownership boundaries.
+- [x] Actual SC roundtrip27,target build27,App-only Boot hash checks9,runtime27,
+  board6,negative36/hooks3 and affected timing/transport regressions pass.
+- [x] All27 English READMEs/rules,canonical MD/local Web/PDF8pages,actual browser
+  and maintainer evidence updated. Existing warning categories remain explicit.
+- [ ] Physical acceptance,interactive SC GUI and Git publication remain outside
+  the completed offline scope;no further implementation item is pending here.
+
+This completes the earlier manual-SCFG follow-up. Detailed commands/results,
+changed groups,spare and limits:tmp/internal/verification/rl78_serial_scfg_result.md.
+
+## RH850 CAN ISP / v4 integration (2026-10-24)
+
+- [x] Adopt current v4 service/driver in the six requested CAN/FD projects;
+  preserve each ISP hardware/profile/startup/vector/protocol ownership boundary.
+- [x] EVM adapter,exact filters,IRQ RX,completion-gated replies and bounded
+  failure handling;four TX credits/channel fit actual all-six FD target RAM.
+- [x] Local CS+ registrations/post-build guards and mirrored maintenance files;
+  six target builds,App-only hashes and actual isolated six-project SC pass.
+- [x] Actual C90 service/driver/adapter17cases/1901assertions,port matrix and
+  full-image engine/PC/Transfer regressions pass.
+- [x] Six READMEs,canonical MD/PDF/local Web browser and engineering records.
+- [ ] Physical board acceptance and separately authorized Git publication.
+
+This newer request authorizes ISP adoption;the earlier standalone-only result
+below describes its earlier scope. Standalone v4 defaults,RL78,Tool and host
+deliveries remain unchanged. No implementation item remains within this
+approved offline integration scope. See
+tmp/internal/verification/rh850_can_v4_result.md for exact results/limitations.
+
+## Approved device follow-ups (2026-10-24)
+
+- [x] Xmodem failure cleanup and stale-reset/final-ACK/local-TX regressions.
+- [x] RL78 UART/I2C/Xmodem36target and36runtime matrix;12App-only Boot hashes.
+- [x] Serial declaration/divisor/SC-clock guards and negative/custom-rate tests.
+- [x] Optional Device UART diagnostics in App/Transfer and Tool0108;Bridge
+  observations remain separate. Boot/I2C capabilities and partitions preserved.
+- [x] RH8509target/runtime and3actual-BIN engine models;source warning cleanup
+  and explicit remaining library/license warnings,without suppression.
+- [x] Standalonev4 channel-local control,cancellation and frame examples;
+  C90/native/resource/linked-image/SC checks;no ISP/Web adoption.
+- [x] Actual19unique-project SC roundtrips with isolated copies and original
+  preservation;33non-SC serial projects correctly markedN/A.
+- [x] Canonical MD/Web/PDF/local browser acceptance and maintainer records.
+- [ ] Board acceptance and separately authorized Git publication remain.
+
+There are no remaining implementation items in this approved offline sequence.
+Physical timing/Flash/power/stack behavior is not inferred from models;see
+tmp/internal/verification/device_completion_20261024_result.md for exact scope,
+commands,changed groups,spare and evidence. Future optional enhancements are
+not silently treated as unfinished required functions.
+
+## Web guide chapter split (2026-10-23)
+
+- [x] Short guide entries,independent topic pages and knowledge-base navigation.
+- [x] Single-owner canonical blocks and chapter-aware sync/check paths.
+- [x] Existing deep URLs/232bookmarks preserved;actual JS and browser checks.
+- [x] Shared renderer default behavior and affected page/browser regressions.
+- [x] Public/source/asset/marker checks and maintainer README/agent/handoff updates.
+- No Tool/MCU rebuild,PDF content change,hardware operation or Git publication.
+
+## Configurable UART/Xmodem/I2C settings (2026-10-23)
+
+- [x] UI/INI/queued settings,selected address/rate binding,live/BIN/readback
+  validation and fresh-discovery gates;no automatic device reconfiguration.
+- [x] F24 host App numeric UART and100/400K IICA with preserved defaults;
+  App-only build/guards and unchanged Boot hash. Two license warnings retained.
+- [x] Focused client/C/register/Xmodem regressions and Debug/Release MFC tests.
+- [x] Brief public compatibility table,engineering jump link,Web/PDF sync and
+  actual browser/table/page review. Tool0107;physical acceptance remains separate.
+- Hardware and Git publication NOT RUN.
+
+
+## Loaded BIN summary rendering (2026-10-23)
+
+- [x] Compact BIN uses complete single-line rows with explicit ellipses;
+  full text/tooltips/details and all image/workflow gates are retained.
+- [x] Focused actual MFC font/paint/frame checks and visually reviewed captures.
+- [x] Debug/Release0warnings/errors;Release0106 startup/normal close PASS.
+- [x] MD/Web owner sync/reference/public checks and affected PDF page review.
+- Hardware/interactive desktop/Git publication NOT RUN;not implied by fixtures.
+
+## Current offline completion / remaining scope (2026-10-23)
+
+- [x] RH850 nine actual runtime-role integrations and Xmodem final ACK/reset fix.
+- [x] Nine target rebuilds and warning classification;unused state removed,
+  two license/one prebuilt-library alignment warnings remain explicit per build.
+- [x] Three engine/full-image models,UART/RIIC HAL regressions and three actual
+  SC-regenerated BIN models. Existing RL78/CAN/Tool evidence reused,not rerun.
+- [x] Nine actual SC headless regenerations -> builds -> linked/RAM/metadata/
+  full512IRQ checks,three App-only Boot hashes,original-source preservation.
+- [x] RH850 CAN/serial document links,SC/runtime/message explanations and two
+  reviewed PDFs;public RH850 navigation remains deferred pending physical work.
+- [x] Actual Chrome home/ISP/Bootloader/local RH850 views:Mermaid/tables/anchors/
+  images/console/sidebar and desktop/narrow layouts;private captures reviewed.
+- [x] Superseded serial checklist items reconciled;current delivery remains0105.
+- [ ] Physical acceptance and separately authorized Git publication remain.
+  Actual SC GUI/interactive desktop actions are not claimed by headless checks.
+
+Earlier dated records are historical checkpoints,not additional active work.
+The current ledger in HANDOFF owns the next scope and verification boundaries.
+
+## Compact metadata overview (2026-10-23)
+
+- [x] Loaded BIN on row2;4live cards row1 and12key fields in3groups.
+- [x] Complete read-only20field BIN Details plus source/workflow guidance;
+  offline availability and busy/no-Flash behavior preserved.
+- [x] Debug/Release0105 builds0warnings/errors,actual MFC main/modal and
+  font/geometry/gating tests PASS;4console source checks PASS.
+- [x] MD/Web and two PDFs synchronized/rendered/reviewed;314references and
+  18file public audit PASS. No firmware/protocol or publication changes.
+
+## Current serial completion / RH850 preparation (2026-10-23)
+
+- [x] Xmodem App/Transfer command24 through actual main-loop runtime/CRC sink,
+  including retries/cancel/failures/max size;all4 Boot and8 runtime models PASS.
+- [x]36 English project entries,12 per-Boot protocol references and C-header
+  comments aligned. Native source/generated checks PASS;no define changes.
+- [x] Tool provenance groups and visible UART / Xmodem workflow entry;actual
+  final Debug/Release MFC frame tests and Release0104 build PASS.
+- [x] Canonical serial operation/engineering and generic field guide locally
+  synchronized to Web;four affected PDFs rendered and visually checked.
+- [x] Nine independent RH850 UART/I2C/Xmodem Boot/App/Transfer projects,
+  actual CS+ image guards,all3 native client/page models and UART/RIIC ISR
+  transitions PASS. Three App-only Boot-hash checks and source/SC checks PASS.
+  Preserve EVM/FCL/ECC/vector conventions and explicit software-only scope;
+  nonzero CC-RH warnings and SC GUI/hardware gaps recorded in HANDOFF.
+- [ ] Hardware acceptance remains separate. No GitHub preparation/publication.
+
+## Four-family serial ISP expansion (2026-10-23, current)
+
+- [x] Confirm XMODEM-CRC128 and I2C7-bit0x20/100kHz; independent UART0 Log.
+- [x] G16/G22 UART Boot/App/Transfer, actual SDK/Flash drivers and board routes.
+- [x] All12 UART projects rebuilt; four-family actual-BIN client/C-engine models
+  and source/project/generated-input checks. Hardware acceptance remains separate.
+- [x] I2C mailbox, four actual IICA ISR/register models and portable Xmodem
+  CRC/replay/wrap/padding/cancel/single-EOT models.
+- [x] F13/G16/G22 I2C Boot/App/Transfer compile/package/ROM/RAM gates;
+  actual-BIN production PC client + actual C engine/mailbox roundtrip.
+- [x] Fail-fast small-device post-build gates; an earlier packaging failure
+  cannot be hidden by a later successful RAM check.
+- [x] Tool Debug build and actual MFC CAN/FD/UART/I2C frame-state/font fixtures.
+  New I2C ISP does not enable G16 reference erase/write.
+- [x] Retain8KiB/App2000 for all serial projects; full protection and512spare.
+  Actual36 builds PASS. X Boot spare910/608/1648/1359 for F13/F24/G16/G22;
+  F24 I2C spare690. Resolve G22 X RAM/RFD overlap without Flash changes.
+- [x] Final actual12-BIN client/receiver matrix, new helper/fault cases,
+  eight I2C/X App-only Boot-hash checks and all36 project source mirrors.
+- [x] Independent serial README/PROTOCOL alignment completed by the later final
+  serial checkpoint,with synchronized MD/Web/PDF and Release delivery.
+  EXE0101 below is historical;the current compact-overview delivery is0105.
+- [ ] Physical electrical/IRQ/Flash/restart/cancel/power acceptance: NOT RUN.
+
+Earlier phase records below are historical, not completion of the current expansion.
+
+## UART ISP expansion (2026-10-23)
+
+- [x] Independent F13/F24 UART Boot/App/Transfer source/build baseline,
+  common C90 framing/state, separate metadata/profile and IRQ headers.
+- [x] Six CS+ rebuilds; retain Boot8KiB/min512spare and protected final1KiB.
+- [x] Native metadata/range/version/replay/CRC/Flash-fault/compiled-role models.
+- [x] Final actual packaged-BIN replay and App-only Boot-hash preservation.
+- [x] User selected bridge UART1 for UART/Xmodem and IICA0 for I2C; Host Link
+  UART0 stays independent. F13 Transfer name is RL78_F13_Xmodem_Transfer.
+- [x] Generic UART host C staging/backend and native raw PC client; actual
+  C/register-model tests plus affected CAN/I2C/G16/UART0 regression.
+- [x] F24 device PIOR42 routing corrected; three F24 UART projects rebuilt.
+- [x] Worker-owned UART ISP/Transfer workflow and shared BIN/log/progress,
+  cancel/live gates/App confirmation/report; Misc remains the last tab.
+- [x] F13/F24 P74/P75 ISP UART plus independent UART0 diagnostic Log;
+  one update interface/protocol per device Boot.
+- [x] Actual-BIN client/C-engine and affected shared policy/overview/report
+  regressions; Debug/Release builds and real MFC frame-state tests.
+- [x] UART operation MD/web/PDF updated, rendered and checked offline.
+- [x] I2C ISP/Transfer implemented in its own workflow;the separate G16 reference
+  workflow remains read-only. Completed in the later four-family checkpoint.
+- [x] F13/F24/G16/G22 I2C/Xmodem Boot/App/Transfer completed;independent projects
+  retain the confirmed Transfer naming and per-interface device Boot ownership.
+- [ ] Physical UART/IRQ/Flash/cancel/reset/recovery acceptance and corresponding
+  actual-board screenshots. No publication authorized this turn.
+
 ## Publication scope and FD timing (2026-10-22)
 
 Publication catalog now covers10repositories/12DefaultBuild deliveries,
@@ -46,8 +250,8 @@ visual verification remains unavailable. See HANDOFF/SELF_CHECK for scope.
 App update timing reference is canonical in the device workshop at
 device-update-timing. User trace-off F13 reports24/56/119KiB PASS:rough totals
 15.8/32.3/65.8s. F24 Classical original/8/24/56/120/247KiB now have rough
-5.2/7.3/15.6/32.2/65.5/136.2s. F24 FD reports are supplied but their public
-timing projection is pending;F13 original-App remains unsupplied.
+5.2/7.3/15.6/32.2/65.5/136.2s. F24 FD projection was completed in the later
+publication-scope checkpoint;F13 original-App timing remains unsupplied.
 The Bootloader page owns the table;ISP has a jump only. No median/range,
 projection or firmware rebuild is part of this timing documentation update;
 the independent requested UI changes have their own Tool build above.

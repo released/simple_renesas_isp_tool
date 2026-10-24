@@ -3,6 +3,7 @@
 #include <sstream>
 
 std::wstring CMainFrame::BuildI2cSummary() const {
+    if(IsI2cIsp())return BuildUartSummary();
     if (!IsI2cTab()) return L"Bus TAB: CAN\r\n";
     std::wstringstream text;
     CString address; i2c_address_edit_.GetWindowTextW(address);

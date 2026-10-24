@@ -11,7 +11,9 @@ if(!$TextPath.Count) {
         'docs\SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md','docs\UPDATE_VALIDATION_zh-TW.md',
         'docs\COMMON_IMAGE_METADATA.md') | ForEach-Object { Join-Path $repo $_ }
     foreach($folder in @('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78')) {
-        foreach($name in @('index.md','README.md')) { $TextPath+=Join-Path $WebRoot ($folder+'\'+$name) }
+        . (Join-Path $PSScriptRoot 'web_guide_layout.ps1')
+        $TextPath+=@(Get-WebGuideReaderPaths -WebRoot $WebRoot -Folder $folder)
+        $TextPath+=Join-Path $WebRoot ($folder+'\README.md')
     }
     foreach($name in @('slide_boot_loader_for_RL78\uart_i2c\index.md',
             'released.github.io\README.md','released.github.io\README.html')) {

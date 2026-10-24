@@ -1,4 +1,4 @@
-# Host Link 高速與 device UART 固定更新速度
+# Host Link 與 device UART 速度設定
 
 2026-10-15 | FirmwareUpgradeTool 0.1.0.0082
 
@@ -6,10 +6,10 @@
 
 上方 COM／Baud 是 PC - FT234XD - bridge 的 Host Link；上電固定115200，
 Tool可選115200／460800／921600，完成身分驗證後才切速。這不是 device
-更新周邊速度，CAN 1M／I2C 100K／未來device UART各自獨立。
-目前F24 I2C仍僅100K；400K與UART device adapter／port driver未啟用。
-未來UART TAB只放介面設定；BIN／metadata／log仍共用，Misc永遠最後。
-UART TAB應顯示「Device UART baud（BIN固定）」且唯讀，不再建立另一個PC COM。
+更新周邊速度；CAN、I2C與device UART各自獨立。
+UART / Xmodem TAB的Device baud可選擇或輸入；I2C使用所選7-bit位址及port宣告的100／400kHz。
+Boot／App初始化、BIN metadata及live INFO的對應條件集中於[串列更新必要條件](https://released.github.io/slide_isp_tool_for_RL78/#serial-update-requirements)。
+BIN／metadata／log仍共用，不建立另一個PC COM；Misc維持host App更新。
 操作時先Close COM、選Host Baud，再Open + Probe；連線期間下拉選單鎖定。
 成功後Host狀態列／log顯示實際會話名義速度，不只顯示選單偏好。
 
@@ -36,7 +36,7 @@ ReadTotalTimeoutConstant為剩餘期限與50ms的較小值。**50ms只限制無�
 寫入timeout及切baud穩定等待不變；未改FTDI driver／Latency Timer。
 依據 [Microsoft COMMTIMEOUTS](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-commtimeouts)。
 
-本輪使用實際SerialPort/Host Link程式搭配Win32 I/O模型測試短回覆、分段、
+離線驗證使用實際SerialPort/Host Link程式搭配Win32 I/O模型測試短回覆、分段、
 最大128-byte payload、CRC壞包、取消、逾時、tick wrap與4806筆交易。
 這不是FTDI/Windows驅動/MCU實體耗時；舊log只有秒級精度，不能拆出各硬體延遲。
 0080當時仍每4bytes等待一次完整PC往返。使用者171150 log同BIN／CRC，DATA約77秒、
@@ -88,12 +88,10 @@ DEVICE policy3 的 version control 位於116..119；CAN device 的 UART baud 欄
 HOST policy1 的112..127保持0。以上皆獨立於上方 Host Link 的三組 preset；
 欄位格式集中於 [共用政策](COMMON_IMAGE_METADATA.md)。
 
-未來target boot/app應共用該專案的編譯設定，例如uart_update_baud=921600，
-boot用它初始化UART，app產表／封裝用同一設定產生metadata。可在封裝算CRC前
-呼叫scripts/image_uart_policy.ps1的Set-DeviceUartImagePolicy；本輪沒有
-假造一個已完成的UART target專案。Tool只解析／顯示／驗證，不能改寫已載入BIN。
-未來worker必須先比對live boot、port與image_policy::AllowsDeviceUartBaud，
-一致才可輸出device UART更新資料；切換PC Host Link不能解除此檢查。
+Target Boot／App共用該工程的isp_transport_config.h，周邊初始化與產表／封裝
+使用同一編譯契約。Tool解析BIN後，比對所選Device baud、live INFO及metadata；
+值相符才允許更新，不修改已載入BIN，也不以切換Host Baud代替device設定。
+修改位置與核對表見[串列更新必要條件](https://released.github.io/slide_isp_tool_for_RL78/#serial-update-requirements)。
 
 BUR1原有metadata48..51的uart_baud是bridge自身BOOT固定更新速度；不是此
 DEVICE UART欄位，也不是APP暫時協商速度。現行HOST policy仍version1且
@@ -101,7 +99,7 @@ device_uart_baud=0。固定baud不相同的boot/app不能靠Tool自動改成相�
 
 ## 驗證邊界
 
-本輪測試直接執行F24 UART C碼的ACK排空、分頻、confirm、逾時與60000ms
+離線驗證直接執行F24 UART C碼的ACK排空、分頻、confirm、逾時與60000ms
 tick換回、RX溢位；PC測試正反路徑及SET／confirm不重送。這些不是FTDI／
 MCU實體高速波形證明。實板仍須三組速度PING／大封包／完整CAN更新，確認
 CRC、timeout、RX overrun與lost counters，並測Reset、Close、拔線及Misc ENTER。

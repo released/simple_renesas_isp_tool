@@ -7,12 +7,12 @@ Boot-only hosts may advertise bit10 without CAN/I2C capabilities.
 
 Status: implementation baseline
 
-This protocol connects the Windows PC tool to a generic MCU CAN/I2C bridge over a
+This protocol connects the Windows PC tool to a generic MCU CAN/I2C/UART bridge over a
 dedicated binary UART link. The first host implementation is RL78/F24. Future
 RA2L1 and RA6 hosts must expose the same protocol.
 
 Target-specific bootloader, flash, image, and test commands are not implemented
-by the bridge. They are encoded as CAN frames or complete I2C transactions by
+by the bridge. They are encoded as CAN frames, complete I2C transactions or UART bytes by
 a PC target protocol. The additive I2C/port contract is
 [Multi-bus bridge design](./MULTIBUS_BRIDGE_DESIGN.md); existing CAN framing
 and layouts remain compatible.
@@ -250,7 +250,7 @@ Feature flags:
 I2C-only bridges may advertise max-CAN-data0; enabled CAN bridges retain
 8/64-byte CAN limits. Port descriptors constrain selectable per-port rates and
 transfer sizes. F24 reports one CAN0 (flags5) and one IICA0 (flags3),512-byte
-I2C TX/RX limits and100kHz only. GET_STATS retains the UART/CAN counter prefix;
+I2C TX/RX limits and100/400kHz. GET_STATS retains the UART/CAN counter prefix;
 the App telemetry extension is defined in section10.2. No I2C counters are implied.
 
 Nominal bitrate-mask bits:
@@ -729,5 +729,103 @@ F24 retains SC CKM0=20MHz. SDR AC00/2A00/1400 produce integer-calculated
 requires measurements; nominal support is not a physical acceptance claim.
 Future native USB CDC must describe its transport explicitly; it must not
 pretend an arbitrary COM line-coding value measures USB throughput.
-See HOST_LINK_BAUD_zh-TW.md for fixed DEVICE UART metadata and manual tests.
+See HOST_LINK_BAUD_zh-TW.md for compiled DEVICE UART metadata and manual tests.
+
+## 17. Optional device UART forwarding
+
+Canonical engine/backend contract: `firmware/common/bridge_uart.h` and
+`bridge_uart.c`. Advertised feature bit14 (`0x00004000`) is independent of
+Host Link baud bit11. A host without bit14 must not receive these commands or
+GET_PORT_INFO bus2. The bridge forwards bytes only; ISP framing, image checks,
+Flash addresses, Xmodem blocks and target retries belong to the PC/device.
+
+| Item | Contract |
+| --- | --- |
+| Physical PC connection | Host Link UART0 P15/P16, unchanged framing and negotiated rate |
+| Device port | GET_PORT_INFO04 bus2/index0, logical port0, UART1 TX P74/RX P75 |
+| Port descriptor | Flags1,bit0=115200 support,bit31=numeric baud300..2000000;F24 App mask80000001h,maximum TX/RX512 |
+| Framing | Fixed8-N-1;selected nominal baud must receive exact SET ACK;F24 rejects divisor error above2percent,default115200 calculates114942 |
+| SET_UART_CONFIG60 | Eight bytes: portU8, three reserved zero bytes, baudLE32; exact echo ACK |
+| UART_TRANSACTION61 | Staged operation below; one active operation, no target interpretation |
+| GET_UART_STATS62 | Empty request;24-byte response: six LE32 lifetime counters |
+
+UART1 is implemented by the non-generated `f24_uart_backend.c`; no generated
+UART1 driver shares SAU1. PIOR42=1 selects the exposed route while preserving
+PIOR46/CAN. App IRQ mapping owns INTST1=3E and INTSR1=40 without physical vectors;
+the fixed Host Boot dispatch already forwards both slots. UART0 is untouched.
+Canonical numeric-rate definitions are `device_uart_rates.h`. The requested
+rate is not a measured electrical rate. F24 chooses CK00/SDR from CPU40MHz;
+see [hardware manual](https://www.renesas.com/en/document/mah/rl78f23-24-users-manual-hardware),section15.3.5.
+Tool ISP exchanges reserve at least three character times for variable-length
+RX idle (minimum5ms),and max(requested,(TX+RX)*10bits/baud+250ms) for the
+transaction (rounded up,bounded30s). Default115200 deadlines are unchanged.
+I2C port bus1 advertises mask3 for100/400kHz;SET_I2C_CONFIG speed0/1 remains
+unchanged. F24 IICA0 uses fMCK20MHz,normal counts94/106 or fast26/24;
+section16.4.2 defines the timing. Abort/recreate preserves the selected speed.
+
+### 17.1 Transaction payloads
+
+All lengths/offsets/times below are LE16. Payload and framing limits remain128/142.
+
+| Operation | Payload | Result |
+| --- | --- | --- |
+| BEGIN0 | `00, port, flags, 00, tx_length, rx_max, rx_min, timeout_ms, idle_ms` (14bytes) | Empty ACK; reserve staging only |
+| CHUNK1 | `01, offset, bytes[1..125]` | Empty ACK; contiguous offset from0 |
+| EXEC2 | `02` | Deferred ACK containing received-lengthLE16 |
+| FETCH3 | `03, offset, countU8` | OffsetLE16 then1..125 received bytes |
+| ABORT4 | `04` | Empty ACK; stop UART1 and discard staged/RX data, idempotent |
+| RELEASE5 | `05` | Empty ACK; release successful completed buffers, preserve asynchronous UART RX |
+
+BEGIN flags bit0 explicitly discards pre-existing RX at EXEC; all other bits
+are zero. TX0 permits receive-only polling of a device handshake. RX0 permits
+TX-only operation without draining asynchronous RX; both zero is rejected. TX/RX limits are512, min<=max;
+nonzero RX requires min>=1. Timeout is1..30000ms; idle<=timeout, and min<max
+requires idle>=1ms. Default ISP scheduling may use min14/max110/idle5ms;
+this is an idle bound, not device-frame parsing or a physical timing guarantee.
+
+EXEC requires the entire TX upload and starts it once. RX capture runs during
+TX. Completion requires physical TX idle plus either max bytes, or at least min
+bytes followed by idle_ms without another byte. Timeout bounds the entire
+operation including TX; incomplete/error results are not successful FETCH data.
+FETCH is valid only after success, with a checked offset/count. RELEASE requires
+successful completion already delivered to the outer dispatcher. ABORT stops
+channels; a later EXEC restarts the already configured UART1.
+
+The upload and consumed-completion lease is five seconds, using the host's
+60000ms tick wrap. An unconsumed result is retained; the dispatcher also retains
+it while the Host Link TX queue is full. Each exact immediate Host Link retry
+replays the previous reply without repeating UART TX; an active EXEC duplicate
+must be exactly the same sequence/command/one-byte payload. A changed same
+sequence is rejected. A fresh-sequence ABORT can cancel active EXEC. Do not
+automatically repeat a device operation after an unknown result.
+
+### 17.2 Ownership and diagnostics
+
+CAN must be stopped before UART configuration/transactions. Active/staged
+I2C and UART exclude each other and CAN configuration/TX. UART reservations
+also block Host Link baud changes and bridge ENTER. During active EXEC only
+its exact retry or explicit ABORT is accepted; after completion, explicit
+RESET can abort UART before acknowledging/resetting. RELEASE or ABORT is
+required before switching buses; stale staging expires without target TX.
+
+UART RX IRQ uses a256-byte ring with255 usable entries; drop-newest and
+hardware errors latch a failed transaction. Main loop drains at most64 bytes
+per poll. TX IRQ only advances the immutable staged packet. No parsing,
+Flash calls, formatted logs or waiting is performed in either IRQ.
+
+| Counter index | Meaning |
+| --- | --- |
+| 0 | Accepted UART1 RX bytes |
+| 1 | Physically completed UART1 TX bytes |
+| 2 | RX framing/parity/overrun error events |
+| 3 | Software RX ring drop-newest events |
+| 4 | RX ring peak depth, maximum255 |
+| 5 | Backend abort calls, including failure/lease cleanup, not only user Cancel |
+
+Counters saturate atFFFFFFFF and survive transactions until host reset. A
+snapshot briefly masks/restores only UART1 TX/RX IRQ masks. Returned status08
+means overflow;0B means a UART receive error;06 means the bridge transaction
+deadline, not a missing PC serial response. Keep these counters separate from
+GET_STATS30 Host Link UART0/CAN observations. Native models do not establish
+pin voltage, IRQ latency, sustained throughput or device Flash acceptance.
 

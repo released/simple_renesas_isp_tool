@@ -15,7 +15,7 @@ void CardText(CStatusCard& card, const std::wstring& text, Tone tone) {
 bool CMainFrame::InitializeBusUi() {
     const DWORD label = WS_CHILD | WS_VISIBLE;
     const DWORD combo = label | WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL;
-    if (!bus_tabs_.Create(label | WS_TABSTOP | TCS_FIXEDWIDTH, CRect(), this, ID_BUS_TABS) ||
+    if (!bus_tabs_.Create(label | WS_TABSTOP, CRect(), this, ID_BUS_TABS) ||
         !bus_port_label_.Create(L"Bridge port", label, CRect(), this, ID_BUS_PORT_LABEL) ||
         !bus_port_combo_.Create(combo, CRect(), this, ID_BUS_PORT_COMBO) ||
         !i2c_speed_label_.Create(L"I2C speed", label, CRect(), this, ID_I2C_SPEED_LABEL) ||
@@ -25,19 +25,35 @@ bool CMainFrame::InitializeBusUi() {
                                   CRect(), this, ID_I2C_ADDRESS_EDIT) ||
         !i2c_probe_btn_.Create(L"Probe G16 Reference", label | WS_TABSTOP | BS_PUSHBUTTON,
                                CRect(), this, ID_I2C_PROBE_BTN) ||
+        !uart_baud_label_.Create(L"Device baud",label,CRect(),this,ID_UART_BAUD_LABEL) ||
+        !uart_baud_combo_.Create(label|WS_TABSTOP|CBS_DROPDOWN|WS_VSCROLL,CRect(),this,ID_UART_BAUD_COMBO) ||
+        !uart_workflow_label_.Create(L"Workflow",label,CRect(),this,ID_UART_WORKFLOW_LABEL) ||
+        !uart_workflow_combo_.Create(combo,CRect(),this,ID_UART_WORKFLOW_COMBO) ||
+        !i2c_workflow_label_.Create(L"Workflow",label,CRect(),this,ID_I2C_WORKFLOW_LABEL) ||
+        !i2c_workflow_combo_.Create(combo,CRect(),this,ID_I2C_WORKFLOW_COMBO) ||
         !i2c_notes_.Create(L"", label, CRect(), this, ID_I2C_NOTES) ||
         !operation_status_card_.Create(L"", label, CRect(), this, ID_OPERATION_STATUS) ||
         !InitializeOverviewUi())
         return false;
     bus_tabs_.InsertItem(0, L"CAN");
     bus_tabs_.InsertItem(1, L"I2C");
-    bus_tabs_.InsertItem(2, L"Misc");
+    bus_tabs_.InsertItem(2, L"UART / Xmodem");
+    bus_tabs_.InsertItem(3, L"Misc");
+    for(const auto baud:{L"9600",L"19200",L"38400",L"57600",L"115200",L"230400",L"460800",L"921600",L"1000000",L"2000000"})
+        uart_baud_combo_.AddString(baud);
+    uart_baud_combo_.SetCurSel(4);uart_baud_combo_.LimitText(7);
+    uart_workflow_combo_.AddString(L"UART ISP");uart_workflow_combo_.AddString(L"Custom Transfer");
+    uart_workflow_combo_.AddString(L"XMODEM-CRC");uart_workflow_combo_.AddString(L"Xmodem Transfer");
+    i2c_workflow_combo_.AddString(L"I2C ISP");i2c_workflow_combo_.AddString(L"Custom Transfer");
+    i2c_workflow_combo_.AddString(L"G16 Reference (read-only)");i2c_workflow_combo_.SetCurSel(0);
+    uart_workflow_combo_.SetCurSel(0);
     bus_tabs_.SetCurSel(0);
     i2c_address_edit_.SetLimitText(4U);
-    i2c_address_edit_.SetWindowTextW(L"0x09");
+    i2c_address_edit_.SetWindowTextW(L"0x20");
     CWnd* controls[] = {&bus_tabs_, &bus_port_label_, &bus_port_combo_,
         &i2c_speed_label_, &i2c_speed_combo_, &i2c_address_label_,
-        &i2c_address_edit_, &i2c_probe_btn_, &i2c_notes_, &operation_status_card_};
+        &i2c_address_edit_, &i2c_probe_btn_, &i2c_notes_, &operation_status_card_,
+        &uart_baud_label_,&uart_baud_combo_,&uart_workflow_label_,&uart_workflow_combo_,&i2c_workflow_label_,&i2c_workflow_combo_};
     for (CWnd* control : controls) control->SetFont(&ui_font_);
     InitializeThemeBrushes();
     return true;
@@ -46,7 +62,7 @@ bool CMainFrame::IsI2cTab() const {
     return bus_tabs_.GetSafeHwnd() != nullptr && bus_tabs_.GetCurSel() == 1;
 }
 bool CMainFrame::IsMiscTab() const {
-    return bus_tabs_.GetSafeHwnd() != nullptr && bus_tabs_.GetCurSel() == 2;
+    return bus_tabs_.GetSafeHwnd() != nullptr && bus_tabs_.GetCurSel() == 3;
 }
 bool CMainFrame::IsI2cSelectionCurrent() const {
     firmware_upgrade::i2c_host::Configuration configuration;
@@ -73,18 +89,19 @@ void CMainFrame::RefreshI2cRates() {
 }
 void CMainFrame::RefreshBusPorts() {
     const bool i2c = IsI2cTab();
-    const auto& ports = i2c ? session_state_.i2c_ports : session_state_.can_ports;
-    bool changed = displayed_i2c_ != i2c || displayed_ports_.size() != ports.size();
+    const bool uart=IsUartTab();const int bus=uart?2:i2c?1:0;
+    const auto& ports = uart?session_state_.uart_ports:i2c ? session_state_.i2c_ports : session_state_.can_ports;
+    bool changed = displayed_bus_ != bus || displayed_ports_.size() != ports.size();
     if (!changed) for (std::size_t i = 0U; i < ports.size(); ++i)
         if (displayed_ports_[i].id != ports[i].id ||
             displayed_ports_[i].label != ports[i].label ||
             displayed_ports_[i].flags != ports[i].flags ||
             displayed_ports_[i].rates != ports[i].rates) changed = true;
     if (!changed && bus_port_combo_.GetCount() > 0) return;
-    displayed_i2c_ = i2c; displayed_ports_ = ports;
+    displayed_bus_ = bus; displayed_ports_ = ports;
     bus_port_combo_.ResetContent();
     int selected = -1;
-    const auto preferred = i2c ? preferred_i2c_port_ : preferred_can_port_;
+    const auto preferred = uart?preferred_uart_port_:i2c ? preferred_i2c_port_ : preferred_can_port_;
     for (const auto& port : ports) if ((port.flags & 1U) != 0U) {
         const std::wstring label = std::to_wstring(port.id) + L": " + port.label;
         const int index = bus_port_combo_.AddString(label.c_str());
@@ -102,6 +119,7 @@ void CMainFrame::RefreshBusPorts() {
 void CMainFrame::UpdateBusUi() {
     if (bus_tabs_.GetSafeHwnd() == nullptr) return;
     if (IsMiscTab()) { UpdateMiscUi(); return; }
+    if(IsIspTab()){UpdateUartUi();return;}
     RefreshBusPorts();
     const bool i2c = IsI2cTab();
     const bool busy = worker_command_pending_ || session_state_.busy;
@@ -172,11 +190,13 @@ void CMainFrame::OnBusPortChanged() {
     const auto id = static_cast<std::uint8_t>(bus_port_combo_.GetItemData(selection));
     if (id == 0xFFU) return;
     if (IsI2cTab()) { preferred_i2c_port_ = id; RefreshI2cRates(); }
+    else if(IsUartTab()) {preferred_uart_port_=id;ValidateLoadedFirmwareImage(false);}
     else { preferred_can_port_ = id; QueueCanConfiguration(); }
+    if(IsIspTab()){OnUartSettingsChanged();return;}
     SaveUiSettings(); UpdateUi();
 }
 void CMainFrame::OnI2cProbe() {
-    if (!IsI2cTab() || worker_command_pending_ || session_state_.busy) return;
+    if (!IsI2cTab() || IsI2cIsp() || worker_command_pending_ || session_state_.busy) return;
     firmware_upgrade::i2c_host::Configuration configuration;
     std::uint8_t address = 0U;
     if (!SelectedI2cSettings(&configuration, &address)) {
@@ -217,26 +237,32 @@ void CMainFrame::OnI2cSettingsChanged() {
     const int speed = i2c_speed_combo_.GetCurSel();
     if (speed >= 0) preferred_i2c_speed_ =
         static_cast<std::uint8_t>(i2c_speed_combo_.GetItemData(speed));
+    if(IsI2cIsp()){OnUartSettingsChanged();return;}
     SaveUiSettings(); UpdateUi();
 }
 void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, int row) {
     const bool i2c = IsI2cTab();
     const bool misc = IsMiscTab();
+    const bool uart=IsUartTab();
     CWnd* can_controls[] = {&can_mode_label_, &can_mode_combo_, &can_bitrate_label_,
         &can_bitrate_combo_, &can_data_label_, &can_data_combo_, &can_tx_test_btn_,
         &can_tx_test_help_, &can_filter_label_, &can_filter_combo_, &can_filter_id_label_,
         &can_filter_id_edit_, &can_filter_mask_label_, &can_filter_mask_edit_,
         &profile_label_, &profile_combo_};
-    for (CWnd* control : can_controls) control->ShowWindow(i2c || misc ? SW_HIDE : SW_SHOW);
+    for (CWnd* control : can_controls) control->ShowWindow(i2c || misc || uart ? SW_HIDE : SW_SHOW);
+    CWnd* uart_controls[]={&uart_baud_label_,&uart_baud_combo_,&uart_workflow_label_,&uart_workflow_combo_};
+    for(auto* control:uart_controls)control->ShowWindow(uart?SW_SHOW:SW_HIDE);
+    i2c_workflow_label_.ShowWindow(i2c?SW_SHOW:SW_HIDE);i2c_workflow_combo_.ShowWindow(i2c?SW_SHOW:SW_HIDE);
     CWnd* i2c_controls[] = {&i2c_speed_label_, &i2c_speed_combo_, &i2c_address_label_,
         &i2c_address_edit_, &i2c_probe_btn_};
     for (CWnd* control : i2c_controls) control->ShowWindow(i2c ? SW_SHOW : SW_HIDE);
     bus_port_label_.ShowWindow(misc ? SW_HIDE : SW_SHOW);
     bus_port_combo_.ShowWindow(misc ? SW_HIDE : SW_SHOW);
-    connect_target_btn_.ShowWindow(i2c ? SW_HIDE : SW_SHOW);
-    enter_bootloader_btn_.ShowWindow(i2c ? SW_HIDE : SW_SHOW);
-    transfer_test_btn_.ShowWindow(i2c ? SW_HIDE : SW_SHOW);
-    i2c_notes_.ShowWindow(i2c || misc ? SW_SHOW : SW_HIDE);
+    connect_target_btn_.ShowWindow(i2c&&!IsI2cIsp() ? SW_HIDE : SW_SHOW);
+    enter_bootloader_btn_.ShowWindow(i2c&&!IsI2cIsp() ? SW_HIDE : SW_SHOW);
+    transfer_test_btn_.ShowWindow(i2c&&!IsI2cIsp() ? SW_HIDE : SW_SHOW);
+    i2c_probe_btn_.ShowWindow(i2c&&!IsI2cIsp()?SW_SHOW:SW_HIDE);
+    i2c_notes_.ShowWindow(i2c || misc || uart ? SW_SHOW : SW_HIDE);
     const int step = row + 2;
     const auto move = [&](CWnd& c, int left, int top, int w, int h) {
         if (c.GetSafeHwnd()) c.MoveWindow(left, top, w, h, FALSE);
@@ -250,7 +276,17 @@ void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, in
         move(value,left+lw+3,top,span-lw-3,combo ? 220 : row-2);
     };
     const auto pair=[&](CWnd& label,CWnd& value,int top) {pair_at(label,value,top,x,width);};
-    if (misc) {
+    if(uart) {
+        pair(bus_port_label_,bus_port_combo_,y);
+        pair(uart_baud_label_,uart_baud_combo_,y+step);
+        pair(uart_workflow_label_,uart_workflow_combo_,y+step*2);
+        move(connect_target_btn_,x,y+step*3,width,row);
+        const int half=(width-4)/2;
+        move(enter_bootloader_btn_,x,y+step*4,half,row);
+        move(transfer_test_btn_,x+half+4,y+step*4,width-half-4,row);
+        move(disconnect_btn_,x,y+step*5,width,row);
+        move(i2c_notes_,x,y+step*6,width,(std::max)(row,height-step*6));
+    } else if (misc) {
         move(connect_target_btn_,x,y,width,row);
         move(enter_bootloader_btn_,x,y+step,width,row);
         move(transfer_test_btn_,x,y+step*2,width,row);
@@ -260,9 +296,16 @@ void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, in
         pair(bus_port_label_,bus_port_combo_,y);
         pair(i2c_speed_label_,i2c_speed_combo_,y+step);
         pair(i2c_address_label_,i2c_address_edit_,y+step*2);
-        move(i2c_probe_btn_,x,y+step*3,width,row);
-        move(disconnect_btn_,x,y+step*4,width,row);
-        move(i2c_notes_,x,y+step*5,width,height-step*5);
+        pair(i2c_workflow_label_,i2c_workflow_combo_,y+step*3);
+        if(IsI2cIsp()) {
+            move(connect_target_btn_,x,y+step*4,width,row);
+            const int half=(width-4)/2;
+            move(enter_bootloader_btn_,x,y+step*5,half,row);move(transfer_test_btn_,x+half+4,y+step*5,width-half-4,row);
+            move(disconnect_btn_,x,y+step*6,width,row);move(i2c_notes_,x,y+step*7,width,(std::max)(row,height-step*7));
+        }else{
+            move(i2c_probe_btn_,x,y+step*4,width,row);move(disconnect_btn_,x,y+step*5,width,row);
+            move(i2c_notes_,x,y+step*6,width,(std::max)(row,height-step*6));
+        }
     } else {
         pair(bus_port_label_,bus_port_combo_,y);
         pair(can_mode_label_,can_mode_combo_,y+step);

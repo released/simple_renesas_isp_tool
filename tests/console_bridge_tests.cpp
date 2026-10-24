@@ -84,7 +84,9 @@ int TestConsoleBridge() {
             check(layout.fits,"font-aware minimum client size contains the console");
             check(inside(layout.connection,layout.connection_group),"connection controls stay within their frame");
             check(inside(layout.identities,layout.analysis_group) && inside(layout.firmware,layout.analysis_group),"live/offline cards stay in analysis frame");
-            for (int group=0;group<4;++group) {
+            check(inside(layout.loaded_bin,layout.analysis_group)&&inside(layout.bin_details,layout.analysis_group),"second-row BIN/details inside analysis frame");
+            check(layout.loaded_bin.y>=layout.identities.y+layout.identities.height&&layout.bin_details.y>=layout.loaded_bin.y+layout.loaded_bin.height,"BIN below live cards;details below BIN");
+            for (int group=0;group<3;++group) {
                 check(inside(layout.metadata_groups[group],layout.analysis_group),"metadata group inside analysis frame");
                 check(inside(layout.metadata_panes[group],layout.metadata_groups[group]),"metadata fields inside their semantic group");
                 if(group) check(layout.metadata_groups[group-1].x+layout.metadata_groups[group-1].width<layout.metadata_groups[group].x,"metadata groups do not overlap");

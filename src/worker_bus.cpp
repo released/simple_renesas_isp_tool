@@ -6,15 +6,19 @@
 namespace firmware_upgrade::ui {
 bool WorkerSession::RefreshBridgePorts(std::wstring* error) {
     i2c_client_.Reset();
+    uart_client_.Reset();state_.uart_valid=false;
     state_.i2c_probe_validated = false;
     state_.i2c_metadata = {};
     return bridge::GetPorts(host_link_client_, state_.host_capabilities,
                bridge::Bus::Can, &state_.can_ports, error) &&
            bridge::GetPorts(host_link_client_, state_.host_capabilities,
-               bridge::Bus::I2c, &state_.i2c_ports, error);
+               bridge::Bus::I2c, &state_.i2c_ports, error) &&
+           bridge::GetPorts(host_link_client_, state_.host_capabilities,
+               bridge::Bus::Uart, &state_.uart_ports, error);
 }
 bool WorkerSession::PrepareCanPort(const CanSettings& settings,
                                    std::wstring* error) {
+    AbortUartBestEffort();
     const auto found = std::find_if(state_.can_ports.begin(), state_.can_ports.end(),
         [&settings](const bridge::Port& p) { return p.id == settings.port; });
     if (!bridge::CanPortSupports(state_.host_capabilities,state_.can_ports,settings.port,
@@ -36,6 +40,7 @@ bool WorkerSession::ProbeI2c(const i2c_host::Configuration& configuration,
     return Submit(std::move(command));
 }
 void WorkerSession::AbortI2cBestEffort() {
+    if(state_.isp_contract==2U)state_.uart_valid=false;
     if (!state_.host_validated || !serial_port_.IsOpen() ||
         (state_.host_capabilities.feature_flags & bridge::kFeatureI2c) == 0U)
         return;
@@ -47,6 +52,7 @@ void WorkerSession::AbortI2cBestEffort() {
     i2c_client_.Reset();
 }
 bool WorkerSession::ProcessProbeI2c(const Command& command, std::wstring* error) {
+    AbortUartBestEffort();
     state_.i2c_probe_validated = false;
     state_.i2c_summary.clear();
     state_.i2c_metadata = {};

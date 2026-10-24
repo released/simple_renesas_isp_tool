@@ -294,7 +294,7 @@ void CMainFrame::RefreshNominalChoices() {
 }
 
 void CMainFrame::QueueCanConfiguration() {
-    if (IsI2cTab() || IsMiscTab()) return;
+    if (IsI2cTab() || IsMiscTab() || IsUartTab()) return;
     if (!session_state_.host_validated || session_state_.can_started ||
         worker_command_pending_ || session_state_.busy) return;
     firmware_upgrade::ui::CanSettings settings;
@@ -386,12 +386,14 @@ void CMainFrame::UpdateUi() {
     baud_combo_.EnableWindow(!busy && !port_open);
     cancel_btn_.EnableWindow(busy);
     preflight_btn_.EnableWindow(!busy);
+    bin_details_btn_.EnableWindow(!busy && !binary_data_.empty());
     open_report_btn_.EnableWindow(!busy && !latest_report_path_.empty());
     error_details_btn_.EnableWindow(!busy && !last_operation_error_.empty());
     compare_metadata_btn_.EnableWindow(!busy && !binary_data_.empty() &&
         (IsMiscTab()?session_state_.bridge_info_valid:!IsI2cTab() && target_ready));
     force_old_firmware_btn_.ShowWindow(!IsMiscTab() && !IsI2cTab() ? SW_SHOW : SW_HIDE);
     force_old_firmware_btn_.EnableWindow(FALSE);
+    if(IsIspTab()) {UpdateUartUi();return;}
     if (IsMiscTab()) {
         load_binary_btn_.EnableWindow(!busy);
         start_log_btn_.EnableWindow(!log_recording_);
@@ -521,6 +523,7 @@ void CMainFrame::UpdateUi() {
 }
 
 void CMainFrame::OnBnClickedConnectTarget() {
+    if(IsIspTab()) {QueueUartAction(0U);return;}
     if (IsMiscTab()) { OnBridgeAction(0U); return; }
     if (IsI2cTab()) return;
     if (!session_state_.host_validated) {
@@ -577,6 +580,7 @@ void CMainFrame::OnBnClickedConnectTarget() {
 }
 
 void CMainFrame::OnBnClickedEnterBootloader() {
+    if(IsIspTab()) {QueueUartAction(1U);return;}
     if (IsMiscTab()) { OnBridgeAction(1U); return; }
     if (IsI2cTab()) return;
     firmware_upgrade::ui::CanSettings settings;
@@ -602,6 +606,7 @@ void CMainFrame::OnBnClickedEnterBootloader() {
 }
 
 void CMainFrame::OnBnClickedTransferTest() {
+    if(IsIspTab()) {QueueUartAction(UartTransferSelected()?3U:4U);return;}
     if (IsMiscTab()) { OnBridgeAction(3U); return; }
     if (IsI2cTab()) return;
     if(SelectedProfile()==L"CAN Upgrade") {
@@ -632,7 +637,7 @@ void CMainFrame::OnBnClickedTransferTest() {
 }
 
 void CMainFrame::OnBnClickedCanTxTest() {
-    if (IsMiscTab() || IsI2cTab()) return;
+    if (IsMiscTab() || IsI2cTab() || IsUartTab()) return;
     if (session_state_.can_tx_test_active) {
         if (!worker_session_.StopCanTxTest()) {
             AppendLog(L"Bridge board self-test stop request was not accepted.");
@@ -667,11 +672,12 @@ void CMainFrame::OnBnClickedCanTxTest() {
 
 void CMainFrame::OnBnClickedStartFirmwareUpdate() {
     if (IsMiscTab()) { OnBridgeAction(2U); return; }
-    if (IsI2cTab()) return;
+    if (IsI2cTab()&&!IsI2cIsp()) return;
     StartDeviceUpdate(false);
 }
 
 void CMainFrame::StartDeviceUpdate(bool force_old_version) {
+    if(IsIspTab()) {QueueUartAction(2U,force_old_version);return;}
     if(worker_command_pending_ || session_state_.busy) return;
     const firmware_upgrade::firmware_update::Profile profile =
         firmware_upgrade::firmware_update::FromDisplayName(SelectedProfile());

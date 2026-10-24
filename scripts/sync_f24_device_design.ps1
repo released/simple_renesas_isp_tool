@@ -11,7 +11,7 @@ if($blocks.Count -ne 1){throw 'Expected exactly one canonical F24 device block.'
 $updates=@()
 foreach($folder in @('slide_isp_tool_for_RL78','slide_boot_loader_for_RL78')){
     $expected=Get-WebGuideProjection -Section F24_DEVICE -Folder $folder -Canonical $blocks[0].Value
-    $path=Join-Path $WebRoot ($folder+'\index.md')
+    $path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder $folder -Section F24_DEVICE
     $web=[IO.File]::ReadAllText($path)
     $matches=[regex]::Matches($web,$pattern)
     if($matches.Count -ne 1){throw "Expected exactly one F24 device block: $folder"}

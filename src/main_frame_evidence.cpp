@@ -33,27 +33,30 @@ private:
 class MetadataDialog : public CDialog {
 public:
     MetadataDialog(const std::vector<firmware_upgrade::evidence::Difference>& rows,CWnd* parent,
-                   const std::wstring& title=L"")
-        : CDialog(IDD_METADATA_DIFFERENCE,parent), rows_(rows), title_(title) {}
+                   const std::wstring& title=L"",bool details_only=false)
+        : CDialog(IDD_METADATA_DIFFERENCE,parent), rows_(rows), title_(title), details_only_(details_only) {}
     BOOL OnInitDialog() override {
         CDialog::OnInitDialog(); list_.SubclassDlgItem(ID_METADATA_DIFFERENCE_LIST,this);
         if(!title_.empty()) SetWindowTextW(title_.c_str());
         list_.SetExtendedStyle(LVS_EX_FULLROWSELECT|LVS_EX_GRIDLINES|LVS_EX_DOUBLEBUFFER);
         CRect r; list_.GetClientRect(&r);
-        list_.InsertColumn(0,L"Field",LVCFMT_LEFT,r.Width()*26/100);
-        list_.InsertColumn(1,title_.empty()?L"Loaded image":L"Current / image",LVCFMT_LEFT,r.Width()*27/100);
-        list_.InsertColumn(2,title_.empty()?L"Live device":L"Required / live",LVCFMT_LEFT,r.Width()*27/100);
-        list_.InsertColumn(3,L"Check",LVCFMT_LEFT,r.Width()*18/100);
+        list_.InsertColumn(0,L"Field",LVCFMT_LEFT,r.Width()*(details_only_?30:26)/100);
+        list_.InsertColumn(1,details_only_?L"Displayed value":title_.empty()?L"Loaded image":L"Current / image",
+            LVCFMT_LEFT,r.Width()*(details_only_?67:27)/100);
+        if(!details_only_) {
+            list_.InsertColumn(2,title_.empty()?L"Live device":L"Required / live",LVCFMT_LEFT,r.Width()*27/100);
+            list_.InsertColumn(3,L"Check",LVCFMT_LEFT,r.Width()*18/100);
+        }
         for(const auto& row:rows_) {
             const int i=list_.InsertItem(list_.GetItemCount(),row.field.c_str());
-            list_.SetItemText(i,1,row.image.c_str());list_.SetItemText(i,2,row.live.c_str());
-            list_.SetItemText(i,3,row.result.c_str());
+            list_.SetItemText(i,1,row.image.c_str());
+            if(!details_only_){list_.SetItemText(i,2,row.live.c_str());list_.SetItemText(i,3,row.result.c_str());}
         }
         CenterWindow(); return TRUE;
     }
     BOOL OnNotify(WPARAM w,LPARAM l,LRESULT* result) override {
         const auto* header=reinterpret_cast<const NMHDR*>(l);
-        if(header && header->hwndFrom==list_.GetSafeHwnd() && header->code==NM_CUSTOMDRAW) {
+        if(!details_only_ && header && header->hwndFrom==list_.GetSafeHwnd() && header->code==NM_CUSTOMDRAW) {
             auto* draw=reinterpret_cast<NMLVCUSTOMDRAW*>(l);
             if(draw->nmcd.dwDrawStage==CDDS_PREPAINT) {*result=CDRF_NOTIFYITEMDRAW;return TRUE;}
             if(draw->nmcd.dwDrawStage==CDDS_ITEMPREPAINT && draw->nmcd.dwItemSpec<rows_.size()) {
@@ -69,6 +72,7 @@ private:
     std::vector<firmware_upgrade::evidence::Difference> rows_;
     CListCtrl list_;
     std::wstring title_;
+    bool details_only_;
 };
 }
 bool CMainFrame::ConfirmForceOldFirmware() {
@@ -77,8 +81,9 @@ bool CMainFrame::ConfirmForceOldFirmware() {
 void CMainFrame::UpdateCompletionFeedback() {
     namespace feedback=firmware_upgrade::feedback;
     if (worker_command_pending_ || session_state_.busy || !last_operation_error_.empty() ||
-        last_update_result_==feedback::Result::None || IsI2cTab()) return;
-    if (feedback::IsDevice(last_update_result_) ? IsMiscTab() || SelectedProfile()!=L"CAN Upgrade" : !IsMiscTab()) return;
+        last_update_result_==feedback::Result::None || (IsI2cTab()&&!IsI2cIsp())) return;
+    if(last_update_result_==feedback::Result::UartAppConfirmed||last_update_result_==feedback::Result::UartAppConfirmedRxWarning) {if(!IsIspTab()||UartTransferSelected())return;}
+    else if (feedback::IsDevice(last_update_result_) ? IsMiscTab() || IsUartTab() || SelectedProfile()!=L"CAN Upgrade" : !IsMiscTab()) return;
     const auto view=feedback::Describe(last_update_result_);
     const auto tone=view.warning ? firmware_upgrade::visual::Tone::Pending : firmware_upgrade::visual::Tone::Ready;
     operation_status_card_.SetWindowTextW(view.status.c_str()); operation_status_card_.SetTone(tone);
@@ -87,7 +92,7 @@ void CMainFrame::UpdateCompletionFeedback() {
     overview_tooltip_.UpdateTipText((view.status+L"\r\n"+view.next).c_str(),&firmware_prerequisites_label_);
 }
 void CMainFrame::OnForceOldFirmware() {
-    if(IsMiscTab() || IsI2cTab()) return;
+    if(IsMiscTab() || (IsI2cTab()&&!IsI2cIsp())) return;
     StartDeviceUpdate(true);
 }
 void CMainFrame::OnCancelOperation() {
@@ -97,10 +102,49 @@ void CMainFrame::OnCompareMetadata() {
     std::vector<firmware_upgrade::evidence::Difference> rows;
     if(IsMiscTab() && binary_bridge_inspection_.valid && session_state_.bridge_info_valid)
         rows=firmware_upgrade::evidence::Compare(binary_bridge_inspection_.metadata,session_state_.bridge_info);
-    else if(!IsI2cTab() && !IsMiscTab() && binary_inspection_.metadata_valid && session_state_.target_validated)
+    else if(IsIspTab()&&IsUartSelectionCurrent()&&binary_inspection_.metadata_valid) {
+        const auto& i=binary_inspection_.metadata;const auto& t=session_state_.uart_target;
+        rows.push_back({L"MCU",i.mcu_family+L" / "+i.mcu_part,t.family+L" / "+t.part,
+            i.mcu_family==t.family&&i.mcu_part==t.part?L"MATCH":L"MISMATCH"});
+        const auto row=[&](const wchar_t* name,std::uint32_t a,std::uint32_t b) {
+            rows.push_back({name,firmware_upgrade::evidence::Hex(a),firmware_upgrade::evidence::Hex(b),a==b?L"MATCH":L"MISMATCH"});
+        };
+        row(L"Target",i.target_id,t.target);row(L"App start",i.application_start,t.start);
+        row(L"App capacity",i.application_capacity,t.capacity);row(L"Flash size",i.code_flash_size,t.flash);
+        row(L"Boot reserve",i.boot_reserved_size,t.boot);row(L"Erase block",i.erase_block_size,t.erase);
+        row(L"IRQ ABI",i.policy.irq_abi,t.irq_abi);row(L"Device rate",t.contract==2U?i.nominal_bitrate_mask:i.policy.device_uart_baud,t.baud);
+        if(t.contract==2U)row(L"I2C7-bit address (selected session)",i.data_bitrate_mask,t.address);
+        row(L"Protocol ID",i.protocol_id,t.contract==2U?0x49U:t.contract==3U?0x58U:0x55U);
+        rows.push_back({L"Minimum Boot",firmware_upgrade::evidence::Hex(i.policy.minimum_boot_version),
+            firmware_upgrade::evidence::Hex(t.boot_version),i.policy.minimum_boot_version<=t.boot_version?L"MATCH":L"MISMATCH"});
+        rows.push_back({L"App version",firmware_upgrade::evidence::Hex(i.version),
+            t.valid?firmware_upgrade::evidence::Hex(t.version):L"No valid App",i.version==t.version?L"MATCH":L"CHANGE"});
+    }
+    else if(!IsUartTab() && !IsI2cTab() && !IsMiscTab() && binary_inspection_.metadata_valid && session_state_.target_validated)
         rows=firmware_upgrade::evidence::Compare(binary_inspection_.metadata,session_state_.target_metadata);
     if(rows.empty()) {AppendLog(L"Compare Metadata requires a valid image and live metadata for the selected destination.");return;}
     MetadataDialog dialog(rows,this); dialog.DoModal();
+}
+std::vector<firmware_upgrade::evidence::Difference> CMainFrame::BuildBinDetails() const {
+    std::vector<firmware_upgrade::evidence::Difference> rows;
+    if(binary_data_.empty())return rows;
+    rows.push_back({L"Loaded BIN (offline)",binary_path_,L"",L""});
+    for(std::size_t field=0;field<kFirmwareFieldCount;++field) {
+        CString name,value;
+        firmware_field_labels_[field].GetWindowTextW(name);
+        firmware_field_values_[field].GetWindowTextW(value);
+        rows.push_back({name.GetString(),value.GetString(),L"",L""});
+    }
+    CString guidance;firmware_prerequisites_label_.GetWindowTextW(guidance);
+    rows.push_back({L"Current workflow guidance",guidance.GetString(),L"",L""});
+    return rows;
+}
+void CMainFrame::OnBinDetails() {
+    if(worker_command_pending_ || session_state_.busy)return;
+    const auto rows=BuildBinDetails();
+    if(rows.empty())return;
+    MetadataDialog dialog(rows,this,L"BIN Details - offline file / Device LIVE policy labeled",true);
+    dialog.DoModal();
 }
 void CMainFrame::SaveUpdateReport(const firmware_upgrade::ui::WorkerEvent& event) {
     if(!event.report_json_path.empty()) AppendLog(L"Automatic JSON update report: "+event.report_json_path);
@@ -129,7 +173,7 @@ void CMainFrame::OnPreflight() {
         evidence::Gate(rows,field,ok,current,action);
     };
     gate(L"Live host",session_state_.host_validated,session_state_.host_summary,L"Open + Probe Host; COM description is not identity");
-    const bool transfer = !IsMiscTab() && !IsI2cTab() && SelectedProfile()==L"Custom Transfer";
+    const bool transfer = IsIspTab()?UartTransferSelected():!IsMiscTab() && !IsI2cTab() && SelectedProfile()==L"Custom Transfer";
     if (!transfer)
         gate(L"Loaded BIN",!binary_data_.empty(),std::to_wstring(binary_data_.size())+L" bytes",L"Load Update Image for the selected destination");
     if(IsMiscTab()) {
@@ -146,9 +190,24 @@ void CMainFrame::OnPreflight() {
             const auto diff=evidence::Compare(binary_bridge_inspection_.metadata,d);
             rows.insert(rows.end(),diff.begin(),diff.end());
         }
-    } else if(IsI2cTab()) {
+    } else if(IsI2cTab()&&!IsI2cIsp()) {
         gate(L"Reference discovery",IsI2cSelectionCurrent(),session_state_.i2c_summary,L"Probe the explicitly selected port/rate/address");
         gate(L"Programming adapter",false,L"Read-only reference workflow",L"Erase/write is not enabled for this adapter");
+    } else if(IsIspTab()) {
+        gate(L"Bridge bus support",(session_state_.host_capabilities.feature_flags&(IsI2cIsp()?bridge::kFeatureI2c:bridge::kFeatureUart))!=0U,
+            L"Advertised bridge capability",L"Use a bridge App with the selected I2C/UART forwarding");
+        isp::BusConfiguration uart_configuration;
+        const bool settings=SelectedUartSettings(&uart_configuration);
+        gate(L"Device bus",settings,settings?isp::BusText(SelectedIspContract(),uart_configuration):L"Invalid settings",L"Match the selected device rate/address to Boot/App; UART0 is Log only");
+        gate(L"Live ISP device",IsUartSelectionCurrent(),session_state_.uart_summary,L"Discover Target / Discover Test Target");
+        if(!transfer) {
+            gate(L"ISP BIN / CRC32",binary_image_valid_,binary_image_validation_error_,L"Load the matching interface/protocol _update.bin");
+            gate(L"Device Boot",IsUartSelectionCurrent()&&session_state_.uart_target.mode==ISP_MODE_BOOT,
+                L"Live UART mode",L"Enter Boot when App is running");
+            std::wstring error;
+            gate(L"BIN / live contract",binary_image_valid_&&IsUartSelectionCurrent()&&isp::Matches(binary_inspection_.metadata,session_state_.uart_target,&error),
+                error,L"Compare MCU, Flash layout, IRQ ABI, minimum Boot and device baud");
+        }
     } else if (transfer) {
         gate(L"Workflow",true,L"Custom Transfer / non-destructive",L"No firmware BIN or Flash operation is used");
         ui::CanSettings settings; std::wstring error;

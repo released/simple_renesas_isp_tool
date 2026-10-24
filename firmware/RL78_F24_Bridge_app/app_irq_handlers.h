@@ -17,6 +17,8 @@
     X(0x2A, r_Config_INTC_intp8_interrupt) \
     X(0x2E, r_Config_TAU0_1_interrupt) \
     X(0x38, r_Config_INTC_intp7_interrupt) \
+    X(0x3E, Bridge_UartTxIsr) \
+    X(0x40, Bridge_UartRxIsr) \
     X(0x4C, r_can_glb_rxmb_isr) \
     X(0x4E, r_can_ch0_error_isr) \
     X(0x52, r_can_ch0_cfifo_rx_isr) \

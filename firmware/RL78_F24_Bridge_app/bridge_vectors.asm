@@ -2,6 +2,8 @@
 .PUBLIC _bridge_default_isr
 .EXTERN _start
 .SECTION .app_vectors, TEXT
+.EXTERN _Bridge_UartRxIsr
+.EXTERN _Bridge_UartTxIsr
 .EXTERN _r_can_ch0_cfifo_rx_isr
 .EXTERN _r_can_ch0_error_isr
 .EXTERN _r_can_ch0_transmit_isr
@@ -44,8 +46,8 @@
     BR !!_r_Config_INTC_intp7_interrupt
     BR !!_bridge_default_isr
     BR !!_bridge_default_isr
-    BR !!_bridge_default_isr
-    BR !!_bridge_default_isr
+    BR !!_Bridge_UartTxIsr
+    BR !!_Bridge_UartRxIsr
     BR !!_bridge_default_isr
     BR !!_bridge_default_isr
     BR !!_bridge_default_isr

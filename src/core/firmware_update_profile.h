@@ -19,6 +19,9 @@ namespace firmware_upgrade::firmware_update {
 enum class Profile {
     None,
     CanUpgrade,
+    UartUpgrade,
+    I2cUpgrade,
+    XmodemUpgrade,
 };
 
 struct ImageInfo {

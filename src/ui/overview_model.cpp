@@ -53,7 +53,7 @@ void ApplyImagePolicy(const Input& in, Card* bin) {
     bin->heading=L"LOADED APP BIN | OFFLINE";
     bin->signal=valid?Signal::Offline:Signal::Invalid;
     if (!valid) { bin->heading+=L" | INVALID"; return; }
-    const auto route=static_cast<std::uint8_t>(in.misc?IP_UART:(in.i2c?IP_I2C:IP_CAN));
+    const auto route=static_cast<std::uint8_t>(in.misc?IP_UART:in.uart?in.uart_target.transport:(in.i2c?IP_I2C:IP_CAN));
     std::wstring error;
     const bool allowed=image_policy::Allows(policy,in.misc?IP_ROLE_BRIDGE_APP:IP_ROLE_DEVICE_APP,route,&error);
     bin->detail+=L"\n"+std::wstring(policy.role==IP_ROLE_BRIDGE_APP?L"HOST APP":L"DEVICE APP")+
@@ -65,8 +65,8 @@ std::array<Card, 5> Build(const Input& in) {
     std::array<Card, 5> out = {{
         {L"HOST BRIDGE | REQUIRED", L"N/A - not verified", L"Open + Probe Host; COM description is not identity."},
         {L"DEVICE TARGET | REQUIRED", L"N/A - not discovered", L"Discover the selected target; BIN identity is offline only."},
-        {L"BOOT CODE | LIVE INFO", L"N/A", L"Version / build / boot reserve require device discovery."},
-        {L"INSTALLED APP | LIVE INFO", L"N/A", L"Version / build / installed size require device discovery."},
+        {L"DEVICE BOOT | LIVE INFO", L"N/A", L"Version / build / boot reserve require device discovery."},
+        {L"DEVICE APP | LIVE INFO", L"N/A", L"Version / build / installed size require device discovery."},
         {L"LOADED APP BIN | OFFLINE", L"N/A", L"Load Update Image; no file is loaded."}
     }};
     if (in.host_current) {
@@ -115,11 +115,11 @@ std::array<Card, 5> Build(const Input& in) {
                 t.mcu_family + L" / " + t.mcu_part,
                 L"Target " + Hex(t.target_id) + L" / protocol " + std::to_wstring(t.protocol_version) +
                 L" / live INFO (not authenticated)", Signal::Verified};
-            out[2] = {L"BOOT CODE | LIVE INFO", L"v" + Version(t.boot_version),
+            out[2] = {L"DEVICE BOOT | LIVE INFO", L"v" + Version(t.boot_version),
                 L"Build " + Number(t.boot_build) + L" / reserve " + Number(t.boot_reserved_size) +
                 L" B\nApp start " + Hex(t.application_start), Signal::Verified};
             const bool installed = t.app_version != 0xFFFFFFFFU && t.installed_app_size != 0xFFFFFFFFU;
-            out[3] = {L"INSTALLED APP | LIVE INFO", installed ? L"v" + Version(t.app_version) : L"N/A - not installed",
+            out[3] = {L"DEVICE APP | LIVE INFO", installed ? L"v" + Version(t.app_version) : L"N/A - not installed",
                 L"Build " + Number(t.app_build) + L" / installed " + Number(t.installed_app_size) +
                 L" B\nCapacity " + Number(t.application_capacity) + L" B; not read-back CRC",
                 installed ? Signal::Verified : Signal::Reported};
@@ -131,9 +131,9 @@ std::array<Card, 5> Build(const Input& in) {
         } else if (in.kind == TargetKind::G16Reference) {
             out[1] = {L"DEVICE TARGET | REFERENCE ONLY", in.g16.label,
                 L"Reported sample label; not authenticated. Programming BLOCKED.", Signal::Reported};
-            out[2] = {L"BOOT CODE | REPORTED CONSTANT", L"v" + Pair(in.g16.boot_major, in.g16.boot_minor),
+            out[2] = {L"DEVICE BOOT | REPORTED", L"v" + Pair(in.g16.boot_major, in.g16.boot_minor),
                 L"G16 reference signature; build / boot reserve N/A.", Signal::Reported};
-            out[3] = {L"INSTALLED APP | REPORTED CONSTANT", L"v" + Pair(in.g16.app_major, in.g16.app_minor),
+            out[3] = {L"DEVICE APP | REPORTED", L"v" + Pair(in.g16.app_major, in.g16.app_minor),
                 L"G16 reference signature; actual installed size N/A.", Signal::Reported};
         }
     }
@@ -159,6 +159,23 @@ std::array<Card, 5> Build(const Input& in) {
         }
     }
     ApplyImagePolicy(in,&out[4]);
+    if(in.uart) {
+        out[1]={L"ISP DEVICE | REQUIRED",L"N/A - not discovered",L"Discover the selected ISP device. Offline BIN is not live identity."};
+        out[2]={L"DEVICE BOOT | LIVE INFO",L"N/A",L"Discover device Boot/App."};
+        out[3]={L"DEVICE APP | LIVE INFO",L"N/A",L"Discover device Boot/App."};
+        if(in.host_current&&in.target_current) {
+            const auto& t=in.uart_target;const bool transfer=t.mode==ISP_MODE_TRANSFER;
+            out[1]={transfer?L"ISP DEVICE | CUSTOM TRANSFER":t.mode==ISP_MODE_BOOT?L"ISP DEVICE | BOOT":L"ISP DEVICE | APP",
+                t.family+L" / "+t.part,L"Target "+Hex(t.target)+L" / "+
+                isp::BusText(t.contract,{0U,t.baud,t.address})+(t.contract==3U?L" / XMODEM-CRC128":L"")+L" / live INFO",Signal::Verified};
+            if(transfer)out[2].detail=out[3].detail=L"Custom Transfer does not report Boot/App metadata.";
+            else {
+                out[2]={L"DEVICE BOOT | LIVE INFO",L"v"+Version(t.boot_version),L"Build "+Number(t.boot_build)+L" / reserve "+Number(t.boot)+L" B",Signal::Verified};
+                out[3]={L"DEVICE APP | LIVE INFO",t.valid?L"v"+Version(t.version):L"N/A - not installed",
+                    L"Build "+Number(t.build)+L" / bytes "+Number(t.size)+(t.ready?L" / APP_READY":L""),t.valid?Signal::Verified:Signal::Reported};
+            }
+        }
+    }
     return out;
 }
 } // namespace firmware_upgrade::overview

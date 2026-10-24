@@ -2,7 +2,10 @@
 param(
     [ValidateSet('Release','Debug')][string]$Configuration='Release',
     [Parameter(Mandatory=$true)][string]$ClassicalImage,
-    [Parameter(Mandatory=$true)][string]$FdImage
+    [Parameter(Mandatory=$true)][string]$FdImage,
+    [string]$UartImage='',
+    [string]$I2cImage='',
+    [string]$XmodemImage=''
 )
 $ErrorActionPreference='Stop'
 $tool=Split-Path -Parent $PSScriptRoot
@@ -22,13 +25,13 @@ $runtime=if($Configuration -eq 'Debug'){@('/MTd','/D_DEBUG')}else{@('/MT','/DNDE
 $linkOptions=if($Configuration -eq 'Debug'){@('/DEBUG','/INCREMENTAL','/OPT:NOICF')}else{@('/LTCG')}
 Push-Location -LiteralPath $output
 try{
-    $compileArgs=@('/nologo','/std:c++17','/W4','/WX','/EHsc','/D_UNICODE','/DUNICODE')+
+    $compileArgs=@('/nologo','/std:c++17','/W4','/WX','/EHsc','/D_UNICODE','/DUNICODE','/D_AFX_NO_MFC_CONTROLS_IN_DIALOGS')+
         $runtime+@((Join-Path $tool 'tests\can_prerequisite_ui_tests.cpp'))+$inputs+$resources+
         @('/Fe:prerequisite_fixture.exe','/link')+$linkOptions+
         @('/SUBSYSTEM:CONSOLE','setupapi.lib','cfgmgr32.lib')
     & cl @compileArgs
     if($LASTEXITCODE -ne 0){throw 'MFC prerequisite fixture build failed.'}
-    & .\prerequisite_fixture.exe $ClassicalImage $FdImage
+    & .\prerequisite_fixture.exe $ClassicalImage $FdImage $UartImage $I2cImage $XmodemImage
     if($LASTEXITCODE -ne 0){throw 'MFC prerequisite fixture failed.'}
 }finally{Pop-Location}
 Write-Host ('Fixture retained: '+$output)

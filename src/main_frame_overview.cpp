@@ -8,10 +8,15 @@ bool CMainFrame::InitializeOverviewUi() {
         if (!firmware_overview_cards_[i].Create(L"", WS_CHILD | WS_VISIBLE, CRect(), this, ids[i])) return false;
         firmware_overview_cards_[i].SetFont(&ui_font_);
     }
+    firmware_overview_cards_[2].SetCompactDetail();
     if (!overview_tooltip_.Create(this, TTS_ALWAYSTIP | TTS_NOPREFIX)) return false;
     overview_tooltip_.SetMaxTipWidth(600);
     CStatusCard* cards[] = {&host_info_label_, &target_info_label_,
         &firmware_overview_cards_[0], &firmware_overview_cards_[1], &firmware_overview_cards_[2]};
+    using firmware_upgrade::visual::Provenance;
+    const Provenance sources[]={Provenance::HostLive,Provenance::DeviceLive,
+        Provenance::DeviceLive,Provenance::DeviceLive,Provenance::ImageFile};
+    for(std::size_t i=0;i<5U;++i)cards[i]->SetProvenance(sources[i]);
     for (auto* card : cards) {
         card->SetInfoStyle();
         card->ModifyStyle(0, SS_NOTIFY);
@@ -27,13 +32,15 @@ bool CMainFrame::InitializeOverviewUi() {
 void CMainFrame::UpdateOverviewUi(bool i2c_current) {
     namespace overview = firmware_upgrade::overview;
     overview::Input input;
-    input.i2c = IsI2cTab();
+    input.i2c = IsI2cTab()&&!IsI2cIsp();
+    input.uart=IsIspTab();input.uart_target=session_state_.uart_target;
+    if(input.uart&&!IsUartSelectionCurrent())input.uart_target.transport=IsI2cIsp()?IP_I2C:IP_UART;
     input.misc=IsMiscTab(); input.bridge_current=session_state_.bridge_info_valid;
     input.bridge=session_state_.bridge_info; input.bridge_image=binary_bridge_inspection_;
     input.host_current = session_state_.host_validated;
     input.host = session_state_.host_info;
     input.port = session_state_.port_name;
-    input.target_current = input.i2c ? i2c_current : session_state_.target_validated;
+    input.target_current = input.uart?IsUartSelectionCurrent():input.i2c ? i2c_current : session_state_.target_validated;
     input.kind = input.i2c ? overview::TargetKind::G16Reference :
         (session_state_.target_profile == firmware_upgrade::ui::TargetProfile::F13Transfer ?
             overview::TargetKind::Transfer : overview::TargetKind::CanUpgrade);
@@ -59,6 +66,9 @@ void CMainFrame::UpdateOverviewUi(bool i2c_current) {
         }
         controls[i]->SetContent(card.heading, card.value, card.detail);
         controls[i]->SetTone(tone);
+        using firmware_upgrade::visual::Provenance;
+        controls[i]->SetProvenance(i==4U?Provenance::ImageFile:
+            i==0U||input.misc?Provenance::HostLive:Provenance::DeviceLive);
         const std::wstring full_text = card.heading + L"\r\n" + card.value + L"\r\n" + card.detail;
         overview_tooltip_.UpdateTipText(full_text.c_str(), controls[i]);
     }

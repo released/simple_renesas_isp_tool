@@ -1,10 +1,11 @@
 #include "main_frame.h"
 
 namespace {
-void Group(CDC& dc,const firmware_upgrade::console::Rect& box,const wchar_t* title) {
+void Group(CDC& dc,const firmware_upgrade::console::Rect& box,const wchar_t* title,
+           COLORREF border=GetSysColor(COLOR_3DSHADOW)) {
     if (box.width<=0 || box.height<=0) return;
     TEXTMETRIC metric={}; dc.GetTextMetrics(&metric);
-    CPen pen(PS_SOLID,2,GetSysColor(COLOR_3DSHADOW));
+    CPen pen(PS_SOLID,2,border);
     auto* old_pen=dc.SelectObject(&pen); auto* old_brush=dc.SelectStockObject(NULL_BRUSH);
     dc.Rectangle(box.x+1,box.y+metric.tmHeight/2,box.x+box.width-1,box.y+box.height-1);
     dc.SelectObject(old_pen); dc.SelectObject(old_brush);
@@ -33,12 +34,13 @@ void CMainFrame::OnPaint() {
     auto* previous=section_font_.GetSafeHandle() ? dc.SelectObject(&section_font_) : nullptr;
     const auto& layout=console_layout_;
     Group(dc,layout.connection_group,L"1. HOST CONNECTION");
-    Group(dc,layout.analysis_group,L"2. BIN / DEVICE INFORMATION - OFFLINE FILE / LIVE BOARD");
+    Group(dc,layout.analysis_group,L"2. INFORMATION - HOST LIVE / DEVICE LIVE / APP BIN OFFLINE");
     Group(dc,layout.interface_group,L"3. PERIPHERAL / TARGET");
     Group(dc,layout.image_group,L"4. LOAD / UPDATE IMAGE");
     Group(dc,layout.log_group,L"5. MESSAGE LOG");
-    const wchar_t* titles[]={L"File / integrity",L"Image identity",L"Flash layout / IRQ",L"Update contract"};
-    for (int i=0;i<4;++i) Group(dc,layout.metadata_groups[i],titles[i]);
+    const wchar_t* titles[]={L"BIN check / layout",L"BIN interface / policy",L"BIN compatibility / LIVE policy"};
+    const auto file_border=firmware_upgrade::visual::SourceColors(firmware_upgrade::visual::Provenance::ImageFile).border;
+    for (int i=0;i<3;++i) Group(dc,layout.metadata_groups[i],titles[i],file_border);
     if (previous) dc.SelectObject(previous);
 }
 
@@ -84,7 +86,7 @@ HBRUSH CMainFrame::OnCtlColor(CDC* dc, CWnd* window, UINT control_type) {
         if (valid) {
             const bool compatible=firmware_upgrade::image_policy::Allows(policy,
                 IsMiscTab()?IP_ROLE_BRIDGE_APP:IP_ROLE_DEVICE_APP,
-                IsMiscTab()?IP_UART:(IsI2cTab()?IP_I2C:IP_CAN),nullptr);
+                IsMiscTab()||IsUartTab()?IP_UART:(IsI2cTab()?IP_I2C:IP_CAN),nullptr);
             const auto palette=firmware_upgrade::visual::Colors(compatible?
                 firmware_upgrade::visual::Tone::Ready:firmware_upgrade::visual::Tone::Error);
             dc->SetTextColor(palette.text); dc->SetBkColor(palette.background);

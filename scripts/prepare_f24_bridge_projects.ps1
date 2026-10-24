@@ -41,6 +41,8 @@ foreach($mode in @('boot','app')) {
     }
     if($mode -eq 'app') {
         $expected['app_image_config.h']=$true; $expected['app_irq_handlers.h']=$true
+        foreach($path in @('..\common\bridge_uart.c','..\common\bridge_uart.h',
+            '..\f24_board\f24_uart_backend.c')) { $expected[$path]=$true }
     }
     foreach($source in $sources) {
         $relative=$source.FullName.Substring($board.Length+1)

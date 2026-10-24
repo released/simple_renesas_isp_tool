@@ -4,8 +4,8 @@ namespace firmware_upgrade::console {
 struct Rect { int x, y, width, height; };
 struct Layout {
     Rect connection_group, analysis_group, interface_group, image_group, log_group;
-    Rect metadata_groups[4], metadata_panes[4];
-    Rect connection, identities, firmware, device_details, status, tabs;
+    Rect metadata_groups[3], metadata_panes[3];
+    Rect connection, identities, firmware, loaded_bin, bin_details, device_details, status, tabs;
     Rect interface_heading, image_heading, log_heading;
     Rect interface_pane, image_pane, log_pane, footer;
     int field_row_height, metadata_row_height, interface_row_height;

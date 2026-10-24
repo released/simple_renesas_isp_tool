@@ -194,7 +194,11 @@ def table_flowable(lines: list[str], styles: dict[str, ParagraphStyle], width: f
         style = styles["table_header"] if row_index == 0 else styles["table_cell"]
         data.append([Paragraph(inline_markup(cell), style) for cell in row])
     if column_count == 2:
-        widths = [width * 0.31, width * 0.69]
+        numeric_steps = len(normalized) > 1 and all(
+            row[0].isdigit() for row in normalized[1:]
+        )
+        fraction = 0.07 if numeric_steps else 0.31
+        widths = [width * fraction, width * (1 - fraction)]
     else:
         widths = [width / column_count] * column_count
     table = Table(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
@@ -303,7 +307,9 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle], asset_ro
             if aspect_ratio <= 1.05:
                 preamble = []
                 if (last_heading_index is not None and
-                        len(story) - last_heading_index <= 3):
+                        len(story) - last_heading_index <= 3 and
+                        all(isinstance(item, (Paragraph, Spacer))
+                            for item in story[last_heading_index:])):
                     preamble = story[last_heading_index:]
                     del story[last_heading_index:]
                 # A table's trailing spacer may otherwise spill onto an empty
@@ -358,7 +364,13 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle], asset_ro
                         if all(isinstance(item, (Paragraph, Spacer)) for item in candidate):
                             caption_height = sum(item.wrap(landscape_width, landscape_height)[1]
                                 + item.getSpaceBefore() + item.getSpaceAfter() for item in candidate)
-                            if caption_height + diagram.drawHeight + 12 < landscape_height:
+                            if caption_height < landscape_height * 0.4:
+                                # Reserve the introduction before scaling a large
+                                # flow; otherwise it is stranded on the prior page.
+                                diagram, unused_ratio = diagram_image(
+                                    image_path, landscape_width,
+                                    min(landscape_height * 0.72,
+                                        landscape_height - caption_height - 26))
                                 preamble = candidate
                                 del story[last_heading_index:]
                     # Let the frame choose the break. A forced break here leaves

@@ -27,20 +27,22 @@ Layout Calculate(int width, int height, int text_height) {
     };
     out.connection_group=band(title+row+padding);
     out.connection={margin+padding,out.connection_group.y+title,content_width-padding*2,row};
-    const int metadata_height=title+field_row*5+padding;
+    const int metadata_height=title+field_row*4+padding;
     out.analysis_group=band(title+card+gap+metadata_height+padding);
     const int inner_width=content_width-padding*2;
-    const int card_width=(inner_width-gap*4)/5;
+    const int card_width=(inner_width-gap*3)/4;
     out.identities={margin+padding,out.analysis_group.y+title,card_width*2+gap,card};
     out.firmware={out.identities.x+out.identities.width+gap,out.identities.y,
         inner_width-out.identities.width-gap,card};
     const int group_y=out.identities.y+card+gap;
+    out.loaded_bin={margin+padding,group_y,card_width,metadata_height-row-gap};
+    out.bin_details={out.loaded_bin.x,group_y+metadata_height-row,card_width,row};
     const int metadata_width=(inner_width-gap*3)/4;
-    for (int i=0;i<4;++i) {
-        const int left=margin+padding+i*(metadata_width+gap);
-        const int w=i==3 ? margin+content_width-padding-left : metadata_width;
+    for (int i=0;i<3;++i) {
+        const int left=margin+padding+(i+1)*(metadata_width+gap);
+        const int w=i==2 ? margin+content_width-padding-left : metadata_width;
         out.metadata_groups[i]={left,group_y,w,metadata_height};
-        out.metadata_panes[i]={left+padding,group_y+title,w-padding*2,field_row*5};
+        out.metadata_panes[i]={left+padding,group_y+title,w-padding*2,field_row*4};
     }
     out.status = band(text_height + 8);
     const int footer_height = row;
@@ -80,7 +82,7 @@ int MinimumClientHeight(int text_height) {
     const int row=(std::max)(24,text_height+8), compact=(std::max)(22,text_height+4);
     const int title=text_height+8, field=(std::max)(20,text_height+4);
     const int connection=title+row+6;
-    const int analysis=title+(text_height*3+10)+5+(title+field*5+6)+6;
+    const int analysis=title+(text_height*3+10)+5+(title+field*4+6)+6;
     const int top=6+connection+5+analysis+5+(text_height+8)+5;
     const int body=(std::max)({(compact+3)+5+(compact+2)*9+compact+title+6,
         (row+2)*3+row*2+2+80+title+6,row*7+title+6});

@@ -12,7 +12,8 @@ if ($blocks.Count -ne 1) { throw 'Expected one canonical F24 app IRQ block.' }
 $updates=@()
 foreach ($relative in @('slide_isp_tool_for_RL78\index.md','slide_boot_loader_for_RL78\index.md')) {
     $expected=Get-WebGuideProjection -Section F24_APP_IRQ -Folder ($relative.Split('\')[0]) -Canonical $blocks[0].Value
-    $path=Join-Path $WebRoot $relative; $text=[IO.File]::ReadAllText($path)
+    $path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder ($relative.Split('\')[0]) -Section F24_APP_IRQ
+    $text=[IO.File]::ReadAllText($path)
     $matches=[regex]::Matches($text,$pattern)
     if ($matches.Count -ne 1) { throw "Expected one F24 managed block: $path" }
     if ($CheckOnly) {

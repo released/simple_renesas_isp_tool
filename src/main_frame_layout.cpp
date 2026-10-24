@@ -51,18 +51,19 @@ void CMainFrame::LayoutControls(int width, int height) {
     const int half = (layout.identities.width - gap) / 2;
     Move(host_info_label_, {layout.identities.x, layout.identities.y, half, layout.identities.height});
     Move(target_info_label_, {layout.identities.x + half + gap, layout.identities.y, half, layout.identities.height});
-    const int third = (layout.firmware.width - gap * 2) / 3;
-    for (std::size_t i = 0; i < firmware_overview_cards_.size(); ++i)
-        Move(firmware_overview_cards_[i], {layout.firmware.x + static_cast<int>(i) * (third + gap),
-            layout.firmware.y, third, layout.firmware.height});
+    const int firmware_width = (layout.firmware.width - gap) / 2;
+    for (std::size_t i = 0; i < 2U; ++i)
+        Move(firmware_overview_cards_[i], {layout.firmware.x + static_cast<int>(i) * (firmware_width + gap),
+            layout.firmware.y, firmware_width, layout.firmware.height});
+    Move(firmware_overview_cards_[2],layout.loaded_bin);
+    Move(bin_details_btn_,layout.bin_details);
     Move(target_metadata_label_, layout.device_details);
     Move(operation_status_card_, layout.status);
     Move(bus_tabs_, layout.tabs);
-    CFont* tab_font = dc.SelectObject(&ui_font_);
-    const int tab_caption = (std::max)({dc.GetTextExtent(L"CAN").cx,
-        dc.GetTextExtent(L"I2C").cx, dc.GetTextExtent(L"Misc").cx}) + 24;
-    if (tab_font) dc.SelectObject(tab_font);
-    bus_tabs_.SetItemSize(CSize((std::max)(tab_caption, (layout.tabs.width - 8) / 3), layout.interface_row_height));
+    // Natural caption widths keep the UART/Xmodem entry visible in the left
+    // column without forcing four copies of the longest tab width.
+    bus_tabs_.SetPadding(CSize(6,3));
+    bus_tabs_.SetItemSize(CSize(0,layout.interface_row_height));
     LayoutInterfaceControls(layout.interface_pane.x, layout.interface_pane.y,
                             layout.interface_pane.width, layout.interface_pane.height, layout.interface_row_height);
 
@@ -82,27 +83,32 @@ void CMainFrame::LayoutControls(int width, int height) {
     Move(compare_metadata_btn_,{compare_x,address_y,compare_width,row});
     Move(preflight_btn_,{compare_x+compare_width+gap,address_y,
         (std::max)(0,image.x+image.width-compare_x-compare_width-gap),row});
-    const FirmwareFieldIndex groups[4][5]={
-        {kFirmwareFieldBinSize,kFirmwareFieldCalculatedCrc,kFirmwareFieldStoredCrc,kFirmwareFieldChecksumResult,kFirmwareFieldMetadataStatus},
-        {kFirmwareFieldMcu,kFirmwareFieldAppVersion,kFirmwareFieldBuild,kFirmwareFieldTarget,kFirmwareFieldProtocolFormat},
-        {kFirmwareFieldAppRange,kFirmwareFieldImageCapacity,kFirmwareFieldFlashBoot,kFirmwareFieldMinimumErase,kFirmwareFieldBootAbi},
-        {kFirmwareFieldCanRates,kFirmwareFieldCanIds,kFirmwareFieldUpdatePolicy,kFirmwareFieldVersionControl,kFirmwareFieldInstalledVersionPolicy}};
-    for (std::size_t group=0;group<4;++group) {
+    const FirmwareFieldIndex groups[3][4]={
+        {kFirmwareFieldChecksumResult,kFirmwareFieldMetadataStatus,kFirmwareFieldAppRange,kFirmwareFieldImageCapacity},
+        {kFirmwareFieldCanRates,kFirmwareFieldCanIds,kFirmwareFieldUpdatePolicy,kFirmwareFieldProtocolFormat},
+        {kFirmwareFieldBootAbi,kFirmwareFieldVersionControl,kFirmwareFieldInstalledVersionPolicy,kFirmwareFieldFlashBoot}};
+    for (std::size_t field=0;field<kFirmwareFieldCount;++field) {
+        firmware_field_labels_[field].ShowWindow(SW_HIDE);
+        firmware_field_values_[field].ShowWindow(SW_HIDE);
+    }
+    for (std::size_t group=0;group<3;++group) {
         const auto& pane=layout.metadata_panes[group];
         int label_width=0;
         for (auto field:groups[group]) label_width=(std::max)(label_width,CaptionWidth(firmware_field_labels_[field]));
-        for (std::size_t item=0;item<5;++item) {
+        for (std::size_t item=0;item<4;++item) {
             const auto field=groups[group][item]; const int cy=pane.y+static_cast<int>(item)*layout.metadata_row_height;
             Move(firmware_field_labels_[field],{pane.x,cy+2,label_width,layout.metadata_row_height-2});
             Move(firmware_field_values_[field],{pane.x+label_width+3,cy,
                 pane.width-label_width-3,layout.metadata_row_height-2});
+            firmware_field_labels_[field].ShowWindow(SW_SHOW);
+            firmware_field_values_[field].ShowWindow(SW_SHOW);
         }
     }
     const int action_y = layout.device_details.y+layout.device_details.height+gap;
     const int start_width = CaptionWidth(start_firmware_update_btn_) + 16;
     Move(start_firmware_update_btn_, {image.x, action_y, start_width, row + 5});
     const int force_width=CaptionWidth(force_old_firmware_btn_)+16;
-    const bool show_force=!IsMiscTab() && !IsI2cTab();
+    const bool show_force=!IsMiscTab() && (!IsI2cTab()||IsI2cIsp());
     const bool force_inline=start_width+gap+force_width<=image.width;
     const int force_y=force_inline?action_y:action_y+row+gap+5;
     Move(force_old_firmware_btn_,{force_inline?image.x+start_width+gap:image.x,force_y,

@@ -11,7 +11,7 @@ if ($blocks.Count -ne 1) { throw 'Expected one canonical public-resources block.
 $updates=@()
 foreach ($relative in @('slide_isp_tool_for_RL78\index.md','slide_boot_loader_for_RL78\index.md')) {
     $expected=Get-WebGuideProjection -Section PUBLIC_RESOURCES -Folder ($relative.Split('\')[0]) -Canonical $blocks[0].Value
-    $path=Join-Path $WebRoot $relative
+    $path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder ($relative.Split('\')[0]) -Section PUBLIC_RESOURCES
     $text=[IO.File]::ReadAllText($path)
     $matches=[regex]::Matches($text,$pattern)
     if ($matches.Count -ne 1) { throw "Expected one public-resources block: $path" }

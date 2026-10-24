@@ -4,6 +4,7 @@
 
 volatile uint8_t IICAMK0, IICE0, IICBSY0, MSTS0, WTIM0, ACKE0;
 volatile uint8_t IICAIF0, STT0, STD0, IICA0, ACKD0, WREL0, SPT0, PM6;
+volatile uint8_t PRS0, SMC0, IICWL0, IICWH0;
 static uint8_t clock_ready = 1U;
 static int failures;
 void R_Config_IICA0_Create(void) { IICE0 = 1U; IICAMK0 = 1U; }
@@ -28,8 +29,17 @@ int TestF24I2cBackend(void)
     CheckBackend(MockBackendOpen(0U, 0U) == BRIDGE_I2C_BUS_ERROR, "clock prerequisite");
     clock_ready = 1U;
     CheckBackend(MockBackendOpen(1U, 0U) == 3U, "invalid port");
-    CheckBackend(MockBackendOpen(0U, 1U) == 3U, "unadvertised 400K");
+    CheckBackend(MockBackendOpen(0U, 2U) == 3U, "invalid speed");
+    CheckBackend(MockBackendOpen(0U, 1U) == 0U && SMC0 == 1U && PRS0 == 1U &&
+        IICWL0 == 26U && IICWH0 == 24U, "400K conservative timing");
+    MockBackendAbort(); IICBSY0 = 0U;
+    CheckBackend(MockBackendWrite(0x40U,tx,1U,0U) == 0U && SMC0 == 1U &&
+        IICWL0 == 26U && IICWH0 == 24U, "400K survives abort/recreate");
+    AddressPhase(0x80U); MockBackendIrq(); IICBSY0=0U; MockBackendPoll();
+    MockBackendAbort();
     CheckBackend(MockBackendOpen(0U, 0U) == 0U, "open 100K");
+    CheckBackend(!SMC0 && PRS0 == 1U && IICWL0 == 94U && IICWH0 == 106U,
+        "default100K timing unchanged");
     CheckBackend(MockBackendWrite(9U, tx, 3U, 1U) == 0U, "TX start");
     CheckBackend(IICAMK0 == 1U, "start interrupt masked");
     AddressPhase(0x12U);

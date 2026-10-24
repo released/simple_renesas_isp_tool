@@ -9,6 +9,7 @@
 #include "core/host_link_baud.h"
 #include "core/update_evidence.h"
 #include "core/host_counter_evidence.h"
+#include "core/isp_i2c_exchange.h"
 
 #include <algorithm>
 #include <array>
@@ -37,6 +38,34 @@ WorkerSession::WorkerSession() {
         });
     can_client_.SetHostLinkClient(&host_link_client_);
     i2c_client_.SetHostLinkClient(&host_link_client_);
+    uart_client_.SetHostLinkClient(&host_link_client_);
+    isp_client_.SetCancelCheck([this](){return IsCancelRequested();});
+    isp_client_.SetExchange([this](const std::vector<std::uint8_t>& bytes,std::uint32_t timeout,
+        std::vector<std::uint8_t>* reply,std::wstring* error) {
+        if(state_.isp_contract==2U) {
+            return isp::MailboxExchange([this](const std::vector<std::uint8_t>& tx,std::uint16_t count,
+                std::uint16_t deadline,std::vector<std::uint8_t>* rx,std::wstring* reason) {
+                i2c_host::Transaction t;t.address=state_.uart_configuration.address;t.transmit=tx;t.receive_length=count;
+                t.timeout_ms=deadline;t.repeated_start=false;return i2c_client_.Transfer(t,rx,reason);
+            },[this](){return IsCancelRequested();},bytes,timeout,reply,error);
+        }
+        uart_host::Transaction transaction;transaction.transmit=bytes;
+        transaction.receive_min=14U;transaction.receive_max=ISP_FRAME_MAX;
+        transaction.timeout_ms=isp::UartTimeoutMs(state_.uart_configuration.baud,bytes.size(),ISP_FRAME_MAX,timeout);
+        transaction.idle_ms=isp::UartIdleMs(state_.uart_configuration.baud);
+        return uart_client_.Transfer(transaction,reply,error);
+    });
+    isp_client_.SetStreamExchange([this](const std::vector<std::uint8_t>& bytes,std::uint32_t timeout,
+        std::vector<std::uint8_t>* reply,std::wstring* error) {
+        uart_host::Transaction t;t.transmit=bytes;t.receive_min=1U;t.receive_max=1U;
+        t.clear_receive=false;t.timeout_ms=isp::UartTimeoutMs(state_.uart_configuration.baud,bytes.size(),1U,timeout);
+        const bool success=uart_client_.Transfer(t,reply,error);
+        if(!success&&!IsCancelRequested()) {
+            const bool old=cleanup_in_progress_;cleanup_in_progress_=true;
+            std::wstring ignored;uart_client_.Abort(&ignored);cleanup_in_progress_=old;
+        }
+        return success;
+    });
     can_client_.SetTraceCallback(
         [this](can_host::TraceDirection direction,
                const can_host::Frame& frame) {
@@ -263,7 +292,8 @@ void WorkerSession::ThreadMain() {
         PostState();
         std::wstring error;
         bool success = false;
-        const bool report_update=command.type==CommandType::ProgramF13Boot ||
+        const bool uart_update=command.type==CommandType::UartProgram;
+        const bool report_update=uart_update || command.type==CommandType::ProgramF13Boot ||
             command.type==CommandType::BridgeProgram || command.type==CommandType::BridgeRun;
         const auto report_started=std::chrono::steady_clock::now();
         const auto report_port=state_.port_name;
@@ -279,10 +309,18 @@ void WorkerSession::ThreadMain() {
         update_timings_.clear();
         const auto report_host=state_.host_summary;
         const auto report_target=state_.target_summary;
-        const auto report_can=state_.can_summary;
+        const auto report_can=uart_update ? state_.uart_summary : state_.can_summary;
+        const std::wstring isp_name=command.isp_contract==2U?L"I2C ISP":command.isp_contract==3U?L"XMODEM-CRC128":L"UART ISP";
 
         try {
             switch (command.type) {
+                case CommandType::UartDiscover:
+                case CommandType::UartEnter:
+                case CommandType::UartProgram:
+                case CommandType::UartTest:
+                case CommandType::UartVerify:
+                    success=ProcessUart(command,&error);
+                    break;
                 case CommandType::OpenAndProbe:
                     success = ProcessOpenAndProbe(command, &error);
                     break;
@@ -390,7 +428,7 @@ void WorkerSession::ThreadMain() {
             }
             phases+=L"}";
             report.text=L"{\n  \"schema\": 1,\n  \"operation\": "+evidence::JsonString(
-                command.type==CommandType::ProgramF13Boot ? L"CAN device update" :
+                uart_update ? isp_name+L" device update" : command.type==CommandType::ProgramF13Boot ? L"CAN device update" :
                 command.type==CommandType::BridgeRun ? L"Host explicit RUN confirmation" : L"Host app update")+
                 L",\n  \"result\": "+evidence::JsonString(report_result)+
                 L",\n  \"message\": "+evidence::JsonString(result_message)+
@@ -398,7 +436,10 @@ void WorkerSession::ThreadMain() {
                 L",\n  \"host_baud\": "+std::to_wstring(report_baud)+
                 L",\n  \"host\": "+evidence::JsonString(report_host)+
                 L",\n  \"target_before\": "+evidence::JsonString(report_target)+
-                L",\n  \"can\": "+evidence::JsonString(report_can)+
+                L",\n  \"can\": "+evidence::JsonString(uart_update?L"":report_can)+
+                L",\n  \"device_uart\": "+evidence::JsonString(uart_update&&command.isp_contract!=2U?report_can:L"")+
+                L",\n  \"device_i2c\": "+evidence::JsonString(uart_update&&command.isp_contract==2U?report_can:L"")+
+                L",\n  \"device_protocol\": "+evidence::JsonString(uart_update?isp_name:L"")+
                 L",\n  \"elapsed_ms\": "+std::to_wstring(elapsed)+
                 L",\n  \"input_bytes\": "+std::to_wstring(command.image.size())+
                 L",\n  \"phases_ms\": "+phases+
@@ -413,7 +454,7 @@ void WorkerSession::ThreadMain() {
             // Render and flush on the worker, never on the window-message path.
             try {
                 evidence::ReportView view;
-                view.operation=command.type==CommandType::ProgramF13Boot?L"CAN device update":
+                view.operation=uart_update?isp_name+L" device update":command.type==CommandType::ProgramF13Boot?L"CAN device update":
                     command.type==CommandType::BridgeRun?L"Host explicit RUN confirmation":L"Host app update";
                 view.result=report_result;
                 view.message=result_message; view.guidance=help;
@@ -423,12 +464,12 @@ void WorkerSession::ThreadMain() {
                     utc.wYear,utc.wMonth,utc.wDay,utc.wHour,utc.wMinute,utc.wSecond,utc.wMilliseconds);
                 view.recorded_utc=stamp; view.phases=update_timings_;
                 view.fields={{L"COM",report_port},{L"Host Baud",std::to_wstring(report_baud)},
-                    {L"Host",report_host},{L"Target before operation",report_target},{L"CAN configuration",report_can},
+                    {L"Host",report_host},{L"Target before operation",report_target},{uart_update?L"Device bus configuration":L"CAN configuration",report_can},
                     {L"Input bytes",std::to_wstring(command.image.size())},{L"Elapsed ms",std::to_wstring(elapsed)},
                     {L"Operation evidence",update_details_},{L"Host counter deltas",counters},
                     {L"Host counter assessment",observations.Status()+L". "+observations.Note()},{L"Host peaks / scope",peaks}};
                 if(command.type!=CommandType::BridgeRun && !command.image.empty()) {
-                    if(command.type==CommandType::ProgramF13Boot) {
+                    if(command.type==CommandType::ProgramF13Boot || uart_update) {
                         const auto input=firmware_update::InspectImage(command.image);
                         view.fields.push_back({L"Offline BIN CRC32 (calculated / stored)",evidence::Hex(input.calculated_crc32)+L" / "+evidence::Hex(input.stored_crc32)});
                         if(input.metadata_valid) view.fields.push_back({L"Offline BIN identity",input.metadata.mcu_family+L" / "+input.metadata.mcu_part+
@@ -470,6 +511,7 @@ void WorkerSession::ThreadMain() {
     }
 
     cancel_requested_ = false;
+    AbortUartBestEffort();
     StopCanBestEffort();
     RestoreLinkBaudBestEffort();
     serial_port_.Close();
@@ -540,6 +582,7 @@ bool WorkerSession::ProcessResetHost(std::wstring* error) {
     port_name = state_.port_name;
     baudrate = state_.requested_baudrate;
     AbortI2cBestEffort();
+    AbortUartBestEffort();
     StopCanBestEffort();
     PostLog(L"Sending one-shot RESET_HOST; waiting for ACK before the bridge "
             L"software reset.");
@@ -615,6 +658,7 @@ void WorkerSession::ProcessDisconnect() {
     const bool was_busy = state_.busy;
     cancel_requested_ = false;
     AbortI2cBestEffort();
+    AbortUartBestEffort();
     StopCanBestEffort();
     RestoreLinkBaudBestEffort();
     if (state_.f24_stats_valid) {
@@ -923,6 +967,11 @@ const wchar_t* WorkerSession::CommandName(CommandType type) {
     case CommandType::CanTxTest: return L"Bridge self test";
     case CommandType::ResetHost: return L"Reset host";
     case CommandType::ProbeI2c: return L"I2C reference discovery";
+    case CommandType::UartDiscover: return L"UART device discovery";
+    case CommandType::UartEnter: return L"Enter UART device Boot";
+    case CommandType::UartProgram: return L"UART device update";
+    case CommandType::UartTest: return L"UART Custom Transfer";
+    case CommandType::UartVerify: return L"UART read-only VERIFY";
     case CommandType::BridgeInfo: return L"Read host update info";
     case CommandType::BridgeEnter: return L"Enter host Boot";
     case CommandType::BridgeProgram: return L"Host App update";
