@@ -1,5 +1,18 @@
 # Firmware Upgrade Tool Development Checklist
 
+## Current publication scope (2026-10-25 clarification)
+
+- [x] Tool-side54RH850 support files are eligible under explicit user authority;
+  preserve their existing offline/physical acceptance distinctions.
+- [x] Independent Sample_Project_RH850_S1_(ISP_)Boot_loader_* and
+  RL78_{G16,G22,F13,F24}_ISP_Boot_loader_* await board validation and separate
+  authorization.36matching directories have no Git initialization;none modified.
+- [x] Narrowed path guard,Tool support allow/in-MCU-tree deny and staged-index
+  refusal tested by3scoped local Git integration checks;static/fixture clean,
+  syntax/public wording/private-data checks pass. No full product suite/rebuild.
+- [x] Only Tool source/docs/policy are in this explicit publication scope;
+  no companion repository or website publication. Detailed evidence in SELF_CHECK.
+
 ## PC0109 slimming (2026-10-25)
 
 - [x] Fresh comparable baseline and original delivery/settings preserved.
@@ -11,7 +24,7 @@
 - [x] Retail1,291,264B; exact hashes/scope/limitations in SELF_CHECK and detailed
   internal tmp record. Private INI unchanged. No physical acceptance inferred.
 - [x] Tool-only publication preflight/index/local-data/ancestry guards pass;
-  retain RH850 deferral and exclude private/tmp/runtime logs. No companion/web
+  retain hardware-pending MCU deferral and exclude private/tmp/runtime logs. No companion/web
   push or force-add. Final remote SHA is recorded in the shared batch progress.
 
 ## RL78 serial SC follow-up (2026-10-24)

@@ -4,6 +4,8 @@ function Get-GithubPublishTargets {
           [string]$F24TransferProject,[string]$F24BootProject,[string]$F24AppProject,
           [string]$F24FdTransferProject,[string]$F24FdBootProject,[string]$F24FdAppProject,
           [string]$F13TransferProject)
+    # Hardware-pending MCU project trees are distinct from Tool-side RH850 support.
+    $pendingMcu='(?i)(?:^|[\\/])(?:Sample_Project_RH850_S1_(?:ISP_)?Boot_loader_|RL78_(?:G16|G22|F13|F24)_ISP_Boot_loader_)[^\\/]*(?:[\\/]|$)'
     @(
         @{Name='RL78_F13_Boot_loader_CAN';Root=$F13BootProject;Remote='released/RL78_F13_Boot_loader_CAN'
           Groups=@(@{Relative='DefaultBuild';Archive='f13_boot';Keep=@('boot0000_1FFF.hex')})},
@@ -23,7 +25,7 @@ function Get-GithubPublishTargets {
           Groups=@(@{Relative='DefaultBuild';Archive='f24_fd_boot';Keep=@('boot0000_1FFF.hex')})},
         @{Name='RL78_F24_Boot_loader_CAN_FD_app';Root=$F24FdAppProject;Remote='released/RL78_F24_Boot_loader_CAN_FD_app'
           Groups=@(@{Relative='DefaultBuild';Archive='f24_fd_app';Keep=@('RL78_F24_Boot_loader_CAN_FD_app_update.bin')})},
-        @{Name='simple_renesas_isp_tool';Root=$ToolRoot;Remote='released/simple_renesas_isp_tool';DeferredPattern='(?i)rh850'
+        @{Name='simple_renesas_isp_tool';Root=$ToolRoot;Remote='released/simple_renesas_isp_tool';DeferredPattern=$pendingMcu
           Groups=@(@{Relative='firmware\RL78_F24_Bridge_boot\DefaultBuild';Archive='bridge_boot';Keep=@('RL78_F24_Bridge_boot.mot')},
             @{Relative='firmware\RL78_F24_Bridge_app\DefaultBuild';Archive='bridge_app'
               Keep=@('RL78_F24_Bridge_app_bridge_update.bin','RL78_F24_Bridge_app_flash.mot')})}

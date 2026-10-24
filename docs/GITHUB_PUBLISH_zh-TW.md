@@ -58,9 +58,23 @@ F24 device App 根目錄的 `boot_app.hex` 保留作 Boot／App 合併初裝，�
 雙擊根目錄 `github_push.bat`，檢視十個 repository 的狀態與保留清單。
 輸入 `PUSH` 後，才進行整理、commit 與 push；取消時不變更檔案或 Git index。
 除了下述暫緩路徑，未被忽略的新增、修改與刪除會包含在提交內。
-Tool 中路徑名稱含 `RH850` 的專用指南、腳本及測試不納入這個發佈清單，大小寫皆適用。
-預覽的 `DEFERRED` 清單列出排除項目；既有 tracked 檔案的修改也不會提交，本機檔案保留原狀。
-RH850 的獨立 MCU repository 不在清單內。此設定不提供略過參數，調整發佈範圍需修改清單並重新驗證。
+Tool repository 內的 RH850 共用原始碼、專用指南、建置腳本及測試可以發佈，
+不再單以路徑含 `RH850` 判定排除。這不代表 MCU 韌體已通過實板驗證。
+
+下列獨立 MCU 專案須待硬體板驗證及另行授權後才發佈，目前不在 catalog 內：
+
+```text
+Sample_Project_RH850_S1_Boot_loader_*
+Sample_Project_RH850_S1_ISP_Boot_loader_*
+RL78_G16_ISP_Boot_loader_*
+RL78_G22_ISP_Boot_loader_*
+RL78_F13_ISP_Boot_loader_*
+RL78_F24_ISP_Boot_loader_*
+```
+
+即使這些專案目錄被複製到 Tool 內，也會依完整路徑元件排除，大小寫皆適用。
+預覽的 `DEFERRED` 清單列出排除項目；既有 tracked 修改也不會提交，本機檔案保留原狀。
+staged-index 檢查會拒絕此類路徑，沒有略過參數。Tool 發佈不等於 MCU 或相關網頁發佈授權。
 
 僅預覽，不連線、不整理、不提交：
 
@@ -114,6 +128,7 @@ flowchart TD
 需要恢復除錯輸出時，可正常重建，或由本次備份複製回原 `DefaultBuild`。
 同名檔已重新產生時先比對內容，不直接覆寫。
 隔離流程測試為 `scripts/verify_github_publish.ps1`，只使用本機測試 repository／bare remote，不連接 GitHub。
+僅調整發佈邊界時使用 `-PublicationBoundaryOnly`，驗證 Tool 內容可發佈、六類 MCU 專案排除及 index 拒絕；不重跑未受影響的其他拒絕案例或產品建置。
 
 ## 本機資料排除與重試
 

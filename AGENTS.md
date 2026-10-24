@@ -527,10 +527,16 @@ logic outside generated files except in preserved user-code sections.
   Read docs/GITHUB_PUBLISH_zh-TW.md and run verify_github_publish.ps1 plus the
   workspace safe-clean audit after changing this workflow. No product rebuild
   or version bump for publication-script-only changes.
-  Tool paths containing RH850 (case-insensitive) are deferred: exclude them
-  from staging and reject any such staged diff. Preserve local tracked/untracked
-  drafts; no override flag. Keep public navigation/projections free of their
-  unpublished engineering chapters. RH850_DEVICE remains a deferred empty block.
+  User clarification2026-10-25: Tool-side RH850 shared sources, guides and test/
+  build scripts may be published in this Tool repository. Do not blanket-exclude
+  the word RH850. Independent MCU projects matching
+  Sample_Project_RH850_S1_Boot_loader_*, Sample_Project_RH850_S1_ISP_Boot_loader_*
+  and RL78_{G16,G22,F13,F24}_ISP_Boot_loader_* stay local until hardware-board
+  validation and explicit release authorization. They are not catalog targets;
+  matching project trees copied under Tool are also excluded, case-insensitively,
+  and rejected by the staged-index guard. No override flag or firmware push is
+  implied by publishing Tool-side mirrors. Public web navigation/projections
+  remain deferred; RH850_DEVICE remains an empty block until separately authorized.
 
 - PC: Visual Studio 2022 with MFC, x64 Release is the release target.
 - F24/F13: CS+ with the project-selected CC-RL toolchain.

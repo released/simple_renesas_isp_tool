@@ -1,6 +1,38 @@
 # Development Handoff
 
-## PC0109 slimming (2026-10-25)
+## Current publication boundary clarification (2026-10-25)
+
+User permits the54 formerly deferred Tool-side RH850 files (4guides,
+13shared firmware/template sources,20scripts and17test/mock files) to be
+published in this Tool repository. This is not publication of the independent
+MCU project checkouts or a claim of physical-board acceptance.
+
+Keep Sample_Project_RH850_S1_Boot_loader_*,
+Sample_Project_RH850_S1_ISP_Boot_loader_* and
+RL78_{G16,G22,F13,F24}_ISP_Boot_loader_* local until board validation and
+separate release authorization. Inventory found36matching directories,
+six per pattern,none initialized as Git repositories. No init/remote/commit/
+push was performed in them. Related web projection/publication remains deferred.
+
+Changed catalog exclusion from any RH850 substring to exact hardware-pending
+project path components; retained case-insensitive/separator/nested-tree and
+staged-index protection. Updated publisher messages and added a scoped runner
+switch. verify_github_publish.ps1 -PublicationBoundaryOnly PASS3checks using
+disposable local worktrees/bare remotes only:normal catalog12deliveries/10fake
+repos,eligible Tool files versus six blocked MCU families,and staged refusal.
+Unchanged refusal/idempotence cases were not rerun. Clean static audit2scripts
+and17-file nested/help/idempotence/junction fixture PASS; no actual clean repeated.
+Four reader documents pass public-content checks;54source hashes match preserved
+prior validation. Reuse existing offline/model/PDF evidence;no hardware,firmware
+build,product build/version change or web mutation. Formal EXE and private INI
+hashes unchanged. Exact local logs:tmp/internal/verification/publication-boundary-20261025.log
+and publication-boundary-clean-20261025.log. Final remote SHA is in shared progress.
+
+This clarification supersedes the earlier blanket RH850-path restriction in
+historical entries below. Only the Tool repository is authorized for this push;
+do not execute the ten-repository convenience publisher against actual checkouts.
+
+## PC0109 slimming (2026-10-25, initial batch record)
 
 Completed local adoption: comparable static x64 Release3,369,472->1,291,264
 bytes. Hash8F51CB04EA29D8B62602F1AF0A265BB80A24E3E17F3F2EBEE4AA109AD54C0FC7;

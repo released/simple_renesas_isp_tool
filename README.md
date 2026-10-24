@@ -327,7 +327,10 @@ F24 CAN FD Transfer/Boot/App and Tool in order (ten repositories, twelve
 DefaultBuild deliveries).
 The Tool includes F24 CAN host Bridge Boot/App. Type PUSH to confirm; no force
 push, automatic merge, build or web deployment. Local tmp/INI/log/report data
-are excluded. RH850-named development paths remain local and are not staged.
+are excluded. Tool-side RH850 shared sources, guides and verification scripts
+are eligible; independent RH850 and RL78 ISP MCU projects await hardware-board
+validation and separate release authorization. Their project trees are excluded
+from staging even if copied under Tool. Web publication remains separate.
 For a read-only preview run scripts/push_github.ps1 without flags.
 See the [publication and recovery guide (zh-TW)](./docs/GITHUB_PUBLISH_zh-TW.md).
 The shared catalog is scripts/github_publish_catalog.ps1. Checkouts must

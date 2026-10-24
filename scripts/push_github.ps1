@@ -43,12 +43,12 @@ try {
     [void](Invoke-PublishGit $toolRoot @('check-ignore','--no-index','tmp/__publish_probe__'))
     [void](Invoke-PublishGit $toolRoot @('check-ignore','--no-index','github_push.local.psd1'))
     Write-Host 'Publish main: F13 Boot/App/Transfer -> F24 Classical Transfer/Boot/App -> F24 FD Transfer/Boot/App -> Tool (including F24 CAN host).'
-    Write-Host "Unignored changes in all $($targets.Count) repositories are included, except deferred RH850 paths in Tool."
+    Write-Host "Unignored changes in all $($targets.Count) repositories are included, except hardware-pending MCU project trees. Tool-side RH850 support is eligible."
     foreach($target in $targets) {
         Write-Host "`n$($target.Name) -> $($target.Remote) : $($target.Root)"
         Write-Host $target.Status
         if($target.DeferredPaths.Count) {
-            Write-Host 'DEFERRED: these RH850 paths remain local and will not be staged/published:' -ForegroundColor Yellow
+            Write-Host 'DEFERRED: these hardware-pending MCU project paths remain local and will not be staged/published:' -ForegroundColor Yellow
             $target.DeferredPaths | ForEach-Object { Write-Host ('  '+$_) }
         }
         foreach($group in $target.Plan) {

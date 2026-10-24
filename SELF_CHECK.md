@@ -1,5 +1,30 @@
 # Host Link v2 Self-Check
 
+## Current publication boundary verification (2026-10-25)
+
+- [x] User distinguishes Tool-side54RH850 support files from independent MCU
+  projects. All54hashes match preserved evidence;no contents changed for upload.
+- [x] Six named hardware-pending project families stay outside the catalog;
+  exact path-component exclusion and staged-index rejection protect copied
+  project trees,case-insensitively,with either separator. No generic RH850 ban.
+- [x] scripts/verify_github_publish.ps1 -PublicationBoundaryOnly:3scoped local
+  Git integration checks PASS;12deliveries/10fake repos and tracked/untracked
+  pending content preservation,eligible Tool support publication and index
+  refusal covered. No GitHub/actual MCU access by this test. Other unchanged
+  refusal/idempotence cases reused,not rerun.
+- [x] Changed PowerShell syntax,static clean2scripts,17-file clean nested/help/
+  idempotence/junction fixture and4reader public-content checks PASS. Actual
+  project clean not repeated; product EXE/INI and54support hashes unchanged.
+- [x]36matching MCU directories found,six/pattern,all without .git;no init,
+  remote,commit or push. No product/firmware rebuild/version change,hardware
+  operation or web publication. Existing offline/model/PDF evidence reused;
+  physical acceptance remains NOT RUN. Tool-only explicit index is required.
+
+Local evidence:tmp/internal/verification/publication-boundary-20261025.log;
+publication-boundary-clean-20261025.log. Final publication SHA is recorded in
+shared EXE_SLIMMING_PROGRESS. This current boundary supersedes older blanket
+RH850 deferral statements,not their historical verification results.
+
 ## PC0109 EXE slimming acceptance (2026-10-25)
 
 - [x] Preserved original0108 EXE3,369,472 bytes, SHA256
@@ -40,8 +65,8 @@
 - [ ] Physical COM/CAN/serial/Flash/IRQ/stack/power,mixed-DPI and clean-PC
   acceptance NOT RUN in this batch. Exact measurements/raw scope:
   tmp/internal/verification/exe-slimming-20261025.json and shared batch evidence.
-  Publication uses Tool-only explicit paths and existing guards; RH850 remains
-  deferred, no companion/web push or DefaultBuild purge.
+  Publication uses Tool-only explicit paths and existing guards;hardware-pending
+  MCU project families remain deferred,no companion/web push or DefaultBuild purge.
 
 ## RL78 serial SC acceptance (2026-10-24)
 

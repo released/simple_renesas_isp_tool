@@ -1,5 +1,5 @@
 # Safe integration tests: disposable local worktrees/bare remotes only. No GitHub access.
-param()
+param([switch]$PublicationBoundaryOnly)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'github_publish_git.ps1')
 . (Join-Path $PSScriptRoot 'github_publish_reset.ps1')
@@ -7,6 +7,9 @@ $ErrorActionPreference='Stop'
 $testRoot=Join-Path (Split-Path -Parent $PSScriptRoot) ('tmp\internal\github_publish_tests\'+[guid]::NewGuid().ToString('N').Substring(0,8))
 [void](New-Item -ItemType Directory -Path $testRoot -Force)
 $passed=0
+$pendingProjects=@('Sample_Project_RH850_S1_Boot_loader_CAN',
+    'Sample_Project_RH850_S1_ISP_Boot_loader_UART','RL78_G16_ISP_Boot_loader_UART',
+    'RL78_G22_ISP_Boot_loader_I2C','RL78_F13_ISP_Boot_loader_Xmodem','RL78_F24_ISP_Boot_loader_UART')
 function Assert-Test($Value,[string]$Message) { if(!$Value) { throw $Message } }
 function Write-Fixture([string]$Path,[string]$Text) {
     [void](New-Item -ItemType Directory -Path (Split-Path -Parent $Path) -Force)
@@ -40,7 +43,10 @@ function New-TestCase([string]$Name) {
         [void](Invoke-PublishGit $target.Root @('config','user.email','publication@example.invalid'))
         Write-Fixture (Join-Path $target.Root '.gitignore') "tmp/`ngithub_push.local.psd1`n"
         Write-Fixture (Join-Path $target.Root 'README.md') "initial`n"
-        if($target.DeferredPattern) { Write-Fixture (Join-Path $target.Root 'docs\RH850_tracked.md') "initial RH850`n" }
+        if($target.DeferredPattern) {
+            Write-Fixture (Join-Path $target.Root 'docs\RH850_tracked.md') "initial RH850`n"
+            Write-Fixture (Join-Path $target.Root ('firmware\'+$pendingProjects[0]+'\README.md')) "initial pending MCU`n"
+        }
         foreach($group in $target.Groups) {
             foreach($name in $group.Keep) { Write-Fixture (Join-Path $target.Root ($group.Relative+'\'+$name)) ('delivery '+$name) }
             # Start tracked to verify that pruning removes files from the remote index.
@@ -58,6 +64,11 @@ function New-TestCase([string]$Name) {
             Write-Fixture (Join-Path $target.Root 'docs\RH850_NEW.md') 'local RH850 draft'
             Write-Fixture (Join-Path $target.Root 'scripts\build_rh850.ps1') 'local RH850 script'
             Write-Fixture (Join-Path $target.Root 'tests\rh850_mock\r_port.h') 'local RH850 mock'
+            Write-Fixture (Join-Path $target.Root 'firmware\common\isp_rh850\isp_rh850.h') 'Tool-side shared source'
+            Write-Fixture (Join-Path $target.Root ('firmware\'+$pendingProjects[0]+'\README.md')) "local pending MCU`n"
+            foreach($project in $pendingProjects) {
+                Write-Fixture (Join-Path $target.Root ('firmware\'+$project+'\source.c')) 'hardware-pending source'
+            }
         }
     }
     @{Root=$case;Targets=$targets;Backup=(Join-Path $targets[-1].Root 'tmp\internal\github_publish\test-archive')}
@@ -81,13 +92,33 @@ foreach($target in $plan) {
 }
 Pass 'twelve delivery files, tracked output removal, tmp exclusion, backup, quoted arguments and verified ten-repo push'
 $tool=$plan[-1]
-Assert-Test ((Invoke-PublishGit $tool.Root @('show','HEAD:docs/RH850_tracked.md')).Text -ceq 'initial RH850') 'tracked RH850 change was published'
-foreach($path in @('docs/RH850_NEW.md','scripts/build_rh850.ps1','tests/rh850_mock/r_port.h')) {
-    Assert-Test (!(Invoke-PublishGit $tool.Root @('ls-tree','--name-only','HEAD','--',$path)).Text) 'new RH850 file was published'
-    Assert-Test (Test-Path -LiteralPath (Join-Path $tool.Root $path)) 'RH850 local file was removed'
+Assert-Test ((Invoke-PublishGit $tool.Root @('show','HEAD:docs/RH850_tracked.md')).Text -ceq 'local changed RH850') 'eligible tracked Tool guide was not published'
+foreach($path in @('docs/RH850_NEW.md','scripts/build_rh850.ps1','tests/rh850_mock/r_port.h','firmware/common/isp_rh850/isp_rh850.h')) {
+    Assert-Test ([bool](Invoke-PublishGit $tool.Root @('ls-tree','--name-only','HEAD','--',$path)).Text) 'eligible Tool support file was not published'
+    Assert-Test (Test-Path -LiteralPath (Join-Path $tool.Root $path)) 'Tool support file was removed'
 }
-Assert-Test ([IO.File]::ReadAllText((Join-Path $tool.Root 'docs/RH850_tracked.md')) -ceq "local changed RH850`n") 'RH850 local draft changed'
-Pass 'tracked and untracked RH850 development stays local with content preserved'
+foreach($project in $pendingProjects) {
+    foreach($path in @($project,('firmware/'+$project+'/source.c'),('FIRMWARE\'+$project.ToUpperInvariant()+'\source.c'))) {
+        Assert-Test ($path -match $tool.DeferredPattern) 'pending MCU pattern did not match project/case/separator'
+    }
+    Assert-Test (!(Invoke-PublishGit $tool.Root @('ls-tree','--name-only','HEAD','--',('firmware/'+$project+'/source.c'))).Text) 'pending MCU source was published'
+    Assert-Test ([IO.File]::ReadAllText((Join-Path $tool.Root ('firmware\'+$project+'\source.c'))) -ceq 'hardware-pending source') 'pending MCU source changed'
+}
+Assert-Test ((Invoke-PublishGit $tool.Root @('show',('HEAD:firmware/'+$pendingProjects[0]+'/README.md'))).Text -ceq 'initial pending MCU') 'tracked pending MCU change was published'
+Assert-Test ([IO.File]::ReadAllText((Join-Path $tool.Root ('firmware\'+$pendingProjects[0]+'\README.md'))) -ceq "local pending MCU`n") 'pending tracked draft changed'
+Assert-Test (@($plan | Where-Object {$_.Name -match $tool.DeferredPattern}).Count -eq 0) 'hardware-pending MCU repository entered catalog'
+Pass 'Tool RH850 support publishes; six pending MCU families stay local with tracked/untracked contents preserved'
+
+$guardCase=New-TestCase 'pending-index'
+$guardPlan=New-PublishPlan $guardCase.Targets
+$guardTool=$guardPlan[-1]
+[void](Invoke-PublishGit $guardTool.Root @('add','--',('firmware/'+$pendingProjects[0]+'/source.c')))
+Expect-Stop { Assert-PublishIndex $guardTool } 'Deferred development file entered the index'
+Pass 'hardware-pending MCU staged source is rejected by existing index guard'
+if($PublicationBoundaryOnly) {
+    Write-Host "$passed scoped publication-boundary checks PASS. Unchanged unrelated refusal/idempotence cases not rerun. Evidence retained: $testRoot"
+    return
+}
 $heads=@($plan | ForEach-Object {$_.Head})
 $plan=New-PublishPlan $case.Targets
 Invoke-GithubPublication $plan (Join-Path $case.Targets[-1].Root 'tmp\internal\github_publish\second-archive') 'no-op'
