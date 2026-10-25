@@ -524,19 +524,25 @@ logic outside generated files except in preserved user-code sections.
   pre-existing staged deletions only for the shared local-only path allowlist;
   source changes/deletions remain blocked. Never repair an actual index or
   remove tracking without user approval; preserve local files and index backups.
-  Read docs/GITHUB_PUBLISH_zh-TW.md and run verify_github_publish.ps1 plus the
-  workspace safe-clean audit after changing this workflow. No product rebuild
-  or version bump for publication-script-only changes.
-  User clarification2026-10-25: Tool-side RH850 shared sources, guides and test/
-  build scripts may be published in this Tool repository. Do not blanket-exclude
-  the word RH850. Independent MCU projects matching
-  Sample_Project_RH850_S1_Boot_loader_*, Sample_Project_RH850_S1_ISP_Boot_loader_*
-  and RL78_{G16,G22,F13,F24}_ISP_Boot_loader_* stay local until hardware-board
-  validation and explicit release authorization. They are not catalog targets;
-  matching project trees copied under Tool are also excluded, case-insensitively,
-  and rejected by the staged-index guard. No override flag or firmware push is
-  implied by publishing Tool-side mirrors. Public web navigation/projections
-  remain deferred; RH850_DEVICE remains an empty block until separately authorized.
+  Read docs/GITHUB_PUBLISH_zh-TW.md and select affected publication checks.
+  Entry-hold changes use verify_firmware_publication_hold.ps1; run the workspace
+  safe-clean audit when archive/deletion/clean behavior changes, not for this
+  early refusal alone. No product rebuild/version bump for policy-only changes.
+  Current user clarification2026-10-25: ALL MCU firmware-related content without
+  real-board validation stays non-public, including Tool-side common/template
+  source, dedicated guides, build/sync/test/mock assets and images. No exception
+  exists for repository/folder, MCU family or Host/Bridge/Device/Boot/App/Transfer.
+  Compile/model tests do not establish hardware acceptance; check actual-version
+  board evidence and every proposed publication path. Unknown status is withheld.
+  The existing six-family regex is only an additional legacy guard, not the
+  publication boundary. push_github.ps1 -Execute is held before any path/plan/
+  archive/index/commit/network action until the full firmware release scope has
+  evidence-backed acceptance; -Yes does not bypass it. Do not call lower-level
+  publication helpers to evade the hold. Pure PC-tool/document changes require
+  an explicit reviewed manifest excluding unvalidated firmware-related content.
+  Previously published54Tool files are not automatically retracted by this
+  correction; do not erase local files, rewrite history or change visibility.
+  Public web projections of unvalidated firmware also remain deferred.
 
 - PC: Visual Studio 2022 with MFC, x64 Release is the release target.
 - F24/F13: CS+ with the project-selected CC-RL toolchain.

@@ -4,6 +4,12 @@ param([switch]$Execute,[switch]$Yes,[string]$Message='Publish Tool and MCU CAN d
       [string]$F24TransferProject='', [string]$F24BootProject='', [string]$F24AppProject='',
       [string]$F24FdTransferProject='', [string]$F24FdBootProject='', [string]$F24FdAppProject='')
 $ErrorActionPreference='Stop'
+# The catalog includes firmware with no complete, version-matched board-acceptance
+# inventory. Keep the bulk entry closed before any path/plan/network or mutation.
+# Confirmation and -Yes cannot replace actual hardware evidence.
+if($Execute) {
+    throw 'MCU firmware publication is on hold: real-board validation and an evidence-backed release scope are required for ALL firmware-related content, including Tool-side copies. -Yes cannot bypass this hold. No paths, files, index, commits or remotes were changed.'
+}
 . (Join-Path $PSScriptRoot 'workspace_paths.ps1')
 . (Join-Path $PSScriptRoot 'github_publish_git.ps1')
 . (Join-Path $PSScriptRoot 'github_publish_reset.ps1')
@@ -43,7 +49,7 @@ try {
     [void](Invoke-PublishGit $toolRoot @('check-ignore','--no-index','tmp/__publish_probe__'))
     [void](Invoke-PublishGit $toolRoot @('check-ignore','--no-index','github_push.local.psd1'))
     Write-Host 'Publish main: F13 Boot/App/Transfer -> F24 Classical Transfer/Boot/App -> F24 FD Transfer/Boot/App -> Tool (including F24 CAN host).'
-    Write-Host "Unignored changes in all $($targets.Count) repositories are included, except hardware-pending MCU project trees. Tool-side RH850 support is eligible."
+    Write-Host 'PREVIEW ONLY. Bulk publication is held: unvalidated MCU firmware-related content is non-public, including Tool-side copies. The legacy deferred-path list is not a complete hardware-acceptance inventory.'
     foreach($target in $targets) {
         Write-Host "`n$($target.Name) -> $($target.Remote) : $($target.Root)"
         Write-Host $target.Status

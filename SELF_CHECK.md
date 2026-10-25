@@ -1,6 +1,23 @@
 # Host Link v2 Self-Check
 
-## Current publication boundary verification (2026-10-25)
+## Current firmware publication hold (2026-10-25, user correction)
+
+- User restriction covers ALL unvalidated MCU firmware-related content,
+  including Tool-side copies/assets; six named families are not the full scope.
+- -Execute stops before dependencies/path resolution/plan/network/mutation;
+  -Yes cannot bypass. Lower-level helpers are not release authorization.
+- Scope: gate/script/batch/policy documents only. Product and firmware builds,
+  hardware, full historical publisher/clean suites: NOT RUN (unaffected).
+- Entry-gate isolated checks: PASS2 with byte-matched copied entry scripts:
+  -Execute and -Execute -Yes both fail before dependency/path/Git/network work.
+  Synthetic delivery/INI/firmware/index files are hash-identical; the decoy
+  dependency was never loaded. No real checkout was used by these fixtures.
+  Evidence: tmp/internal/verification/firmware-publication-hold/
+  551b6bb5b36e4ebbad6aa8d68e01ea9e/result.json and matching case logs.
+- Existing54-file public history remains; no local firmware deletion, current-tree
+  retraction, history rewrite, visibility change or MCU/web publication.
+
+## Historical publication boundary verification (2026-10-25, superseded policy)
 
 - [x] User distinguishes Tool-side54RH850 support files from independent MCU
   projects. All54hashes match preserved evidence;no contents changed for upload.

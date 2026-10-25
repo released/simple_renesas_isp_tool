@@ -3,10 +3,22 @@
 這個入口供維護原始碼與交付檔使用，與 Tool 的 MCU 韌體更新操作分開。
 使用現有 Git for Windows、Windows PowerShell 5.1 及 Git 登入設定；不需 Python。
 
+## 目前發布限制
+
+未經實板驗證的 MCU 韌體相關內容一律暫不公開，不限 MCU、角色、repository 或目錄。
+Tool 內的共用／模板原始碼、韌體映像、專用指南、建置／同步腳本及測試／mock 也適用；
+編譯、host/model/smoke 測試通過不能代替對應版本、實板與介面設定的驗證。
+
+十個 repository 的整批發布範圍尚未建立完整實板驗證清單，`-Execute` 目前會立即拒絕，
+在路徑解析、依賴載入、整理、Git index、commit 或網路操作之前停止，`-Yes` 也不能略過。
+Codex 應核對驗證證據與逐項發布清單；不可改用下層 helper 繞過。
+純 PC Tool／文件修改可使用明確清單提交，不能夾帶未驗證韌體相關內容。
+先前已公開的檔案與 Git 歷史不會因這項限制而自動撤回。
+
 ## 範圍與保留檔
 
 固定順序為 F13 Boot／App／Transfer → F24 Classical Transfer／Boot／App → F24 CAN FD Transfer／Boot／App → Tool，
-十個 repository 各自提交至對應 `origin/main`。
+下列為既有 catalog 的目標與交付檔參考，並非已取得實板驗證或目前可發布的清單。
 Tool repository 包含 F24 (MCU CAN host) 的 Bridge Boot／App。
 
 | Repository／專案 | DefaultBuild 僅保留 |
@@ -55,13 +67,10 @@ F24 device App 根目錄的 `boot_app.hex` 保留作 Boot／App 合併初裝，�
 
 路徑優先順序：命令參數 → 本機設定檔 → 環境變數 → Tool 相鄰目錄。
 
-雙擊根目錄 `github_push.bat`，檢視十個 repository 的狀態與保留清單。
-輸入 `PUSH` 後，才進行整理、commit 與 push；取消時不變更檔案或 Git index。
-除了下述暫緩路徑，未被忽略的新增、修改與刪除會包含在提交內。
-Tool repository 內的 RH850 共用原始碼、專用指南、建置腳本及測試可以發佈，
-不再單以路徑含 `RH850` 判定排除。這不代表 MCU 韌體已通過實板驗證。
+需要只讀預覽時，直接執行下方不帶 `-Execute` 的 PowerShell 命令。
+批次檔會帶入 `-Execute`，目前因此直接停止，不會進入 `PUSH` 確認或執行整理。
 
-下列獨立 MCU 專案須待硬體板驗證及另行授權後才發佈，目前不在 catalog 內：
+既有路徑規則另外排除下列專案，但這些名稱不涵蓋完整的未驗證韌體範圍：
 
 ```text
 Sample_Project_RH850_S1_Boot_loader_*
@@ -74,7 +83,7 @@ RL78_F24_ISP_Boot_loader_*
 
 即使這些專案目錄被複製到 Tool 內，也會依完整路徑元件排除，大小寫皆適用。
 預覽的 `DEFERRED` 清單列出排除項目；既有 tracked 修改也不會提交，本機檔案保留原狀。
-staged-index 檢查會拒絕此類路徑，沒有略過參數。Tool 發佈不等於 MCU 或相關網頁發佈授權。
+staged-index 檢查會拒絕此類路徑。這個 regex 只是額外防線，不能作為其他韌體已可發布的依據。
 
 僅預覽，不連線、不整理、不提交：
 
@@ -82,16 +91,17 @@ staged-index 檢查會拒絕此類路徑，沒有略過參數。Tool 發佈不�
 .\scripts\push_github.ps1
 ```
 
-指定提交說明，檢視清單後確認：
+以下執行方式目前會因實板驗證限制而停止：
 
 ```powershell
 .\scripts\push_github.ps1 -Execute -Message 'Update Tool and CAN firmware'
 ```
 
-已檢視清單、需要非互動執行時可加 `-Yes`。
-該參數只略過這次確認，不略過路徑、保留檔、Git 與遠端驗證。
+加上 `-Yes` 仍會停止，不會略過實板驗證限制。
 
 ## 整理、驗證與恢復
+
+下列為既有整理流程的恢復參考；目前 `-Execute` 的前置限制會在進入此流程前停止。
 
 ```mermaid
 flowchart TD
@@ -128,7 +138,8 @@ flowchart TD
 需要恢復除錯輸出時，可正常重建，或由本次備份複製回原 `DefaultBuild`。
 同名檔已重新產生時先比對內容，不直接覆寫。
 隔離流程測試為 `scripts/verify_github_publish.ps1`，只使用本機測試 repository／bare remote，不連接 GitHub。
-僅調整發佈邊界時使用 `-PublicationBoundaryOnly`，驗證 Tool 內容可發佈、六類 MCU 專案排除及 index 拒絕；不重跑未受影響的其他拒絕案例或產品建置。
+`-PublicationBoundaryOnly` 是舊路徑規則的隔離測試，不代表完整實板驗證，也不能授權 Tool 內的韌體相關內容發布。
+目前入口的停止行為以 `scripts/verify_firmware_publication_hold.ps1` 隔離驗證；不重跑未受影響的產品建置或舊整批流程測試。
 
 ## 本機資料排除與重試
 

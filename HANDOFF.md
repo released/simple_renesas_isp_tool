@@ -1,6 +1,24 @@
 # Development Handoff
 
-## Current publication boundary clarification (2026-10-25)
+## Current firmware publication restriction (2026-10-25, user correction)
+
+ALL MCU firmware-related content without real-board validation stays non-public,
+including Tool-side common/template sources, images, dedicated guides and
+build/sync/test/mock files. Scope follows content and hardware acceptance,
+not MCU name, project family, folder or Host/Bridge/Device/Boot/App/Transfer role.
+Compile/model/smoke results cannot replace matching-version board evidence.
+
+The earlier54-file Tool exception and six-family-only boundary below are
+superseded. push_github.ps1 -Execute is held before dependency/path/plan/network
+or mutation; -Yes cannot bypass it. Do not invoke lower-level helpers to evade
+the hold. Pure PC-tool/docs changes need an explicit reviewed manifest.
+No existing public firmware was retracted or history rewritten by this change;
+dd75922c9d2e5a79df4008bbf69d02812d04026f already published the54files.
+Keep local firmware intact. Existing public exposure requires separate
+remediation scope; do not confuse a new restriction with historical erasure.
+Scoped verification: SELF_CHECK current publication-hold entry.
+
+## Historical publication boundary interpretation (2026-10-25, superseded)
 
 User permits the54 formerly deferred Tool-side RH850 files (4guides,
 13shared firmware/template sources,20scripts and17test/mock files) to be
