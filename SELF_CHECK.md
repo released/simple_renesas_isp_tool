@@ -1,5 +1,20 @@
 # Host Link v2 Self-Check
 
+## Post-user cleanup verification (2026-10-26)
+
+- PASS122 reviewed paths absent /2,837,093,499B retired;39approved run directories
+  remain.39INI/146PNG and aggregate lengths22,762/10,665,424B match pre-clean data.
+  Those185 files have count/length coverage only, not a fresh per-file hash claim.
+- PASS formal EXE/private INI SHA256 equals saved pre-clean receipt. Actual batch
+  --preview exits0:0files/0bytes,185retained entries; no agent Apply/deletion.
+- Reuse the unchanged script's prior142read-only assertions and static/parser
+  checks explicitly; no full app/firmware build, UI/hardware or unrelated tests.
+- Publication review: live main a58ce308 and actual README match the intended
+  Tool origin. Only HANDOFF.md/SELF_CHECK.md are in the reviewed follow-up scope;
+  no firmware source/assets, private files, test payload, EXE or history rewrite.
+- Size before documentation:2,832,549,586B including111,082,081B Git,15links skipped.
+  Other tmp contents and overall20MB decision remain pending separate cleanup.
+
 ## Prerequisite cleanup batch (2026-10-26)
 
 - Changed: scripts/clean_prerequisite_tests.bat/.ps1,

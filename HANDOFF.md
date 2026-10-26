@@ -1,5 +1,25 @@
 # Development Handoff
 
+## User cleanup verified (2026-10-26)
+
+- User reports the dedicated fixture cleanup completed. All122 manifest paths
+  are absent:2,837,093,499B of reviewed compiler/test outputs retired. Matching
+  run directories41->39;39INI/146PNG remain, totaling22,762/10,665,424B respectively,
+  equal to the pre-clean counts/lengths. Per-file pre-clean evidence hashes were
+  not retained for these185 files; no new bitwise-preservation claim for them.
+- Formal Release and private INI SHA256 match the saved pre-clean receipt.
+  Actual batch --preview now reports0files/0bytes and185retained entries. This
+  verifies the post-user-clean state; the agent did not invoke Apply or retry
+  previously blocked deletion. Product/firmware build or hardware tests NOT RUN.
+- Batch/helper/manifest/tests were already published by the user at a58ce308.
+  Live origin main and README identity were checked. This follow-up publication
+  scope is explicitly HANDOFF.md and SELF_CHECK.md only: generic PC-tool cleanup
+  verification, with no new firmware-related content, binary, private settings,
+  recordings or tmp data. All existing firmware-release restrictions remain.
+- Measured before this documentation update:2,832,549,586B including Git111,082,081B;
+  tmp2,678,580,588B remains for separate ownership review.15reparse targets skipped.
+  This selected cohort is complete; project-wide cleanup/20MB review is pending.
+
 ## User-run prerequisite fixture cleanup entry (2026-10-26)
 
 - User requested a batch instead of manually deleting four filenames across
