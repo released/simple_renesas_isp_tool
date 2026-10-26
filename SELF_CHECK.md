@@ -1,5 +1,34 @@
 # Host Link v2 Self-Check
 
+## Prerequisite cleanup batch (2026-10-26)
+
+- Changed: scripts/clean_prerequisite_tests.bat/.ps1,
+  scripts/prerequisite_cleanup_manifest.json,tests/test_prerequisite_cleanup.ps1;
+  AGENTS/HANDOFF/SELF_CHECK. No application/firmware source, normal clean,
+  generator, version, formal EXE or private INI change.
+- Purpose: one user-run entry for four source-verified fixture artifact names;
+  retain nonempty directories/INI/PNG/log and unreviewed/modified content.
+- PASS: `powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File
+  tests/test_prerequisite_cleanup.ps1`:142 read-only assertions, including
+  relative/absolute/traversal/sibling/target-name bounds, duplicate/invalid hash
+  records, changed size/hash refusal, mocked reparse and process path isolation.
+- PASS: batch `--help` exit0; unsupported argument exit2; actual `--preview`
+  exit0 from workspace cwd:122 files/2,837,093,499B;185 other entries retained.
+  Pre/post SHA256:187 protected files and122 candidates unchanged. No test data
+  or application processes were generated. Preview creates no output files.
+- PASS final static clean scan:4 scripts, no known whole-build deletion pattern;
+  final PowerShell AST parse, UTF-8/whitespace/fences/new local links and git diff
+  --check. New batch/helper/manifest/tests total40,071B; no test payload retained.
+- Size snapshot before this final note:5,669,407,616B including Git110,847,052B;
+  15reparse targets excluded. The existing over-budget state remains pending
+  manual disposal/review; no capacity exception or size reduction is claimed.
+- Existing historical HANDOFF links to retired tmp/internal/docs records are
+  unchanged from HEAD and outside this edit; no obsolete test data was recreated.
+- NOT RUN: Apply/deletion branch (existing automatic review rejection; user-run
+  batch requested), physical-junction deletion fixture, app/firmware rebuild,
+  full/GUI/hardware suites or Git publication. This is not a fresh actual-clean
+  preservation PASS. The normal clean helper was not changed or rerun.
+
 ## Current firmware publication hold (2026-10-25, user correction)
 
 - User restriction covers ALL unvalidated MCU firmware-related content,

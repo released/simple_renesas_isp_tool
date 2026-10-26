@@ -1,5 +1,34 @@
 # Development Handoff
 
+## User-run prerequisite fixture cleanup entry (2026-10-26)
+
+- User requested a batch instead of manually deleting four filenames across
+  historical can_prerequisite_* runs. Added scripts/clean_prerequisite_tests.bat,
+  standalone PS helper, reviewed relative-path/hash manifest and focused tests.
+  Double-click applies; `--preview` lists the plan without changes. The window
+  remains open after Apply so the user can read the outcome/error.
+- Scope: 122 reviewed files / 2,837,093,499 bytes in 41 Debug/Release GUID runs:
+  can_prerequisite_ui_tests.obj and prerequisite_fixture.exe/.ilk/.pdb only.
+  Other 39 INIs / 146 PNGs remain. Changed files stop preflight; unreviewed runs
+  and unlisted contents remain. Independent script-derived project boundary,
+  ancestor reparse checks and active-fixture checks precede deletion. Directories
+  use atomic empty-only removal, never a recursive purge.
+- New compact source manifest is 26,621 bytes. The old 25,060,610-byte audit
+  inventory was already absent at this task's entry; it was not recreated or
+  deleted by this task. Compact result JSON remains. No disposable fixtures,
+  EXE copies, archives or build artifacts were created for the focused checks.
+- PASS: 142 read-only assertions (20 validation/process/metadata checks plus 122
+  planned-path checks), batch help/invalid-argument exit codes, actual batch
+  preview from workspace cwd:122 files/185 retained entries. All 187 protected
+  root-delivery/INI/PNG files and all 122 candidates hash-identical afterward.
+- Actual Apply/deletion NOT RUN. Earlier automatic-review rejection remains;
+  this is the user's requested manual entry, not an agent retry via a wrapper.
+  Reparse negative coverage is mocked, not a fresh physical-junction fixture.
+  Product/firmware rebuild, version bump and unrelated suites NOT RUN/unaffected.
+- No commit/push. After the user's cleanup, verify results and follow the
+  existing reviewed-publication scope; firmware publication restrictions below
+  remain in force. No normal-clean/test-generator behavior was changed.
+
 ## Current firmware publication restriction (2026-10-25, user correction)
 
 ALL MCU firmware-related content without real-board validation stays non-public,

@@ -1,0 +1,621 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-26",
+  "purpose": "Explicitly reviewed, reproducible native prerequisite fixture outputs. Unlisted files are retained.",
+  "generator": {
+    "path": "scripts/test_can_prerequisite_ui.ps1",
+    "sha256": "1CCD990690015C87FC3234D4CEDBB0499AA2D9A44A02EFC897F51027EEB6E1E2"
+  },
+  "files": [
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_005e7d1a/can_prerequisite_ui_tests.obj",
+      "bytes": 641104,
+      "sha256": "95E2C1692E890BA9DB571EB422506EAE809BD40A48FF8747B39CDA3528A8FB41"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_005e7d1a/prerequisite_fixture.exe",
+      "bytes": 14498816,
+      "sha256": "66411696FB85476B1B5700B7707CA5A03BA6851706CB5D67653AF7422971B38B"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_005e7d1a/prerequisite_fixture.ilk",
+      "bytes": 75405927,
+      "sha256": "DFB184D8FF4C3F477614968DC3689D90B26B953781202916694DBD4643B43AD0"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_005e7d1a/prerequisite_fixture.pdb",
+      "bytes": 43479040,
+      "sha256": "F52AEAAF7F322F2763C29EEBE44FC13030C907033FBA8202AF68C640E9D05CBE"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_09385cbb/can_prerequisite_ui_tests.obj",
+      "bytes": 617207,
+      "sha256": "00A6398B41406DC334176AE4F94A914460B967C4EF548588AB49B08C295DF7BC"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_09385cbb/prerequisite_fixture.exe",
+      "bytes": 14436864,
+      "sha256": "9C753D9983FACF7A2A3A7F855495AD14EE5BAB0E1F72479BFEF88005E83769E8"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_09385cbb/prerequisite_fixture.ilk",
+      "bytes": 75236192,
+      "sha256": "2CF80E058DF701678D84E588C69EEE5A385EB051C79D09237B93F91B8F276091"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_09385cbb/prerequisite_fixture.pdb",
+      "bytes": 43331584,
+      "sha256": "13D3B1FFF9F0DA121179E7ADE39F8A22D9DD787F04496E841AD7DAB633AB4043"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_0a40643e/can_prerequisite_ui_tests.obj",
+      "bytes": 629203,
+      "sha256": "234B2A2B073453F8F0DE506147BCC7922C7CF6F3A86FBE598739D58EEF1DD52D"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_0a40643e/prerequisite_fixture.exe",
+      "bytes": 14490624,
+      "sha256": "1698E91F4D0C5354CDD671FA6969C69FB00693ECC766585CD4CFABBACDBA4075"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_0a40643e/prerequisite_fixture.ilk",
+      "bytes": 75407791,
+      "sha256": "C18F07BC915065BB5E6DEF68F0798B4D0326C71CDE476C7DDC28587150DF168C"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_0a40643e/prerequisite_fixture.pdb",
+      "bytes": 43470848,
+      "sha256": "5D6C30FB60288883FCA5BCC7232F3B5E1FCED873D38DEEAB63AB70FA1F191E5C"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_154e8390/can_prerequisite_ui_tests.obj",
+      "bytes": 905872,
+      "sha256": "8CF148469263623777491077DA8F2C2F4777684AD09D31A1707E029B7A1221BF"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_154e8390/prerequisite_fixture.exe",
+      "bytes": 14536192,
+      "sha256": "C03E1AD0901E0E45F07A1C6944B7D38B9C1566E58359818F9CDD7C4070BBCBF6"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_154e8390/prerequisite_fixture.ilk",
+      "bytes": 75699002,
+      "sha256": "BBA4B9ECB4F91DBCF5EA751C05C4E1D91A32EA1E9B5D1E7EED0FA4489B02E83F"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_154e8390/prerequisite_fixture.pdb",
+      "bytes": 43462656,
+      "sha256": "4CF258E255CB5A1C77BD0A76FE8717896BCFF546D1DB0B1E247F42589AB2684D"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_2def689f/can_prerequisite_ui_tests.obj",
+      "bytes": 730171,
+      "sha256": "C9B3D3F791A02C3E0765BBE25E27F9666FA929E62FEA0ABF8AAB795F6EDA364A"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_2def689f/prerequisite_fixture.exe",
+      "bytes": 14525440,
+      "sha256": "7B37FB3544B66C34FA5B3BB2DDD67989E7DAC0A78996AB253DE241821DDF2817"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_2def689f/prerequisite_fixture.ilk",
+      "bytes": 75543379,
+      "sha256": "A65CBCBA5C21574678A312C0C5DA6358E98A5DE1BD841F369AAB4CC596EF8C01"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_2def689f/prerequisite_fixture.pdb",
+      "bytes": 43511808,
+      "sha256": "1806A9B7CB1A92CAB471E2D890F61543B1B0DDDCD3D97F81C85D72C3B5831CDC"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_309b06b5/can_prerequisite_ui_tests.obj",
+      "bytes": 428066,
+      "sha256": "F5FFBF0A84EAF5EA59D384E036EFD0DFE4C1AEF2AB8A478DEAD6A98938796872"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_309b06b5/prerequisite_fixture.exe",
+      "bytes": 6858240,
+      "sha256": "D90204F1072E250EA0C074C68CA44CB50E5AEB4A044C81653801C246FDD02EF7"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_32a1c7b9/can_prerequisite_ui_tests.obj",
+      "bytes": 904426,
+      "sha256": "2992FB4D9ED259F3AE921B7132477708C29532C25C8AF50D0A26ABB1FC50E1EE"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_32a1c7b9/prerequisite_fixture.exe",
+      "bytes": 14535680,
+      "sha256": "C8E008B1F5702AFF098249DE33E12151EDFCC9714B6F4A9AB3FF6F188BA1F006"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_32a1c7b9/prerequisite_fixture.ilk",
+      "bytes": 75698010,
+      "sha256": "65163818CC80E1CF55401AA68427F684104ABF360FF8B1AEE345A8123602C8E8"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_32a1c7b9/prerequisite_fixture.pdb",
+      "bytes": 43479040,
+      "sha256": "D126E97C32409EAD7B02D0B2E3475BBA0F331FD5B6E0F9ECE44581514A47F9EF"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_41ace6ac/can_prerequisite_ui_tests.obj",
+      "bytes": 905872,
+      "sha256": "B85787784FC5F602BAF93319A10FF0F308A1A1DBBFD5D97ABADD5B92F55460C6"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_41ace6ac/prerequisite_fixture.exe",
+      "bytes": 14536192,
+      "sha256": "C38B0CC9D49DDB87678FD7939AA3DE87186F651C30AA53442B7657C7486E36E3"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_41ace6ac/prerequisite_fixture.ilk",
+      "bytes": 75702317,
+      "sha256": "73957EF4B65323EBC5691132F3646E1CFD69BF39964B9D312D35A6429E3519E5"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_41ace6ac/prerequisite_fixture.pdb",
+      "bytes": 43470848,
+      "sha256": "574C4C8162BAA85FF466424BF605480B85BED86B07F191DF7B7467B54CBA1F73"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_439cc4a7/can_prerequisite_ui_tests.obj",
+      "bytes": 964145,
+      "sha256": "CAA70507B805CD5E789D911A1EB231A86EFBDB5EB2DD07C5D1418F3E7FAD138B"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_439cc4a7/prerequisite_fixture.exe",
+      "bytes": 14538240,
+      "sha256": "2B95FAAE32636CF7323207C4808D3D8E547AC859D0F084569CBCF57F5199D4CE"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_439cc4a7/prerequisite_fixture.ilk",
+      "bytes": 75732749,
+      "sha256": "6D3BEAB0BEF8830BE0C347656A25B2A2D60E0D0990BB3E0AA70D6EDD448D9C9F"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_439cc4a7/prerequisite_fixture.pdb",
+      "bytes": 43454464,
+      "sha256": "69F18DC05578C635A07AA38B1289F06DC9EDDB2A6BB91231D7FA451FB03B704E"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_562d1198/can_prerequisite_ui_tests.obj",
+      "bytes": 511943,
+      "sha256": "74FFC41603E0BB336B4986C8ADAA66AE9AC87DC4B6D8A7BA7E6FA134570E0F2E"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_562d1198/prerequisite_fixture.exe",
+      "bytes": 14252032,
+      "sha256": "1865255D17C6D4D86DD09614CB68814DC84C968F63DFCC5530EC6F24F521DE3A"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_562d1198/prerequisite_fixture.ilk",
+      "bytes": 73287343,
+      "sha256": "8F0E3E756BED81E15D56C457D3DA87B7110EEBC6E3D01D13467231479FF5C078"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_562d1198/prerequisite_fixture.pdb",
+      "bytes": 42840064,
+      "sha256": "B9131F123413D307878AC537090E7E9962AB545F58FF88904B69ED2C9F4E63F2"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_7778c5f0/can_prerequisite_ui_tests.obj",
+      "bytes": 617049,
+      "sha256": "6A9C54FC4A48D707A8437885578975ABDA121D23DFABC10BC29F3C482523544F"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_7778c5f0/prerequisite_fixture.exe",
+      "bytes": 14419968,
+      "sha256": "64B4FE732A2B0B6A9AA9927B60271CDD23BD4EADD8B3A9B3FFB5865617DFAA5B"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_7778c5f0/prerequisite_fixture.ilk",
+      "bytes": 74892726,
+      "sha256": "A759C0A4D890DD626290C94D2622D788D1FC684F23442B93842C7D556335CB36"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_7778c5f0/prerequisite_fixture.pdb",
+      "bytes": 43298816,
+      "sha256": "10016F2D4E4DAA2B5C1CF3106BE5512B6D5072E0C625443E99EB4FCF2792DAA5"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_898ee195/can_prerequisite_ui_tests.obj",
+      "bytes": 964161,
+      "sha256": "24C0FD02ED9C0CF520A92D16A9DC57D7C9E00A2026B9A1B32E84C66AB1DA0047"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_898ee195/prerequisite_fixture.exe",
+      "bytes": 14545408,
+      "sha256": "EA8A1DF935453BD539FBA2D739BD288884BD3BACD8F6CF48111C502307BE7A8D"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_898ee195/prerequisite_fixture.ilk",
+      "bytes": 75755232,
+      "sha256": "9DC39B68946B3E66847D9FE2695C79A650EE5BFA14FCF42E9A80FA9B80EE5CC8"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_898ee195/prerequisite_fixture.pdb",
+      "bytes": 43479040,
+      "sha256": "158D645827F7DA2C40BC2D84510BF8466B4EFDDDC887ACD244F7F18292DA2E37"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_aceac6e2/can_prerequisite_ui_tests.obj",
+      "bytes": 641104,
+      "sha256": "86BBFF1D6145932FCD8CF0B11C82337F8B62DFF1F5A5AB68B4052F4CCD6190AF"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_aceac6e2/prerequisite_fixture.exe",
+      "bytes": 14503424,
+      "sha256": "CFD467FB58ACDD631B660851979704D8F84D672C58ADC2050DDE9F0D75D01904"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_aceac6e2/prerequisite_fixture.ilk",
+      "bytes": 75414059,
+      "sha256": "65C9F249AF120489142D2389B1800A9E24832050B9DD61C63C7E1D14768539AF"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_aceac6e2/prerequisite_fixture.pdb",
+      "bytes": 43470848,
+      "sha256": "DAC8AB0E255CB409F093DA8A69971D817151569FDF28AB52AFD5D38BB2AF8568"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_b512578b/can_prerequisite_ui_tests.obj",
+      "bytes": 675410,
+      "sha256": "F3139A66A1324023BA5C4BD1169E94700BEC6B42DA5C6DC6F715DD58212A170E"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_b512578b/prerequisite_fixture.exe",
+      "bytes": 14515712,
+      "sha256": "941ADF527FFDC7AD28CFE46316B9CE6E727A4A72611E2BB549EC359640D323D5"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_b512578b/prerequisite_fixture.ilk",
+      "bytes": 75463440,
+      "sha256": "BEBFCF46A6937E60FDE55C6B0572BBB15DED6BB930701A541C8989AA91A593CD"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_b512578b/prerequisite_fixture.pdb",
+      "bytes": 43520000,
+      "sha256": "BCE13DE5CBB3BAEE7AFB1BC5F5984CD233CC8513F0EE7FB3540D3B9EE5B6E2E2"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_b596bbfd/can_prerequisite_ui_tests.obj",
+      "bytes": 629216,
+      "sha256": "2D0F283AD3077F17479436B70165BE95B147D883293DCE8A345C7E29B58B27CE"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_b596bbfd/prerequisite_fixture.exe",
+      "bytes": 14495232,
+      "sha256": "FCD9832D110A1E1EA6D8A4C8AA0688366150F7973DB68FA2DB2629325F1E33E4"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_b596bbfd/prerequisite_fixture.ilk",
+      "bytes": 75416772,
+      "sha256": "F5DB0E85D1BC481DDF3F7EA8123FF680487921322925BF7B276D8E92512875A3"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_b596bbfd/prerequisite_fixture.pdb",
+      "bytes": 43470848,
+      "sha256": "1DD54C816015050BF9B9FF9675CDE572B7CACAC70F027A2A5AB9B9D9505DC4FD"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_d0653cf0/can_prerequisite_ui_tests.obj",
+      "bytes": 617207,
+      "sha256": "73BAC90664481BA126FC7026DCEFDCA312315177DBF7C80437022555CF1A309E"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_d0653cf0/prerequisite_fixture.exe",
+      "bytes": 14435840,
+      "sha256": "110ACB50376F21EB0C5F80D368EB39F7D9B35FD04DFE7813418ABA003B88814D"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_d0653cf0/prerequisite_fixture.ilk",
+      "bytes": 75235056,
+      "sha256": "6A494710B6629163E5CA9AE7F5C99FA1B77EBAFFA0255922E53A50334F0D0B35"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_d0653cf0/prerequisite_fixture.pdb",
+      "bytes": 43339776,
+      "sha256": "C518D3DAD013A3EBDCD9A05687E482E75529773582B5E3D6511D14B4D95220A0"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_d9db7e4b/can_prerequisite_ui_tests.obj",
+      "bytes": 964276,
+      "sha256": "3CEFA376FC139D865FCB23FADB2B3F36C9538FABC753BF79CDE145EB6A9CE459"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_d9db7e4b/prerequisite_fixture.exe",
+      "bytes": 7297536,
+      "sha256": "91B201DE54718ED9CE8EF5B08C526A2159F36C066E518C4A082B3EC92DAA3DE6"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_d9db7e4b/prerequisite_fixture.ilk",
+      "bytes": 44934421,
+      "sha256": "5E8291A187C12554231229DA8C1E7D5A04C30538CDD5689F335A92DDA1B0FF6D"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_d9db7e4b/prerequisite_fixture.pdb",
+      "bytes": 32419840,
+      "sha256": "368B20990D2AD9767FB62DE5F84CA9DD67581EF78D567FC390683C77514374D1"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_defd1d06/can_prerequisite_ui_tests.obj",
+      "bytes": 675410,
+      "sha256": "5EFE883A611445AEF970796BB4A281A3ACBD054A6FA56CDEFFA7B3AA7482B621"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_defd1d06/prerequisite_fixture.exe",
+      "bytes": 14516736,
+      "sha256": "167951E33641EDC7C5B2BCB0F2ECA2CCE56B146C3CA390DF1640DBC8B7D24A04"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_defd1d06/prerequisite_fixture.ilk",
+      "bytes": 75465838,
+      "sha256": "B7A395631FB2ED38F3922996ADE70F605D766FE19D7A06787E6641833819B089"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_defd1d06/prerequisite_fixture.pdb",
+      "bytes": 43520000,
+      "sha256": "A27D898FDA223B07BE6812E8BC2FE5492C8EDBABC3854092FCDF01B9C2C22499"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_e74c675f/can_prerequisite_ui_tests.obj",
+      "bytes": 641104,
+      "sha256": "70B4D7BC8FE91593800AD98F4CF88113E79314C5ED3431213271B7D950AE0657"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_e74c675f/prerequisite_fixture.exe",
+      "bytes": 14502400,
+      "sha256": "FF9E51237C6C2746E48061E67FB370EF55CFBB3B4D7DD2DA740CAD48C36E4FDF"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_e74c675f/prerequisite_fixture.ilk",
+      "bytes": 75413716,
+      "sha256": "94045625A4B9964E4C16BA7B5E1E322D9D401DD19323BF6BA15CF6441E6B4D63"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_e74c675f/prerequisite_fixture.pdb",
+      "bytes": 43470848,
+      "sha256": "02446D9458447C3055908F7E7199E9B79EB7359FD08788C3F76690AD48E2458B"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_f1f7d283/can_prerequisite_ui_tests.obj",
+      "bytes": 537415,
+      "sha256": "0587D428B005DD0D0122ABC9C6DF51FD86BBB1E646D729CA14E6EAE7E844C611"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_f1f7d283/prerequisite_fixture.exe",
+      "bytes": 14416896,
+      "sha256": "6418268EB4AAE2FF362F74AD0C7B83175FA203D472E0E14E63E10D80317D7273"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_f1f7d283/prerequisite_fixture.ilk",
+      "bytes": 74825222,
+      "sha256": "6CA9A329A4763B47DDC7A88255182212556C360CCFD0EE0DF3E178F637D460C6"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_f1f7d283/prerequisite_fixture.pdb",
+      "bytes": 43323392,
+      "sha256": "3BD81A567C4813102C3B8F8781C8724AAD9446B6A13F1CD605277FDCEB5CA925"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_fdbcde85/can_prerequisite_ui_tests.obj",
+      "bytes": 895357,
+      "sha256": "E8764128239ACF17A29C73E4C6CAC1E6B98BB3B59B5B5F0FAFE80AEBA6F9FA88"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_fdbcde85/prerequisite_fixture.exe",
+      "bytes": 14521856,
+      "sha256": "7C5811FB23170FDCA02E812E4743CB19023EB603193E0FB32D2E0860353083A0"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_fdbcde85/prerequisite_fixture.ilk",
+      "bytes": 75634182,
+      "sha256": "4B23DA72736486845ACE64F5BB18DC3E60D4E7B2B94809AA25657FCFAC3E1842"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_fdbcde85/prerequisite_fixture.pdb",
+      "bytes": 43446272,
+      "sha256": "EDBEA4D3A664937B277E7B86FCB72A6B8E02FC4FBCC5B674ED85C6596E706A4B"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_ff06197e/can_prerequisite_ui_tests.obj",
+      "bytes": 428066,
+      "sha256": "82CCF3C06A0DAD9E4119947DE26C09DFFD6F90102E6E14362F545A8FD731D950"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_ff06197e/prerequisite_fixture.exe",
+      "bytes": 14254080,
+      "sha256": "7F89A3359FB0EFBB8CBB428AB10F9F01EBABAF2E775BC4E15A56401B6FB51ED7"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_ff06197e/prerequisite_fixture.ilk",
+      "bytes": 73246448,
+      "sha256": "09B38F20E5B6DFE32E15C7D8B6CE055FD83B2406F62BD2F144EC1DA91C687340"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Debug_ff06197e/prerequisite_fixture.pdb",
+      "bytes": 42864640,
+      "sha256": "BAEED4CB3BE8402EC1EC2BA7B479E1F71B34AAEB7D0E4F72D2C7C8AEB5C07679"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_284d95ad/can_prerequisite_ui_tests.obj",
+      "bytes": 864815,
+      "sha256": "A3B17793D55468CD0A2285186EAB75B2BD67D97A80BC69D75BC9612422682F61"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_284d95ad/prerequisite_fixture.exe",
+      "bytes": 3535360,
+      "sha256": "1E1E92BCEB5722CBA392BE6C6F242576FB3FC0B8AE8851D4A5FEE45FE16FF109"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_341dd3be/can_prerequisite_ui_tests.obj",
+      "bytes": 371404,
+      "sha256": "EF20AF2B6685BF10CACE4491B30B613A6CE7AF7C3D28F8AA151C573A391F795C"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_341dd3be/prerequisite_fixture.exe",
+      "bytes": 3349504,
+      "sha256": "E077B4E56A35C3769E87032E02281BF64A0C1189DE2C56F50D9CF3F4BE387AFF"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_3e8cd45d/can_prerequisite_ui_tests.obj",
+      "bytes": 604742,
+      "sha256": "1E3F6E06FC854637C6D6A842ADC32980CC13F562AA19DCEF74BF6AC4E861C6FA"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_3e8cd45d/prerequisite_fixture.exe",
+      "bytes": 3493888,
+      "sha256": "2B25FF332E61E9D6376B56EE84359644B7E36E1F15527D6E5E9D7A846BF352B2"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_4d679725/can_prerequisite_ui_tests.obj",
+      "bytes": 807847,
+      "sha256": "8525A52E7E85080569AFEE2CDB370332CBF86AE0DD7DAB8E058EC30A4448AB9E"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_4d679725/prerequisite_fixture.exe",
+      "bytes": 3521536,
+      "sha256": "8B4419FFA5EFA32B4D69D59D838B2C275AEE15A51E03154D023C78AD774A73A3"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_536dadab/can_prerequisite_ui_tests.obj",
+      "bytes": 604805,
+      "sha256": "86F2002F4D9F72F3FB794074EE49B485BBE87562849C1737C9EEA8030670BD73"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_536dadab/prerequisite_fixture.exe",
+      "bytes": 3493888,
+      "sha256": "D06A5536C252E397F1B0A0BC99D13D6A0B910521680B6A1998B1CC0B48FA4B5B"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_622a1d76/can_prerequisite_ui_tests.obj",
+      "bytes": 572101,
+      "sha256": "3CAD8C12E5910ED86F59504AA2616B61967881CB38B440F810001B3E26D43E3F"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_622a1d76/prerequisite_fixture.exe",
+      "bytes": 3484672,
+      "sha256": "2561890AFB9758B75D33519F16A8580313AE68243A2F73F738BBDBE7A96A26B5"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_6a549e87/can_prerequisite_ui_tests.obj",
+      "bytes": 818220,
+      "sha256": "C41A6DAB311498EF86BCEE881C56410D6A9DBFF09E8795E4D0BEBCE19CF87085"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_6a549e87/prerequisite_fixture.exe",
+      "bytes": 3530752,
+      "sha256": "A6E5F0DD3134A101744480C0B0F8A9E88DF0044F079B80E6745EFE2AAED7B9DA"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_78c20ea9/can_prerequisite_ui_tests.obj",
+      "bytes": 864929,
+      "sha256": "3A53628F7509A7BA2FD6F4ABA2D5995C007B007BD4028E3FDAFCCEDEA4AEABE6"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_78c20ea9/prerequisite_fixture.exe",
+      "bytes": 1461248,
+      "sha256": "053BED20B5926D883A91418655D53345743BEF999E6740DF005C0A9FA1BC2F50"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_7c29d1e2/can_prerequisite_ui_tests.obj",
+      "bytes": 451620,
+      "sha256": "C06619BD45B73304541D340A7E94C0E8DF374F500E5D0664FA9ABE3990457DD1"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_7c29d1e2/prerequisite_fixture.exe",
+      "bytes": 3355648,
+      "sha256": "46CC2A6F9174E6FE8267C60A4B67BB79E49A30E9CAAD590EC09288C804CA742B"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_93369cef/can_prerequisite_ui_tests.obj",
+      "bytes": 548051,
+      "sha256": "1787CF9428950BD2569E1A8CEF4548799CC21408E4D045BD64DCE406A61CE6A1"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_93369cef/prerequisite_fixture.exe",
+      "bytes": 3452416,
+      "sha256": "BA87CF8361517FF154C684BE7A0D45C5F691D09A9672CA5621195F8B57CD081E"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_93c10684/can_prerequisite_ui_tests.obj",
+      "bytes": 572101,
+      "sha256": "73B34ADE97D8D651FD4245CAB755235996F952185B8E3E6CB5A08AC547666805"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_93c10684/prerequisite_fixture.exe",
+      "bytes": 3485184,
+      "sha256": "6E620C71F9D3FE12E7BEFECC42981B3B8C526DE7F596CC80C8D46895D59CC470"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_a8d6253f/can_prerequisite_ui_tests.obj",
+      "bytes": 818220,
+      "sha256": "E1573E6044A55E93AC867CCCCFA0599496B76428A2F2CF159C72C09492DE0A90"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_a8d6253f/prerequisite_fixture.exe",
+      "bytes": 3530752,
+      "sha256": "733FF284ECB4902F98FC7122612BC1ED286BEB93FEB475747CF8E6DF05E7B529"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_ba427c4b/can_prerequisite_ui_tests.obj",
+      "bytes": 605656,
+      "sha256": "FB17821DD5BC2C6C3D31F9DE2E09C3651052E0B0714FF76B1B4BD9155806C342"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_ba427c4b/prerequisite_fixture.exe",
+      "bytes": 3494400,
+      "sha256": "2DF0EDB59A3DC219A246150FA2D6066FCF705DE81BC6385B2212AF88CF0BAF81"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_bab7a609/can_prerequisite_ui_tests.obj",
+      "bytes": 371404,
+      "sha256": "AAF349DF5C5294186550811AB249DE5B7DF0E732B42432A2BFD74EE709596FFA"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_cba757b4/can_prerequisite_ui_tests.obj",
+      "bytes": 864815,
+      "sha256": "EF8FF9A936B25A23C1E7625080E12B10708BC0C1763F9A66D9CC1E8F0012AD7D"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_cba757b4/prerequisite_fixture.exe",
+      "bytes": 3532288,
+      "sha256": "22B413864B50F77E1D5ABD5357131447E7344D95526BAE25032E31A2ED99C28C"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_e90b3931/can_prerequisite_ui_tests.obj",
+      "bytes": 572101,
+      "sha256": "CCAFA60B6B9626F7D39A2FE13C02D88265F267941A589EFB9FA60EBB36B48866"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_e90b3931/prerequisite_fixture.exe",
+      "bytes": 3485696,
+      "sha256": "53A6E83DBDBDBF6A57CB4970D0EF94D8A3E41FB43D42711A0A7617D7166B0F8B"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_ec6d1a1d/can_prerequisite_ui_tests.obj",
+      "bytes": 451620,
+      "sha256": "1337A3070266FF98E971B078FB6B13D2C76B2D9BDC6D1C0A3CAC72A9800AD64D"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_ec6d1a1d/prerequisite_fixture.exe",
+      "bytes": 3353088,
+      "sha256": "94F75E5659AEFFA23F5577C9154DBB6B98FCDD4A2DA463DBCB36E4BA044E3DA3"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_f994ff3c/can_prerequisite_ui_tests.obj",
+      "bytes": 356134,
+      "sha256": "9DC6D842B3914A82153B7AA3C57DA4855E1DF709C4D150BCA031E06F749718D8"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_f99df42b/can_prerequisite_ui_tests.obj",
+      "bytes": 371404,
+      "sha256": "FB777FB66ACF25AA8BA9C7969B9C9583F5CCE4FAAAB22126F3B5D6ECEC0FFB91"
+    },
+    {
+      "path": "tmp/internal/tests/can_prerequisite_Release_f99df42b/prerequisite_fixture.exe",
+      "bytes": 3349504,
+      "sha256": "0A9459C9D2504703E31416CEECC953605B40F29545F6706714C4CF3897678347"
+    }
+  ]
+}

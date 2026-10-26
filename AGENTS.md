@@ -2,6 +2,14 @@
 
 ## Workspace Layout And Safe Clean
 
+Dedicated prerequisite fixture cleanup uses `scripts/clean_prerequisite_tests.bat`
+(double-click applies; `--preview` is read-only). Its standalone PowerShell helper
+and reviewed manifest retain unlisted/changed artifacts, INI, PNG/log/evidence;
+only empty approved run directories may be removed. This separate lifecycle
+entry does not extend normal clean or build/rebuild flows. New run directories
+need ownership/hash review before adding them to the manifest. See HANDOFF for
+the current manual-execution/automatic-review restriction before agent Apply.
+
 Workspace profile exception: integrated PC/firmware/public-guide release; retain existing root RC/res and coupled diagrams/reference assets. Do not relocate frozen delivery files or publish raw captures for cosmetic uniformity. clean_mfc.bat uses clean_intermediates.ps1 scoped to tmp/internal/build, file allowlist only, reparse preflight; never purge tmp or obj/tests trees.
 
 
