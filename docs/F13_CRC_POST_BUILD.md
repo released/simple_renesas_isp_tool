@@ -98,7 +98,7 @@ and the build fails if that size exceeds the declared capacity or flash end.
 
 CRC protects integrity, not authenticity. Optional installed-App version
 control and the explicit one-update force operation are described in
-[Tool operation](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version).
+[Tool operation](https://released.github.io/slide_simple_renesas_isp_tool/#force-old-version).
 Digital signatures, authentication and a persistent version floor are not provided.
 
 ## Verification

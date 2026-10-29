@@ -88,3 +88,12 @@ The parser receives byte extents and has no CAN/UART/Flash-driver dependency.
 boot_app_handoff.h owns no-init RAM, separate from serialized metadata.
 For recovery, hold SW1/P32 LOW during reset/power-up, release after Boot starts,
 then use Misc115200 to update App and explicitly RUN.
+
+## User code entry
+
+`custom_func.c` provides `hardware_init()` for initialization and `loop()` for
+foreground service. Add application initialization and foreground work through
+these callbacks, retaining the existing communication service calls.
+The selected main/startup adapter owns entry and handoff. Generated peripheral
+files remain under `src/`; retain the project's MTPJ source selection when using
+Code Generator or Smart Configurator, then rebuild to validate the image and vectors.

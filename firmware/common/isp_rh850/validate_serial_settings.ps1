@@ -1,6 +1,6 @@
 param([Parameter(Mandatory=$true)][string]$BootProject,[Parameter(Mandatory=$true)][string]$Project)
 $ErrorActionPreference='Stop'
-$header=[IO.File]::ReadAllText((Join-Path $BootProject 'common\isp_transport_config.h'))
+$header=[IO.File]::ReadAllText((Join-Path $BootProject 'isp_transport_config.h'))
 function Value([string]$Name,[string]$Text=$header){
     $m=[regex]::Match($Text,'(?m)^#define\s+'+[regex]::Escape($Name)+'\s+\(?(0x[0-9A-Fa-f]+|[0-9]+)[ULul]*\)?')
     if(!$m.Success){throw ('Missing literal serial setting: '+$Name)}

@@ -38,12 +38,12 @@ class UpdateObservability(unittest.TestCase):
         self.assertNotRegex(source,r'[A-Z]:[\\/]|_Avery|SourceCode')
         web=companion_path('Web')
         pattern=r'<!-- UPDATE_EVIDENCE_BEGIN -->.*?<!-- UPDATE_EVIDENCE_END -->'
-        owner=(web/'slide_isp_tool_for_RL78/index.md').read_text(encoding='utf-8-sig')
+        owner=(web/'slide_simple_renesas_isp_tool/index.md').read_text(encoding='utf-8-sig')
         other=(web/'slide_boot_loader_for_RL78/index.md').read_text(encoding='utf-8-sig')
         self.assertEqual(re.findall(pattern,source,re.S),re.findall(pattern,owner,re.S))
         self.assertNotIn('phases_ms',re.findall(pattern,other,re.S)[0])
         catalog=json.loads((ROOT/'scripts/web_guide_sections.json').read_text(encoding='utf-8-sig'))
-        self.assertEqual(catalog['UPDATE_EVIDENCE']['owner'],'slide_isp_tool_for_RL78')
+        self.assertEqual(catalog['UPDATE_EVIDENCE']['owner'],'slide_simple_renesas_isp_tool')
 
     def test_f24_delivery_names(self):
         boot=companion_path('F13Boot')

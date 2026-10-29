@@ -13,10 +13,10 @@
  * the selected EVM peripheral, ECC-safe reads and RAM-executed FCL calls.
  */
 unsigned char Device_ReadPrepare(void);
-unsigned char Device_FlashRead(unsigned long address,unsigned char *out,unsigned short size);
+unsigned char Device_FlashRead(unsigned long address, unsigned char *out, unsigned short size);
 unsigned char Device_FlashInit(void);
 unsigned char Device_FlashErase(unsigned long address);
-unsigned char Device_FlashWritePage(unsigned long address,const unsigned char *data);
+unsigned char Device_FlashWritePage(unsigned long address, const unsigned char *data);
 unsigned long Device_IrqSave(void);
 void Device_IrqRestore(unsigned long psw);
 void Device_InstructionSync(void);
@@ -24,12 +24,11 @@ unsigned long Device_ReadRomStart(void);
 unsigned long Device_ReadRomSize(void);
 void Device_JumpAsm(void);
 void Device_RequestReset(unsigned long request);
-void Device_Log(const char *text);
 unsigned short IspTick(void);
 unsigned char IspBusInit(void);
 void IspBusStop(void);
 unsigned char IspBusGet(unsigned char *byte);
-unsigned char IspBusSend(const unsigned char *bytes,unsigned short size);
+unsigned char IspBusSend(const unsigned char *bytes, unsigned short size);
 void IspBusPoll(void);
 unsigned char IspBusReplyComplete(void);
 void IspBusDiagnostics(unsigned char *bytes);

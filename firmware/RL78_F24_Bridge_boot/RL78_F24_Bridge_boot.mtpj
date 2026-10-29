@@ -700,7 +700,11 @@
       <Type>File</Type>
       <RelativePath>..\f24_bridge_common\image_metadata_profile.h</RelativePath>
     </Instance>
-  </Class>
+
+<Instance Guid="e0b57a8c-938c-45ef-9fe6-5e16e4188851"><Name>custom_func.c</Name><Type>File</Type><RelativePath>custom_func.c</RelativePath><TreeImageGuid>941832c1-fc3b-4e1b-94e8-01ea17128b42</TreeImageGuid><ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem></Instance>
+
+<Instance Guid="75be7515-a8cc-493f-86e5-1e5564e0d90a"><Name>custom_func.h</Name><Type>File</Type><RelativePath>custom_func.h</RelativePath><TreeImageGuid>03cad1e8-2eb3-4cde-a8a3-982423631122</TreeImageGuid><ParentItem>76f247c0-0a47-461a-b088-233f5a2b5061</ParentItem></Instance>
+</Class>
   <Class Guid="fb98844b-2c27-4275-9804-f6e63e204da0">
     <Instance Guid="fb98844b-2c27-4275-9804-f6e63e204da0">
       <TypeOfStorageOfUserSettings>UserMtudFile</TypeOfStorageOfUserSettings>

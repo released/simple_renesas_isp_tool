@@ -47,12 +47,29 @@ class DeviceWorkshop(unittest.TestCase):
     def setUpClass(cls):
         cls.text = DOC.read_text(encoding='utf-8-sig')
         blocks = re.findall(r'```c\n(.*?)\n```',cls.text,re.S)
-        cls.examples = image_examples(cls.text) + [read_irq_header(value) for value in blocks if '#ifndef APP_IRQ_HANDLERS_H' in value]
+        images = image_examples(cls.text)
+        # The second MCU is documented as a compact field-difference table.
+        table = cls.text.split('#### B2.', 1)[1].split('#### B3.', 1)[0]
+        value = lambda macro: re.search(r'(?m)^\| `' + macro + r'` \| [^|]+ \| `(0x[0-9A-Fa-f]+|[0-9]+)(?:UL|U)`', table)[1]
+        f24 = dict(images[0], version='0x%08X' % int(value('APP_IMAGE_VERSION'), 0),
+                   build=int(value('APP_IMAGE_BUILD'), 0), target='0x%04X' % int(value('APP_IMAGE_TARGET_ID'), 0))
+        cls.examples = images + [f24] + [read_irq_header(value) for value in blocks if '#ifndef APP_IRQ_HANDLERS_H' in value]
         cls.irq_c = next(value for value in blocks if '#pragma interrupt app_aux_irq' in value)
+
+    def test_timing_images_follow_app_build_and_source_contract(self):
+        block = self.text.split('<a id="device-test-images"></a>',1)[1].split('<a id="device-update-timing"></a>',1)[0]
+        for token in ('Build／Rebuild', 'test_bins/auto/index.html', 'generate_test_bins.bat',
+                      '16／32／64／128／256／512／1024 KiB', '0x118..0x11B', 'little-endian CRC32',
+                      '.owned.csv', 'SHA-256', 'UART／Xmodem／I2C', 'Tool JSON 更新報告'):
+            self.assertIn(token,block)
+        for mcu,capacity in (('F13',119),('F24',247),('G16',23),('G22',55)):
+            self.assertRegex(block,rf'(?m)^\| {mcu} \| 8 KiB \| {capacity} KiB \|')
+        self.assertNotRegex(block,r'(?<![A-Za-z])[A-Za-z]:[\\/]|SourceCode|Python 3')
+        self.assertIn(block,(WEB/'slide_boot_loader_for_RL78/app-development.md').read_text(encoding='utf-8-sig'))
 
     def test_scope_structure_source_links_and_examples(self):
         self.assertEqual(self.text.count('```mermaid'),6)
-        self.assertEqual(len(self.examples),8)
+        self.assertEqual(len(self.examples),6)
         self.assertGreaterEqual(len(re.findall(r'(?m)^\| --- \|',self.text)),7)
         self.assertEqual(self.text.count('```')%2,0)
         self.assertNotRegex(self.text,r'[A-Z]:[\\/]|_Avery|尚未發布')
@@ -65,11 +82,11 @@ class DeviceWorkshop(unittest.TestCase):
         self.assertIn('#pragma interrupt app_aux_irq',self.irq_c)
         self.assertNotRegex(self.irq_c,r'\bstatic\b|\bvect\s*=|printf|\bEI\s*\(')
         self.assertIn('PIF1 = 0U;',self.irq_c)
-        for index,value in enumerate(self.examples[:4]):
+        for index,value in enumerate(self.examples[:2]):
             self.assertEqual((value['target'],value['role'],value['transport']),
-                             ('0xF13B' if index<2 else '0xF24B','DEVICE_APP','CAN'))
-        self.assertEqual(self.examples[3]['version'],'0x00010001')
-        for before,after in ((self.examples[4],self.examples[5]),(self.examples[6],self.examples[7])):
+                             ('0xF13B' if index==0 else '0xF24B','DEVICE_APP','CAN'))
+        self.assertEqual(self.examples[1]['version'],'0x00010001')
+        for before,after in ((self.examples[2],self.examples[3]),(self.examples[4],self.examples[5])):
             self.assertNotIn('0x0A',before)
             self.assertEqual(after['0x0A'],'app_aux_irq')
             self.assertTrue(all(after[k]==v for k,v in before.items()))
@@ -105,8 +122,8 @@ class DeviceWorkshop(unittest.TestCase):
         before=hashed(protected)
         with tempfile.TemporaryDirectory(prefix='device_workshop_f13_') as folder:
             project=Path(folder)
-            self.temp_project(F13_APP,project,self.examples[5])
-            (project/'app_image_config.h').write_text(image_header(self.examples[1]),encoding='utf-8')
+            self.temp_project(F13_APP,project,self.examples[3])
+            (project/'app_image_config.h').write_text(image_header(self.examples[0]),encoding='utf-8')
             args=['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',
                   str(F13/'generate_irq_contract.ps1'),'-Mode','App','-AppProject',str(project)]
             command(args)
@@ -120,7 +137,7 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertIn('CAN_BOOT_APP_FIRMWARE_BUILD (20261016UL)',files[1].read_text())
             self.assertRegex(files[2].read_text(),r'APP_IMAGE_VERSION\s+\.EQU 0x00010501')
             self.assertIn('Do not edit',files[2].read_text())
-            self.reject_invalid_config(args,project,self.examples[1],files)
+            self.reject_invalid_config(args,project,self.examples[0],files)
             files[2].write_text(files[2].read_text()+'; tampered\n')
             tampered=hashed(files)
             self.assertNotEqual(subprocess.run(args+['-CheckOnly'],capture_output=True).returncode,0)
@@ -138,11 +155,11 @@ class DeviceWorkshop(unittest.TestCase):
         scratch.mkdir(parents=True,exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='device_workshop_f24_',dir=scratch) as folder:
             project=Path(folder)
-            self.temp_project(F24_APP,project,self.examples[7])
-            for name in ('app_main.c','iodefine.h'):
+            self.temp_project(F24_APP,project,self.examples[5])
+            for name in ('custom_func.c','iodefine.h'):
                 shutil.copyfile(F24_APP/name,project/name)
             shutil.copytree(F24_APP/'src/smc_gen',project/'src/smc_gen')
-            (project/'app_image_config.h').write_text(image_header(self.examples[3]),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(self.examples[1]),encoding='utf-8')
             args=['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',
                   str(F24/'tools/prepare_projects.ps1'),'-Kind','app','-Project',str(project)]
             command(args)
@@ -161,7 +178,7 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertEqual(len(words),64)
             self.assertEqual(words[4:7],[0x10001,20261016,0xFFFFFFFF])
             self.assertEqual(words[32:],[0xFFFFFFFF]*32)
-            self.reject_invalid_config(args,project,self.examples[3],files)
+            self.reject_invalid_config(args,project,self.examples[1],files)
             files[4].write_text(files[4].read_text()+'; tampered\n')
             tampered=hashed(files)
             self.assertNotEqual(subprocess.run(args+['-CheckOnly'],capture_output=True).returncode,0)
@@ -197,17 +214,17 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertEqual(before,hashed([image_path]))
         with tempfile.TemporaryDirectory(prefix='device_workshop_meta_') as folder:
             project=Path(folder)
-            (project/'app_image_config.h').write_text(image_header(self.examples[3]),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(self.examples[1]),encoding='utf-8')
             snippet=f". '{F24/'tools/device_common.ps1'}'; $meta=Get-DeviceMetadata '{project}' 516; [Convert]::ToBase64String($meta)"
             args=['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-Command',snippet]
             region=base64.b64decode(command(args).stdout.strip())
             self.assertEqual(region[16:20],bytes.fromhex('01 00 01 00'))
             self.assertEqual(struct.unpack_from('<I',region,20)[0],20261016)
             self.assertEqual(region[128:],b'\xff'*128)
-            invalid=dict(self.examples[3]); invalid['transport']='I2C'
+            invalid=dict(self.examples[1]); invalid['transport']='I2C'
             (project/'app_image_config.h').write_text(image_header(invalid),encoding='utf-8')
             self.assertNotEqual(subprocess.run(args,capture_output=True).returncode,0)
-            (project/'app_image_config.h').write_text(image_header(self.examples[3]),encoding='utf-8')
+            (project/'app_image_config.h').write_text(image_header(self.examples[1]),encoding='utf-8')
             shutil.copyfile(next(F24_APP.glob('*.mtpj')),project/'sample.mtpj')
             build=project/'DefaultBuild'; build.mkdir()
             for suffix in ('.mot','.map'):
@@ -227,8 +244,8 @@ class DeviceWorkshop(unittest.TestCase):
                          'can_boot_config.h','image_metadata_config.h','boot_app_handoff.h',
                          'image_metadata.c','image_metadata.h','image_metadata_profile.c'):
                 shutil.copyfile(F13/name,boot/name)
-            self.temp_project(F13_APP,project,self.examples[5])
-            (project/'app_image_config.h').write_text(image_header(self.examples[1]),encoding='utf-8')
+            self.temp_project(F13_APP,project,self.examples[3])
+            (project/'app_image_config.h').write_text(image_header(self.examples[0]),encoding='utf-8')
             command(['powershell.exe','-NoProfile','-File',str(boot/'generate_irq_contract.ps1'),
                      '-Mode','App','-AppProject',str(project)])
             build=project/'DefaultBuild'; build.mkdir()
@@ -260,7 +277,7 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertFalse(list(build.glob('*_update.bin')))
 
     def test_both_web_copies_and_bounded_read_only_sync(self):
-        for name in ('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78'):
+        for name in ('slide_boot_loader_for_RL78','slide_simple_renesas_isp_tool'):
             text=(WEB/name/'index.md').read_text(encoding='utf-8-sig')
             block, = PATTERN.findall(text)
             if name == 'slide_boot_loader_for_RL78':
@@ -271,7 +288,7 @@ class DeviceWorkshop(unittest.TestCase):
             self.assertEqual(text.count('<a id="device-metadata-vector-workshop"></a>'),1)
         with tempfile.TemporaryDirectory(prefix='device_workshop_web_') as folder:
             web=Path(folder); pages=[]
-            for name in ('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78'):
+            for name in ('slide_boot_loader_for_RL78','slide_simple_renesas_isp_tool'):
                 page=web/name/'index.md'; page.parent.mkdir()
                 page.write_text('prefix\n<!-- DEVICE_WORKSHOP_BEGIN -->old<!-- DEVICE_WORKSHOP_END -->\nsuffix',encoding='utf-8')
                 pages.append(page)

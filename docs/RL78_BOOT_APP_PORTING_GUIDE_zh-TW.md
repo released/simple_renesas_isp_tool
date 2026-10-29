@@ -14,6 +14,8 @@ Metadata 編輯與新增 IRQ 的逐步操作集中於 [Device App 設定](https:
 
 <a id="basic-vs-golden"></a>
 
+<a id="guide-porting-1"></a>
+
 ### Basic 範例與 CAN golden sample
 
 [F24 Basic UART／I2C／XMODEM 範例](https://released.github.io/slide_boot_loader_for_RL78/basic_uart_i2c/)
@@ -38,6 +40,8 @@ Basic 的無後綴與 `_e2` 配對均使用軟體 CRC32；`_e2` 表示附有 e2 
 各配對的來源、啟用開關及封裝範圍見 [Basic 工程索引](https://released.github.io/slide_boot_loader_for_RL78/basic_uart_i2c/#basic-projects)。
 兩類映像分別交給對應下載流程，Basic BIN 不作為 CAN metadata 映像載入。
 
+<a id="guide-porting-2"></a>
+
 ### 1. 工程來源
 
 | 工程 | F13 (MCU CAN device) | F24 (MCU CAN device) |
@@ -50,7 +54,8 @@ Basic 的無後綴與 `_e2` 配對均使用軟體 CRC32；`_e2` 表示附有 e2 
 | 板端時鐘 | X1 4MHz、CPU32／CAN16 | X1 4MHz、PLL80、CPU／CAN40 |
 | 工程配置 | [F13 啟動與更新](https://released.github.io/slide_boot_loader_for_RL78/#f13-boot-decision) | [F24 工程配置](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device) |
 
-各 App 引用相鄰 Boot 工程提供的共用來源與建置腳本。
+每個 Boot／App／Transfer 工程自備來源碼、設定 header 與建置腳本，可分別下載及建置。
+搭配安裝的 Boot／App 使用相容的 MCU、Flash 分區、通訊與映像契約。
 工程放置方式如下，F13 與 F24 可依需要分別使用：
 
 ```text
@@ -69,6 +74,17 @@ git clone https://github.com/released/RL78_F13_Boot_loader_CAN.git
 git clone https://github.com/released/RL78_F13_Boot_loader_CAN_app.git
 ```
 
+#### 依修改目的選擇設定入口
+
+| 修改目的 | 主要編輯位置 | Boot 是否需要配套修改 |
+| --- | --- | --- |
+| App 功能、版本或一般 IRQ | App `custom_func.c`、ISR、`app_image_config.h`、`app_irq_handlers.h` | 契約及既有轉送範圍內不需重建 Boot；App Rebuild 後核對報告 |
+| 更新介面、速率、ID／address | Boot／App 通訊 header、SC／driver、metadata profile及Tool選項 | 需要；單一介面的工程分別設定，另保留診斷UART |
+| Flash 分區或容量 | `image_metadata_config.h`、linker、startup、封裝與Flash backend | 需要；核對 erase／write 單位、保護範圍及安裝方式 |
+| 新 MCU／板子 | MCU header、clock／pin、IRQ配置、RAM、Flash library及上述契約 | 需要；先完成獨立Boot／App／Transfer建置及板端驗證 |
+
+<a id="guide-porting-3"></a>
+
 ### 2. Flash 與映像配置
 
 | 區域 | F13 device | F24 device |
@@ -85,12 +101,14 @@ git clone https://github.com/released/RL78_F13_Boot_loader_CAN_app.git
 App 前512 bytes 由256-byte向量表與256-byte metadata 組成。
 BIN 的實際長度由 linker map 決定，尾端四位元組對齊並加上 CRC32。
 
-各 Boot 的 `image_metadata_config.h` 定義映像契約；`can_boot_config.h` 定義 CAN，`boot_app_handoff.h` 定義 RAM 交接。
+各工程的 `image_metadata_config.h` 定義映像契約；`can_boot_config.h` 定義 CAN，`boot_app_handoff.h` 定義 RAM 交接。
 完整編輯分工見 [設定檔與產物](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-vector-workshop)。
-獨立 `image_metadata.c/.h` 搭配工程專用 `image_metadata_profile.c`；API 與移植方式見 [Metadata C 模組](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser)。
+獨立 `hal/image/image_metadata.c/.h` 搭配工程專用 `image_metadata_profile.c`；API 與移植方式見 [Metadata C 模組](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser)。
 逐 byte 位址見 [Flash／metadata 參考](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
 
 <a id="device-debug-monitor"></a>
+
+<a id="guide-porting-4"></a>
 
 #### 重要事項：Boot 燒錄方式與 Flash 尾端保護
 
@@ -116,13 +134,15 @@ App BIN 容量包含向量表、metadata、程式／填充與最後 4 bytes CRC3
 
 需要滿容量時，工程配置與安裝方式須一起調整：
 
-1. 在 Boot 的 `image_metadata_config.h` 設定 `IMAGE_APPLICATION_CAPACITY`：F13 為 `0x1E000`，F24 為 `0x3E000`。
+1. 在 各工程的 `image_metadata_config.h` 設定 `IMAGE_APPLICATION_CAPACITY`：F13 為 `0x1E000`，F24 為 `0x3E000`。
 2. 重新建置配對的 Boot 與 App，確認 Flash 擦寫邊界、產生的 metadata、封裝範圍與 Tool live capacity 一致；重新產生測試 BIN。
 3. **使用 RFP 安裝配對的 Boot HEX**，再以 Tool 更新 App BIN；不可將 CS+ Debug 下載當作這一步的替代方式。
 4. 若之後再次使用 CS+ Debug 下載，滿容量更新前須重新以 RFP 安裝 Boot。
 
 僅改用 RFP、不修改配對工程，預設 Boot 仍只接受 119／247 KiB 以內的 App。
 目前操作依據可參閱 Renesas [E1／E20／E2／E2 Lite RL78 附加手冊](https://www.renesas.com/en/document/mat/e1e20e2-emulator-e2-emulator-lite-additional-document-users-manual-notes-connection-rl78) §3.3.1（monitor 區域）、§3.5.1（self-programming）及 §3.8.2（離開除錯後獨立運作）。
+
+<a id="guide-porting-5"></a>
 
 ### 3. Startup、RAM 與中斷交接
 
@@ -131,7 +151,7 @@ App BIN 容量包含向量表、metadata、程式／填充與最後 4 bytes CRC3
 | Project device／CC-RL | MCU、記憶體模型、Flash driver |
 | Startup | stack、data／bss 初始化、App 起點 |
 | No-init RAM | `0xFF710..0xFF71F` owner／handoff／update marker；startup 與 linker 保留此區 |
-| ENTER marker | F13：`0xFF700`，見 r_main.c；F24：`0xFF71C`，見 boot_main.c |
+| ENTER marker | F13：`0xFF700`；F24：`0xFF71C`；讀取與交接邏輯見各 Boot 的 `custom_func.c` |
 | IRQ owner | `0xAA`：Boot；`0x55`：App |
 | RAM／stack | linker map 確認與 no-init 區間分離 |
 | Flash 執行路徑 | F24 RFD programming-mode 路徑及必要資料位於 RAM |
@@ -141,10 +161,76 @@ Boot 交接前關閉中斷、整理周邊狀態並寫入 App owner。
 App 經自己的 startup 初始化後，再啟用所需周邊與 IRQ。
 
 F13 的 `f13_board_support` 與 startup user-area clock hook 負責時鐘交接。
-F24 的 `common` 與 startup projection 負責板端初始化及 RFD RAM 配置。
+F24 的 `hal/device`、`hal/flash` 與 startup projection 負責板端初始化及 RFD RAM 配置。
 這些來源分別保留在各自工程中。
 
+<a id="device-project-entry"></a>
+
+<a id="guide-porting-6"></a>
+
+#### 使用者程式入口與 Generate Code
+
+工程的初始化與前景工作集中在 `custom_func.c`。
+App 新增功能時，可從 `hardware_init()` 加入初始化，在 `loop()` 呼叫前景工作。
+協定、Flash 與 metadata 模組維持獨立，IRQ 宣告與 App mapping 見 [App 中斷設定](https://released.github.io/slide_boot_loader_for_RL78/#device-irq-ownership)。
+
+Boot、App 與 Transfer 各自包含所需的 API 與 PowerShell helpers。
+`custom_func.c` 保留初始化與前景流程；底層功能依用途放入 `hal`，不透過另一個工程取得來源碼。
+
+| API 目錄 | 內容 |
+| --- | --- |
+| `hal/can` | CAN service、controller driver 與通訊 adapter |
+| `hal/device` | MCU、時鐘、周邊、CPU 交接與板端 API |
+| `hal/image` | Metadata parser／profile、映像驗證與 CRC |
+| `hal/flash` | Flash 存取與 geometry API |
+| `hal/isp` | 更新／Transfer 協定與資料處理 |
+
+各工程保留實際使用的功能目錄；Flash library 與 `src` 的原廠產生碼維持其原有結構。
+App 的 `app_image_config.h`／`app_irq_handlers.h`，以及 MCU／Flash、通訊與 handoff 設定 header 位於工程根目錄。
+修改搭配安裝的 Boot／App 契約時，分別更新兩個工程的本機設定，再重建核對。
+
+```mermaid
+flowchart LR
+    ENTRY["工程選用的 main / startup"] --> INIT["custom_func.c: hardware_init"]
+    ENTRY --> LOOP["custom_func.c: loop"]
+    INIT --> API["本工程 hal API"]
+    LOOP --> API
+    CFG["本工程 C 設定 header"] --> API
+    CFG --> BUILD["本工程 PowerShell pre/post-build"]
+    BUILD --> IMAGE["向量 / metadata / BIN / HTML"]
+```
+
+| 位置 | 工作與修改方式 |
+| --- | --- |
+| `custom_func.c`：`hardware_init()` | 單次初始化；保留既有時鐘、handoff、周邊及 IRQ 啟用順序，再加入 App 初始化 |
+| `custom_func.c`：`loop()` | 前景處理；保留既有通訊服務呼叫，再加入可返回的 App 工作 |
+| 主程式的 user code 區或工程自有入口 | 呼叫初始化與迴圈；由 MTPJ 選用該工程的唯一入口 |
+| `src/code_gen`／`src/smc_gen` | Code Generator／Smart Configurator 輸出；功能實作放在上述使用者來源 |
+| Startup、vector、pre/post-build | 處理映像啟動、向量配置與封裝驗證，保留配對工程設定 |
+
+一般 App／Transfer 的呼叫方式如下：
+
+```c
+void main(void)
+{
+    hardware_init();
+    for (;;)
+    {
+        loop();
+    }
+}
+```
+
+RL78 的部分 Boot 由 startup 呼叫 `boot_main()`，完成 Boot 工作後返回 startup，再轉入 App。
+這類工程保留既有返回約定；使用者功能仍從 `custom_func.c` 接入。
+
+Generate Code 後，可在 MTPJ 的編譯來源確認使用者入口仍被選用，
+再執行正常建置，核對 linked metadata、IRQ、ROM／RAM 與封裝結果。
+若調整 SC 周邊，對應的 ISR、初始化及旗標處理也需同步。
+
 <a id="flash-ram-execution"></a>
+
+<a id="guide-porting-7"></a>
 
 #### Code Flash 擦寫：ROM 儲存與 RAM 執行
 
@@ -175,7 +261,7 @@ flowchart TD
 | F24 工程 | RAM 配置來源 |
 | --- | --- |
 | Basic | `cstart.asm` 複製 `RFD_CMN`、`RFD_CF`、`SMP_CMN`、`SMP_CF` 及資料 section；配合 `-rom` 與 RAM section 配置 |
-| CAN／CAN FD golden sample | `f24_flash.c` 的 `DRAM` 包含 `execute()`、`wait_end()`、`fail_reset()`；`generated_projection/cstart.asm` 複製 RFD／DRAM sections |
+| CAN／CAN FD golden sample | `hal/flash/f24_flash.c` 的 `DRAM` 包含 `execute()`、`wait_end()`、`fail_reset()`；`generated_projection/cstart.asm` 複製 RFD／DRAM sections |
 
 F24 CAN 工程在 Flash critical section 使用 DI／EI；此期間不執行一般 Flash-resident IRQ 路徑。
 軟體向量轉送不會解除 Flash busy 限制；實體 vector、stub、dispatcher、ISR 與資料都需要可存取。
@@ -186,6 +272,8 @@ F13 使用其 FSL 的 library／使用者程式配置，依 FSL 的內部處理�
 僅存在 RAM section 或成功編譯，並不足以證明 busy 期間沒有回到 Code Flash。
 
 <a id="crc-backends"></a>
+
+<a id="guide-porting-8"></a>
 
 #### 映像 CRC32 與硬體 CRC
 
@@ -203,7 +291,7 @@ CRC 的格式契約與計算後端分開：相同資料需使用相同位寬、�
 目前 CRC32 參數為 init=`0xFFFFFFFF`、refin/refout=true、xorout=`0xFFFFFFFF`；
 計算 App BIN 除最後4 bytes 以外的全部 bytes，CRC 以 LE32 存入最後4 bytes。
 `123456789` 的檢查值為 `0xCBF43926`，儲存 bytes 為 `26 39 F4 CB`。
-來源為各 Boot 的 `sw_crc32.c`；Basic `_HW_CRC` 呼叫的是 general-purpose CRC16，不是 high-speed CRC。
+來源為各 Boot 的 `hal/image/sw_crc32.c`；Basic `_HW_CRC` 呼叫的是 general-purpose CRC16，不是 high-speed CRC。
 
 硬體功能依據：[F13／F14／F15 Safety Function](https://www.renesas.com/en/document/apn/rl78f13-f14-f15-safety-function-rev250)
 與 [F23／F24 Safety Function](https://www.renesas.com/en/document/apn/rl78f23-f24-safety-function-rev110)，各 §2／§3。
@@ -213,6 +301,8 @@ General-purpose CRC 可處理 CPU 指定的資料；限制在演算法結果，�
 先核對 polynomial、init、reflection、feed order、xorout、範圍與 endian，再比較已知向量、分段運算及完整 BIN 的結果。
 效能取決於 CPU 搬運、硬體啟動與映像大小，需依實際工程量測。
 CRC 用於偵測資料損壞，不提供韌體來源驗證或防竄改簽章。
+
+<a id="guide-porting-9"></a>
 
 ### 4. 固定向量介面
 
@@ -236,6 +326,8 @@ CRC 用於偵測資料損壞，不提供韌體來源驗證或防竄改簽章。
 仍依 MCU 與 Flash library 的限制配置。
 若擦寫期間需要啟用中斷，另核對從實體 vector、stub、dispatcher 到 handler 與資料的完整路徑是否仍可存取。
 
+<a id="guide-porting-10"></a>
+
 ### 5. 設定檔與建置
 
 | 內容 | F13 device | F24 device |
@@ -250,17 +342,21 @@ CRC 用於偵測資料損壞，不提供韌體來源驗證或防竄改簽章。
 來源搬移或改名時，source／include／hook、map 與輸出檔名一併調整。
 完整命令集中於 [產生與建置](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build)。
 
+<a id="guide-porting-11"></a>
+
 ### 6. 初次安裝與後續更新
+
+Tool 操作見 [CAN device 更新](https://released.github.io/slide_simple_renesas_isp_tool/#mcu-can-device)。
+以燒錄器安裝時，核對 Boot 與 App 檔案的位址範圍及 erase 設定。
+App raw ABS／MOT 用於編譯除錯，封裝後的 App HEX 用於燒錄器初裝。
 
 | 用途 | F13 device | F24 device |
 | --- | --- | --- |
-| 燒錄器初裝 | App 根目錄 `boot_app.hex` | App 根目錄 `boot_app.hex`，或 Boot `boot0000_1FFF.hex`＋App `flash_app_variable_CRC.hex` |
+| 燒錄器初裝 | Boot `DefaultBuild/boot0000_1FFF.hex`＋App `DefaultBuild/flash_app_variable_CRC.hex` | Boot `DefaultBuild/boot0000_1FFF.hex`＋App `DefaultBuild/flash_app_variable_CRC.hex` |
 | CAN 更新 App | `DefaultBuild/*_update.bin` | `DefaultBuild/*_update.bin` |
 | 除錯檢查 | 保留 Boot 實體向量，載入 App symbols | 保留 Boot 實體向量，載入 App symbols |
 
-Tool 操作見 [CAN device 更新](https://released.github.io/slide_isp_tool_for_RL78/#mcu-can-device)。
-以燒錄器安裝時，核對每個檔案的範圍與 erase 設定。
-App raw ABS／MOT 與封裝後的安裝映像分別使用於編譯除錯及正式初裝。
+<a id="guide-porting-12"></a>
 
 ### 7. 啟動與更新流程
 
@@ -279,6 +375,8 @@ flowchart TD
 各工程的 marker、逾時與 Flash 操作由各自 Boot 處理。
 F13 的狀態條件見 [F13 Boot 啟動與更新](https://released.github.io/slide_boot_loader_for_RL78/#f13-boot-decision)。
 F24 的狀態路徑見 [F24 device 工程配置](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device)。
+
+<a id="guide-porting-13"></a>
 
 ### 8. App 變更與驗證
 

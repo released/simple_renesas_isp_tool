@@ -8,7 +8,7 @@ $pattern='(?s)<!-- CAN_WALKTHROUGH_BEGIN -->.*?<!-- CAN_WALKTHROUGH_END -->'
 $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\CAN_UPDATE_WALKTHROUGH_zh-TW.md'))
 $blocks=[regex]::Matches($source,$pattern)
 if ($blocks.Count -ne 1) { throw 'Expected exactly one canonical CAN walkthrough block.' }
-$path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_isp_tool_for_RL78 -Section CAN_WALKTHROUGH
+$path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_simple_renesas_isp_tool -Section CAN_WALKTHROUGH
 $web=[IO.File]::ReadAllText($path)
 $matches=[regex]::Matches($web,$pattern)
 if ($matches.Count -ne 1) { throw 'Expected exactly one CAN walkthrough block in ISP web guide.' }

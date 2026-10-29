@@ -8,9 +8,9 @@
 #endif
 #include "host_link_uart.h"
 
-#define UART_ERROR_OVERRUN    (0x01U)
-#define UART_ERROR_PARITY     (0x02U)
-#define UART_ERROR_FRAMING    (0x04U)
+#define UART_ERROR_OVERRUN (0x01U)
+#define UART_ERROR_PARITY (0x02U)
+#define UART_ERROR_FRAMING (0x04U)
 
 static uint8_t g_rx_buffer[HOST_LINK_UART_RX_CAPACITY];
 static volatile uint8_t g_rx_head;
@@ -31,8 +31,14 @@ static uint8_t g_baud_phase, g_rate_changed;
 static uint16_t baud_divisor(uint32_t baud)
 {
     /* CKM0 remains fCLK/2 = 20 MHz. Do not change a shared SAU clock. */
-    if (baud == 460800UL) return 0x2A00U;
-    if (baud == 921600UL) return 0x1400U;
+    if (baud == 460800UL)
+    {
+        return 0x2A00U;
+    }
+    if (baud == 921600UL)
+    {
+        return 0x1400U;
+    }
     return 0xAC00U;
 }
 
@@ -59,9 +65,18 @@ void HostLinkUart_BaudInfo(uint32_t *nominal, uint32_t *actual)
 }
 uint8_t HostLinkUart_PrepareBaud(uint32_t baud)
 {
-    if (baud != HL_BAUD_DEFAULT && baud != 460800UL && baud != 921600UL) return 3U;
-    if (g_baud_phase != 0U) return 1U;
-    if (baud == g_baud) return 0U;
+    if (baud != HL_BAUD_DEFAULT && baud != 460800UL && baud != 921600UL)
+    {
+        return 3U;
+    }
+    if (g_baud_phase != 0U)
+    {
+        return 1U;
+    }
+    if (baud == g_baud)
+    {
+        return 0U;
+    }
     g_next_baud = baud;
     g_baud_tick = get_tick();
     g_baud_phase = 1U; /* Prepared, but no ACK has been queued yet. */
@@ -69,15 +84,24 @@ uint8_t HostLinkUart_PrepareBaud(uint32_t baud)
 }
 void HostLinkUart_ArmBaud(void)
 {
-    if (g_baud_phase == 1U) g_baud_phase = 2U;
+    if (g_baud_phase == 1U)
+    {
+        g_baud_phase = 2U;
+    }
 }
 uint8_t HostLinkUart_ConfirmBaud(uint32_t baud)
 {
-    if (g_baud_phase != 3U || baud != g_baud) return 10U;
+    if (g_baud_phase != 3U || baud != g_baud)
+    {
+        return 10U;
+    }
     g_baud_phase = 0U;
     return 0U;
 }
-uint8_t HostLinkUart_BaudPending(void) { return g_baud_phase; }
+uint8_t HostLinkUart_BaudPending(void)
+{
+    return g_baud_phase;
+}
 uint8_t HostLinkUart_TakeRateChange(void)
 {
     uint8_t changed;
@@ -89,10 +113,13 @@ uint8_t HostLinkUart_TakeRateChange(void)
 static void process_baud(void)
 {
     uint16_t now, elapsed;
-    if (g_baud_phase == 0U) return;
+    if (g_baud_phase == 0U)
+    {
+        return;
+    }
     now = get_tick();
-    elapsed = (now >= g_baud_tick) ? (uint16_t)(now - g_baud_tick) :
-        (uint16_t)(60000U - g_baud_tick + now);
+    elapsed = (now >= g_baud_tick) ? (uint16_t)(now - g_baud_tick)
+                                   : (uint16_t)(60000U - g_baud_tick + now);
     if (elapsed >= HL_BAUD_CONFIRM_MS)
     {
         apply_baud(HL_BAUD_DEFAULT);
@@ -125,8 +152,7 @@ static uint16_t ring_count(uint8_t head, uint8_t tail)
     }
     else
     {
-        count = HOST_LINK_UART_RX_CAPACITY - (uint16_t)tail +
-                (uint16_t)head;
+        count = HOST_LINK_UART_RX_CAPACITY - (uint16_t)tail + (uint16_t)head;
     }
 
     return count;
@@ -247,8 +273,11 @@ uint8_t HostLinkUart_Write(const uint8_t *source, uint16_t length)
         head++;
     }
     g_tx_head = head;
-    free_count=ring_count(g_tx_head,g_tx_tail);
-    if (free_count>g_uart_stats.tx_high_water) g_uart_stats.tx_high_water=free_count;
+    free_count = ring_count(g_tx_head, g_tx_tail);
+    if (free_count > g_uart_stats.tx_high_water)
+    {
+        g_uart_stats.tx_high_water = free_count;
+    }
 
     return 1U;
 }
@@ -299,8 +328,8 @@ void HostLinkUart_ClearStats(void)
     g_uart_stats.rx_hardware_overrun_count = 0U;
     g_uart_stats.tx_overflow_count = 0U;
     g_uart_stats.tx_start_error_count = 0U;
-    g_uart_stats.rx_high_water = ring_count(g_rx_head,g_rx_tail);
-    g_uart_stats.tx_high_water = ring_count(g_tx_head,g_tx_tail);
+    g_uart_stats.rx_high_water = ring_count(g_rx_head, g_rx_tail);
+    g_uart_stats.tx_high_water = ring_count(g_tx_head, g_tx_tail);
     BSP_EI();
 }
 
@@ -318,8 +347,11 @@ void HostLinkUart_RxByteFromIsr(uint8_t data)
     {
         g_rx_buffer[g_rx_head] = data;
         g_rx_head = next;
-        used=ring_count(g_rx_head,g_rx_tail);
-        if (used>g_uart_stats.rx_high_water) g_uart_stats.rx_high_water=used;
+        used = ring_count(g_rx_head, g_rx_tail);
+        if (used > g_uart_stats.rx_high_water)
+        {
+            g_uart_stats.rx_high_water = used;
+        }
     }
 }
 

@@ -289,7 +289,16 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle], asset_ro
             while index < len(lines) and not lines[index].strip().startswith("```"):
                 code_lines.append(lines[index])
                 index += 1
-            story.append(Preformatted("\n".join(code_lines), styles["code"]))
+            code_block = Preformatted("\n".join(code_lines), styles["code"])
+            if len(code_lines) <= 24:
+                preamble = []
+                if (story and isinstance(story[-1], Paragraph) and
+                        story[-1].style == styles["body"] and
+                        len(story[-1].getPlainText()) < 500):
+                    preamble.append(story.pop())
+                story.append(KeepTogether(preamble + [code_block]))
+            else:
+                story.append(code_block)
             index += 1
             continue
         # Markdown thumbnails may link to the same full-size public image.
@@ -307,11 +316,15 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle], asset_ro
             if aspect_ratio <= 1.05:
                 preamble = []
                 if (last_heading_index is not None and
-                        len(story) - last_heading_index <= 3 and
+                        len(story) - last_heading_index <= 12 and
                         all(isinstance(item, (Paragraph, Spacer))
                             for item in story[last_heading_index:])):
-                    preamble = story[last_heading_index:]
-                    del story[last_heading_index:]
+                    candidate = story[last_heading_index:]
+                    caption_height = sum(item.wrap(portrait_width, portrait_height)[1]
+                        + item.getSpaceBefore() + item.getSpaceAfter() for item in candidate)
+                    if caption_height < portrait_height * 0.3:
+                        preamble = candidate
+                        del story[last_heading_index:]
                 # A table's trailing spacer may otherwise spill onto an empty
                 # landscape page immediately before this portrait page break.
                 while story and isinstance(story[-1], Spacer):
@@ -329,9 +342,10 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle], asset_ro
                     story.append(Paragraph(
                         inline_markup(last_heading_text), last_heading_style
                     ))
-                diagram, unused_ratio = diagram_image(
-                    image_path, portrait_width, portrait_height - 26 * mm
-                )
+                caption_height = sum(item.wrap(portrait_width, portrait_height)[1]
+                    + item.getSpaceBefore() + item.getSpaceAfter() for item in preamble)
+                diagram, unused_ratio = diagram_image(image_path, portrait_width,
+                    portrait_height - max(26 * mm, caption_height + 12))
                 story.append(KeepTogether([diagram, Spacer(1, 7)]))
                 story.append(NextPageTemplate("landscape"))
                 story.append(PageBreak())

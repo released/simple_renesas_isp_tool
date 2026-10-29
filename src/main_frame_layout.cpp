@@ -126,8 +126,8 @@ void CMainFrame::LayoutControls(int width, int height) {
     Move(log_auto_scroll_check_,log_tools.auto_scroll);
     Move(log_edit_,log_tools.history);
 
-    // Reserve 100% up front so progress updates never move the bar per packet.
-    const std::wstring progress_sample = progress_operation_ + L": 100%";
+    // Reserve the complete waiting caption as well as the 100-percent suffix.
+    const std::wstring progress_sample = progress_operation_ + L": waiting...";
     const auto footer = firmware_upgrade::console::CalculateFooter(layout.footer,
         CaptionWidth(progress_label_, 145, progress_sample.c_str()),
         CaptionWidth(operation_timer_label_, 145), CaptionWidth(build_info_label_, 270));

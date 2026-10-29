@@ -19,7 +19,7 @@ SECTIONS=('TOOL_CONNECT_MEDIA','TOOL_DEVICE_MEDIA','TOOL_BRIDGE_MEDIA')
 class OperationMedia(unittest.TestCase):
     def test_sixteen_public_copies_and_single_owner(self):
         source=SOURCE.read_text(encoding='utf-8-sig')
-        page=(WEB/'slide_isp_tool_for_RL78/index.md').read_text(encoding='utf-8-sig')
+        page=(WEB/'slide_simple_renesas_isp_tool/index.md').read_text(encoding='utf-8-sig')
         other=(WEB/'slide_boot_loader_for_RL78/index.md').read_text(encoding='utf-8-sig')
         images=[]
         for section in SECTIONS:
@@ -33,7 +33,7 @@ class OperationMedia(unittest.TestCase):
         self.assertEqual(len(set(images)),16)
         for relative in images:
             local=ROOT/'docs'/relative
-            public=WEB/'slide_isp_tool_for_RL78'/relative
+            public=WEB/'slide_simple_renesas_isp_tool'/relative
             self.assertEqual(local.read_bytes(),public.read_bytes())
             original=ROOT/local.name
             if original.is_file():
@@ -72,7 +72,7 @@ class OperationMedia(unittest.TestCase):
     def test_sync_validation_and_read_only_check(self):
         with tempfile.TemporaryDirectory(prefix='operation_media_') as folder:
             root=Path(folder)
-            page=root/'slide_isp_tool_for_RL78/index.md'
+            page=root/'slide_simple_renesas_isp_tool/index.md'
             page.parent.mkdir()
             stub='prefix\n'+'\n'.join('<!-- '+s+'_BEGIN -->stale<!-- '+s+'_END -->' for s in SECTIONS)+'\nsuffix'
             page.write_text(stub,encoding='utf-8')

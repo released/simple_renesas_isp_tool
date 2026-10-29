@@ -84,7 +84,7 @@ bool WorkerSession::ProcessBridgeAction(const Command& command, std::wstring* er
         update_details_=L"RUN sent once; ack="+std::to_wstring(acknowledged);
         if(!acknowledged) PostLog(L"RUN ACK not confirmed; checking the same host without repeating RUN: "+*error);
         serial_port_.Close(); ResetSessionState(); PostState();
-        PostProgress(0,L"1/2 Host reconnect");
+        PostActivity(L"1/2 Host reconnect");
         const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(12);
         while(std::chrono::steady_clock::now()<deadline && !IsCancelRequested()) {
             Sleep(150U);
@@ -94,7 +94,7 @@ bool WorkerSession::ProcessBridgeAction(const Command& command, std::wstring* er
                 ProcessDisconnect(); *error=L"RUN reconnect found a different or unverified bridge."; return false;
             }
             if(live.mode!=BU_MODE_APP) continue;
-            PostProgress(0,L"2/2 Verify host App");
+            PostActivity(L"2/2 Verify host App");
             if(!evidence::ConfirmBridgeApp(expected,live)) {
                 *error=L"RUN returned to APP, but installed metadata/version/build/size differs from the validated Boot descriptor.";
                 return false;
@@ -135,7 +135,10 @@ bool WorkerSession::ProcessBridgeAction(const Command& command, std::wstring* er
         [this](int n){PostProgress(n,L"3/4 Host transfer");},abort,error,
         [&](unsigned stage) {
             finish_phase(); const wchar_t* names[]={L"1/4 Host metadata",L"2/4 Host BEGIN",L"3/4 Host transfer",L"4/4 Host CRC/readback"};
-            phase=names[stage]; PostProgress(0,phase); PostLog(L"Update stage: "+phase);
+            phase=names[stage];
+            if(stage==2U) PostProgress(0,phase);
+            else PostActivity(phase);
+            PostLog(L"Update stage: "+phase);
         });
     finish_phase();
     update_details_+=L"; App execution=not requested (explicit RUN)";

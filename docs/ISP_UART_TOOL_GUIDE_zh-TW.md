@@ -9,8 +9,15 @@
 Tool 只開啟 bridge 的 Host Link COM，再由 bridge UART1 或 IICA0 與 MCU device 通訊。
 Device UART0 獨立提供診斷文字，供 terminal 觀察。
 
-F13／F24／G16／G22 各有獨立的 UART、Xmodem、I2C Boot／App／Transfer 工程。
+RL78 F13／F24／G16／G22 與 RH850 各有獨立的 UART、Xmodem、I2C Boot／App／Transfer 工程。
 這些串列工程已通過離線建置及程式模型測試；實際接線、中斷、Flash、重啟與斷電恢復另作實板驗證。
+
+Boot 流程與協定格式可依介面直接查閱：
+
+| 平台 | UART | I2C | Xmodem | 共用契約 |
+| --- | --- | --- | --- | --- |
+| RL78 | [Boot／Format](https://released.github.io/slide_boot_loader_for_RL78/uart-device.html) | [Boot／Format](https://released.github.io/slide_boot_loader_for_RL78/i2c-device.html) | [Boot／Format](https://released.github.io/slide_boot_loader_for_RL78/xmodem-device.html) | [Frame／INFO／Status](https://released.github.io/slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5) |
+| RH850 | [Boot／Format](https://released.github.io/slide_boot_loader_for_RH850/uart-device.html) | [Boot／Format](https://released.github.io/slide_boot_loader_for_RH850/i2c-device.html) | [Boot／Format](https://released.github.io/slide_boot_loader_for_RH850/xmodem-device.html) | [Frame／INFO／Status](https://released.github.io/slide_boot_loader_for_RH850/serial-device.html#guide-serial-device-5) |
 
 ### 選擇介面與 Workflow
 
@@ -33,7 +40,7 @@ Device 每份 Boot 只支援其所屬的介面／協定；UART0 診斷輸出不�
 | --- | --- |
 | PC ↔ bridge UART0 | Host Link binary，預設115200；Host Baud 與 device 速度獨立 |
 | bridge UART1 ↔ device UART1 | Bridge TX P74 接 device RX；bridge RX P75 接 device TX；Device baud 可選或輸入，8-N-1，範例預設115200 |
-| bridge IICA0 ↔ device IICA0 | Bridge SCL P62／SDA P63 接 device SCL／SDA；設定未左移的7-bit address與host宣告的速度，範例預設0x20／100kHz |
+| bridge IICA0 ↔ device I2C Slave | Bridge SCL P62／SDA P63 接 device SCL／SDA；設定未左移的7-bit address與host宣告的速度，範例預設0x20／100kHz |
 | device UART0 ↔ terminal | 診斷文字與 V1／V2 counter；115200、8-N-1 |
 | 所有連線 | 共地、核對 I/O 電壓；I2C 使用適當上拉，不將不相容電位直接相接 |
 
@@ -50,10 +57,12 @@ F13／F24 UART1 使用 PIOR42=1；G16 使用 SAU0 channels2／3 與對應 PIOR�
 接線依據：F13 target board R20UT2272XJ0200 第2頁、F24 target board R12UZ0100XJ0101 第2頁、
 G16 FPB schematic R12TU0180EJ、G22 FPB schematic R20UT5122EJ。
 接頭方向與焊橋依各板原理圖核對；表內腳位與韌體 adapter 對照，不表示已量測實體波形。
+RH850 的 RLIN31／RIIC1、獨立 Log 及 EVM 腳位集中於 [RH850 平台配置](https://released.github.io/slide_boot_loader_for_RH850/serial-device.html#guide-serial-device-1)。
 
 ### 工程與產物
 
-命名中的 MCU 取 F13、F24、G16 或 G22；下表每格代表各 MCU 的獨立工程。
+下表為 RL78 工程命名，MCU 取 F13、F24、G16 或 G22；每格代表各 MCU 的獨立工程。
+RH850 工程名稱與安裝檔集中於 [RH850 工程與建置](https://released.github.io/slide_boot_loader_for_RH850/serial-device.html#guide-serial-device-2)。
 
 | 協定 | Boot | App | Custom Transfer |
 | --- | --- | --- | --- |
@@ -61,19 +70,20 @@ G16 FPB schematic R12TU0180EJ、G22 FPB schematic R20UT5122EJ。
 | Xmodem | RL78_＜MCU＞_ISP_Boot_loader_Xmodem | Boot 名稱加 _app | RL78_＜MCU＞_Xmodem_Transfer |
 | I2C | RL78_＜MCU＞_ISP_Boot_loader_I2C | Boot 名稱加 _app | RL78_＜MCU＞_I2C_Slave_Transfer |
 
-App／Transfer 與其配對 Boot 放在同一父目錄；共用來源與建置 helper 由該 Boot 提供。
+Boot／App／Transfer 各自包含來源碼、設定與建置工具，可獨立編譯。
+板上配對的 Boot／App 需使用相容的 Metadata、IRQ、Flash 與通訊契約。
 在所選工程根目錄執行：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-使用既有 CS+／CC-RL 與 Windows PowerShell。
+使用既有 CS+ 與 Windows PowerShell；RL78 使用 CC-RL，RH850 使用 CC-RH。
 App 設定由 app_image_config.h、app_irq_handlers.h 編輯，不需要 Python 或 JSON 編輯器。
 
 | 產物 | 使用方式 |
 | --- | --- |
-| Boot DefaultBuild/boot0000_1FFF.hex | 燒錄器安裝8-KiB Boot |
+| RL78 Boot DefaultBuild/boot0000_1FFF.hex | 燒錄器安裝8-KiB Boot；RH850 安裝檔見上述平台建置章節 |
 | App DefaultBuild/＜App工程名＞_update.bin | Tool 載入；包括向量、metadata、程式／padding、末端CRC32 |
 | App DefaultBuild/app_build_report.html | 瀏覽器核對實際 BIN 的 metadata／IRQ／CRC／雜湊 |
 | Transfer DefaultBuild/＜Transfer工程名＞.hex | 燒錄器安裝獨立通訊測試程式；不放入 App 更新欄 |
@@ -179,6 +189,5 @@ Boot更新與I2C mailbox維持各自能力；不因缺少UART診斷而拒絕更�
 | Cancel | Worker清理 device／bridge交易；UI不自行關閉另一條COM |
 
 成功、失敗、取消都產生 JSON／HTML report；Tool不自動開啟瀏覽器。
-報告欄位與開啟方式見 [Firmware update report](https://released.github.io/slide_isp_tool_for_RL78/#update-html-report)；
-Xmodem及I2C的格式細節見 [串列 device 契約](https://released.github.io/slide_boot_loader_for_RL78/#serial-device-engineering)。
+報告欄位與開啟方式見 [Firmware update report](https://released.github.io/slide_simple_renesas_isp_tool/#update-html-report)；
 <!-- UART_TOOL_GUIDE_END -->

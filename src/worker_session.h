@@ -24,6 +24,9 @@
 #include "core/serial_port.h"
 #include "core/bridge_update_profile.h"
 #include "ui/update_feedback.h"
+#include "ui/worker_event_queue.h"
+
+struct WorkerResponsivenessFixture;
 
 namespace firmware_upgrade::ui {
 
@@ -112,6 +115,7 @@ struct WorkerEvent {
     WorkerEventKind kind = WorkerEventKind::Log;
     SessionState state;
     int progress = 0;
+    bool indeterminate = false;
     bool success = false;
     feedback::Result update_result = feedback::Result::None;
     std::wstring text;
@@ -121,6 +125,7 @@ struct WorkerEvent {
 };
 
 class WorkerSession {
+    friend struct ::WorkerResponsivenessFixture;
 public:
     WorkerSession();
     ~WorkerSession();
@@ -153,7 +158,8 @@ public:
         std::uint32_t approved_version=0U,std::uint8_t contract=1U);
     void SetDetailedTrace(bool enabled);
 
-    std::vector<WorkerEvent> DrainEvents();
+    std::vector<WorkerEvent> DrainEvents(std::size_t maximum=64U);
+    bool HasPendingEvents();
 
 private:
     enum class CommandType {
@@ -245,6 +251,7 @@ private:
     void PostLog(const std::wstring& text);
     void PostState();
     void PostProgress(int progress, const std::wstring& text);
+    void PostActivity(const std::wstring& text);
     static const wchar_t* CommandName(CommandType type);
     void QueueEvent(WorkerEvent event);
 
@@ -265,8 +272,7 @@ private:
     bool cleanup_in_progress_ = false;
 
     std::mutex event_mutex_;
-    std::deque<WorkerEvent> events_;
-    std::uint64_t dropped_ui_events_ = 0U;
+    WorkerEventQueue<WorkerEvent> events_;
 
     SessionState state_;
     std::wstring update_details_;

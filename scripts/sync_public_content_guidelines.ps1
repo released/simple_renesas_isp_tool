@@ -12,7 +12,7 @@ if($CheckOnly -and (!(Test-Path -LiteralPath $target) -or
     throw 'Tool documentation copy differs from the common /web guidelines.'
 }
 & (Join-Path $WebRoot 'scripts\sync_public_content_guidelines.ps1') `
-    -Project @('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78') -CheckOnly:$CheckOnly
+    -Project @('slide_boot_loader_for_RL78','slide_boot_loader_for_RH850','slide_simple_renesas_isp_tool') -CheckOnly:$CheckOnly
 if(!$CheckOnly -and (!(Test-Path -LiteralPath $target) -or [IO.File]::ReadAllText($target) -cne $expected)) {
     [IO.File]::WriteAllText($target,$expected,(New-Object Text.UTF8Encoding($false)))
 }

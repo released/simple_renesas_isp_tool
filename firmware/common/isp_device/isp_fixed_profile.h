@@ -21,20 +21,21 @@ unsigned char IspRomRead(unsigned long address, unsigned char *data, unsigned sh
 unsigned char IspImageVerify(unsigned long size, unsigned long crc);
 #define ISP_METADATA(words) IspMetadataCheck(words)
 #define ISP_ERASE(address) IspFlashErase(address)
-#define ISP_WRITE(address,data) IspFlashWrite(address,data)
-#define ISP_READ(address,data,size) IspRomRead(address,data,size)
-#define ISP_VERIFY(size,crc) IspImageVerify(size,crc)
+#define ISP_WRITE(address, data) IspFlashWrite(address, data)
+#define ISP_READ(address, data, size) IspRomRead(address, data, size)
+#define ISP_VERIFY(size, crc) IspImageVerify(size, crc)
 #define ISP_CALLBACKS_VALID 1
 #define ISP_CAN_READ 1
 #else
 #define ISP_CFG(name) (device->config->name)
 #define ISP_METADATA(words) device->ops->metadata(words)
 #define ISP_ERASE(address) device->ops->erase(address)
-#define ISP_WRITE(address,data) device->ops->write(address,data)
-#define ISP_READ(address,data,size) device->ops->read(address,data,size)
-#define ISP_VERIFY(size,crc) device->ops->verify(size,crc)
-#define ISP_CALLBACKS_VALID (device->ops && device->ops->metadata && \
-    device->ops->erase && device->ops->write && device->ops->read && device->ops->verify)
+#define ISP_WRITE(address, data) device->ops->write(address, data)
+#define ISP_READ(address, data, size) device->ops->read(address, data, size)
+#define ISP_VERIFY(size, crc) device->ops->verify(size, crc)
+#define ISP_CALLBACKS_VALID                                                                        \
+    (device->ops && device->ops->metadata && device->ops->erase && device->ops->write &&           \
+     device->ops->read && device->ops->verify)
 #define ISP_CAN_READ (device->ops && device->ops->read && device->ops->verify)
 #endif
 

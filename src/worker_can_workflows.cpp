@@ -632,7 +632,9 @@ bool WorkerSession::ProcessProgramF13Boot(
     callbacks.stage=[this](f13_boot::UpdateStage stage) {
         const wchar_t* names[]={L"1/5 Metadata",L"2/5 START",L"3/5 Transfer",L"4/5 END CRC"};
         const auto name=names[static_cast<unsigned>(stage)];
-        PostProgress(0,name); PostLog(std::wstring(L"Update stage: ")+name);
+        if(stage==f13_boot::UpdateStage::Transfer) PostProgress(0,name);
+        else PostActivity(name);
+        PostLog(std::wstring(L"Update stage: ")+name);
     };
     f13_boot::UpdateReport report;
     PostProgress(0, L"Firmware update");
@@ -674,7 +676,7 @@ bool WorkerSession::ProcessProgramF13Boot(
         (static_cast<std::uint64_t>(report.image.image_size) * 1000U / update_ms) : 0U) + L" B/s.");
     PostLog(L"END acknowledged with matching CRC32; target is resetting to "
             L"the application.");
-    PostProgress(0,L"5/5 Confirm App");
+    PostActivity(L"5/5 App restart");
     state_.f13_bootloader_ready=false;
     state_.target_validated=false;
     const auto confirm_started=std::chrono::steady_clock::now();
@@ -735,12 +737,15 @@ bool WorkerSession::ConfirmDeviceApp(const firmware_update::ImageInfo& image,
         L" bytes, END CRC "+std::to_wstring(end_crc_ms)+L" ms), included in the "+
         std::to_wstring(evidence::AppConfirmationTiming::budget_ms)+
         L" ms confirmation window; Cancel remains available.");
+    PostActivity(L"5/5 App restart");
     while(evidence::AwaitAppProbe(timing,elapsed,[this]() { return IsCancelRequested(); },
         [](std::uint32_t ms) { Sleep(ms); })==evidence::AppConfirmationTiming::Action::Probe) {
         ++probes;
+        PostActivity(L"5/5 Check APP_READY");
         std::uint32_t health=0U;
         std::wstring probe_error;
         if(boot_client_.GetAppHealth(&health,&probe_error) && (health&0xFFU)==1U) {
+            PostActivity(L"5/5 Verify running App");
             f13_boot::TargetInfo live;
             if(!boot_client_.GetTargetInfo(&live,error)) { record(); return false; }
             for(const auto& row:evidence::Compare(image,live))

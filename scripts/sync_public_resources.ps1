@@ -9,7 +9,7 @@ $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\MULTIBUS_TOOL_GUIDE_zh-TW.
 $blocks=[regex]::Matches($source,$pattern)
 if ($blocks.Count -ne 1) { throw 'Expected one canonical public-resources block.' }
 $updates=@()
-foreach ($relative in @('slide_isp_tool_for_RL78\index.md','slide_boot_loader_for_RL78\index.md')) {
+foreach ($relative in @('slide_simple_renesas_isp_tool\index.md','slide_boot_loader_for_RL78\index.md')) {
     $expected=Get-WebGuideProjection -Section PUBLIC_RESOURCES -Folder ($relative.Split('\')[0]) -Canonical $blocks[0].Value
     $path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder ($relative.Split('\')[0]) -Section PUBLIC_RESOURCES
     $text=[IO.File]::ReadAllText($path)

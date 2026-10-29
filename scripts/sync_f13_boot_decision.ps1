@@ -10,7 +10,7 @@ $pattern = '(?s)' + [regex]::Escape($begin) + '.*?' + [regex]::Escape($end)
 $source = Get-Content -LiteralPath (Join-Path $toolRoot 'docs\F13_BOOT_UPDATE_FLOW_zh-TW.md') -Raw -Encoding UTF8
 $blocks = [regex]::Matches($source, $pattern)
 if ($blocks.Count -ne 1) { throw 'Expected exactly one canonical boot-decision block.' }
-$targets = @('slide_isp_tool_for_RL78\index.md', 'slide_boot_loader_for_RL78\index.md')
+$targets = @('slide_simple_renesas_isp_tool\index.md', 'slide_boot_loader_for_RL78\index.md')
 # Validate every target before changing either local web draft.
 $updates = @()
 foreach ($relative in $targets) {

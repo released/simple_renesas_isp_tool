@@ -1,31 +1,30 @@
 {
   "UART_TOOL_GUIDE": {
-    "owner": "slide_isp_tool_for_RL78",
+    "owner": "slide_simple_renesas_isp_tool",
     "anchor": "uart-device-operation",
     "title": "UART／Xmodem／I2C device 操作",
-    "description": "四系列串列 ISP、獨立診斷 UART、接線、更新與 Custom Transfer 集中於 ISP Tool 頁。"
+    "description": "RL78與RH850串列ISP的接線、可調通訊設定、App更新及Custom Transfer集中於ISP Tool頁。"
   },
   "SERIAL_DEVICE_GUIDE": {
     "owner": "slide_boot_loader_for_RL78",
     "anchor": "serial-device-engineering",
-    "title": "MCU 串列 ISP 工程配置",
-    "description": "F13／F24／G16／G22 UART、I2C與Xmodem的獨立工程、C header、Flash／IRQ、metadata與封包契約集中於Bootloader頁。"
+    "title": "串列 ISP 共用工程與協定契約",
+    "description": "F13／F24／G16／G22 的平台配置、C header、Metadata、建置與共用封包集中於本章；UART、I2C、Xmodem 各有獨立 Bootloader／Protocol Format 入口。"
   },
   "RH850_DEVICE": {
-    "deferred": true,
-    "owner": "slide_boot_loader_for_RL78",
+    "owner": "slide_boot_loader_for_RH850",
     "anchor": "rh850-can-device",
-    "title": "RH850 MCU CAN device 工程",
-    "description": "RH850 Classical／FD Boot、App、metadata、EIINT、Flash page及離線驗證集中於Device指南。"
+    "title": "其他 MCU 指南",
+    "description": "RH850 的 CAN／CAN FD、App Metadata／IRQ、串列介面與 Flash 移植集中於獨立 Bootloader 指南。"
   },
   "FD_TRANSFER": {
-    "owner": "slide_isp_tool_for_RL78",
+    "owner": "slide_simple_renesas_isp_tool",
     "anchor": "can-fd-custom-transfer",
     "title": "CAN FD Custom Transfer 通訊測試",
     "description": "CAN FD Discover、8-byte命令、64-byte ECHO、能力與操作核對集中於ISP Tool。"
   },
   "FD_UPDATE": {
-    "owner": "slide_isp_tool_for_RL78",
+    "owner": "slide_simple_renesas_isp_tool",
     "anchor": "can-fd-update",
     "title": "CAN FD App 更新操作",
     "description": "500K／2M、BRS、64-byte FD資料幀的Tool與Host操作集中於ISP Tool。"
@@ -37,7 +36,7 @@
     "description": "CAN FD Boot/App設定來源、timing、metadata、建置與產物集中於Device指南。"
   },
   "UPDATE_EVIDENCE": {
-    "owner": "slide_isp_tool_for_RL78",
+    "owner": "slide_simple_renesas_isp_tool",
     "anchor": "update-confirmation",
     "title": "更新確認與驗證紀錄",
     "description": "App 確認、metadata 差異表、階段進度、取消、報告與實板測試表集中於 ISP Tool。"
@@ -61,19 +60,19 @@
     "description": "Boot 啟動檢查、ENTER marker、30 秒 inactivity 與更新完成後的啟動路徑集中於 Bootloader 頁。"
   },
   "F24_APP_IRQ": {
-    "owner": "slide_isp_tool_for_RL78",
+    "owner": "slide_simple_renesas_isp_tool",
     "anchor": "host-app-engineering",
     "title": "F24 (MCU CAN host)：App 工程與向量設定",
     "description": "Host App 的工程來源、獨立產表、建置方式與 Misc 操作集中於 ISP Tool 頁。"
   },
   "COMMON_IMAGE_POLICY": {
-    "owner": "slide_isp_tool_for_RL78",
+    "owner": "slide_simple_renesas_isp_tool",
     "anchor": "image-update-policy",
     "title": "更新政策與通訊速度",
     "description": "BIN 的更新目的地、允許介面、Boot／IRQ ABI 與 Host Link 速度，集中於 ISP Tool 的更新政策章節。"
   },
   "PUBLIC_RESOURCES": {
-    "owner": "slide_isp_tool_for_RL78",
+    "owner": "slide_simple_renesas_isp_tool",
     "anchor": "downloads",
     "title": "下載與操作入口",
     "description": "Tool、host／device firmware 的來源與下載檔案集中於 ISP Tool 頁。F13、F24 CAN device 的工程配置則由各自的章節說明。"

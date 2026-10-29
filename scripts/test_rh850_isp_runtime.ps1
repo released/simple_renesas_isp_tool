@@ -3,8 +3,11 @@ param([Parameter(Mandatory=$true)][string]$DeviceRoot,
     [ValidateSet('BOOT','APP','TRANSFER')][string[]]$Role=@('BOOT','APP','TRANSFER'))
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
-$out=Join-Path $root 'tmp\internal\tests\rh850_isp_runtime'
-[IO.Directory]::CreateDirectory($out)|Out-Null
+. (Join-Path $PSScriptRoot 'device_hal_paths.ps1')
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$testScope=New-OwnedTestWorkspace 'rh850_isp_runtime'
+$out=$testScope.Path
+try {
 $vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 $vs=& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if(!$vs){throw 'MSVC is required.'}
@@ -14,8 +17,8 @@ foreach($line in $lines){if($line -match '^([^=]+)=(.*)$'){[Environment]::SetEnv
 Push-Location -LiteralPath $out
 try{foreach($selectedBus in $Bus){
     $name='Sample_Project_RH850_S1_ISP_Boot_loader_'+$selectedBus
-    $common=Join-Path $DeviceRoot ($name+'\common')
-    $text=[IO.File]::ReadAllText((Join-Path $common 'isp_rh850_runtime.c'))
+    $common=Join-Path $DeviceRoot $name
+    $text=[IO.File]::ReadAllText((Join-Path $common 'custom_func.c'))
     $globals=$text.IndexOf('static IspDevice g_device;')
     $hardware=$text.IndexOf('unsigned short IspTick(void)')
     $begin=$text.IndexOf('static unsigned char Metadata(')
@@ -30,20 +33,23 @@ try{foreach($selectedBus in $Bus){
         if($selectedBus -eq 'I2C'){$defines+='/DISP_I2C'}elseif($selectedBus -eq 'Xmodem'){$defines+='/DISP_XMODEM'}
         $files=@('isp_protocol.c','isp_device.c','device_image.c','image_metadata.c','image_metadata_profile.c')
         if($selectedBus -eq 'Xmodem'){$files+='isp_xmodem.c'}
-        $sources=@($files|ForEach-Object {Join-Path $common $_})
-        $profile=[IO.File]::ReadAllText((Join-Path $common 'image_metadata_profile.c'))
+        $sources=@($files|ForEach-Object {Get-DeviceProjectSource $common $_})
+        $profile=[IO.File]::ReadAllText((Get-DeviceProjectSource $common 'image_metadata_profile.c'))
         $profile=[regex]::Replace($profile,'(?m)^#pragma section[^\r\n]*','')
         [IO.File]::WriteAllText((Join-Path $out 'image_metadata_profile.c'),$profile,(New-Object Text.UTF8Encoding($false)))
         $sources=@($sources|ForEach-Object {if([IO.Path]::GetFileName($_) -eq 'image_metadata_profile.c'){Join-Path $out 'image_metadata_profile.c'}else{$_}})
         $identity=Join-Path $DeviceRoot ($name+'_app\generated_projection')
-        & cl /nologo /TC /W4 /WX /c @defines ('/I'+$common) ('/I'+$identity) ('/I'+$out) @sources (Join-Path $root 'tests\rh850_isp_runtime_harness.c')
+        $halIncludes=@('device','image','isp','flash')|ForEach-Object {'/I'+(Join-Path $common ('hal\'+$_))}
+        & cl /nologo /TC /W4 /WX /c @defines ('/I'+$common) @halIncludes ('/I'+$identity) ('/I'+$out) @sources (Join-Path $root 'tests\rh850_isp_runtime_harness.c')
         if($LASTEXITCODE){throw ($selectedBus+'/'+$selectedRole+' actual runtime C compilation failed.')}
         $objects=@($files|ForEach-Object {[IO.Path]::ChangeExtension($_,'.obj')})+@('rh850_isp_runtime_harness.obj')
         $core=Join-Path $root 'src\core'
-        & cl /nologo /std:c++17 /EHsc /W4 /WX @defines ('/I'+$common) ('/I'+$core) (Join-Path $root 'tests\rh850_isp_runtime_tests.cpp') (Join-Path $core 'isp_device_client.cpp') (Join-Path $core 'firmware_update_profile.cpp') @objects /Fe:rh850_isp_runtime_tests.exe
+        & cl /nologo /std:c++17 /EHsc /W4 /WX @defines ('/I'+$common) @halIncludes ('/I'+$core) (Join-Path $root 'tests\rh850_isp_runtime_tests.cpp') (Join-Path $core 'isp_device_client.cpp') (Join-Path $core 'firmware_update_profile.cpp') @objects /Fe:rh850_isp_runtime_tests.exe
         if($LASTEXITCODE){throw 'Runtime client model compilation failed.'}
         & .\rh850_isp_runtime_tests.exe (Join-Path $DeviceRoot ($name+'_app\DefaultBuild\'+$name+'_app_update.bin'))
         if($LASTEXITCODE){throw ($selectedBus+'/'+$selectedRole+' runtime integration failed.')}
         Write-Host ('PASS '+$selectedBus+'/'+$selectedRole+' actual runtime integration;hardware NOT RUN.')
     }
 }}finally{Pop-Location}
+
+} finally { Remove-OwnedTestWorkspace $testScope }

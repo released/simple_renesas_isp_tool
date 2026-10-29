@@ -102,7 +102,6 @@ void CAN_Get_TX_Data_Message_Buffer_Result(void);
 
 void CAN_Abort_TX_Data_Message_Buffer(void);
 
-
 void CAN_FD_Send_TX_Data_Message_Buffer2(void);
 void CAN_FD_Send_TX_Data_Message_Buffer1(void);
 void CAN_Send_TX_Data_Message_Buffer_polling2(void);
@@ -117,8 +116,7 @@ e_can_err_t CAN_Bus_Config(void);
 e_can_err_t CAN_Transition_Check(void);
 
 can_host_result_t CAN_HostSetConfig(const can_host_config_t *config);
-can_host_result_t CAN_HostSetFilter(uint8_t index,
-                                    const can_host_filter_t *filter);
+can_host_result_t CAN_HostSetFilter(uint8_t index, const can_host_filter_t *filter);
 can_host_result_t CAN_HostStart(uint32_t *controller_state);
 can_host_result_t CAN_HostStop(uint32_t *controller_state);
 uint8_t CAN_HostIsRunning(void);
@@ -126,8 +124,7 @@ uint32_t CAN_HostGetControllerState(void);
 void CAN_HostGetConfig(can_host_config_t *config);
 can_host_result_t CAN_HostTransmit(const st_can_tx_frame_t *frame);
 void CAN_HostGetLastTxDiagnostic(can_host_tx_diagnostic_t *diagnostic);
-uint8_t CAN_HostPollTransmit(e_can_txb_result_t *result,
-                             uint16_t *timestamp);
+uint8_t CAN_HostPollTransmit(e_can_txb_result_t *result, uint16_t *timestamp);
 can_host_result_t CAN_HostAbortTransmit(void);
 void CAN_HostDiscardRxQueue(void);
 

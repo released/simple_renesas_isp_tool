@@ -12,7 +12,8 @@
  */
 typedef char BuWordMustBe32Bits[(sizeof(uint32_t) == 4U) ? 1 : -1];
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 #define BU_PROTOCOL (3U)
 /* Core/descriptor sizes are NOT metadata region size or UART payload size. */
@@ -29,33 +30,35 @@ extern "C" {
 #define BU_FLAG_ACTIVE (2U)
 #define BU_FLAG_FLASH_READY (4U)
 #define BU_MAX_DATA (64U)
-typedef struct {
-    uint16_t board_id;
-    uint32_t image_size, version, build;
-    uint32_t app_start, capacity, flash_size, boot_size, erase_size, minimum_size;
-    uint32_t uart_baud, minimum_boot_version;
-    uint8_t image_role, update_transports;
-    uint32_t irq_abi;
-    char family[13], part[17];
-} bu_manifest_t;
-typedef struct {
-    uint8_t mode, max_data, flags;
-    uint16_t board_id;
-    uint32_t boot_version, boot_build, app_version, app_build, installed_size;
-    uint32_t app_start, capacity, flash_size, boot_size, erase_size, minimum_size;
-    uint32_t uart_baud;
-    uint32_t irq_abi;
-    char family[13], part[17];
-} bu_info_t;
-uint16_t Bu_Read16(const uint8_t *p);
-uint32_t Bu_Read32(const uint8_t *p);
-void Bu_Write16(uint8_t *p, uint16_t n);
-void Bu_Write32(uint8_t *p, uint32_t n);
-uint8_t Bu_ParseManifest(const uint8_t *p, uint16_t length, bu_manifest_t *out);
-uint8_t Bu_ParseMetadataRegion(const uint8_t *p, uint16_t length, bu_manifest_t *out);
-uint8_t Bu_ParseInfo(const uint8_t *p, uint16_t length, bu_info_t *out);
-void Bu_EncodeInfo(const bu_info_t *in, uint8_t *p);
-uint8_t Bu_MatchesDevice(const bu_manifest_t *image, const bu_info_t *device);
+    typedef struct
+    {
+        uint16_t board_id;
+        uint32_t image_size, version, build;
+        uint32_t app_start, capacity, flash_size, boot_size, erase_size, minimum_size;
+        uint32_t uart_baud, minimum_boot_version;
+        uint8_t image_role, update_transports;
+        uint32_t irq_abi;
+        char family[13], part[17];
+    } bu_manifest_t;
+    typedef struct
+    {
+        uint8_t mode, max_data, flags;
+        uint16_t board_id;
+        uint32_t boot_version, boot_build, app_version, app_build, installed_size;
+        uint32_t app_start, capacity, flash_size, boot_size, erase_size, minimum_size;
+        uint32_t uart_baud;
+        uint32_t irq_abi;
+        char family[13], part[17];
+    } bu_info_t;
+    uint16_t Bu_Read16(const uint8_t *p);
+    uint32_t Bu_Read32(const uint8_t *p);
+    void Bu_Write16(uint8_t *p, uint16_t n);
+    void Bu_Write32(uint8_t *p, uint32_t n);
+    uint8_t Bu_ParseManifest(const uint8_t *p, uint16_t length, bu_manifest_t *out);
+    uint8_t Bu_ParseMetadataRegion(const uint8_t *p, uint16_t length, bu_manifest_t *out);
+    uint8_t Bu_ParseInfo(const uint8_t *p, uint16_t length, bu_info_t *out);
+    void Bu_EncodeInfo(const bu_info_t *in, uint8_t *p);
+    uint8_t Bu_MatchesDevice(const bu_manifest_t *image, const bu_info_t *device);
 /* Parse calls require a non-null output and sufficient input length.
  * Return1 only for complete format validation, not CRC/authentication/launch.
  * Outputs must be ignored on failure. Buffer bytes are never changed.
@@ -66,4 +69,3 @@ uint8_t Bu_MatchesDevice(const bu_manifest_t *image, const bu_info_t *device);
 }
 #endif
 #endif
-

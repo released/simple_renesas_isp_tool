@@ -11,8 +11,10 @@ if($LASTEXITCODE){throw 'MSVC environment failed.'}
 foreach($line in $lines){if($line -match '^([^=]+)=(.*)$'){[Environment]::SetEnvironmentVariable($Matches[1],$Matches[2],'Process')}}
 $canonical=Join-Path $repo 'firmware\common\custom_transfer_fd.h'
 if([IO.File]::ReadAllText($canonical).Replace("`r`n","`n") -cne [IO.File]::ReadAllText((Join-Path $device 'custom_transfer_fd.h')).Replace("`r`n","`n")){throw 'FD wire header differs.'}
-$out=Join-Path $repo 'tmp\internal\tests\fd_transfer'
-New-Item -ItemType Directory -Path $out -Force | Out-Null
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$testScope=New-OwnedTestWorkspace 'fd_transfer'
+$out=$testScope.Path
+try {
 $core=Join-Path $repo 'src\core'
 $sources=@((Join-Path $repo 'tests\fd_transfer_tests.cpp'))
 foreach($name in @('host_link_protocol','host_link_client','can_host_client','f13_transfer_profile')){$sources+=Join-Path $core ($name+'.cpp')}
@@ -61,3 +63,5 @@ try {
         Write-Host "PASS: FD Transfer models trace=$trace; hardware NOT RUN."
     }
 }finally{Pop-Location}
+
+} finally { Remove-OwnedTestWorkspace $testScope }

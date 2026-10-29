@@ -9,7 +9,7 @@ $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\F24_CAN_DEVICE_DESIGN_zh-T
 $blocks=[regex]::Matches($source,$pattern)
 if($blocks.Count -ne 1){throw 'Expected exactly one canonical F24 device block.'}
 $updates=@()
-foreach($folder in @('slide_isp_tool_for_RL78','slide_boot_loader_for_RL78')){
+foreach($folder in @('slide_simple_renesas_isp_tool','slide_boot_loader_for_RL78')){
     $expected=Get-WebGuideProjection -Section F24_DEVICE -Folder $folder -Canonical $blocks[0].Value
     $path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder $folder -Section F24_DEVICE
     $web=[IO.File]::ReadAllText($path)

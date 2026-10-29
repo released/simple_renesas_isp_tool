@@ -9,7 +9,8 @@
  * Main owns Get/Release/Publish. Published reply storage stays immutable until
  * a full ready read ends with master NACK and STOP. No protocol parsing here.
  */
-typedef struct {
+typedef struct
+{
     volatile unsigned char busy, ready, drained, overflow, writing;
     volatile unsigned char receive_count, receive_at;
     volatile unsigned char reply_ready, reply_done, reply_length;

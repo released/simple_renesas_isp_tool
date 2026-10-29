@@ -71,7 +71,7 @@ class ToolUiFieldGuide(unittest.TestCase):
 
     def test_stable_links_and_single_web_owner(self):
         web = companion_path("Web")
-        owner = (web / "slide_isp_tool_for_RL78/index.md").read_text(encoding="utf-8-sig")
+        owner = (web / "slide_simple_renesas_isp_tool/index.md").read_text(encoding="utf-8-sig")
         other = (web / "slide_boot_loader_for_RL78/index.md").read_text(encoding="utf-8-sig")
         pattern = r"<!-- UPDATE_EVIDENCE_BEGIN -->.*?<!-- UPDATE_EVIDENCE_END -->"
         self.assertEqual(re.findall(pattern, self.document, re.S),

@@ -10,8 +10,11 @@ function Get-WebGuideProjection {
         return "<!-- ${Section}_BEGIN -->`n<!-- ${Section}_END -->"
     }
     if ($Folder -ceq $config.owner) { return $Canonical }
-    $url = 'https://released.github.io/'+$config.owner+'/#'+$config.anchor
-    $linkText=[regex]::Unescape('\u95B1\u8B80\u5B8C\u6574\u7AE0\u7BC0')
+    $layout = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'web_guide_layout.json')) | ConvertFrom-Json
+    $page = $layout.PSObject.Properties[$config.owner].Value.sections.PSObject.Properties[$Section].Value
+    if (!$page) { throw "Missing owner chapter for $Section" }
+    $url = 'https://released.github.io/'+$config.owner+'/'+$page+'.html#'+$config.anchor
+    $linkText=$config.title
     return "<!-- ${Section}_BEGIN -->`n<a id=`"$($config.anchor)`"></a>`n`n## $($config.title)`n`n$($config.description)`n[$linkText]($url)`n<!-- ${Section}_END -->"
 }
 
@@ -24,7 +27,7 @@ function Sync-WebGuideSection {
     if ($blocks.Count -ne 1) { throw "Expected one canonical section: $Section" }
     $canonical = $blocks[0].Value
     $targets = @()
-    foreach ($folder in @('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78')) {
+    foreach ($folder in @('slide_boot_loader_for_RL78','slide_simple_renesas_isp_tool')) {
         $targets += @{Path=(Get-WebGuideSectionPath -WebRoot $WebRoot -Folder $folder -Section $Section);Folder=$folder}
     }
     foreach ($path in $DocTargets) { $targets += @{Path=$path;Folder='docs'} }

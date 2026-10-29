@@ -38,7 +38,7 @@ design or its target-specific bridge commands.
 Functional changes must update the relevant protocol/design document,
 `DEVELOPMENT_CHECKLIST.md`, `HANDOFF.md`, and `SELF_CHECK.md` in the same change.
 Also synchronize the affected web guide under `FIRMWARE_WEB_ROOT` (default:
-the Tool checkout's parent), in `slide_isp_tool_for_RL78`; update
+the Tool checkout's parent), in `slide_simple_renesas_isp_tool`; update
 `slide_boot_loader_for_RL78` and `released.github.io` navigation when affected.
 Keep features, protocol contracts, status/steps and screenshot gates consistent with MD.
 Public web navigation/intros use evergreen function descriptions, not product
@@ -53,6 +53,20 @@ Regenerate affected guide PDFs directly in docs. Local synchronization does
 not authorize Git commit/push, publishing, or fabricated UI/hardware evidence.
 
 ## Product boundaries
+
+Device firmware examples each own their source/config/build tools; do not add
+sibling Boot dependencies or common/version-number folders. Place function APIs
+under hal/can, hal/device, hal/image, hal/flash and hal/isp as used by each role.
+Flow orchestration is integrated in project-local custom_func.c hardware_init/loop;
+maintainer API sync must not overwrite user workflow. Initialize derivatives
+from independent golden samples with initialize_device_samples.ps1.
+Firmware examples expose hardware_init()/loop() through project-local
+custom_func.c/.h. Keep the selected main/startup adapter small and preserve
+each role's initialization and return-to-App order. Backend runtime modules
+may provide services, but do not define main or introduce transfer_main.c /
+transfer_fd_main.c. Keep source bindings, preparation templates and isolated
+SC regeneration checks aligned. Expand handwritten control flow and separate
+statements across lines; do not compress if/else/for/while bodies.
 
 F24/G16/G22 serial Boot/App/Transfer own same-name editable SCFG inputs.
 Normal builds validate existing SC/actual registers and project-local peripheral
@@ -88,6 +102,26 @@ three-character/min5ms RX idle and byte-count+250ms deadline,max30s.
 serial-update-requirements owns the brief public compatibility table;link it
 elsewhere rather than duplicating. Hardware timing remains separately tested.
 
+RH850 CAN/CAN FD/serial Boot/App/Transfer retain the complete original RH850
+UART_printf retarget.c/.h feature set and call tiny_printf for foreground logs.
+Do not replace it with the v4 compact formatter or strip float/ll/format support.
+The formatter/project compiler uses C99; other handwritten modules retain C90
+authoring style. Each project owns/registers local copies; putchar delegates to
+the existing bounded SendChar UART0 hook, separate from ISP data.
+Standalone MultiCHv4 uses the same retarget.c/.h/full.inc while retaining its own
+board/UART guard. retarget_config.h owns editable TINY_PRINTF_FULL (default1),
+not overwritten by API sync. Full uses C99 formats, fixed C locale/ASCII wide
+conversion, IEEE32/64 and matching long double, nearest/ties-to-even rounding,
+streamed precision and checked format/count/encoding/UART errors. Current0 keeps
+the previous formats/rounding and attempted-output count. Preserve both modes;
+do not claim hosted locale/fenv/stdio conformance. SendChar returns accepted byte
+or -1 at its unchanged wait bound. Native v4 tests compile the formatter as C99
+separately from strict-C90 CAN sources and retire fresh owned local outputs.
+Do not add Device_Log/Device_LogHex/UartChar or manual numeric formatting again.
+The canonical serial copies live in firmware/common/isp_rh850; API synchronization
+preserves project custom_func workflows. test_rh850_console checks actual call
+excerpts, byte formats/CRLF/counters, trace on/off and the finite busy-UART guard.
+
 RH850 serial completion uses test_rh850_isp_runtime for all nine compiled roles:
 actual RuntimePoll/config/Action/page/stream code, not a substitute decoder.
 Keep reset gated by successful complete reply transmission; Xmodem control-TX
@@ -110,7 +144,8 @@ Keep ISR/plain-helper separation;CC-RH rejects direct calls to interrupt
 functions. All3 App-only builds must preserve paired Boot SHA manifests.
 prepare_rh850_serial_scfg is explicit one-time initialization,not an automatic
 build reset of user SC settings. No physical or publication acceptance is
-implied by native models. Public RH850 projection stays deferred.
+implied by native models. RH850 has its own locally prepared Bootloader guide;
+publication remains subject to the separate firmware acceptance gate.
 
 Serial operation/engineering guides cover all four RL78 families and all three
 independent UART/I2C/Xmodem contracts. sync_isp_uart_guide owns UART_TOOL_GUIDE
@@ -266,6 +301,12 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
   canonical COM name. Enumeration is read-only; never probe all listed devices
   or infer a bridge identity from a USB-UART driver description.
 - Long operations run outside the UI thread.
+- Worker notification is one outstanding wake;drain64 events on the40ms UI
+  timer so posted trace cannot starve paint/input. Same-phase progress may
+  coalesce,but retain phase/terminal order and explicit bounded-drop notices.
+  Batch RichEdit color runs/scroll restoration and file flushes;preserve paused
+  viewport/selection. Unknown waits use marquee without a fake percent,stop
+  activity on failure/cancel,and keep completion/App gates independent.
 - Serial RX uses documented Win32 first-byte return, not full-buffer/20ms
   timeout batching. Bound idle waits to the caller deadline/50ms; zero timeout
   only drains buffered bytes. Cache unchanged COM timeouts; preserve parser
@@ -391,11 +432,13 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
   Read unknown/blank Flash only through copied call-free RAM reader with
   saved/restored VCI ECC;do not describe it as hardware blank/ECC validation.
   tools/device_build.ps1 owns CS+ pre/post,actual metadata/512IRQ/map checks,
-  BIN/HEX/HTML. App/FD Transfer require matching sibling Boot sources.
+  BIN/HEX/HTML. App/Transfer own their HAL/config/build inputs and compile
+  without a sibling Boot checkout; installed Boot/App contracts remain compatible.
   scripts/build_rh850_can_device.ps1 selects Kind explicitly;tests compile
   actual C90 engine/adapter and production PC client,max960KiB/replay/faults.
-  docs/RH850_CAN_DEVICE_GUIDE_zh-TW.md owns RH850_DEVICE;sync_rh850_device.ps1
-  projects it only to Bootloader. ISP/home use short linked entries.
+  docs/RH850_* sources own CAN/App/serial/porting/reference/timing topics;
+  sync_rh850_device.ps1 projects them to slide_boot_loader_for_RH850 only.
+  RL78/ISP/home use short linked entries; preserve the RL78 guide and aliases.
   User scoped this work to offline builds/models; no COM/programmer action.
   Keep RL78 golden projects and F24 host firmware unchanged.
   Three identical can_port_config/rh850_can_ports copies own independent
@@ -519,13 +562,18 @@ logic outside generated files except in preserved user-code sections.
   Detailed slimming measurements stay in tmp/internal, with concise current
   SELF_CHECK/HANDOFF records. Reuse unchanged device/guide evidence explicitly.
 - github_push.bat / scripts/push_github.ps1 is the explicit maintainer publish
-  entry. Plain invocation is read-only; -Execute requires PUSH or -Yes.
-  Shared catalog github_publish_catalog.ps1 owns ten repos: F13 Boot/App/Transfer,
-  F24 Classical and FD device Transfer/Boot/App and Tool including its F24 CAN host projects.
+  entry. Plain PowerShell invocation is read-only. The entry selects exactly
+  nine repos: F13 CAN and F24 Classical/FD device Transfer/Boot/App. The shared
+  catalog's Tool/Host target is NOT selected; RH850/serial/web remain excluded.
+  github_publish_release binds the reviewed source/delivery inventory to SHA256.
+  Execute needs current-board confirmation or an exact AcceptanceFile. A narrowly
+  user-authorized prior-board/offline-regression exception must keep
+  BoardValidated=false,ExceptionAuthorized=true and actual evidence. Never infer
+  an exception for a future snapshot. -Yes alone cannot establish either basis.
   User requests scripts/checks only: do not initialize/create/commit/push actual
   repositories without a separate request. Missing .git stops before pruning.
 - DefaultBuild release pruning is a recoverable move to ignored tmp/internal/
-  github_publish, never normal clean/build. Preserve the exact twelve delivery
+  github_publish, never normal clean/build. Preserve the exact nine selected delivery
   files in the catalog; validate bounds/reparse points, remote ancestry and
   index before commit/push. Never force push, auto-merge or publish web sites.
   Reject tracked or unignored local-only data before archiving/staging. Permit
@@ -533,7 +581,8 @@ logic outside generated files except in preserved user-code sections.
   source changes/deletions remain blocked. Never repair an actual index or
   remove tracking without user approval; preserve local files and index backups.
   Read docs/GITHUB_PUBLISH_zh-TW.md and select affected publication checks.
-  Entry-hold changes use verify_firmware_publication_hold.ps1; run the workspace
+  Scoped-entry changes use verify_can_publication.ps1 (the old hold test name
+  forwards to its GateOnly mode); owned fixtures retire on pass/fail. Run the workspace
   safe-clean audit when archive/deletion/clean behavior changes, not for this
   early refusal alone. No product rebuild/version bump for policy-only changes.
   Current user clarification2026-10-25: ALL MCU firmware-related content without
@@ -543,9 +592,9 @@ logic outside generated files except in preserved user-code sections.
   Compile/model tests do not establish hardware acceptance; check actual-version
   board evidence and every proposed publication path. Unknown status is withheld.
   The existing six-family regex is only an additional legacy guard, not the
-  publication boundary. push_github.ps1 -Execute is held before any path/plan/
-  archive/index/commit/network action until the full firmware release scope has
-  evidence-backed acceptance; -Yes does not bypass it. Do not call lower-level
+  publication boundary. The selected nine-project source/image snapshot needs
+  evidence-backed acceptance before archive/index/commit/network actions;
+  -Yes does not bypass it. Do not call lower-level
   publication helpers to evade the hold. Pure PC-tool/document changes require
   an explicit reviewed manifest excluding unvalidated firmware-related content.
   Previously published54Tool files are not automatically retracted by this
@@ -573,6 +622,19 @@ or write the copied legacy INI filename.
 
 ## Public documentation
 
+RL78 and RH850 Bootloader readers share scripts/bootloader_guide_contract.json:
+equal chapter titles/order and mapped topic bodies. Maintain the paired topic
+and specification when extending either guide; platform-specific values and IRQ/
+Flash implementations remain independent. sync_rh850_device.ps1 projects both
+guides' common navigation through bootloader_guide_navigation.mjs. Keep direct
+homepage timing links and verify_bootloader_parity.mjs checks in the Web gate.
+UART/I2C/Xmodem each own a Bootloader/protocol page with matching six-topic
+structure in both platforms. ISP_SERIAL_TRANSPORT_GUIDE is the shared source;
+serial_guide_content.mjs projects platform diagnostic limits and prepares the
+combined existing serial PDFs. Keep common frame/INFO/status tables only in
+serial-device; other pages link. sync_isp_uart_guide also refreshes the paired
+navigation. Preserve moved legacy anchors and direct home flow/format links.
+
 Web entry pages are short overviews;web_guide_layout.json owns each marker's
 chapter destination. Get-WebGuideSectionPath is mandatory for synchronizers;
 never hardcode index.md for complete chapters. Preserve guide-map.json legacy
@@ -580,8 +642,9 @@ aliases and refresh guide-routes.js when adding stable anchors. The optional
 shared renderer data-markdown/guide:ready contract preserves default consumers.
 Verify all chapter assets/markers and actual legacy destination IDs. Splitting
 HTML alone does not require rebuilding identical PDF sources or MCU/Tool images.
-Publish the shared notices_can renderer together with both guide repositories
-when separately authorized. Keep RH850 projection deferred in the overview.
+Publish the shared notices_can renderer together with affected guide repositories
+only when separately authorized. RH850 full topics belong to its independent
+slide_boot_loader_for_RH850 site; RL78/ISP overviews carry short links only.
 
 The canonical public-writing policy is /web/PUBLIC_CONTENT_GUIDELINES_zh-TW.md,
 entered through the common /web/AGENTS.md. Keep it generic for every present
@@ -593,10 +656,14 @@ do not replace contextual review or permit removing technical safety limits.
 
 F13/F24 CAN device editing tutorial is canonical in
 docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md (DEVICE_WORKSHOP block).
-App-local generate_test_bins.ps1/.bat mirror scripts/device_test_bins.ps1/.bat
-via sync_device_test_bins.ps1. Keep FF-only extension, source/version/IRQ
-preservation, size/CRC resealing, no overwrite, ignored test_bins batches and
-PowerShell/.NET-only runtime. Never rebuild Boot/Host/Tool to generate inputs;
+App-local generate_test_bins.ps1/.bat and device_test_bins_output.ps1 mirror
+the canonical scripts via sync_device_test_bins.ps1;DeviceRoot selects all20
+device Apps in device_app_catalog. Successful post-package gates generate a
+bounded test_bins/auto set;manual batches stay unique and untouched. Replace
+only exact hash-matched owned auto files;refuse unknown/modified/reparse paths.
+Keep FF-only extension,source/version/IRQ/interface preservation,size/CRC
+resealing,actual Flash/start/capacity and maximum-size coverage,ignored outputs
+and PowerShell/.NET-only runtime. Never rebuild Boot/Host/Tool to generate inputs;
 physical timing results remain separate from offline image validation.
 sync_device_workshop.ps1 projects the full workshop only to the Bootloader page and a link on ISP; keep source C headers,
 generated outputs, App-only commands and verification boundaries distinct.

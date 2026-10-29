@@ -109,7 +109,7 @@ bool WorkerSession::ProcessUart(const Command& command,std::wstring* error) {
             isp_client_.Request(ISP_CMD_ENTER,{},&reply,error)&&reply.empty();
         if(success) {
             const auto quiet=evidence::DeviceRestartQuietMs(state_.uart_target.size,0U,true);
-            PostProgress(0,L"Enter UART Boot / restart wait");
+            PostActivity(L"Enter UART Boot / restart");
             const auto start=std::chrono::steady_clock::now();
             while(Elapsed(start)<quiet&&!IsCancelRequested())Sleep(20U);
             success=!IsCancelRequested()&&ReadUartTarget(error)&&state_.uart_target.mode==ISP_MODE_BOOT;
@@ -133,16 +133,19 @@ bool WorkerSession::ProcessUart(const Command& command,std::wstring* error) {
             evidence::AppConfirmationTiming timing(evidence::DeviceRestartQuietMs(image.image_size,end_ms));
             const auto start=std::chrono::steady_clock::now();bool confirmed=false;
             PostLog(L"ISP END CRC acknowledged; waiting for APP_READY and installed identity. No automatic rewrite.");
+            PostActivity(L"5/5 App restart");
             while(!IsCancelRequested()) {
                 const auto action=evidence::AwaitAppProbe(timing,[&](){return Elapsed(start);},
                     [this](){return IsCancelRequested();},[](std::uint32_t n){Sleep(n);});
                 if(action!=evidence::AppConfirmationTiming::Action::Probe)break;
+                PostActivity(L"5/5 Check APP_READY");
                 std::wstring probe_error;
                 if(ReadUartTarget(&probe_error)&&state_.uart_target.mode==ISP_MODE_APP&&state_.uart_target.ready&&
                     state_.uart_target.valid&&state_.uart_target.version==image.version&&
                     state_.uart_target.build==image.build&&state_.uart_target.size==image.image_size&&
                     state_.uart_target.version_control==(image.policy.version_control!=0U)&&isp::Matches(image,state_.uart_target,&probe_error)) {
                     std::vector<std::uint8_t> metadata;
+                    PostActivity(L"5/5 Verify running App");
                     if(isp_client_.ReadMetadata(&metadata,&probe_error)&&
                         std::equal(metadata.begin(),metadata.end(),command.image.begin()+256U)) {confirmed=true;break;}
                 }

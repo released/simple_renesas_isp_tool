@@ -75,13 +75,13 @@ class CanUpdateWalkthrough(unittest.TestCase):
     def test_sync_is_bounded_and_check_only_read_only(self):
         text = DOC.read_text(encoding='utf-8-sig')
         web = companion_path('Web')
-        isp = (web / 'slide_isp_tool_for_RL78/index.md').read_text(encoding='utf-8-sig')
+        isp = (web / 'slide_simple_renesas_isp_tool/index.md').read_text(encoding='utf-8-sig')
         boot = (web / 'slide_boot_loader_for_RL78/index.md').read_text(encoding='utf-8-sig')
         self.assertEqual(re.findall(PATTERN, text, re.S), re.findall(PATTERN, isp, re.S))
         self.assertEqual(isp.count('<a id="can-update-walkthrough"></a>'), 1)
-        self.assertIn('https://released.github.io/slide_isp_tool_for_RL78/#can-update-walkthrough', boot)
+        self.assertIn('https://released.github.io/slide_simple_renesas_isp_tool/#can-update-walkthrough', boot)
         with tempfile.TemporaryDirectory(prefix='can_walkthrough_') as folder:
-            page = Path(folder) / 'slide_isp_tool_for_RL78/index.md'
+            page = Path(folder) / 'slide_simple_renesas_isp_tool/index.md'
             page.parent.mkdir()
             page.write_text('prefix\n<!-- CAN_WALKTHROUGH_BEGIN -->stale<!-- CAN_WALKTHROUGH_END -->\nsuffix', encoding='utf-8')
             command = ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',

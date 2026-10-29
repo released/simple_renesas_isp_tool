@@ -4,6 +4,7 @@ import {readFile,stat} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {runInNewContext} from 'node:vm';
+import {verifyBootloaderParity} from './verify_bootloader_parity.mjs';
 const tool=resolve(fileURLToPath(new URL('../',import.meta.url)));
 assert.ok(process.argv[2],'supply the local web root');
 const web=resolve(process.argv[2]);
@@ -24,7 +25,6 @@ for(const [site,config] of Object.entries(layout)){
     assert.ok(md.includes('id="article_top"'),'page top '+page);
     if(page==='index')assert.ok(md.split('\n').length<100,'overview must remain short');
     else {assert.ok(md.includes('](index.html)'),'overview backlink '+page);chapters++;}
-    assert.ok(!md.includes('RH850 Classical / CAN FD device'),'deferred RH850 '+page);
     for(const match of md.matchAll(/\]\(([^\s)]+)\)/g)){
       const ref=match[1];if(/^(?:https?:|mailto:|#)/.test(ref))continue;
       const path=ref.split('#')[0];
@@ -53,7 +53,7 @@ for(const [site,config] of Object.entries(layout)){
       'allowlisted local destination '+target.page);
     assert.ok(!/[?#\\]|\.\./.test(target.page),'no query,path traversal or external route');
     if(rendered){
-      const path='/'+site+'/'+target.page;
+      const path='/'+site+'/'+(target.page==='index.html'?'':target.page);
       const actual=rendered.results.find(r=>r.path===path);
       assert.ok(actual,'missing browser destination '+path);
       assert.ok(actual.contentIds.includes(target.anchor),'missing legacy target '+site+'/#'+id+' -> '+target.page+'#'+target.anchor);
@@ -81,8 +81,11 @@ for(const [site,config] of Object.entries(layout)){
     assert.equal(route(hash),null,'unknown/malformed fragment does not redirect '+hash);
   }
   assert.equal(route('#'+Object.keys(map.aliases)[0],true),null,'existing local anchor wins');
-  const empty=files.index.match(/<!-- RH850_DEVICE_BEGIN -->([^]*?)<!-- RH850_DEVICE_END -->/);
-  assert.ok(empty&&!empty[1].trim(),'RH850 remains deferred');
+  if(site!=='slide_boot_loader_for_RH850'){
+    const link=files.index.match(/<!-- RH850_DEVICE_BEGIN -->([^]*?)<!-- RH850_DEVICE_END -->/);
+    assert.ok(link&&link[1].includes('slide_boot_loader_for_RH850/'),'independent RH850 navigation');
+    assert.ok(link[1].length<700&&!link[1].includes('```mermaid'),'short RH850 navigation only');
+  }
 }
 const app=await readFile(join(web,'notices_can/assets/app.js'),'utf8');
 assert.ok(app.includes('getAttribute("data-markdown") || "index.md"'),'default renderer contract');
@@ -90,7 +93,7 @@ assert.ok(app.includes('"guide:ready"'),'navigation ready event');
 const homeUrls=[];
 for(const file of ['README.md','README.html']){
   const source=await readFile(join(web,'released.github.io',file),'utf8');
-  const urls=[...source.matchAll(/https:\/\/released\.github\.io\/(slide_(?:boot_loader|isp_tool)_for_RL78)\/[^\s)"<>]*/g)];
+  const urls=[...source.matchAll(/https:\/\/released\.github\.io\/(slide_(?:boot_loader_for_(?:RL78|RH850)|simple_renesas_isp_tool))\/[^\s)"<>]*/g)];
   homeUrls.push(urls.map(m=>m[0]).sort());
   for(const match of urls){
     const url=new URL(match[0]);const path=url.pathname.endsWith('/')?url.pathname+'index.html':url.pathname;
@@ -102,4 +105,5 @@ for(const file of ['README.md','README.html']){
   }
 }
 assert.deepEqual(homeUrls[0],homeUrls[1],'knowledge-base MD/HTML guide link parity');
-console.log('PASS',chapters,'chapter pages,',aliases,'actual-JS legacy routes,placements/assets/short overviews/deferred RH850',rendered?'and actual browser destination IDs':'(browser IDs checked separately)');
+await verifyBootloaderParity(web);
+console.log('PASS',chapters,'chapter pages,',aliases,'actual-JS routes,placements/assets/short overviews and independent MCU guides',rendered?'and actual browser destination IDs':'(browser IDs checked separately)');

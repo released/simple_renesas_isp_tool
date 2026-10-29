@@ -197,7 +197,7 @@ initialization, physical/bit-timing, and protocol stages without formatting
 text inside an ISR.
 
 Field/stage interpretation is maintained in the
-[Custom Transfer diagnostic guide](https://released.github.io/slide_isp_tool_for_RL78/#transfer-diagnostics).
+[Custom Transfer diagnostic guide](https://released.github.io/slide_simple_renesas_isp_tool/#transfer-diagnostics).
 
 ### 6.2 Verification references
 
@@ -212,7 +212,7 @@ exact match construction, and advancing non-zero sequences.
 
 F24 device discovery and a successful normal transfer test are illustrated by
 paired Tool/MCU UART captures in the
-[Custom Transfer operation example](https://released.github.io/slide_isp_tool_for_RL78/#f24-custom-transfer-example).
+[Custom Transfer operation example](https://released.github.io/slide_simple_renesas_isp_tool/#f24-custom-transfer-example).
 Hardware filter rejection, bus error injection, FIFO overflow, duplicate replay,
 TX timeout recovery and analyzer waveforms need their own records; the normal
 operation captures and software models do not establish those conditions.

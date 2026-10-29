@@ -17,8 +17,8 @@ CAN、I2C與UART / Xmodem TAB提供port、speed、ID／mask或slave address等�
 
 CAN／I2C／UART / Xmodem／Misc TAB只位於左下PERIPHERAL / TARGET群組。
 上方 BIN 資訊、中下 LOAD / UPDATE IMAGE 與右下 MESSAGE LOG 固定獨立，切換 TAB 保留共用資料。
-完整[群組與欄位對照](https://released.github.io/slide_isp_tool_for_RL78/#tool-console-layout)及
-[Auto scroll down／INI 設定](https://released.github.io/slide_isp_tool_for_RL78/#tool-log-auto-scroll)集中於 Tool operation。
+完整[群組與欄位對照](https://released.github.io/slide_simple_renesas_isp_tool/#tool-console-layout)及
+[Auto scroll down／INI 設定](https://released.github.io/slide_simple_renesas_isp_tool/#tool-log-auto-scroll)集中於 Tool operation。
 
 | 顏色與文字 | 意義 |
 | --- | --- |
@@ -35,7 +35,7 @@ COM 清單的 USB friendly name 用於辨識轉接器。
 UI 依 Host Link／backend 回報的能力顯示功能與 port。
 
 Device workflow的DEVICE BOOT／DEVICE APP卡來自外部device的live INFO；LOADED BIN是離線檔案。
-Host、相關Device卡與BIN群組的來源識別見[畫面群組與資料關聯](https://released.github.io/slide_isp_tool_for_RL78/#tool-console-layout)。
+Host、相關Device卡與BIN群組的來源識別見[畫面群組與資料關聯](https://released.github.io/slide_simple_renesas_isp_tool/#tool-console-layout)。
 Custom Transfer不提供boot/app metadata，所以顯示N/A。
 I2C的G16 Reference (read-only)回報常數，其erase／write／jump仍封鎖；I2C ISP是另一個獨立契約。
 
@@ -48,7 +48,7 @@ Misc 的 BOOT／APP 卡改為 host bridge 自己的資訊，且目的地卡明�
 
 選擇 COM 與 Host Baud 後按 `Open + Probe Host`，核對 `HOST BRIDGE | VERIFIED LINK` 與實際 MCU。
 下圖的 COM 已驗證，但 Misc 仍保留 Device CAN BIN，因此出現 `INVALID - HOST APP required`；連線成功與選檔相容是兩項獨立判斷。
-進行更新前，依[下載與操作總覽](https://released.github.io/slide_isp_tool_for_RL78/#downloads)載入對應目的地的 App BIN。
+進行更新前，依[下載與操作總覽](https://released.github.io/slide_simple_renesas_isp_tool/#downloads)載入對應目的地的 App BIN。
 
 圖中的版本、COM 與大小是操作範例；本機檔案與報告路徑已遮蔽，狀態與操作結果保留。
 網頁上的操作圖可點選開啟原尺寸，方便查看欄位與訊息。
@@ -71,7 +71,7 @@ Misc 的 BOOT／APP 卡改為 host bridge 自己的資訊，且目的地卡明�
 以下圖片使用 F13 (MCU CAN device)，各欄數值來自所載入 BIN 與 live device；操作順序依回報模式選擇。
 F13 與 F24 device 的正常 CAN App 更新皆已完成實板驗證，使用相同的載入、探索、進 Boot、更新及 App 確認流程。
 F24 的完成報告與執行畫面見 [F24 device 更新結果](#f24-device-update-example)。
-完整[欄位與狀態判讀](https://released.github.io/slide_isp_tool_for_RL78/#tool-ui-fields)集中於 Tool operation。
+完整[欄位與狀態判讀](https://released.github.io/slide_simple_renesas_isp_tool/#tool-ui-fields)集中於 Tool operation。
 
 #### 1. 載入 Device App BIN
 
@@ -120,8 +120,8 @@ START 已接受後失聯不會沿用步驟 3 的自動返回原 App 行為；取
 
 只有 END／CRC 通過、APP_READY 與 live INFO 核對完成後，才顯示 `[COMPLETE]` 與 Device App update complete。
 正常完成會停止 Host CAN、保留 COM（Host UART），讓使用者檢查 App 與板上功能；因此 DEVICE TARGET 回到 N/A 並要求再次 Discover 是完成清理後的狀態。
-App 未確認或 CAN STOP 未確認時，依[完成提示與下一步](https://released.github.io/slide_isp_tool_for_RL78/#update-completion)處理，不自動重寫。
-Tool 自動保存 Firmware update report；右下 `MESSAGE LOG` 的 `Open Last Report` 可開啟報告，操作見[更新報告](https://released.github.io/slide_isp_tool_for_RL78/#update-html-report)。
+App 未確認或 CAN STOP 未確認時，依[完成提示與下一步](https://released.github.io/slide_simple_renesas_isp_tool/#update-completion)處理，不自動重寫。
+Tool 自動保存 Firmware update report；右下 `MESSAGE LOG` 的 `Open Last Report` 可開啟報告，操作見[更新報告](https://released.github.io/slide_simple_renesas_isp_tool/#update-html-report)。
 
 [![Device 更新完成並確認 App 後停止 CAN 保留 COM](images/tool_operation/tool_CAN_update6_after_update.jpg)](images/tool_operation/tool_CAN_update6_after_update.jpg)
 
@@ -165,7 +165,7 @@ HTML 報告的 `PASS | CAN device update` 與 `[COMPLETE]` 表示寫入、CRC �
 | `App version / Build / Image bytes` 比對 | 完整 HTML 的 live 值與載入 BIN 相符，代表重啟後辨識到此次 App |
 | `CAN stopped; Host COM remains open` | App 確認後停止 CAN、保留 Host COM；下一次更新先重新 Discover |
 
-開啟方式、完整欄位與錯誤判讀集中於 [更新報告](https://released.github.io/slide_isp_tool_for_RL78/#update-html-report)。
+開啟方式、完整欄位與錯誤判讀集中於 [更新報告](https://released.github.io/slide_simple_renesas_isp_tool/#update-html-report)。
 
 #### Device UART 執行紀錄
 
@@ -176,7 +176,7 @@ V1 是可編輯的觀察標籤，不取代 metadata 的版本號；修改位置�
 [![F24 device 更新後 App UART 顯示 V1 與遞增 counter](images/tool_operation/MCU_F24_Device_app_log.png)](images/tool_operation/MCU_F24_Device_app_log.png)
 
 以上確認正常 115200 Host Link／500K CAN 更新與 App 執行。
-250K／1M、長時間壓力、其他 IRQ、取消、拔線及斷電復原各自依 [實板驗證矩陣](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation) 保留測試結果。
+250K／1M、長時間壓力、其他 IRQ、取消、拔線及斷電復原各自依 [實板驗證矩陣](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation) 保留測試結果。
 <!-- TOOL_DEVICE_MEDIA_END -->
 
 ## 3. Misc：PC 透過 UART 更新 Host App
@@ -220,7 +220,7 @@ flowchart TD
 未宣告 self-update 能力的 bridge 不開放 Misc 寫入，不推測位址或接受 raw BIN。
 
 更新後確認、Compare Metadata、分階段進度、Cancel 與自動報告，集中於
-[更新確認與驗證紀錄](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
+[更新確認與驗證紀錄](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation)。
 
 <!-- TOOL_BRIDGE_MEDIA_BEGIN -->
 <a id="bridge-update-example"></a>
@@ -228,7 +228,7 @@ flowchart TD
 ### Host App 更新操作圖
 
 以下使用 F24 (MCU CAN host)。Misc 更新的是 PC 所連接 host 自身的 App，固定以 UART115200 操作。
-初裝 Boot MOT、燒錄器 App MOT 與 Misc BIN 的選用，見[下載與操作總覽](https://released.github.io/slide_isp_tool_for_RL78/#downloads)。
+初裝 Boot MOT、燒錄器 App MOT 與 Misc BIN 的選用，見[下載與操作總覽](https://released.github.io/slide_simple_renesas_isp_tool/#downloads)。
 
 #### 1. 載入 Host App BIN
 
@@ -262,7 +262,7 @@ flowchart TD
 
 `Host App update complete - RUN required` 表示映像寫入、CRC 與 metadata readback 通過，**還沒有啟動 App**。
 下一步是明確執行 RUN，不需再次燒錄。
-此次寫入結果會自動保存為 Firmware update report，可按 `Open Last Report` 查看；[報告操作](https://released.github.io/slide_isp_tool_for_RL78/#update-html-report)說明儲存位置與判讀方式。
+此次寫入結果會自動保存為 Firmware update report，可按 `Open Last Report` 查看；[報告操作](https://released.github.io/slide_simple_renesas_isp_tool/#update-html-report)說明儲存位置與判讀方式。
 
 [![Host App 寫入完成但尚待 RUN](images/tool_operation/tool_Bridge_update5_after_update.jpg)](images/tool_operation/tool_Bridge_update5_after_update.jpg)
 
@@ -429,7 +429,7 @@ Parse API 檢查 null／可用長度並回傳 1 或 0；失敗時不使用 outpu
 
 封裝輸出 `<專案名>_bridge_update.bin` 與 `<專案名>_flash.mot`。
 產表與封裝會核對 App mapping、BR 目的地及 RETI／RETB。
-更新操作集中於 [Misc／UART](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware)。
+更新操作集中於 [Misc／UART](https://released.github.io/slide_simple_renesas_isp_tool/#host-bridge-firmware)。
 
 #### Smart Configurator
 
@@ -464,5 +464,5 @@ CAN analyzer self test 的資料為 standard ID 0x123、DLC8、`11 22 33 44 55 6
 ## 更新政策與通訊速度
 
 BIN 的更新目的地、允許介面、Boot／IRQ ABI 與 Host Link 速度，集中於 ISP Tool 的更新政策章節。
-[閱讀完整章節](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)
+[更新政策與通訊速度](https://released.github.io/slide_simple_renesas_isp_tool/operation.html#image-update-policy)
 <!-- COMMON_IMAGE_POLICY_END -->

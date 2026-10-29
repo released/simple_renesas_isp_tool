@@ -7,8 +7,9 @@
  * TX queue credits include undrained completion events. No heap is used.
  */
 #define CAN_ENABLED_COUNT CAN_PORT_ENABLED_COUNT
-#define CAN_ENABLED_MASK ((ENABLE_PORT_CAN0<<0)|(ENABLE_PORT_CAN1<<1)| \
-    (ENABLE_PORT_CAN2<<2)|(ENABLE_PORT_CAN3<<3)|(ENABLE_PORT_CAN4<<4)|(ENABLE_PORT_CAN5<<5))
+#define CAN_ENABLED_MASK                                                                           \
+    ((ENABLE_PORT_CAN0 << 0) | (ENABLE_PORT_CAN1 << 1) | (ENABLE_PORT_CAN2 << 2) |                 \
+     (ENABLE_PORT_CAN3 << 3) | (ENABLE_PORT_CAN4 << 4) | (ENABLE_PORT_CAN5 << 5))
 #define CAN_RX_POLLING (0U)
 #define CAN_RX_INTERRUPT (1U)
 #define CAN_MODE_CLASSIC (0U)
@@ -25,7 +26,8 @@
 #define CAN_RX_BUFFER_SHADOW (0U)
 #define CAN_TX_TIMEOUT_MS (100UL)
 #define CAN_INIT_TIMEOUT_MS (100UL)
-#if CAN_RX_QUEUE_DEPTH < 1 || CAN_RX_QUEUE_DEPTH > 254 || CAN_TX_QUEUE_DEPTH < 1 || CAN_TX_QUEUE_DEPTH > 254
+#if CAN_RX_QUEUE_DEPTH < 1 || CAN_RX_QUEUE_DEPTH > 254 || CAN_TX_QUEUE_DEPTH < 1 ||                \
+    CAN_TX_QUEUE_DEPTH > 254
 #error CAN queue capacities must be1..254.
 #endif
 #endif

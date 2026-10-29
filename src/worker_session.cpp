@@ -22,12 +22,6 @@
 namespace firmware_upgrade::ui {
 using namespace worker_detail;
 
-namespace {
-
-constexpr std::size_t kMaximumQueuedEvents = 256U;
-
-} // namespace
-
 WorkerSession::WorkerSession() {
     host_link_client_.SetTransport(&serial_port_);
     host_link_client_.SetCancelCheck(
@@ -229,23 +223,26 @@ void WorkerSession::SetDetailedTrace(bool enabled) {
     detailed_trace_enabled_.store(enabled);
 }
 
-std::vector<WorkerEvent> WorkerSession::DrainEvents() {
+std::vector<WorkerEvent> WorkerSession::DrainEvents(std::size_t maximum) {
     std::vector<WorkerEvent> drained;
     std::lock_guard<std::mutex> lock(event_mutex_);
-    drained.reserve(events_.size());
-    if (dropped_ui_events_ != 0U) {
+    if(maximum==0U) return drained;
+    const auto dropped=events_.TakeDropped();
+    if (dropped != 0U) {
         WorkerEvent warning;
         warning.kind = WorkerEventKind::Log;
-        warning.text = L"WARNING: UI event queue overflow; " + std::to_wstring(dropped_ui_events_) +
+        warning.text = L"WARNING: UI event queue overflow; " + std::to_wstring(dropped) +
             L" events/log lines dropped. This log is incomplete; do not count trace lines as wire packets.";
         drained.push_back(std::move(warning));
-        dropped_ui_events_ = 0U;
     }
-    while (!events_.empty()) {
-        drained.push_back(std::move(events_.front()));
-        events_.pop_front();
-    }
+    auto batch=events_.Take(maximum-drained.size());
+    for(auto& event:batch) drained.push_back(std::move(event));
     return drained;
+}
+
+bool WorkerSession::HasPendingEvents() {
+    std::lock_guard<std::mutex> lock(event_mutex_);
+    return events_.Pending();
 }
 
 bool WorkerSession::Submit(Command command) {
@@ -954,6 +951,15 @@ void WorkerSession::PostProgress(int progress, const std::wstring& text) {
     QueueEvent(std::move(event));
 }
 
+void WorkerSession::PostActivity(const std::wstring& text) {
+    current_phase_=text;
+    WorkerEvent event;
+    event.kind=WorkerEventKind::Progress;
+    event.indeterminate=true;
+    event.text=text;
+    QueueEvent(std::move(event));
+}
+
 const wchar_t* WorkerSession::CommandName(CommandType type) {
     switch(type) {
     case CommandType::OpenAndProbe: return L"Open + Probe Host";
@@ -984,22 +990,17 @@ void WorkerSession::QueueEvent(WorkerEvent event) {
     UINT notify_message;
     {
         std::lock_guard<std::mutex> lock(event_mutex_);
-        if (events_.size() >= kMaximumQueuedEvents) {
-            const auto log = std::find_if(events_.begin(), events_.end(),
-                [](const WorkerEvent& pending) { return pending.kind == WorkerEventKind::Log; });
-            if (log != events_.end()) events_.erase(log);
-            else events_.pop_front();
-            ++dropped_ui_events_;
-        }
-        events_.push_back(std::move(event));
+        if(!events_.Push(std::move(event))) return;
     }
     {
         std::lock_guard<std::mutex> lock(command_mutex_);
         notify_window = notify_window_;
         notify_message = notify_message_;
     }
-    if (notify_window != nullptr && notify_message >= WM_APP) {
-        PostMessageW(notify_window, notify_message, 0U, 0);
+    if (notify_window == nullptr || notify_message < WM_APP ||
+        !PostMessageW(notify_window, notify_message, 0U, 0)) {
+        std::lock_guard<std::mutex> lock(event_mutex_);
+        events_.RetryWake();
     }
 }
 

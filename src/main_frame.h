@@ -16,9 +16,11 @@
 #include "worker_session.h"
 #include "ui/status_card.h"
 #include "ui/console_geometry.h"
+#include "ui/log_view.h"
 
 class CMainFrame : public CFrameWnd {
     friend struct CanPrerequisiteUiFixture;
+    friend struct WorkerResponsivenessFixture;
 public:
     CMainFrame();
     ~CMainFrame() override;
@@ -151,7 +153,11 @@ private:
     std::wstring SelectedProfile() const;
     bool SelectedApplicationStart(std::uint32_t* application_start,
                                   std::wstring* error) const;
-    void SetProgress(int value, const std::wstring& label);
+    void SetProgress(int value, const std::wstring& label, bool indeterminate=false);
+    void StopProgressActivity();
+    void PumpWorkerEvents();
+    void FlushWorkerLogBatch();
+    static constexpr UINT_PTR kWorkerEventPumpTimerId=3U;
     void ApplyWorkerEvent(const firmware_upgrade::ui::WorkerEvent& event);
     void InitializeSettingsFile();
     void LoadUiSettings();
@@ -279,6 +285,7 @@ private:
     CProgressCtrl progress_bar_;
     CStatic progress_label_;
     std::wstring progress_operation_ = L"Progress";
+    bool progress_indeterminate_ = false;
 
     CRichEditCtrl log_edit_;
     CButton clear_log_btn_;
@@ -290,6 +297,8 @@ private:
     CButton detailed_trace_check_;
     CButton log_auto_scroll_check_;
     bool log_auto_scroll_ = true;
+    bool batching_worker_events_ = false;
+    std::vector<firmware_upgrade::log_view::Line> worker_log_batch_;
 
     std::wstring binary_path_;
     std::wstring preferred_com_port_;

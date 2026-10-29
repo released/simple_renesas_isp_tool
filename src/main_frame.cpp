@@ -539,14 +539,15 @@ void CMainFrame::AppendLog(const std::wstring& text) {
 
     const std::wstring line = L"[" + NowTimeText() + L"] " + text +
                               L"\r\n";
-    firmware_upgrade::log_view::Append(log_edit_.GetSafeHwnd(),line,
-        IsErrorLogText(text) ? RGB(196,24,24) : GetSysColor(COLOR_WINDOWTEXT),log_auto_scroll_);
+    const auto color=IsErrorLogText(text) ? RGB(196,24,24) : GetSysColor(COLOR_WINDOWTEXT);
+    if(batching_worker_events_) worker_log_batch_.push_back({line,color});
+    else firmware_upgrade::log_view::Append(log_edit_.GetSafeHwnd(),line,color,log_auto_scroll_);
 
     if (log_recording_ && log_record_fp_ != nullptr) {
         const std::string utf8 = WideToUtf8(line);
         if (!utf8.empty()) {
             fwrite(utf8.data(), 1U, utf8.size(), log_record_fp_);
-            fflush(log_record_fp_);
+            if(!batching_worker_events_) fflush(log_record_fp_);
         }
     }
 }
@@ -779,12 +780,23 @@ DWORD CMainFrame::SelectedBaudrate() const {
     return 115200U;
 }
 
-void CMainFrame::SetProgress(int value, const std::wstring& label) {
+void CMainFrame::SetProgress(int value, const std::wstring& label, bool indeterminate) {
     const int clamped = (std::max)(0, (std::min)(value, 100));
-    progress_bar_.SetPos(clamped);
+    const bool mode_changed=progress_indeterminate_!=indeterminate;
+    if(mode_changed) {
+        if(indeterminate) {
+            progress_bar_.ModifyStyle(0,PBS_MARQUEE);
+            progress_bar_.SetMarquee(TRUE,40U);
+        } else {
+            progress_bar_.SetMarquee(FALSE,0U);
+            progress_bar_.ModifyStyle(PBS_MARQUEE,0);
+        }
+        progress_indeterminate_=indeterminate;
+    }
+    if(!indeterminate) progress_bar_.SetPos(clamped);
     progress_label_.SetWindowTextW(
-        (label + L": " + std::to_wstring(clamped) + L"%").c_str());
-    if (progress_operation_ != label) {
+        (label + (indeterminate ? L": waiting..." : L": "+std::to_wstring(clamped)+L"%")).c_str());
+    if (progress_operation_ != label || mode_changed) {
         progress_operation_ = label;
         CRect client;
         GetClientRect(&client);
@@ -841,12 +853,13 @@ void CMainFrame::ApplyWorkerEvent(
             UpdateUi();
             break;
         case WorkerEventKind::Progress:
-            SetProgress(event.progress, event.text);
+            SetProgress(event.progress, event.text, event.indeterminate);
             break;
         case WorkerEventKind::UpdateReport:
             SaveUpdateReport(event);
             break;
         case WorkerEventKind::OperationComplete:
+            StopProgressActivity();
             worker_command_pending_ = false;
             last_update_result_=event.update_result;
             last_operation_error_ = event.success ? L"" : event.text;
@@ -1030,6 +1043,10 @@ void CMainFrame::OnEnChangeApplicationStart() {
 }
 
 void CMainFrame::OnTimer(UINT_PTR timer_id) {
+    if(timer_id==kWorkerEventPumpTimerId) {
+        PumpWorkerEvents();
+        return;
+    }
     if(timer_id==kComRefreshTimerId) {
         if(worker_command_pending_ || session_state_.busy || session_state_.serial_open) return;
         KillTimer(kComRefreshTimerId); RefreshComPorts(); UpdateUi(); return;
@@ -1051,17 +1068,9 @@ BOOL CMainFrame::OnDeviceChange(UINT event_type,DWORD_PTR data) {
     return CFrameWnd::OnDeviceChange(event_type,data);
 }
 
-LRESULT CMainFrame::OnWorkerEvent(WPARAM, LPARAM) {
-    const std::vector<firmware_upgrade::ui::WorkerEvent> events =
-        worker_session_.DrainEvents();
-    for (const firmware_upgrade::ui::WorkerEvent& event : events) {
-        ApplyWorkerEvent(event);
-    }
-    return 0;
-}
-
 void CMainFrame::OnClose() {
     closing_ = true;
+    KillTimer(kWorkerEventPumpTimerId);
     SaveUiSettings();
     StopOperationElapsedTimer();
     worker_session_.StopAndJoin();

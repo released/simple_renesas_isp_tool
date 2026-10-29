@@ -109,11 +109,15 @@ function Assert-PublishIndex($Target) {
     }
 }
 
-function Invoke-GithubPublication($Targets,[string]$Backup,[string]$Message) {
-    $tool=@($Targets | Where-Object Name -eq 'simple_renesas_isp_tool')
-    if($tool.Count -ne 1) { throw 'Exactly one Tool repository is required.' }
-    $archiveRoot=Join-Path $tool[0].Root 'tmp\internal\github_publish'
-    Assert-PublishTree $tool[0].Root $Backup
+function Invoke-GithubPublication($Targets,[string]$Backup,[string]$Message,
+    [string]$ArchiveOwnerRoot='', [scriptblock]$ReleaseGuard=$null) {
+    if(!$ArchiveOwnerRoot) {
+        $tool=@($Targets | Where-Object Name -eq 'simple_renesas_isp_tool')
+        if($tool.Count -ne 1) { throw 'An explicit archive-owner root is required for a scoped publication.' }
+        $ArchiveOwnerRoot=$tool[0].Root
+    }
+    $archiveRoot=Join-Path $ArchiveOwnerRoot 'tmp\internal\github_publish'
+    Assert-PublishTree $ArchiveOwnerRoot $Backup
     Assert-PublishTree $archiveRoot $Backup
     if($Backup -ieq $archiveRoot) { throw 'Use a dedicated publication backup directory.' }
     Assert-PublishAncestry $Targets
@@ -132,6 +136,7 @@ function Invoke-GithubPublication($Targets,[string]$Backup,[string]$Message) {
         }
         $target.Plan=$fresh
     }
+    if($ReleaseGuard) { & $ReleaseGuard }
     foreach($target in $Targets) { Move-PublishOutputs $target $Backup }
     foreach($target in $Targets) {
         $stageArguments=@('add','--all','--','.')
@@ -145,6 +150,12 @@ function Invoke-GithubPublication($Targets,[string]$Backup,[string]$Message) {
             }
         }
         Assert-PublishIndex $target
+    }
+    if($ReleaseGuard) { & $ReleaseGuard }
+    foreach($target in $Targets) {
+        if((Invoke-PublishGit $target.Root @('diff','--quiet','--no-ext-diff') @(0,1)).Code) {
+            throw "Working files changed while staging the reviewed release: $($target.Name)"
+        }
     }
     foreach($target in $Targets) {
         if((Invoke-PublishGit $target.Root @('diff','--cached','--quiet') @(0,1)).Code) {

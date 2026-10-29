@@ -1,7 +1,7 @@
 # RL78/F13 (MCU CAN device) Boot Loader 與韌體更新流程
 
 本文件整理 F13 (MCU CAN device) 的啟動驗證、CAN 接收與 App 更新流程。
-Tool／host 的操作方式見 [ISP Tool 操作](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation)。
+Tool／host 的操作方式見 [ISP Tool 操作](https://released.github.io/slide_simple_renesas_isp_tool/#tool-operation)。
 F24 (MCU CAN device) 的工程配置見 [F24 CAN device](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device)。
 
 映像與傳輸規格採 App image format6、CAN protocol5、256-byte metadata。
@@ -10,7 +10,7 @@ F24 (MCU CAN device) 的工程配置見 [F24 CAN device](https://released.github
 ## 1. 系統角色與資料邊界
 
 MCU CAN device 的 Boot 接收更新、驗證映像並交接 App。
-Tool 操作與 CAN host 轉送見 [CAN 更新逐層導讀](https://released.github.io/slide_isp_tool_for_RL78/#can-update-walkthrough)。
+Tool 操作與 CAN host 轉送見 [CAN 更新逐層導讀](https://released.github.io/slide_simple_renesas_isp_tool/#can-update-walkthrough)。
 
 ```mermaid
 flowchart LR
@@ -67,12 +67,12 @@ flowchart LR
 
 ### 1.2 Tool 顯示與映像資訊
 
-BIN 離線資訊與 live device INFO 的來源，見 [Tool 資訊與驗證](https://released.github.io/slide_isp_tool_for_RL78/#can-update-walkthrough)。
+BIN 離線資訊與 live device INFO 的來源，見 [Tool 資訊與驗證](https://released.github.io/slide_simple_renesas_isp_tool/#can-update-walkthrough)。
 
 ### 1.3 App UART log 與 boot/update 來源判讀
 
 Tool 會在 END 後等待 APP_READY 並比對 live App 資訊；另提供 Boot 唯讀 VERIFY。
-格式與診斷欄位集中於[更新確認與驗證紀錄](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
+格式與診斷欄位集中於[更新確認與驗證紀錄](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation)。
 Boot 的診斷 UART 輸出由 `CAN_BOOT_DEBUG_UART` 控制，預設關閉；App UART log 保留。
 
 App 的 `APP_RUNTIME_LOG_TAG` 是 operator 用來快速辨識 image 的短字串。本版
@@ -167,7 +167,7 @@ P12 控制的是 S/silent mode，LOW 才能正常 TX；不是 standby。這塊�
 <a id="f13-boot-decision"></a>
 
 本節整理 F13 (MCU CAN device) 的 Boot 啟動與更新狀態。
-對應來源為 `r_main.c` 與 `can_boot_transport.c`。
+流程入口為 `custom_func.c` 的 `hardware_init()`／`loop()`；`r_main.c` 保留啟動 adapter，CAN 命令處理由 `hal/isp/can_boot_transport.c` 執行。
 
 #### A. 每次 reset 的 app 有效性檢查：全部通過才可啟動
 
@@ -219,7 +219,7 @@ flowchart TD
 
 在 Tool 完成 Enter Boot 後，若停留在選檔或確認視窗而未開始更新，原有效 App 可能因 inactivity 到期而重新執行。
 此時先 `Discover Target` 取得目前模式；若為 App，再 `Enter Boot`，確認 Boot Ready 後執行 `Start Device Update`。
-操作圖集中於 [Device App 更新操作圖](https://released.github.io/slide_isp_tool_for_RL78/#device-update-example)。
+操作圖集中於 [Device App 更新操作圖](https://released.github.io/slide_simple_renesas_isp_tool/#device-update-example)。
 
 | 事件 | boot 的實際結果 |
 | --- | --- |
@@ -379,7 +379,7 @@ stateDiagram-v2
 | `INFO` | 以多頁回覆 running state、boot/app version/build、installed size、MCU、layout、CAN 能力與 ID |
 | `METADATA_RESET / METADATA / SEAL` | 先清除舊RAM staging，64次4-byte依序收齊256 bytes，再驗證region CRC與全部metadata；不擦寫 |
 | `START` | DLC 8、protocol 5、target相符、metadata已封存、size等於已驗證metadata且FSL ready；有效已安裝 App 啟用版控時拒絕較舊版本；START本身不擦寫 |
-| `FORCE_START 0E` | 與 START 相同，僅在這次交易略過版本排序；身分、政策、minimum Boot、IRQ ABI、size、分區及 CRC 檢查保留；[維護操作](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version) |
+| `FORCE_START 0E` | 與 START 相同，僅在這次交易略過版本排序；身分、政策、minimum Boot、IRQ ABI、size、分區及 CRC 檢查保留；[維護操作](https://released.github.io/slide_simple_renesas_isp_tool/#force-old-version) |
 | `BLOCK_BEGIN / raw / COMMIT` | 已START，offset64對齊，最多64-byte RAM收齊／CRC及metadata重疊驗證後才逐4-byte寫入；最後一次ACK |
 | `END` | 已收到全部資料、address 到達 image end、manifest 與 CRC32 正確 |
 | `ABORT` | 回覆目前 sequence/address，結束 session 並留在 boot |
@@ -494,10 +494,10 @@ flowchart TD
 
 ## 8. Tool 操作與通訊驗證
 
-- [Tool 操作](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation)
-- [CAN device App 更新](https://released.github.io/slide_isp_tool_for_RL78/#mcu-can-device)
-- [Custom Transfer：獨立工程與通訊測試](https://released.github.io/slide_isp_tool_for_RL78/#custom-transfer)
-- [Tool／host／device 逐層動作](https://released.github.io/slide_isp_tool_for_RL78/#can-update-walkthrough)
+- [Tool 操作](https://released.github.io/slide_simple_renesas_isp_tool/#tool-operation)
+- [CAN device App 更新](https://released.github.io/slide_simple_renesas_isp_tool/#mcu-can-device)
+- [Custom Transfer：獨立工程與通訊測試](https://released.github.io/slide_simple_renesas_isp_tool/#custom-transfer)
+- [Tool／host／device 逐層動作](https://released.github.io/slide_simple_renesas_isp_tool/#can-update-walkthrough)
 
 ## 9. 實板驗證
 
@@ -536,5 +536,5 @@ flowchart TD
 ## 更新政策與通訊速度
 
 BIN 的更新目的地、允許介面、Boot／IRQ ABI 與 Host Link 速度，集中於 ISP Tool 的更新政策章節。
-[閱讀完整章節](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)
+[更新政策與通訊速度](https://released.github.io/slide_simple_renesas_isp_tool/operation.html#image-update-policy)
 <!-- COMMON_IMAGE_POLICY_END -->

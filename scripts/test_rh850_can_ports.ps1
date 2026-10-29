@@ -1,7 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$BootProject)
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
-$common=Join-Path (Resolve-Path -LiteralPath $BootProject).Path 'common'
+$common=(Resolve-Path -LiteralPath $BootProject).Path
 $vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 $vs=& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if(!$vs){throw 'Existing Visual Studio C/C++ tools are required for models.'}

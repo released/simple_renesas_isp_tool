@@ -23,7 +23,7 @@ class F24DeviceAcceptanceMedia(unittest.TestCase):
         for name, size in (('MCU_F24_Device_app_log', (1560, 624)), ('firmware_update_report', (1907, 873))):
             relative = 'images/tool_operation/' + name + '.png'
             local = ROOT / 'docs' / relative
-            public = WEB / 'slide_isp_tool_for_RL78' / relative
+            public = WEB / 'slide_simple_renesas_isp_tool' / relative
             self.assertEqual(local.read_bytes(), public.read_bytes())
             self.assertIn('](' + relative + ')', section)
             with Image.open(local) as image:
@@ -64,7 +64,7 @@ class F24DeviceAcceptanceMedia(unittest.TestCase):
     def test_png_hash_mismatch_fails_without_writes(self):
         with tempfile.TemporaryDirectory(prefix='f24_device_media_') as temporary:
             folder = Path(temporary)
-            page = folder / 'slide_isp_tool_for_RL78/index.md'
+            page = folder / 'slide_simple_renesas_isp_tool/index.md'
             page.parent.mkdir()
             page.write_text('\n'.join('<!-- ' + name + '_BEGIN -->stale<!-- ' + name + '_END -->' for name in
                             ('TOOL_CONNECT_MEDIA', 'TOOL_DEVICE_MEDIA', 'TOOL_BRIDGE_MEDIA')), encoding='utf-8')

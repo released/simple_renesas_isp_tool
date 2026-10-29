@@ -18,9 +18,8 @@
  * All deadlines use the host's 60000-ms tick, not a uint16 rollover. */
 void Bridge_UartInit(void);
 uint8_t Bridge_UartConfigure(uint8_t port, uint32_t baud);
-uint8_t Bridge_UartCommand(const uint8_t *input, uint16_t length,
-                          uint8_t *output, uint16_t *output_length,
-                          uint16_t now);
+uint8_t Bridge_UartCommand(const uint8_t *input, uint16_t length, uint8_t *output,
+                           uint16_t *output_length, uint16_t now);
 void Bridge_UartPoll(uint16_t now);
 uint8_t Bridge_UartReserved(void);
 uint8_t Bridge_UartActive(void);
@@ -31,8 +30,7 @@ void Bridge_UartAbort(void);
  * TX storage remains valid until TxIdle or Abort. Error is latched per EXEC.
  * Begin explicitly clears stale RX only when flags bit0 requests it. */
 uint8_t Bridge_UartBackend_Open(uint8_t port, uint32_t baud);
-uint8_t Bridge_UartBackend_Begin(const uint8_t *tx, uint16_t length,
-                                uint8_t clear_rx);
+uint8_t Bridge_UartBackend_Begin(const uint8_t *tx, uint16_t length, uint8_t clear_rx);
 uint8_t Bridge_UartBackend_Get(uint8_t *value);
 uint8_t Bridge_UartBackend_TxIdle(void);
 uint8_t Bridge_UartBackend_Error(void);

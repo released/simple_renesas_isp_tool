@@ -6,7 +6,7 @@
  * denotes 800K and is not implemented by this bridge. */
 #define F24_CAN_NOMINAL_250K (1U)
 #define F24_CAN_NOMINAL_500K (2U)
-#define F24_CAN_NOMINAL_1M   (4U)
+#define F24_CAN_NOMINAL_1M (4U)
 #define F24_CAN_NOMINAL_MASK ((1UL << 1) | (1UL << 2) | (1UL << 4))
 
 typedef struct

@@ -10,7 +10,7 @@ from workspace_paths import companion_path
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = companion_path('Web')
-ISP = WEB / 'slide_isp_tool_for_RL78'
+ISP = WEB / 'slide_simple_renesas_isp_tool'
 BOOT = WEB / 'slide_boot_loader_for_RL78'
 NAV = WEB / 'released.github.io/README.md'
 
@@ -20,8 +20,11 @@ class PublicWebGuides(unittest.TestCase):
         source = (ROOT / 'docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md').read_text(encoding='utf-8-sig')
         anchor = '<a id="device-update-timing"></a>'
         block = source.split(anchor, 1)[1].split('<a id="device-app-runtime-log">', 1)[0]
-        boot = (BOOT / 'index.md').read_text(encoding='utf-8-sig')
-        isp = (ISP / 'index.md').read_text(encoding='utf-8-sig')
+        layout = json.loads((ROOT/'scripts/web_guide_layout.json').read_text(encoding='utf-8-sig'))
+        boot_page = layout[BOOT.name]['sections']['DEVICE_WORKSHOP']
+        isp_page = layout[ISP.name]['sections']['DEVICE_WORKSHOP']
+        boot = (BOOT / (boot_page+'.md')).read_text(encoding='utf-8-sig')
+        isp = (ISP / (isp_page+'.md')).read_text(encoding='utf-8-sig')
         self.assertEqual(boot.count(anchor), 1)
         self.assertIn(block, boot)
         self.assertNotIn(anchor, isp)
@@ -33,7 +36,7 @@ class PublicWebGuides(unittest.TestCase):
                                (120, '不適用', '約 65.5 秒', '約 65.5 秒'),
                                (247, '不適用', '約 136.2 秒', '約 134.2 秒')):
             self.assertRegex(block, rf'(?m)^\| {size} KiB[^\n]+\| {f13} \| {f24} \| {fd} \|$')
-        for token in ('115200', 'Detailed trace | 關閉',
+        for token in ('115200', 'Detailed trace | 填充 BIN：關閉',
                       'nominal 500 kbit/s／data 2 Mbit/s／BRS', '0xCA0DE29D'):
             self.assertIn(token, block)
         for target in ('flash-metadata-can-reference', 'device-irq-ownership',
@@ -42,7 +45,7 @@ class PublicWebGuides(unittest.TestCase):
         for phrase in ('119／247 KiB', '120／248 KiB', '1 KiB', 'Boot 只能由 RFP 安裝'):
             self.assertIn(phrase, block)
         self.assertNotRegex(block, r'中位數|平均值|(?<![A-Za-z])[A-Za-z]:[\\/]|SourceCode')
-        self.assertIn('| 原始 App（未填充） | 20,308 bytes／— | 4,224 bytes／約 5.2 秒 | 4,756 bytes／約 5.5 秒 |', block)
+        self.assertIn('| 原始 App（未填充） | 20,308 bytes／約 14.0 秒 | 4,224 bytes／約 5.2 秒 | 4,756 bytes／約 5.5 秒 |', block)
         self.assertIn('| 8 KiB（8,192 bytes） | 不適用 | 約 7.3 秒 | 約 7.2 秒 |', block)
         self.assertIn('六次均完成 END CRC、APP_READY／live image 比對及 CAN_STOP 確認', block)
 
@@ -127,6 +130,7 @@ class PublicWebGuides(unittest.TestCase):
             self.assertEqual(update['elapsed_ms'], elapsed)
             self.assertEqual(update['result'], 'PASS')
             self.assertEqual(update['link_retries'], 0)
+            self.assertTrue(all(item.strip().endswith('=0') for item in update['host_deltas'].split(';')))
             self.assertEqual(update['host_baud'], 115200)
             self.assertIn('Classical CAN 500K', update['can'])
             self.assertIn('app_confirmation=PASS', update['details'])
@@ -136,9 +140,43 @@ class PublicWebGuides(unittest.TestCase):
             html = unescape(re.sub('<[^>]+>', ' ', path.with_suffix('.html').read_text(encoding='utf-8')))
             plain = re.sub(r'\s+', ' ', html)
             self.assertIn(f'Input bytes {size} Elapsed ms {elapsed}', plain)
-        log = (ROOT / 'build/firmware_upgrade_tool_20261022_172301.log').read_text(encoding='utf-8-sig')
+    def test_f13_filled_bin_timing_log(self):
+        path = ROOT/'build/firmware_upgrade_tool_20261022_172301.log'
+        if not path.is_file():
+            self.skipTest('Historical private Log absent; report JSON/HTML checks remain independent.')
+        log = path.read_text(encoding='utf-8-sig')
         self.assertEqual(log.count('App confirmation PASS:'), 3)
         self.assertNotRegex(log, 'TRACE UART|TRACE CAN|UI event queue overflow')
+
+    def test_f13_original_app_timing_matches_user_report(self):
+        from html import unescape
+        path = ROOT/'build/reports/update_20261027_013422_855_47096_164948546_1.json'
+        if not path.is_file():
+            self.skipTest('Private user report absent; no synthetic hardware evidence.')
+        report = json.loads(path.read_text(encoding='utf-8-sig'))
+        update = report['update']
+        self.assertEqual((report['tool'],update['result'],update['input_bytes'],update['elapsed_ms']),
+                         ('0.1.0.0109','PASS',20308,13960))
+        self.assertEqual((update['host_baud'],update['link_retries']),(115200,0))
+        self.assertIn('Classical CAN 500K',update['can'])
+        self.assertIn('target 0xF13B',update['target_before'])
+        for token in ('image_crc32=0x0C297B5E','blocks_acked=318',
+                      'app_confirmation=PASS','host_can_stop=PASS'):
+            self.assertIn(token,update['details'])
+        self.assertEqual(update['host_counter_assessment'],'NO_RECORDED_ERRORS')
+        self.assertTrue(all(item.strip().endswith('=0') for item in update['host_deltas'].split(';')))
+        plain = re.sub(r'\s+',' ',unescape(re.sub('<[^>]+>',' ',path.with_suffix('.html').read_text(encoding='utf-8'))))
+        self.assertIn('Input bytes 20308 Elapsed ms 13960',plain)
+        log = (ROOT/'build/firmware_upgrade_tool_20261027_093357.log').read_text(encoding='utf-8-sig')
+        for token in ('size 20308 bytes, CRC32 0x0C297B5E','318 blocks ACKed',
+                      'App confirmation PASS:','App confirmed; Host CAN stopped.'):
+            self.assertIn(token,log)
+        self.assertNotRegex(log,'TRACE UART|TRACE CAN|Operation failed|UI event queue overflow')
+        source = (ROOT/'docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md').read_text(encoding='utf-8-sig')
+        self.assertIn('| `'+path.stem.removeprefix('update_20261027_')+'` | 原始 App，20,308 bytes | 13960 | `0x0C297B5E` |',source)
+        self.assertIn('原始 App 識別碼前加 `update_20261027_`',source)
+        self.assertIn('原始 App：0.1.0.0109；填充 BIN：0.1.0.0097',source)
+        self.assertIn('firmware_upgrade_tool_20261027_093357.log',source)
 
     def test_debug_monitor_warning_is_single_owner_and_explicit(self):
         source = (ROOT / 'docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md').read_text(encoding='utf-8-sig')
@@ -183,15 +221,20 @@ class PublicWebGuides(unittest.TestCase):
         self.assertEqual(38 / 32, 1.1875)
         self.assertEqual(38 / 40, 0.95)
 
-    def test_deferred_device_content_is_not_in_publication(self):
+    def test_rh850_has_an_independent_guide_and_short_peer_links(self):
         catalog = json.loads((ROOT/'scripts/web_guide_sections.json').read_text(encoding='utf-8-sig'))
-        self.assertTrue(catalog['RH850_DEVICE']['deferred'])
+        self.assertEqual(catalog['RH850_DEVICE']['owner'],'slide_boot_loader_for_RH850')
+        rh850=WEB/'slide_boot_loader_for_RH850'
         pattern = re.compile(r'<!-- RH850_DEVICE_BEGIN -->.*?<!-- RH850_DEVICE_END -->', re.S)
         for page in (BOOT / 'index.md', ISP / 'index.md'):
             actual, = pattern.findall(page.read_text(encoding='utf-8-sig'))
-            self.assertEqual(actual, '<!-- RH850_DEVICE_BEGIN -->\n<!-- RH850_DEVICE_END -->')
-        for page in (BOOT / 'index.md', ISP / 'index.md', NAV, WEB / 'released.github.io/README.html', ROOT/'README.md'):
-            self.assertNotRegex(page.read_text(encoding='utf-8-sig'), r'#rh850-(?:can-device|classical-transfer)|\]\([^)]*RH850_CAN_DEVICE')
+            self.assertIn('slide_boot_loader_for_RH850/#rh850-can-device',actual)
+            self.assertLess(len(actual),800)
+            self.assertNotIn('```',actual)
+        for name in ('can-device','app-development','serial-device','porting','reference','tool-guides'):
+            self.assertTrue((rh850/(name+'.md')).is_file())
+            self.assertTrue((rh850/(name+'.html')).is_file())
+        self.assertIn('rh850-update-timing',(rh850/'app-development.md').read_text(encoding='utf-8-sig'))
         transfer = (ROOT / 'docs/MULTIBUS_TOOL_GUIDE_zh-TW.md').read_text(encoding='utf-8-sig')
         for name in ('Sample_Project_RH850_S1_CAN_Transfer', 'Sample_Project_RH850_S1_CAN_FD_Transfer'):
             self.assertNotIn(name, transfer)
@@ -212,14 +255,17 @@ class PublicWebGuides(unittest.TestCase):
         pattern = re.compile(r'<!-- PUBLIC_RESOURCES_BEGIN -->.*?<!-- PUBLIC_RESOURCES_END -->', re.S)
         source = (ROOT / 'docs/MULTIBUS_TOOL_GUIDE_zh-TW.md').read_text(encoding='utf-8-sig')
         block, = pattern.findall(source)
-        for path in [ISP / 'index.md', BOOT / 'index.md']:
+        layout = json.loads((ROOT / 'scripts/web_guide_layout.json').read_text(encoding='utf-8'))
+        resource_pages = [site / (layout[site.name]['sections']['PUBLIC_RESOURCES'] + '.md')
+                          for site in (ISP, BOOT)]
+        for path in resource_pages:
             text = path.read_text(encoding='utf-8-sig')
             actual, = pattern.findall(text)
             if path.parent == ISP:
                 self.assertEqual(actual, block)
             else:
                 self.assertNotEqual(actual, block)
-                self.assertIn('https://released.github.io/slide_isp_tool_for_RL78/#downloads', actual)
+                self.assertIn('https://released.github.io/slide_simple_renesas_isp_tool/#downloads', actual)
                 self.assertNotIn('raw.githubusercontent', actual)
             self.assertNotRegex(text, r'_Avery|[A-Z]:[\\/]|\.\./\.\./python|SourceCode')
             self.assertNotIn('有效core長度仍為96', text)
@@ -228,13 +274,14 @@ class PublicWebGuides(unittest.TestCase):
                          'boot_app.hex', 'RL78_F13_Boot_loader_CAN_app_update.bin']:
             self.assertIn('https://raw.githubusercontent.com/released/', block)
             self.assertIn('/' + filename + ')', block)
-        anchors = [('slide_isp_tool_for_RL78', name) for name in
+        anchors = [('slide_simple_renesas_isp_tool', name) for name in
                    ['tool-bridge-flow', 'tool-operation', 'custom-transfer',
                     'host-bridge-firmware', 'f13-device-update']]
         anchors.append(('slide_boot_loader_for_RL78', 'boot-app-porting'))
         anchors.append(('slide_boot_loader_for_RL78', 'f13-boot-decision'))
         for site, anchor in anchors:
-            target = (WEB / site / 'index.md').read_text(encoding='utf-8-sig')
+            mapping = json.loads((WEB / site / 'guide-map.json').read_text(encoding='utf-8'))
+            target = (WEB / site / mapping['aliases'][anchor]['page']).with_suffix('.md').read_text(encoding='utf-8-sig')
             self.assertEqual(target.count('<a id="' + anchor + '"></a>'), 1)
             self.assertIn('https://released.github.io/' + site + '/#' + anchor, block)
 
@@ -243,7 +290,7 @@ class PublicWebGuides(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='public_sync_') as folder:
             web = Path(folder)
             pages = [web / site / 'index.md' for site in
-                     ['slide_isp_tool_for_RL78', 'slide_boot_loader_for_RL78']]
+                     ['slide_simple_renesas_isp_tool', 'slide_boot_loader_for_RL78']]
             for page in pages:
                 page.parent.mkdir()
                 page.write_text('prefix\n<!-- PUBLIC_RESOURCES_BEGIN -->stale<!-- PUBLIC_RESOURCES_END -->\nsuffix', encoding='utf-8')
@@ -264,14 +311,28 @@ class PublicWebGuides(unittest.TestCase):
 
     def test_navigation_has_canonical_links_and_function_descriptions(self):
         text = NAV.read_text(encoding='utf-8-sig')
-        entries = re.findall(r'(?m)^\| \[RL78 (?:ISP Tool|Bootloader)\].*$', text)
+        entries = re.findall(r'(?m)^\| \[(?:Simple Renesas ISP Tool|RL78 Bootloader)\].*$', text)
         self.assertEqual(len(entries), 2)
-        self.assertIn('[RL78 ISP Tool](https://released.github.io/slide_isp_tool_for_RL78/', text)
+        self.assertIn('[Simple Renesas ISP Tool](https://released.github.io/slide_simple_renesas_isp_tool/', text)
         self.assertIn('[RL78 Bootloader](https://released.github.io/slide_boot_loader_for_RL78/', text)
         for entry in entries:
             self.assertNotRegex(entry, r'\d+\.\d+\.\d+|Tool\d{4}|工程第一版|19244|10963|301區塊')
-        self.assertIn('I2C 探索', entries[-1])
+        self.assertIn('Custom Transfer', entries[-1])
         self.assertTrue((ISP / 'index.html').is_file())
+
+    def test_tool_branding_is_platform_neutral_and_personal(self):
+        self.assertEqual(ISP.name, 'slide_simple_renesas_isp_tool')
+        overview = (ISP / 'index.md').read_text(encoding='utf-8-sig')
+        self.assertIn('Simple Renesas ISP Tool', overview)
+        self.assertIn('個人開發與分享', overview)
+        for page in ISP.glob('*.html'):
+            html = page.read_text(encoding='utf-8-sig')
+            self.assertIn('<strong>Simple Renesas ISP Tool</strong>', html)
+            self.assertNotIn('RL78 ISP Tool', html)
+        for path in [NAV, NAV.with_suffix('.html')]:
+            text = path.read_text(encoding='utf-8-sig')
+            self.assertIn('slide_simple_renesas_isp_tool/', text)
+            self.assertNotIn('slide_isp_tool_for_' + 'RL78', text)
 
     def test_public_pages_have_no_draft_or_delivery_pins(self):
         for path in [NAV, NAV.with_suffix('.html'), ISP / 'index.md', BOOT / 'index.md',
@@ -289,7 +350,7 @@ class PublicWebGuides(unittest.TestCase):
         from html import unescape
         markdown = NAV.read_text(encoding='utf-8-sig')
         exported = NAV.with_suffix('.html').read_text(encoding='utf-8-sig')
-        for label in ('RL78 Bootloader', 'RL78 ISP Tool'):
+        for label in ('RL78 Bootloader', 'Simple Renesas ISP Tool'):
             entry, = re.findall(rf'(?m)^\| \[{re.escape(label)}\].*$', markdown)
             row, = re.findall(rf'<tr>\s*<td><a [^>]*>{re.escape(label)}</a></td>.*?</tr>', exported, re.S)
             plain_md = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', entry).strip('| ').split(' | ', 1)[1]
@@ -357,6 +418,8 @@ class PublicWebGuides(unittest.TestCase):
     def test_single_owner_sections_and_generic_diagram_roles(self):
         catalog = json.loads((ROOT/'scripts/web_guide_sections.json').read_text(encoding='utf-8-sig'))
         sources = {'RH850_DEVICE':'RH850_CAN_DEVICE_GUIDE_zh-TW.md',
+                   'UART_TOOL_GUIDE':'ISP_UART_TOOL_GUIDE_zh-TW.md',
+                   'SERIAL_DEVICE_GUIDE':'ISP_UART_DEVICE_DESIGN_zh-TW.md',
                    'FD_TRANSFER':'CAN_FD_UPDATE_zh-TW.md',
                    'FD_UPDATE':'CAN_FD_UPDATE_zh-TW.md',
                    'FD_DEVICE':'CAN_FD_UPDATE_zh-TW.md',
@@ -367,8 +430,9 @@ class PublicWebGuides(unittest.TestCase):
                    'F24_APP_IRQ':'SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md',
                    'COMMON_IMAGE_POLICY':'COMMON_IMAGE_METADATA.md',
                    'PUBLIC_RESOURCES':'MULTIBUS_TOOL_GUIDE_zh-TW.md'}
-        pages = {p.parent.name:p.read_text(encoding='utf-8-sig')
-                 for p in (ISP/'index.md',BOOT/'index.md')}
+        layout = json.loads((ROOT/'scripts/web_guide_layout.json').read_text(encoding='utf-8-sig'))
+        pages = {folder.name:'\n'.join((folder/(page+'.md')).read_text(encoding='utf-8-sig')
+                 for page in layout[folder.name]['pages']) for folder in (ISP,BOOT)}
         for section, config in catalog.items():
             pattern = rf'<!-- {section}_BEGIN -->.*?<!-- {section}_END -->'
             if config.get('deferred'):

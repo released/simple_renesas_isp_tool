@@ -20,11 +20,11 @@ class DeviceCanBitrateGuide(unittest.TestCase):
             self.assertEqual(16000000 // ((f13_brp + 1) * (1 + 11 + 4)), rate)
             self.assertEqual(40000000 // ((f24_brp + 1) * (1 + 15 + 4)), rate)
             self.assertIn(f'`0x{1 << bit:08X}UL`', guide)
-        for path in (F13 / 'RSCANconf/RSCANlite.h', F13.parent / 'RL78_F13_Boot_loader_CAN_app/RSCANconf/RSCANlite.h'):
+        for path in (F13 / 'hal/can/RSCANlite.h', F13.parent / 'RL78_F13_Boot_loader_CAN_app/hal/can/RSCANlite.h'):
             text = path.read_text(encoding='utf-8-sig')
             self.assertIn('CAN_CFG_BAUDRATEL(1U)', text)
             self.assertIn('CAN_TSEG1_11TQ, CAN_TSEG2_4TQ', text)
-        config = (F24 / 'common/f24_device_config.h').read_text()
+        config = (F24 / 'hal/device/f24_device_config.h').read_text()
         for name, value in (('NBRP', 3), ('NMNL_TSEG1', 15), ('NMNL_TSEG2', 4)):
             self.assertRegex(config, rf'#define CAN_CFG_{name}\s+\({value}\)')
         self.assertIn('**Boot 與 App 各自**', guide)
@@ -49,13 +49,13 @@ class DeviceCanBitrateGuide(unittest.TestCase):
         self.assertIn('f13_boot_timer_isr', (F13 / 'f13_boot_vectors.asm').read_text())
 
     def test_log_is_main_loop_only_and_registered_in_app(self):
-        main = (APP / 'app_main.c').read_text()
+        main = (APP / 'custom_func.c').read_text()
         self.assertIn('log_counter = 0UL;', main)
-        self.assertIn('App_FormatRuntimeCounter(counter_text, log_counter++);', main)
+        self.assertRegex(main, r'App_FormatRuntimeCounter\(\w+,\s*\w+\+\+\);')
         self.assertIn('>= 1000U', main)
         self.assertIn('log(timer)-', main)
         self.assertNotIn('APP alive version=', main)
-        board = (F24 / 'common/device_board.c').read_text()
+        board = (F24 / 'hal/device/device_board.c').read_text()
         isr = board.split('void __near Device_TimerIsr(void)', 1)[1].split('unsigned int get_tick', 1)[0]
         self.assertNotIn('Device_Log', isr)
         self.assertNotIn('App_FormatRuntimeCounter', isr)

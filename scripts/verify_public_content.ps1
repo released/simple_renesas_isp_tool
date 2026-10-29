@@ -9,8 +9,10 @@ if(!$TextPath.Count) {
         'docs\F13_BOOT_UPDATE_FLOW_zh-TW.md','docs\F24_CAN_DEVICE_DESIGN_zh-TW.md',
         'docs\RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md','docs\MULTIBUS_TOOL_GUIDE_zh-TW.md',
         'docs\SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md','docs\UPDATE_VALIDATION_zh-TW.md',
-        'docs\COMMON_IMAGE_METADATA.md') | ForEach-Object { Join-Path $repo $_ }
-    foreach($folder in @('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78')) {
+        'docs\COMMON_IMAGE_METADATA.md','docs\ISP_SERIAL_TRANSPORT_GUIDE_zh-TW.md',
+        'docs\ISP_UART_DEVICE_DESIGN_zh-TW.md','docs\RH850_ISP_DEVICE_DESIGN_zh-TW.md',
+        'docs\ISP_UART_TOOL_GUIDE_zh-TW.md') | ForEach-Object { Join-Path $repo $_ }
+    foreach($folder in @('slide_boot_loader_for_RL78','slide_boot_loader_for_RH850','slide_simple_renesas_isp_tool')) {
         . (Join-Path $PSScriptRoot 'web_guide_layout.ps1')
         $TextPath+=@(Get-WebGuideReaderPaths -WebRoot $WebRoot -Folder $folder)
         $TextPath+=Join-Path $WebRoot ($folder+'\README.md')

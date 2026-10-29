@@ -5,7 +5,7 @@ $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'web_guide_layout.ps1')
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
 $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\MULTIBUS_TOOL_GUIDE_zh-TW.md'))
-$path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_isp_tool_for_RL78 -Section TRANSFER_EXAMPLES
+$path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_simple_renesas_isp_tool -Section TRANSFER_EXAMPLES
 $web=[IO.File]::ReadAllText($path)
 $updated=$web
 # Validate both canonical sections before writing the page once.

@@ -5,8 +5,8 @@
 #include "../common/host_link_limits.h"
 #include "../common/host_link_baud.h"
 
-#define HOST_LINK_UART_RX_CAPACITY    (256U)
-#define HOST_LINK_UART_TX_CAPACITY    (256U)
+#define HOST_LINK_UART_RX_CAPACITY (256U)
+#define HOST_LINK_UART_TX_CAPACITY (256U)
 #if HOST_WIRE_MAX_FRAME > (HOST_LINK_UART_TX_CAPACITY - 1U)
 #error Complete Host Link frame must fit in the UART TX ring.
 #endif

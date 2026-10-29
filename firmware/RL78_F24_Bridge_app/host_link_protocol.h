@@ -4,9 +4,9 @@
 #include <stdint.h>
 #include "../common/host_link_limits.h"
 
-#define HOST_LINK_VERSION              (0x02U)
-#define HOST_LINK_MAX_PAYLOAD          HOST_WIRE_MAX_PAYLOAD
-#define HOST_LINK_MAX_FRAME_SIZE       HOST_WIRE_MAX_FRAME
+#define HOST_LINK_VERSION (0x02U)
+#define HOST_LINK_MAX_PAYLOAD HOST_WIRE_MAX_PAYLOAD
+#define HOST_LINK_MAX_FRAME_SIZE HOST_WIRE_MAX_FRAME
 
 void HostLink_Init(void);
 void HostLink_Process(void);

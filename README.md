@@ -1,6 +1,6 @@
-# Firmware Upgrade Tool
+# Simple Renesas ISP Tool
 
-FirmwareUpgradeTool is a native Windows application for updating MCU
+This personal project provides FirmwareUpgradeTool, a native Windows application for updating MCU
 application firmware and testing communication through an MCU bridge.
 It provides a shared interface for Classical CAN, CAN FD, UART, Xmodem and I2C,
 with BIN inspection, live device information, progress, diagnostics and reports.
@@ -17,10 +17,11 @@ and common firmware sources for the device examples.
 ## Downloads and guides
 
 - [Windows x64 executable](build/FirmwareUpgradeTool.exe).
-- [Firmware downloads and file selection](https://released.github.io/slide_isp_tool_for_RL78/#downloads):
+- [Firmware downloads and file selection](https://released.github.io/slide_simple_renesas_isp_tool/#downloads):
   Host Boot/App, Device Boot/App and standalone Transfer images.
-- [Tool operation guide](https://released.github.io/slide_isp_tool_for_RL78/).
+- [Tool operation guide](https://released.github.io/slide_simple_renesas_isp_tool/).
 - [Bootloader and App authoring guide](https://released.github.io/slide_boot_loader_for_RL78/).
+- [RH850 Bootloader and App guide](https://released.github.io/slide_boot_loader_for_RH850/).
 
 The executable runs on Windows 10/11 x64 without a Python runtime.
 The USB-to-UART adapter may require its manufacturer's driver.
@@ -105,7 +106,8 @@ Step-by-step screenshots and field descriptions are available in the
 [F24 Host Boot](firmware/RL78_F24_Bridge_boot/) and
 [F24 Host App](firmware/RL78_F24_Bridge_app/) share board, driver and library
 sources in this repository. Device projects are separate checkouts;
-the [download index](docs/MULTIBUS_TOOL_GUIDE_zh-TW.md#downloads) identifies
+each device project includes its own sources, configuration and build helpers.
+The [download index](docs/MULTIBUS_TOOL_GUIDE_zh-TW.md#downloads) identifies
 the corresponding source and installation/update files.
 
 Device App configuration uses `app_image_config.h` and `app_irq_handlers.h`.
@@ -114,6 +116,10 @@ IRQ outputs. App builds also produce `DefaultBuild/app_build_report.html`
 for inspecting the actual packaged BIN. Firmware authoring uses C headers,
 Windows PowerShell and the MCU compiler; it does not require a JSON editor
 or Python.
+
+Successful Device App builds also produce FF-filled timing BINs in
+`test_bins/auto/`. Open its `index.html` to choose a size; see
+[App test images](docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md#device-test-images).
 
 F24/G16/G22 serial projects use project-local Smart Configurator settings;
 F13 serial projects use Code Generator. See the

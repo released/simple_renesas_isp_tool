@@ -7,7 +7,7 @@
 
 Custom Transfer 驗證 MCU CAN host 與 MCU CAN device 的收發，不使用更新 BIN，也不擦寫 Flash。
 FD 範例使用 `RL78_F24_CAN_FD_Transfer` 獨立整機映像，由燒錄器安裝。
-此映像使用自己的 SC 工程與相鄰 FD Boot 工程的 common 後端；它不經 Boot/App 更新流程啟動。
+此映像包含自己的 SC 工程與 `hal/can` 後端，由燒錄器安裝為獨立 Transfer 程式。
 
 接收使用 RX Message Buffer 0（64-byte 容量）與中斷，資料經 8 筆 RAM queue 交給主迴圈。
 Standard 0x710／mask 0x7FF 的規則只儲存到 RXMB0；接收 FIFO 不啟用，TX 完成狀態仍由主迴圈輪詢。
@@ -165,7 +165,7 @@ UART 輸出會增加主迴圈延遲；吞吐量量測時可將兩個 trace 開�
 
 ### 工程與產物
 
-FD Transfer與 `RL78_F24_Boot_loader_CAN_FD` 放在同一父目錄。
+FD Transfer 自備 `hal` 來源、header 與建置工具，可單獨建置，不需要 Boot checkout。
 在FD Transfer目錄使用Windows PowerShell5.1：
 
 ```powershell
@@ -176,7 +176,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 MTPJ的pre/post hooks引用FD helper；SC重新產生後使用同一入口重新prepare與建置。
 正式產物為 `DefaultBuild/RL78_F24_CAN_FD_Transfer.hex`，供燒錄器安裝，不能載入CAN Upgrade。
 安裝獨立Transfer會取代板端原有程式；燒錄前核對實際MCU、映像與erase範圍。
-CRC／診斷欄位見 [Custom Transfer診斷](https://released.github.io/slide_isp_tool_for_RL78/#transfer-diagnostics)。
+CRC／診斷欄位見 [Custom Transfer診斷](https://released.github.io/slide_simple_renesas_isp_tool/#transfer-diagnostics)。
 一般中斷接收與 Transfer Test 已完成實板驗證；queue 壓力、波形及故障測試另行記錄。
 <!-- FD_TRANSFER_END -->
 
@@ -188,6 +188,7 @@ CRC／診斷欄位見 [Custom Transfer診斷](https://released.github.io/slide_i
 此設定使用 nominal 500 kbit/s、data 2 Mbit/s、BRS，以及 64-byte FD 資料幀。
 Tool 與 MCU CAN host 負責傳輸，MCU CAN device Boot 負責映像驗證與 Flash 寫入。
 F24 CAN FD device 的一般 App 寫入、END CRC、APP_READY 與 UART counter 已有實板紀錄。
+RH850使用相同Tool操作；EVM接線、256-byte Flash page與實測耗時見 [RH850工程](https://released.github.io/slide_boot_loader_for_RH850/can-device.html#guide-can-device-5)／[更新耗時](https://released.github.io/slide_boot_loader_for_RH850/app-development.html#rh850-update-timing)。
 驗證包含初次 Boot 更新，以及 App → Enter Boot → 更新 → App 確認；
 重啟等待後的更新紀錄中，七項 Host 錯誤計數差值均為零。
 長時間連續更新、queue 壓力與故障／斷電恢復仍各自保留驗證範圍。
@@ -205,7 +206,7 @@ F24 CAN FD device 的一般 App 寫入、END CRC、APP_READY 與 UART counter �
 | PC 到 Host Link | 可先用115200；此速度與 CAN nominal／data phase 分開設定 |
 
 若 host 缺少 bit13，Tool 在寫入前拒絕更新。
-使用 [Misc Host App 更新](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware)
+使用 [Misc Host App 更新](https://released.github.io/slide_simple_renesas_isp_tool/#host-bridge-firmware)
 載入 `RL78_F24_Bridge_app_bridge_update.bin`，完成後明確 RUN、重新 Probe 核對能力。
 此流程更新 Host App，不改 Host Boot。
 
@@ -238,10 +239,10 @@ F24 CAN FD device 的一般 App 寫入、END CRC、APP_READY 與 UART counter �
 START 本身不擦除 Flash，區塊 COMMIT 驗證通過後才由 Flash driver 寫入。
 
 
-報告及成功／失敗欄位沿用 [更新確認與驗證紀錄](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
-END 後的等待與查詢時序見 [重啟等待與 App 確認](https://released.github.io/slide_isp_tool_for_RL78/#app-restart-confirmation)；
+報告及成功／失敗欄位沿用 [更新確認與驗證紀錄](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation)。
+END 後的等待與查詢時序見 [重啟等待與 App 確認](https://released.github.io/slide_simple_renesas_isp_tool/#app-restart-confirmation)；
 完成提示與報告同時保留映像驗證結果及 Host 計數警告。
-Metadata 的逐欄內容見 [共用欄位指南](https://released.github.io/slide_isp_tool_for_RL78/#tool-ui-fields)，
+Metadata 的逐欄內容見 [共用欄位指南](https://released.github.io/slide_simple_renesas_isp_tool/#tool-ui-fields)，
 不以離線 BIN 資訊代替 live device 身分。
 
 ### 三幀區塊與 Host Link
@@ -291,12 +292,16 @@ flowchart TD
 <!-- FD_DEVICE_BEGIN -->
 <a id="can-fd-device-engineering"></a>
 
+<a id="guide-can-device-5"></a>
+
 ## MCU CAN FD device 工程設定
 
 F24 device 使用獨立 `RL78_F24_Boot_loader_CAN_FD` 與
-`RL78_F24_Boot_loader_CAN_FD_app` 工程，放在同一父目錄。
-App 引用相鄰 FD Boot 的 common／metadata 來源。
+`RL78_F24_Boot_loader_CAN_FD_app` 工程；各自包含本地來源與工具，可分開建置。
+App 使用本工程的 `hal` API、metadata 設定與建置工具。
 App 發行與 IRQ 編輯沿用 [C header 工作流程](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-vector-workshop)。
+
+<a id="guide-can-device-6"></a>
 
 ### 設定來源
 
@@ -306,7 +311,7 @@ App 發行與 IRQ 編輯沿用 [C header 工作流程](https://released.github.i
 | App `app_irq_handlers.h` | App-local IRQ mapping；無 vect ISR |
 | Boot `image_metadata_config.h` | Flash／metadata格式／IRQ ABI／最低Boot相容契約 |
 | Boot `can_boot_config.h` | mode2、nominal mask4、data mask2及ID |
-| Boot `common/f24_device_config.h` | 實際40MHz CAN clock timing、FD模式、64-byte RXMB及中斷來源 |
+| Boot `hal/device/f24_device_config.h` | 實際40MHz CAN clock timing、FD模式、64-byte RXMB及中斷來源 |
 | Boot `boot_app_handoff.h` | owner Boot=AA／App=55、no-init RAM |
 | `image_metadata_profile.c` | 由獨立metadata parser比對的工程契約 |
 | `tools/device_common.ps1` | 讀取上述C headers、產生metadata |
@@ -331,9 +336,11 @@ SC重新產生後仍需執行工程prepare及clean build，核對實際linked產
 
 <a id="can-fd-device-rx"></a>
 
+<a id="guide-can-device-7"></a>
+
 ### 接收與中斷
 
-Boot 與 App 各自連結 `common/device_can.c`，使用精簡 RXMB0 ISR 與 8 筆 RAM queue。
+Boot 與 App 各自連結 `hal/can/device_can.c`，使用精簡 RXMB0 ISR 與 8 筆 RAM queue。
 主迴圈負責命令、metadata、CRC 及 Flash 流程；ISR 只核對幀的型態／長度並搬移資料，不解析更新命令、不輸出 UART，也不等待 TX。
 主迴圈不直接輪詢 RXMB0；TX 完成狀態仍使用有上限的輪詢。
 
@@ -366,6 +373,8 @@ ISR 確認 RMND 後讀取 RXMB0，保存／還原 CAN RAM window；讀取期間�
 | 觀察位置 | App 在 UART counter 旁顯示非零 faults／drops；Boot 可由 debugger 查看 `g_rx_faults`／`g_device_rx_drops`，位址由當次 map 查詢 |
 | 重設範圍 | 上述值只在 CAN 初始化時歸零；正常一問一答應保持 0 |
 
+<a id="guide-can-device-8"></a>
+
 ### 更新區塊與 Flash 交接
 
 一個區塊的 BEGIN8、DATA64、COMMIT8 可先入 queue，再由 Boot 主迴圈依序處理。
@@ -392,7 +401,8 @@ Host 在 COMMIT ACK 前等待，不連續送下一個區塊；逾時與斷線結
 ### Flash與建置
 
 `RL78_F24_Boot_loader_CAN_FD`、`RL78_F24_Boot_loader_CAN_FD_app` 與 `RL78_F24_CAN_FD_Transfer`
-保持同層及既有名稱；App／Transfer 都需要 Boot checkout 的共用來源與 PowerShell helpers。
+各自包含來源碼與 PowerShell helpers，可單獨建置；搭配安裝的 Boot／App 使用相容契約。
+來源分工見 [工程目錄與程式入口](https://released.github.io/slide_boot_loader_for_RL78/#device-project-entry)。
 詳細相依與生成路徑檢查見 [工程發佈說明](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/GITHUB_PUBLISH_zh-TW.md#fd-publication-layout)。
 SC 重新生成後使用同一建置入口；`-CheckOnly` 檢查相對路徑及生成檔狀態。
 
@@ -406,20 +416,16 @@ SC 重新生成後使用同一建置入口；`-CheckOnly` 檢查相對路徑及�
 | App start + image_size -4 | 全映像 CRC32 tail |
 | 0x3FC00..0x3FFFF | 保護區 |
 
-在 FD Boot 目錄執行：
+在所選 FD Boot 或 App 工程根目錄執行：
 
 ```powershell
-# Clean rebuild only the FD Boot/App pair.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Kind all
-# App-only release changes.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Kind app
-# Artifact, metadata, IRQ, ROM/RAM and CRC guards.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\test.ps1
+# Rebuild this project and run its linked-image/package guards.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
 MCU建置使用CS+ CC-RL、Windows PowerShell5.1／.NET，不需Python。
 封裝維持至少512-byte Boot餘裕、完整IRQ表、RAM-only RFD與分區界線；
-App-only建置不改Boot；操作見 [CAN FD更新](https://released.github.io/slide_isp_tool_for_RL78/#can-fd-update)。
+App-only建置不改Boot；操作見 [CAN FD更新](https://released.github.io/slide_simple_renesas_isp_tool/#can-fd-update)。
 
 | 產物 | 使用方式 |
 | --- | --- |

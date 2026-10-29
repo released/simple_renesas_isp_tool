@@ -76,7 +76,7 @@ Compiler option reference: [Renesas CC-RL link optimization](https://tool-suppor
 ## 更新政策與通訊速度
 
 BIN metadata 提供更新目的地、允許介面、MCU 身分與 Boot 契約。
-版本政策與密碼確認的維護操作集中於 [force 降版](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version)。
+版本政策與密碼確認的維護操作集中於 [force 降版](https://released.github.io/slide_simple_renesas_isp_tool/#force-old-version)。
 Tool 將這些欄位與目前選定的 port、live device 資訊一併核對。
 
 | UI 資訊 | 來源與作用 |
@@ -91,13 +91,19 @@ UI、worker 與 device Boot 分別執行對應驗證；改變 port／address／r
 
 Metadata 位址與欄位格式見 [Device 映像對照](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
 
-### 三條通訊路徑的速度
+<a id="三條通訊路徑的速度"></a>
 
-| 路徑 | 設定來源 | 目前設定 |
+### 通訊路徑與速度
+
+| 路徑 | 設定來源 | 範例與調整方式 |
 | --- | --- | --- |
-| PC ↔ MCU CAN host 的 Host Link | Tool Host Baud 與 host live 能力 | 上電115200，可協商460800／921600 |
-| MCU CAN host ↔ MCU CAN device | device Boot／App 編譯設定與 metadata | Classical CAN 500K |
-| PC ↔ host Boot 的自身 App 更新 | host Boot 描述器 | Misc／UART115200 |
+| PC ↔ MCU host 的 Host Link | Tool Host Baud 與 host live 能力 | 上電115200，可協商460800／921600；與 device bus 速度獨立 |
+| Host ↔ CAN device | Device Boot／App driver、metadata 與 Tool CAN Mode／rate | Classical 500K；FD nominal500K／data2M、BRS；選項需符合 live 能力與映像 |
+| Host ↔ UART／Xmodem device | Boot／App UART 分頻、metadata、Tool Device baud | 範例115200、8-N-1；可選或輸入 baud，仍須符合實際時脈分頻與 host 能力 |
+| Host ↔ I2C device | Slave address、Boot／App timing、metadata 與 Tool I2C 設定 | 範例7-bit0x20／100kHz；address不左移，速度依 host 宣告能力選擇 |
+| PC ↔ host Boot 的自身 App 更新 | Host Boot 描述器 | Misc／UART115200 |
+
+Device 串列配置的必要一致項目見 [通訊設定與更新必要條件](https://released.github.io/slide_simple_renesas_isp_tool/serial-isp.html#serial-update-requirements)。
 
 Host Link 換速完成後會重新確認 host 身分。
 尚未確認時，host 在2秒內回到115200；已確認後維持該次連線速度。
@@ -129,7 +135,7 @@ flowchart TD
     META --> VALID{"驗證通過？"}
     VALID -->|否| STOP
     VALID -->|是| WRITE["更新 App；END 驗證 Flash 映像"]
-    WRITE --> BOOT["重啟時由 MCU CAN device Boot<br/>驗證映像後啟動 App"]
+    WRITE --> BOOT["重啟時由 MCU device Boot<br/>驗證映像後啟動 App"]
 ```
 
 CRC提供完整性檢查。映像驗證與實板功能測試分別記錄。

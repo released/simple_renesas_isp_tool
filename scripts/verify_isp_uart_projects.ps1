@@ -18,7 +18,7 @@ foreach($deviceBus in $selectedBuses){foreach($deviceMcu in $selectedMcus){
     $suffix=if($deviceBus -eq 'I2C'){'I2C_Slave_Transfer'}else{$deviceBus+'_Transfer'}
     $transfer=Join-Path $DeviceRoot ('RL78_'+$deviceMcu+'_'+$suffix)
     $files=@('isp_protocol.c','isp_protocol.h','isp_device.c','isp_device.h','isp_fixed_profile.h')
-    if($deviceBus -eq 'UART' -and $deviceMcu -in @('F13','F24')){$files+=@('isp_rl78_board.c','isp_rl78_board.h','isp_rl78_runtime.c','isp_rl78_entry.c')}
+    if($deviceBus -eq 'UART' -and $deviceMcu -in @('F13','F24')){$files+=@('isp_rl78_board.c','isp_rl78_board.h','isp_rl78_runtime.c')}
     if($deviceBus -eq 'I2C'){$files+=@('isp_i2c_mailbox.c','isp_i2c_mailbox.h','isp_i2c.c','isp_i2c.h','isp_runtime_transport.inc')}
     if($deviceBus -eq 'Xmodem'){$files+=@('isp_xmodem.c','isp_xmodem.h','isp_runtime_transport.inc')}
     foreach($name in $files){

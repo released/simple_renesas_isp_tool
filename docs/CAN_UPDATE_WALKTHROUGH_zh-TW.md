@@ -10,9 +10,9 @@
 [MD 原稿](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md)與
 [可下載 PDF](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.pdf)可供離線對照。
 
-本篇只描述現有 CAN Upgrade：Classical CAN、控制 ID `0x700/0x701`、raw data IDs `0x720..0x727`，
+本篇以 **F13 Classical CAN** 的 CAN Upgrade 為範例：控制 ID `0x700/0x701`、raw data IDs `0x720..0x727`，
 範例 App 起點 `0x2000`、metadata 位於 image offset `0x100..0x1FF`。這些是此範例契約，不是所有 MCU 的固定值。
-Host 自身 App 的更新操作見 [Misc／UART](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware)。
+Host 自身 App 的更新操作見 [Misc／UART](https://released.github.io/slide_simple_renesas_isp_tool/#host-bridge-firmware)。
 
 ### A. 三層責任與資訊來源
 
@@ -55,7 +55,7 @@ flowchart TD
 | 8. 確認結果 | END ACK 與 App confirmed 分開記錄 | Tool 等待 APP_READY，再比對 live INFO 與載入 BIN 的身分／版本／build／大小；自動保存報告 | 更新流程已寫入 |
 
 載入 BIN 與 Probe 的先後可以互換；但 Start 前必須全部通過。Transfer Test／Bridge Self Test
-只能用來排查通訊，不會替代 CAN Upgrade 的映像驗證。完整操作見[Tool operation](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation)。
+只能用來排查通訊，不會替代 CAN Upgrade 的映像驗證。完整操作見[Tool operation](https://released.github.io/slide_simple_renesas_isp_tool/#tool-operation)。
 
 ### C. Tool 如何判斷「這個 BIN 可以更新」
 
@@ -166,7 +166,7 @@ flowchart TD
 
 Host Link 的 115200／460800／921600 是 PC↔F24 這一路；CAN 的 500K 是 F24↔F13 另一路。
 F24 不會把 UART baud 寫入 F13 metadata，也不會將收到的 BIN 自動燒進自己的 App。
-F24 自身更新另見[Misc 更新 Host App](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware)。
+F24 自身更新另見[Misc 更新 Host App](https://released.github.io/slide_simple_renesas_isp_tool/#host-bridge-firmware)。
 
 ### G. F13 (MCU CAN device) 如何分類 CAN RX
 
@@ -195,7 +195,7 @@ flowchart TD
 ### H. 完整 metadata、SEAL 與 START
 
 一般 START 另檢查目前有效 App 的版本政策；`FORCE_START 0E` 只略過本次版本排序。
-其餘契約／CRC／Flash 檢查相同；維護確認與密碼見 [force 降版操作](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version)。
+其餘契約／CRC／Flash 檢查相同；維護確認與密碼見 [force 降版操作](https://released.github.io/slide_simple_renesas_isp_tool/#force-old-version)。
 
 ```mermaid
 flowchart TD
@@ -246,6 +246,10 @@ END ACK 的 detail 則是 image_size/4 的低16 bits。欄位位置相同，不�
 
 ### J. COMMIT 才是 RAM → Flash 的界線
 
+以下逐4-byte寫入與1KiB擦除邊界適用F13。
+RH850 使用256-byte Flash page buffer，單次64-byte COMMIT先驗證並收進page；湊滿page或到映像末端才提交Flash。
+完整差異見 [RH850 區塊與page寫入](https://released.github.io/slide_boot_loader_for_RH850/can-device.html#rh850-can-block-write)。
+
 ```mermaid
 flowchart TD
     C["BLOCK_COMMIT：BlockCheck<br/>BEGIN offset／CRC／bitmap／RAM CRC"] --> Q{"全部通過？"}
@@ -288,7 +292,7 @@ flowchart TD
 ```
 
 完整 ENTER、RAM handoff、checksum、逾時、失敗留 Boot 的條件以
-[F13 Boot→App 完整條件圖](https://released.github.io/slide_isp_tool_for_RL78/#f13-boot-flow)為準。
+[F13 Boot→App 完整條件圖](https://released.github.io/slide_simple_renesas_isp_tool/#f13-boot-flow)為準。
 僅有效舊 App 的 ENTER session 啟用30秒 inactivity；START 前可重驗舊 App 後返回，
 接受 START 後逾時不自動回 App。無效 App 的 recovery 不啟用該逾時；ABORT／fatal error 不保證自動返回。
 
@@ -333,7 +337,7 @@ flowchart TD
 | F13 CAN 接收與 Flash 入口 | [can_boot_transport.c](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_transport.c) | `CAN_BootRead`／`CAN_BootReceive`／`CAN_BootWrite`／`CAN_BootSend` |
 | F13 metadata staging／契約 | [can_boot_metadata.inc](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_metadata.inc) | `MetadataStage`／`MetadataSeal`／`MetadataValid` |
 | F13 raw segments／bitmap／CRC | [can_boot_block.inc](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/can_boot_block.inc) | `BlockBegin`／`BlockSegment`／`BlockCheck` |
-| F13 reset 與重新驗證 | [r_main.c](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/r_main.c) | `boot_main`／`verify_application_checksum`；配合 Boot decision 圖 |
+| F13 reset 與重新驗證 | [custom_func.c](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/custom_func.c) | `hardware_init`／`loop`／`verify_application_checksum`；`r_main.c` 保留啟動 adapter |
 
 若要改成自己的專案：先固定 partition／vector ABI／board clock，再由 image build 設定產生 metadata／CRC；
 同步修改 Tool target profile 與 device Boot 的契約，最後對照本篇每一關驗證。
@@ -341,9 +345,9 @@ flowchart TD
 更換更新介面或映像契約則必須重新評估 Boot。
 詳見[Boot/App 移植工程](https://released.github.io/slide_boot_loader_for_RL78/#boot-app-porting)。
 
-本篇是現行程式的導讀，不是新一輪板測報告。實體斷線／斷電、完整故障矩陣、高速長時間可靠性，
+實體斷線／斷電、完整故障矩陣、高速長時間可靠性，
 以及各自訂 App 的 IRQ／啟動，仍須在對應硬體上留存驗證紀錄。
 <!-- CAN_WALKTHROUGH_END -->
 
 APP_READY／Verify Installed 的 CAN 格式、metadata 差異表、階段進度、取消與報告欄位，
-請見[更新確認與驗證紀錄](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
+請見[更新確認與驗證紀錄](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation)。

@@ -62,9 +62,9 @@ try{
   });
   await call('Page.enable');await call('Runtime.enable');await call('Log.enable');
   const paths=process.argv.slice(3);
-  for(const path of paths.length?paths:['/','/slide_boot_loader_for_RL78/','/slide_isp_tool_for_RL78/','/__rh850_serial__/','/__rh850_can__/']){
+  for(const path of paths.length?paths:['/','/slide_boot_loader_for_RL78/','/slide_simple_renesas_isp_tool/','/__rh850_serial__/','/__rh850_can__/']){
     const requested=new URL(path,base);let expected=new URL(requested);
-    const legacy=/^\/(slide_(?:boot_loader|isp_tool)_for_RL78)\/(?:index.html)?$/.exec(requested.pathname);
+    const legacy=/^\/(slide_(?:boot_loader_for_(?:RL78|RH850)|simple_renesas_isp_tool))\/(?:index.html)?$/.exec(requested.pathname);
     if(legacy&&requested.hash){
       const map=JSON.parse(await readFile(join(web,legacy[1],'guide-map.json'),'utf8'));
       const item=map.aliases[decodeURIComponent(requested.hash.slice(1))];
@@ -79,6 +79,18 @@ try{
       const html=await readFile(join(web,htmlPath.slice(1)),'utf8');
       const title=/<title>([^]*?)<\/title>/.exec(html)?.[1];
       if(title)await wait(()=>evaluate('document.title==='+JSON.stringify(title)),'new document commit '+path);
+    }
+    if(/\/data\/update_[A-Za-z0-9_]+\.html$/.test(path)){
+      await wait(()=>evaluate("!!document.querySelector('h1') && !!document.querySelector('table')"),'report summary '+path);
+      const report=await evaluate("({title:document.title,pathname:location.pathname,width:innerWidth,scroll:document.documentElement.scrollWidth,rows:document.querySelectorAll('tr').length,text:document.body.innerText})");
+      assert.ok(report.rows>10&&report.text.includes('input_bytes')&&report.text.includes('source_sha256'),'portable report fields');
+      assert.ok(!/(?<![A-Za-z])[A-Za-z]:[\\/]|_Avery|SourceCode/.test(report.text),'no private report paths');
+      assert.ok(report.scroll<=report.width+1,'report desktop width');
+      await capture('rh850_report_desktop');
+      await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+      const narrow=await evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth})');
+      assert.ok(narrow.scroll<=narrow.width+1,'report narrow width');await capture('rh850_report_narrow');
+      delete report.text;results.push({path,...report,narrow});console.log('PASS browser report',path);continue;
     }
     await wait(()=>evaluate("!!document.querySelector('#content h1') && !document.querySelector('.loading,.render-error')"),'render '+path);
     await wait(()=>evaluate("!document.querySelector('.render-warning') && [...document.querySelectorAll('.mermaid')].every(n=>!!n.querySelector('svg'))"),'all Mermaid '+path);
@@ -129,12 +141,33 @@ try{
     await capture(name+'_toc');
     await evaluate('document.querySelector("#sidebar-toc-btn").click()');
     results.push({path,...data,narrow});console.log('PASS browser',path,data.diagrams,'Mermaid',data.tables,'tables');
-    if(/^\/slide_(?:boot_loader|isp_tool)_for_RL78\/$/.test(path)){
+    if(/^\/slide_boot_loader_for_(?:RL78|RH850)\/$/.test(path)){
+      const shortcut=await evaluate("[...document.querySelectorAll('#content a')].find(a=>a.textContent.includes('查看更新耗時表'))?.getAttribute('href')");
+      assert.ok(shortcut,'visible timing shortcut');
+      await evaluate("[...document.querySelectorAll('#content a')].find(a=>a.textContent.includes('查看更新耗時表')).click()");
+      const target=new URL(shortcut,base+path);
+      await wait(()=>evaluate('location.pathname==='+JSON.stringify(target.pathname)+' && !!document.getElementById('+JSON.stringify(target.hash.slice(1))+') && !!document.querySelector("#content table")'),'actual timing shortcut '+path);
+      navigation.push({kind:'timing-shortcut',from:path,to:target.pathname+target.hash});
+      await call('Page.navigate',{url:base+path});
+      await wait(()=>evaluate('location.pathname==='+JSON.stringify(path)+' && !!document.querySelector("#content h1") && !![...document.querySelectorAll("#content a")].find(a=>a.textContent.includes("查看更新耗時表"))'),'return to overview');
+    } else if(/^\/slide_boot_loader_for_(?:RL78|RH850)\/[a-z-]+\.html$/.test(new URL(path,base).pathname)){
+      const peerPath=path.includes('for_RH850')?'slide_boot_loader_for_RL78':'slide_boot_loader_for_RH850';
+      const peerLink=await evaluate('[...document.querySelectorAll("#content a")].find(a=>a.getAttribute("href")?.startsWith('+JSON.stringify('../'+peerPath+'/')+') && a.hash)?.getAttribute("href")');
+      if(peerLink){
+        await evaluate('[...document.querySelectorAll("#content a")].find(a=>a.getAttribute("href")==='+JSON.stringify(peerLink)+').click()');
+        const target=new URL(peerLink,base+path);
+        const brand=peerPath.includes('RH850')?'RH850 Bootloader':'RL78 Bootloader';
+        await wait(()=>evaluate('location.pathname==='+JSON.stringify(target.pathname)+' && !!document.getElementById('+JSON.stringify(target.hash.slice(1))+') && document.querySelector(".sidebar-brand strong")?.textContent.includes('+JSON.stringify(brand)+')'),'actual matching-platform topic');
+        navigation.push({kind:'platform-topic',from:path,to:target.pathname+target.hash});
+      }
+    }
+    if(/^\/slide_(?:boot_loader_for_(?:RL78|RH850)|simple_renesas_isp_tool)\/$/.test(path)){
       const link=await evaluate('document.querySelector("#content a[href$=\\".html\\"]")?.getAttribute("href")');
       assert.ok(link,'overview chapter link '+path);
       await evaluate('document.querySelector("#content a[href$=\\".html\\"]").click()');
       const target=new URL(link,base+path);
-      await wait(()=>evaluate('location.pathname==='+JSON.stringify(target.pathname)+' && document.body.getAttribute("data-markdown")==='+JSON.stringify(link.replace(/\.html$/,'.md'))+' && !!document.querySelector("#content h1")'),'actual overview chapter click '+path);
+      const markdown=target.pathname.split('/').at(-1).replace(/\.html$/,'.md');
+      await wait(()=>evaluate('location.pathname==='+JSON.stringify(target.pathname)+' && document.body.getAttribute("data-markdown")==='+JSON.stringify(markdown)+' && !!document.querySelector("#content h1")'),'actual overview chapter click '+path);
       navigation.push({from:path,to:target.pathname});
     }
   }

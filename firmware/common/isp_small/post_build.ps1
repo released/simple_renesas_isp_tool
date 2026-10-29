@@ -13,3 +13,11 @@ if($Kind -eq 'app') {
 }else { & (Join-Path $PSScriptRoot 'verify_boot_budget.ps1') -MapPath $map }
 & (Join-Path $PSScriptRoot 'verify_ram_budget.ps1') -MapPath $map -RamStart $ram -Owner ($ram+16)
 Write-Host 'PASS package/ROM/RAM gates; a failed earlier gate cannot be hidden by a later command.'
+
+# APP_TIMING_BINS_BEGIN
+if($Kind -eq 'app') {
+    $LASTEXITCODE=0
+    & (Join-Path $Project 'generate_test_bins.ps1') -ProjectRoot $Project -Automatic
+    if($LASTEXITCODE -ne 0){throw 'App timing BIN generation failed.'}
+}
+# APP_TIMING_BINS_END

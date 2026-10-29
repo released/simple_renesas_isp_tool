@@ -8,12 +8,28 @@
 #include "f24_bridge_support.h"
 static volatile uint16_t g_milliseconds;
 /* Minimal boot peripherals; do not initialize CAN/IICA or switch to X1. */
-void R_Systeminit(void) {
-    *(volatile uint8_t __far *)F24_BRIDGE_DISPATCH_ADDRESS=F24_BRIDGE_BOOT_OWNER;
-    R_Config_PORT_Create(); R_SAU0_Create(); R_TAU0_Create();
+void R_Systeminit(void)
+{
+    *(volatile uint8_t __far *)F24_BRIDGE_DISPATCH_ADDRESS = F24_BRIDGE_BOOT_OWNER;
+    R_Config_PORT_Create();
+    R_SAU0_Create();
+    R_TAU0_Create();
 }
-void tick_counter(void) { ++g_milliseconds; }
-unsigned int get_tick(void) { return g_milliseconds; }
-void set_TIMER_PERIOD_1000MS(void) { }
-void reset_TIMER_PERIOD_1000MS(void) { }
-void Timer_1ms_IRQ(void) { ++g_milliseconds; }
+void tick_counter(void)
+{
+    ++g_milliseconds;
+}
+unsigned int get_tick(void)
+{
+    return g_milliseconds;
+}
+void set_TIMER_PERIOD_1000MS(void)
+{
+}
+void reset_TIMER_PERIOD_1000MS(void)
+{
+}
+void Timer_1ms_IRQ(void)
+{
+    ++g_milliseconds;
+}

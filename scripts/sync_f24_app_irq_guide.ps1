@@ -10,7 +10,7 @@ $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\SHARED_CONSOLE_BRIDGE_GUID
 $blocks=[regex]::Matches($source,$pattern)
 if ($blocks.Count -ne 1) { throw 'Expected one canonical F24 app IRQ block.' }
 $updates=@()
-foreach ($relative in @('slide_isp_tool_for_RL78\index.md','slide_boot_loader_for_RL78\index.md')) {
+foreach ($relative in @('slide_simple_renesas_isp_tool\index.md','slide_boot_loader_for_RL78\index.md')) {
     $expected=Get-WebGuideProjection -Section F24_APP_IRQ -Folder ($relative.Split('\')[0]) -Canonical $blocks[0].Value
     $path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder ($relative.Split('\')[0]) -Section F24_APP_IRQ
     $text=[IO.File]::ReadAllText($path)

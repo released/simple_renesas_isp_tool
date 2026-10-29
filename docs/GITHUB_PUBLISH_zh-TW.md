@@ -3,23 +3,27 @@
 這個入口供維護原始碼與交付檔使用，與 Tool 的 MCU 韌體更新操作分開。
 使用現有 Git for Windows、Windows PowerShell 5.1 及 Git 登入設定；不需 Python。
 
-## 目前發布限制
+## 發布範圍與驗證依據
 
 未經實板驗證的 MCU 韌體相關內容一律暫不公開，不限 MCU、角色、repository 或目錄。
 Tool 內的共用／模板原始碼、韌體映像、專用指南、建置／同步腳本及測試／mock 也適用；
 編譯、host/model/smoke 測試通過不能代替對應版本、實板與介面設定的驗證。
 
-十個 repository 的整批發布範圍尚未建立完整實板驗證清單，`-Execute` 目前會立即拒絕，
-在路徑解析、依賴載入、整理、Git index、commit 或網路操作之前停止，`-Yes` 也不能略過。
-Codex 應核對驗證證據與逐項發布清單；不可改用下層 helper 繞過。
-純 PC Tool／文件修改可使用明確清單提交，不能夾帶未驗證韌體相關內容。
-先前已公開的檔案與 Git 歷史不會因這項限制而自動撤回。
+`github_push.bat` 固定同步下列九個 CAN device repository。
+Tool／F24 host、RH850、UART／I2C／Xmodem 與網站不在這個入口的發布範圍。
+九個專案的來源、交付映像與 repository 路徑會組成 SHA256 快照；確認後若內容改變，流程停止。
+
+互動執行時，輸入 `VALIDATED_AND_PUSH` 表示這九個專案的目前來源與映像已完成實板驗證，並同意發布。
+僅有前版實板結果時，須由維護者另外明確核准這次快照的例外，記錄前版依據與本版離線回歸結果；
+該紀錄不會將本版標記為已實板驗證，也不能套用到其他專案或後續修改。
+`-Yes` 只略過一般提交確認，不能代替驗證依據或例外核准。
+發布紀錄與本機路徑保存在已忽略的 `tmp`，不加入公開操作頁面。
+完整同步成功後會保留 `tmp/internal/github_publish/last_can_acceptance.json`。
+下次互動執行若快照相同，可沿用紀錄並輸入 `PUSH`；內容變動則需重新確認。
 
 ## 範圍與保留檔
 
-固定順序為 F13 Boot／App／Transfer → F24 Classical Transfer／Boot／App → F24 CAN FD Transfer／Boot／App → Tool，
-下列為既有 catalog 的目標與交付檔參考，並非已取得實板驗證或目前可發布的清單。
-Tool repository 包含 F24 (MCU CAN host) 的 Bridge Boot／App。
+固定順序為 F13 Boot／App／Transfer → F24 Classical Transfer／Boot／App → F24 CAN FD Transfer／Boot／App。
 
 | Repository／專案 | DefaultBuild 僅保留 |
 | --- | --- |
@@ -32,16 +36,14 @@ Tool repository 包含 F24 (MCU CAN host) 的 Bridge Boot／App。
 | F24 device `RL78_F24_CAN_FD_Transfer` | `RL78_F24_CAN_FD_Transfer.hex`，燒錄器安裝 FD 通訊測試映像 |
 | F24 device `RL78_F24_Boot_loader_CAN_FD` | `boot0000_1FFF.hex`，燒錄器安裝 FD Boot |
 | F24 device `RL78_F24_Boot_loader_CAN_FD_app` | `RL78_F24_Boot_loader_CAN_FD_app_update.bin`，Tool CAN FD 更新 App |
-| [Tool](https://github.com/released/simple_renesas_isp_tool) 下的 `firmware/RL78_F24_Bridge_boot` | `RL78_F24_Bridge_boot.mot` |
-| Tool 下的 `firmware/RL78_F24_Bridge_app` | `RL78_F24_Bridge_app_bridge_update.bin`、`RL78_F24_Bridge_app_flash.mot` |
 
 只依明確檔名保留，不會因為副檔名是 BIN／HEX／MOT 就全部保留。
-App 原始 `.mot` 與已封裝的 `_flash.mot` 用途不同，安裝方式見 [Host App 工程](https://released.github.io/slide_isp_tool_for_RL78/#host-app-engineering)。
 其他原始碼、共用 driver、專案設定、根目錄的 App 初裝合併映像及正式文件不在清理範圍內。
 F13 App 根目錄的 `boot_app.hex` 供燒錄器初裝；`boot_app.bin` 是相同內容的 raw binary，起點為 `0x0000`，不是 Tool 的 CAN 更新映像。
-各操作應選用的檔案與下載連結集中於[下載與操作總覽](https://released.github.io/slide_isp_tool_for_RL78/#downloads)。
+各操作應選用的檔案與下載連結集中於[下載與操作總覽](https://released.github.io/slide_simple_renesas_isp_tool/#downloads)。
 F24 device App 根目錄的 `boot_app.hex` 保留作 Boot／App 合併初裝，與 F13 的分工相同。
-十二個 DefaultBuild 交付檔的清單集中於 `scripts/github_publish_catalog.ps1`，發佈與隔離測試引用同一份清單。
+九個 DefaultBuild 交付檔取自 `scripts/github_publish_catalog.ps1`；入口再核對九個專案的固定範圍。
+catalog 內保留的 Tool 項目不會被這個入口選入，也不表示 Tool 內的韌體已獲准發布。
 這個入口不重新編譯、不調整版號，也不納入 web repository。
 
 ## 路徑與執行
@@ -68,22 +70,9 @@ F24 device App 根目錄的 `boot_app.hex` 保留作 Boot／App 合併初裝，�
 路徑優先順序：命令參數 → 本機設定檔 → 環境變數 → Tool 相鄰目錄。
 
 需要只讀預覽時，直接執行下方不帶 `-Execute` 的 PowerShell 命令。
-批次檔會帶入 `-Execute`，目前因此直接停止，不會進入 `PUSH` 確認或執行整理。
+批次檔會帶入 `-Execute`，列出範圍、保留檔與快照後，要求本次驗證／發布確認。
 
-既有路徑規則另外排除下列專案，但這些名稱不涵蓋完整的未驗證韌體範圍：
-
-```text
-Sample_Project_RH850_S1_Boot_loader_*
-Sample_Project_RH850_S1_ISP_Boot_loader_*
-RL78_G16_ISP_Boot_loader_*
-RL78_G22_ISP_Boot_loader_*
-RL78_F13_ISP_Boot_loader_*
-RL78_F24_ISP_Boot_loader_*
-```
-
-即使這些專案目錄被複製到 Tool 內，也會依完整路徑元件排除，大小寫皆適用。
-預覽的 `DEFERRED` 清單列出排除項目；既有 tracked 修改也不會提交，本機檔案保留原狀。
-staged-index 檢查會拒絕此類路徑。這個 regex 只是額外防線，不能作為其他韌體已可發布的依據。
+入口只接受表列九個專案，不以排除名稱的 regex 推定其他韌體可公開。
 
 僅預覽，不連線、不整理、不提交：
 
@@ -91,28 +80,38 @@ staged-index 檢查會拒絕此類路徑。這個 regex 只是額外防線，不
 .\scripts\push_github.ps1
 ```
 
-以下執行方式目前會因實板驗證限制而停止：
+互動執行，或直接點擊 `github_push.bat`：
 
 ```powershell
-.\scripts\push_github.ps1 -Execute -Message 'Update Tool and CAN firmware'
+.\scripts\push_github.ps1 -Execute -Message 'Sync validated CAN device examples'
 ```
 
-加上 `-Yes` 仍會停止，不會略過實板驗證限制。
+非互動執行需提供已核對的本機紀錄：
+
+```powershell
+.\scripts\push_github.ps1 -Execute -Yes -AcceptanceFile '.\tmp\internal\release_acceptance.json'
+```
+
+紀錄包含 `Schema`、`Scope`、`SnapshotId`、逐檔雜湊、`BoardValidated`、`ValidationBasis` 與 `Evidence`。
+一般實板驗證使用 `ValidationBasis=current-board`、`BoardValidated=true`。
+明確核准的前版實板／本版離線回歸例外使用 `prior-board-offline-regression`，
+保留 `BoardValidated=false`，並須有 `ExceptionAuthorized=true` 與此次核准依據。
+缺少紀錄、內容不符、證據空白或快照已變更時拒絕執行；不會自動建立核准。
 
 ## 整理、驗證與恢復
 
-下列為既有整理流程的恢復參考；目前 `-Execute` 的前置限制會在進入此流程前停止。
+所有專案通過前置檢查與本次快照確認後，才進行整理與同步。
 
 ```mermaid
 flowchart TD
-    PLAN[核對十個 repository、main、origin 與必要交付檔] --> CONFIRM{確認提交範圍？}
+    PLAN[核對九個 repository、main、origin 與必要交付檔] --> CONFIRM{本次快照的驗證／發布確認？}
     CONFIRM -->|否| STOP[不變更檔案或 index]
     CONFIRM -->|是| FETCH[核對各 origin main 祖先關係<br/>首次發佈則確認遠端完全為空]
     FETCH --> VALID{全部符合？}
     VALID -->|否| STOP
     VALID -->|是| BACKUP[其餘 DefaultBuild 內容移至本機 tmp 備份]
     BACKUP --> INDEX[Stage；核對保留清單與本機資料排除規則]
-    INDEX --> COMMIT[十個 repository 各自 commit]
+    INDEX --> COMMIT[再次核對來源／映像快照<br/>九個 repository 各自 commit]
     COMMIT --> PUSH[依序一般 push；核對遠端 commit SHA]
     PUSH --> RESULT{全部完成？}
     RESULT -->|是| OK[保留 log 與備份]
@@ -121,15 +120,15 @@ flowchart TD
 
 - `DefaultBuild` 其餘內容移至 `tmp/internal/github_publish/<本次執行>/`，沒有永久刪除。
   `f13_boot`、`f13_app`、`f13_transfer`、`f24_device_transfer`、`f24_device_boot`、`f24_device_app`、
-  `f24_fd_transfer`、`f24_fd_boot`、`f24_fd_app`、`bridge_boot`、`bridge_app`
-  對應表格中的十一個目錄；同一層保留 `publish.log`。
+  `f24_fd_transfer`、`f24_fd_boot`、`f24_fd_app`
+  對應表格中的九個目錄；同一層保留 `publish.log` 與 `release_acceptance.json`。
 - 搬移任何輸出前，先檢查 `tmp/`、本機路徑設定、Tool 執行期 INI／log／reports。
   已被追蹤或未被忽略的本機資料會使流程停止，並列出 repository 與相對路徑；不自動刪除或取消追蹤。
 - 缺少／空白交付檔、錯誤 origin、非 main、未處理的 staged changes、Git 操作未完成、junction／symlink，均停止。
   已明確取消本機資料追蹤的 staged deletion 可納入提交；其餘 staged 新增、修改或原始碼刪除仍停止。
   不自動切換分支、不 pull／merge／rebase、不 force push。
 - 遠端 main 必須是本機 HEAD 的祖先。若遠端已有本機沒有的修改，先檢視及同步，再重新執行。
-- 十個 repository 的 push **不是原子交易**。若第二個 push 失敗，第一個可能已完成。
+- 九個 repository 的 push **不是原子交易**。若第二個 push 失敗，第一個可能已完成。
   保留各 repository 的 commit 與備份，修正原因後重新執行；沒有變更時不另建空 commit。
 - 只更新目前分支內容，不重寫 Git 歷史；先前已提交的建置輸出仍可由歷史版本查到。
 - 編譯期間不要執行整理。核對後若 Git 狀態或交付檔變動，流程停止；鎖定檔案不會強制刪除。
@@ -137,9 +136,9 @@ flowchart TD
 
 需要恢復除錯輸出時，可正常重建，或由本次備份複製回原 `DefaultBuild`。
 同名檔已重新產生時先比對內容，不直接覆寫。
-隔離流程測試為 `scripts/verify_github_publish.ps1`，只使用本機測試 repository／bare remote，不連接 GitHub。
-`-PublicationBoundaryOnly` 是舊路徑規則的隔離測試，不代表完整實板驗證，也不能授權 Tool 內的韌體相關內容發布。
-目前入口的停止行為以 `scripts/verify_firmware_publication_hold.ps1` 隔離驗證；不重跑未受影響的產品建置或舊整批流程測試。
+隔離流程測試為 `scripts/verify_can_publication.ps1`，使用本機測試 repository／bare remote，
+驗證目前入口的範圍、驗證紀錄、來源漂移、備份、提交與九個遠端 SHA，不連接 GitHub。
+測試資料完成後由執行器移除；合成紀錄不代表韌體實板驗證。
 
 ## 本機資料排除與重試
 
@@ -161,7 +160,7 @@ git rm --cached -- tmp/build/app_rebuild.log
 
 若先前執行已搬移 DefaultBuild 輸出，可依 `publish.log` 與備份核對該次整理。
 需要解除腳本留下的暫存刪除時，只處理已確認的個別路徑，保留其他 staged changes；不重設整個 index 或還原工作目錄。
-確認後執行 `scripts/push_github.ps1` 預覽，再透過 `github_push.bat` 檢視清單並輸入 `PUSH`。
+確認後執行 `scripts/push_github.ps1` 預覽，再透過 `github_push.bat` 檢視清單並確認當次版本。
 
 ## 第一次加入 device repository
 
@@ -182,11 +181,11 @@ CAN FD 對應 `released/RL78_F24_CAN_FD_Transfer`、`released/RL78_F24_Boot_load
 
 <a id="fd-publication-layout"></a>
 
-## FD 工程相依與生成路徑
+## FD 工程目錄與生成路徑
 
-FD App 與 FD Transfer 建置均引用同層的 `RL78_F24_Boot_loader_CAN_FD`；
-三個 checkout 保持原有資料夾名稱，置於同一父目錄。各 README 列出使用的 build 入口。
-發佈腳本不代替 MCU 建置，也不將共用來源複製成另一套。
+FD Boot、App 與 Transfer 各自包含來源碼、設定及 PowerShell helpers，可分別建置。
+搭配安裝的 Boot／App 契約保持相容；各 README 列出本機 build 入口。
+發佈腳本只處理發佈，不代替 MCU 建置或同步工程設定。
 
 FD 的 `tools/prepare_projects.ps1` 使用相對的產生器檔名與輸出目錄，
 並整理 `iodefine.h` 命令註解；SFR 宣告、授權文字與 CS+ 工具鏈安裝設定保持不變。

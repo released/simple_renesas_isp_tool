@@ -29,7 +29,7 @@ class PublicContentRules(unittest.TestCase):
         self.assertIn(NAME, (WEB / 'AGENTS.md').read_text(encoding='utf-8-sig'))
         self.assertEqual((ROOT / 'docs' / NAME).read_text(encoding='utf-8-sig').split('\n', 1)[1], source)
         self.assertIn(NAME, (ROOT / 'AGENTS.md').read_text(encoding='utf-8-sig'))
-        for folder in ('slide_boot_loader_for_RL78', 'slide_isp_tool_for_RL78'):
+        for folder in ('slide_boot_loader_for_RL78', 'slide_simple_renesas_isp_tool'):
             page = WEB / folder
             self.assertIn(NAME, (page / 'AGENTS.md').read_text(encoding='utf-8-sig'))
             self.assertIn(NAME, (page / 'README.md').read_text(encoding='utf-8-sig'))
@@ -48,7 +48,7 @@ class PublicContentRules(unittest.TestCase):
             def run(*arguments):
                 return subprocess.run(['powershell.exe', '-NoProfile', '-File', str(script), *arguments], capture_output=True)
             copies = []
-            for folder in ('slide_boot_loader_for_RL78', 'slide_isp_tool_for_RL78'):
+            for folder in ('slide_boot_loader_for_RL78', 'slide_simple_renesas_isp_tool'):
                 page = root / folder
                 page.mkdir()
                 for name in ('index.md', 'README.md', 'AGENTS.md'):

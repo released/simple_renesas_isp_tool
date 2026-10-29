@@ -10,20 +10,32 @@ void ScrollToEnd(HWND window) {
     SendMessageW(window,WM_VSCROLL,SB_BOTTOM,0);
 }
 void Append(HWND window,const std::wstring& text,COLORREF color,bool follow) {
-    if (!IsWindow(window)) return;
+    AppendBatch(window,{{text,color}},follow);
+}
+void AppendBatch(HWND window,const std::vector<Line>& lines,bool follow) {
+    if (!IsWindow(window) || lines.empty()) return;
     CHARRANGE selection={}; POINT viewport={};
     const auto first_line=SendMessageW(window,EM_GETFIRSTVISIBLELINE,0,0);
     SendMessageW(window,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&selection));
     const bool pixel_position=SendMessageW(window,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&viewport))!=0;
     const bool visible=(GetWindowLongPtrW(window,GWL_STYLE)&WS_VISIBLE)!=0;
-    if (!follow && visible) SendMessageW(window,WM_SETREDRAW,FALSE,0);
+    if (visible) SendMessageW(window,WM_SETREDRAW,FALSE,0);
     CHARRANGE end={-1,-1};
     SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&end));
     CHARFORMATW format={}; format.cbSize=sizeof(format);
-    format.dwMask=CFM_COLOR; format.crTextColor=color;
-    SendMessageW(window,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
-    SendMessageW(window,EM_REPLACESEL,FALSE,reinterpret_cast<LPARAM>(text.c_str()));
-    if (follow) ScrollToEnd(window);
+    format.dwMask=CFM_COLOR;
+    for(std::size_t i=0;i<lines.size();) {
+        format.crTextColor=lines[i].color;
+        std::wstring text=lines[i++].text;
+        while(i<lines.size() && lines[i].color==format.crTextColor) text+=lines[i++].text;
+        SendMessageW(window,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
+        SendMessageW(window,EM_REPLACESEL,FALSE,reinterpret_cast<LPARAM>(text.c_str()));
+    }
+    if (follow) {
+        if(visible) SendMessageW(window,WM_SETREDRAW,TRUE,0);
+        ScrollToEnd(window);
+        if(visible) InvalidateRect(window,nullptr,FALSE);
+    }
     else {
         SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&selection));
         // Let RichEdit recalculate its scroll range before restoring the view.

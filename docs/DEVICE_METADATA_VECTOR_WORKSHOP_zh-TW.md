@@ -10,6 +10,8 @@
 兩份工程共同作為後續 MCU 的 [golden sample](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/DEVICE_GOLDEN_SAMPLE_zh-TW.md)。
 編輯與建置使用 C header、Windows PowerShell／.NET 與 CS+；不需要 Python。
 
+<a id="guide-app-development-1"></a>
+
 ### A. 專案配置與共用介面
 
 | 項目 | F13 (MCU CAN device) | F24 (MCU CAN device) |
@@ -23,7 +25,8 @@
 | 版本／build 編輯來源 | App `app_image_config.h` | App `app_image_config.h` |
 | IRQ 編輯來源 | 各 App 的 `app_irq_handlers.h`＋已註冊 ISR C 檔 | 同左 |
 
-App 與 matching Boot 以原名稱放在同一父目錄；保留相鄰 Boot 提供的腳本／共用來源。
+App 工程自備設定、來源碼與建置腳本，可單獨編譯。
+搭配安裝的 Boot／App 契約保持相容；[目錄與程式入口](https://released.github.io/slide_boot_loader_for_RL78/#device-project-entry)說明來源分工。
 F13 可由 [Boot](https://github.com/released/RL78_F13_Boot_loader_CAN)／[App](https://github.com/released/RL78_F13_Boot_loader_CAN_app) 取得。
 F24 device 的板端設定與建置方式見 [F24 CAN device 工程配置](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device)。
 獨立 Transfer 專案是通訊測試整機映像，不是可載入的 App 更新 BIN。
@@ -33,10 +36,10 @@ F24 device 的板端設定與建置方式見 [F24 CAN device 工程配置](https
 | 檔案 | 內容 | 編輯方式 |
 | --- | --- | --- |
 | `app_image_config.h` | App 版本、build 與映像身分核對值 | 使用者設定 |
-| Boot `image_metadata_config.h` | 格式、MCU／Flash、IRQ ABI、更新政策與 Boot 版本 | 共用映像契約；變動時核對 Boot／App、linker、封裝及 Tool |
-| Boot `can_boot_config.h` | CAN ID、速率宣告、命令與接收規則 | CAN 通訊設定；搭配實際 clock／timing 修改 |
-| Boot `boot_app_handoff.h` | 共用 RAM、IRQ owner 與一次性交接標記 | 啟動交接契約；與 linker／startup／向量產生器對應 |
-| `image_metadata.c/.h` | 執行時欄位解碼與完整 metadata 驗證 | 共用 C90 模組；Boot／App 分別編譯引用 |
+| 各工程 `image_metadata_config.h` | 格式、MCU／Flash、IRQ ABI、更新政策與 Boot 版本 | 共用映像契約；變動時核對 Boot／App、linker、封裝及 Tool |
+| 各工程 `can_boot_config.h` | CAN ID、速率宣告、命令與接收規則 | CAN 通訊設定；搭配實際 clock／timing 修改 |
+| 各工程 `boot_app_handoff.h` | 共用 RAM、IRQ owner 與一次性交接標記 | 啟動交接契約；與 linker／startup／向量產生器對應 |
+| `hal/image/image_metadata.c/.h` | 執行時欄位解碼與完整 metadata 驗證 | 共用 C90 模組；Boot／App 分別編譯引用 |
 | `image_metadata_profile.c` | 工程接受的 32-word metadata core | 結合映像契約與 ISP 設定；不操作 driver register |
 | `app_irq_handlers.h` | 實體 vector → ISR 函式名稱 | 使用者設定，搭配 App 的 ISR C 檔 |
 | `.inc`、identity header、向量表 | 編譯與封裝所需資料 | 產生器輸出；檔名見 [建置產物](#device-app-build) |
@@ -50,11 +53,13 @@ CAN 參數仍會被記錄到 BIN，產生器及驗證端在組合欄位時讀取
 
 日常 App 發行編輯 `app_image_config.h`；改 MCU／分區／格式時核對 `image_metadata_config.h`；
 改 CAN 通訊參數時核對 `can_boot_config.h` 與驅動。
-CS+ 專案樹已列入這些設定 header。F13 App 的同名 metadata header 只引用相鄰 Boot 契約，
-不另存一份可獨立修改的共用數值。
+CS+ 專案樹已列入本工程的設定 header。
+Boot／App 各自保存契約；調整 MCU、分區或通訊配置時，分別更新搭配安裝的兩個工程。
 
 <a id="device-app-json"></a>
 <a id="device-app-config"></a>
+
+<a id="guide-app-development-2"></a>
 
 ### B. Metadata 設定與產生來源
 
@@ -80,7 +85,7 @@ App 版本、Boot 版本與 minimum Boot 為不同欄位。
 | `APP_IMAGE_TARGET_ID` | 與 paired Boot 核對映像身分，不是 MCU 選擇器 | F13 `0xF13BU`／F24 `0xF24BU`；只改成 `0xF33BU` 會在 pre-build 被拒絕 |
 | `APP_IMAGE_ROLE` | 更新目的地角色 | 協定 `1U`＝DEVICE_APP、`2U`＝HOST_BRIDGE_APP；本工程要求 `1U`，改 `2U` 或未定義的 `5U` 都拒絕產生 |
 | `APP_IMAGE_UPDATE_TRANSPORTS` | 允許的更新介面 bitmask，不是 App 執行時使用的周邊 | 協定 `0x01U`＝CAN、`0x02U`＝I2C、`0x04U`＝UART，`0x03U`＝CAN＋I2C；本 CAN 工程僅接受 `0x01U`，其他值不會啟用另一種更新流程 |
-| `APP_IMAGE_VERSION_CONTROL` | 已安裝有效 App 的版本政策 | `0U`＝任意版本、`1U`＝同版／新版；其他值拒絕產生；維護操作見 [force 降版](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version) |
+| `APP_IMAGE_VERSION_CONTROL` | 已安裝有效 App 的版本政策 | `0U`＝任意版本、`1U`＝同版／新版；其他值拒絕產生；維護操作見 [force 降版](https://released.github.io/slide_simple_renesas_isp_tool/#force-old-version) |
 
 Boot 自身的版本／build 位於 `image_metadata_config.h` 的 `IMAGE_BOOT_VERSION`／`IMAGE_BOOT_BUILD`。
 App producer 將該 Boot 版本寫成 metadata 的 minimum Boot；板上 Boot 版本須不低於此值。
@@ -89,30 +94,17 @@ App producer 將該 Boot 版本寫成 metadata 的 minimum Boot；板上 Boot �
 
 #### B1. F13：編輯 app_image_config.h
 
-修改前：
+以下為 App 發行設定範例；六個 define 的用途與可接受值見上表。
+例如將版本改為 1.5.1、build 改為 20261016：
 
 ```c
 #ifndef APP_IMAGE_CONFIG_H
 #define APP_IMAGE_CONFIG_H
 
-#define APP_IMAGE_VERSION           (0x00010500UL)
-#define APP_IMAGE_BUILD             (20261015UL)
-#define APP_IMAGE_TARGET_ID         (0xF13BU)
-#define APP_IMAGE_ROLE              (1U)    /* DEVICE_APP */
-#define APP_IMAGE_UPDATE_TRANSPORTS (0x01U) /* CAN */
-#define APP_IMAGE_VERSION_CONTROL   (0U)    /* 0=any; 1=same/newer */
-
-#endif
-```
-
-修改後（僅示範 App 資訊變更）：
-
-```c
-#ifndef APP_IMAGE_CONFIG_H
-#define APP_IMAGE_CONFIG_H
-
+/* App release: packed major/minor/patch, independent of Boot version. */
 #define APP_IMAGE_VERSION           (0x00010501UL)
 #define APP_IMAGE_BUILD             (20261016UL)
+/* Contract checks: these values must match this project's Boot profile. */
 #define APP_IMAGE_TARGET_ID         (0xF13BU)
 #define APP_IMAGE_ROLE              (1U)    /* DEVICE_APP */
 #define APP_IMAGE_UPDATE_TRANSPORTS (0x01U) /* CAN */
@@ -121,58 +113,30 @@ App producer 將該 Boot 版本寫成 metadata 的 minimum Boot；板上 Boot �
 #endif
 ```
 
-App pre-build 讀 App C header、Boot 的 `image_metadata_config.h` 及 CAN 設定，產生 `ftable.inc`／`app_identity.h`；
-`ftable_RL78_F13.asm` 依生成常數排列 App metadata，讓 App INFO 與 BIN 使用同一版本／build。
-`IMAGE_SIZE_POST_BUILD = 0xFFFFFFFF` 是封裝前的長度預留值，post-build 會填入實際大小。
+App pre-build 讀取本工程的 C header，產生 `ftable.inc`／`app_identity.h`。
+`ftable_RL78_F13.asm` 排列 metadata；封裝時填入實際長度與 CRC。
+`IMAGE_SIZE_POST_BUILD = 0xFFFFFFFF` 是封裝前的長度預留值。
 
 #### B2. F24 device：編輯 app_image_config.h
 
-修改前：
+使用相同的六個 define；發行時修改 version／build，工程身分依下表保留。
 
-```c
-#ifndef APP_IMAGE_CONFIG_H
-#define APP_IMAGE_CONFIG_H
+| 欄位 | F13 範例 | F24 範例 |
+| --- | --- | --- |
+| `APP_IMAGE_VERSION` | `0x00010501UL`，1.5.1 | `0x00010001UL`，1.0.1 |
+| `APP_IMAGE_BUILD` | `20261016UL` | `20261016UL` |
+| `APP_IMAGE_TARGET_ID` | `0xF13BU` | `0xF24BU` |
+| Role／transport／version control | `1U`／`0x01U`／`0U` | `1U`／`0x01U`／`0U` |
 
-#define APP_IMAGE_VERSION           (0x00010000UL)
-#define APP_IMAGE_BUILD             (20261015UL)
-#define APP_IMAGE_TARGET_ID         (0xF24BU)
-#define APP_IMAGE_ROLE              (1U)    /* DEVICE_APP */
-#define APP_IMAGE_UPDATE_TRANSPORTS (0x01U) /* CAN */
-#define APP_IMAGE_VERSION_CONTROL   (0U)    /* 0=any; 1=same/newer */
-
-#endif
-```
-
-修改後（保留契約欄位）：
-
-```c
-#ifndef APP_IMAGE_CONFIG_H
-#define APP_IMAGE_CONFIG_H
-
-#define APP_IMAGE_VERSION           (0x00010001UL)
-#define APP_IMAGE_BUILD             (20261016UL)
-#define APP_IMAGE_TARGET_ID         (0xF24BU)
-#define APP_IMAGE_ROLE              (1U)    /* DEVICE_APP */
-#define APP_IMAGE_UPDATE_TRANSPORTS (0x01U) /* CAN */
-#define APP_IMAGE_VERSION_CONTROL   (0U)    /* 0=any; 1=same/newer */
-
-#endif
-```
-
-`prepare_projects.ps1` 核對 C header，產生 `app_identity.h`、`ftable.inc`
-與其組語 wrapper；linker 將該 256-byte metadata 放到 `0x2100`。
-`package_images.ps1` 比對已編譯 metadata 與同一 C header／Boot contract，再填實際長度與尾端 CRC。
-geometry、IRQ ABI、CAN routing 等欄位由 Boot 契約提供。
-更新目的地與介面的核對規則見 [更新政策](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy)。
+`tools/prepare_projects.ps1` 讀取本工程 header，產生 identity、metadata 與 IRQ table。
+`tools/package_images.ps1` 核對已編譯內容及工程契約，再填入實際長度與尾端 CRC。
+兩者都使用 App 本地設定與工具；App-only 建置不讀取或修改另一份 Boot 專案。
+安裝到板上的 Boot 仍須符合 [更新政策](https://released.github.io/slide_simple_renesas_isp_tool/#image-update-policy)。
 
 `app_image_config.h` 使用上述六個 `APP_IMAGE_*` define 與固定 include guard。
 數值採 C 的十六進位或十進位整數，可加 `U`／`UL` 及一層括號；version 為 `0x00000000..0x00FFFFFF`，build 為 `0..4294967294`。
 設定以 literal 表示，不使用條件編譯、其他 include 或運算式；C90 `/* ... */` 註解可保留。
 產生器會拒絕缺少／重複／未知 define、契約不符或非整數設定。
-
-工程內的 header 在每個欄位旁標示用途、編碼與修改條件。
-version／build 是 App 身分設定；target／role／transport 是與 Boot 核對的契約值。
-完整 Flash／CAN／IRQ ABI 資料由 Boot 契約產生，不需要在 App header 重複填寫。
 
 #### B3. 用 address 與 byte 核對結果
 
@@ -241,11 +205,11 @@ flowchart TD
 
 #### 模組移植步驟
 
-1. 保留 `image_metadata.c/.h`，依實際 MCU／分區修改 `image_metadata_config.h`。
+1. 保留 `hal/image/image_metadata.c/.h`，依實際 MCU／分區修改 `image_metadata_config.h`。
 2. 在 `image_metadata_profile.c` 組合工程接受的身分、格式與 ISP 參數。
    換介面時對應其設定與 adapter；共用解析模組不處理通訊命令或 register。
 3. 在 Boot／App 的 CS+ 專案樹註冊 C 來源與 header；C 來源各編譯一次，不以 include 合併 C 檔。
-   範例已完成註冊，App 引用相鄰 Boot 的本機來源。
+   範例已完成註冊，Boot／App 分別編譯本工程的 `hal/image` 來源。
 4. Boot 在 metadata staging、已安裝映像判斷與 END 使用共用驗證；
    CRC、向量檢查及 Flash 保護維持在 Boot 流程。
    App 讀欄位時呼叫 `ImageMetadataRead32`，不另行複製 byte shift 或直接套用未對齊 struct。
@@ -260,6 +224,8 @@ flowchart TD
 
 <a id="device-app-irq"></a>
 
+<a id="guide-app-development-3"></a>
+
 ### C. App Vector Table：新增 IRQ 範例
 
 本例使用兩個 device header 都定義的 `INTP1 = 0x0A`。
@@ -269,7 +235,7 @@ Vector 位址是**實體 vector byte address**，不是 IRQ 序號、App slot �
 
 <a id="device-irq-ownership"></a>
 
-#### C0. Boot／App 中斷所有權與向量轉送
+#### C0. Boot／App 中斷入口與交接
 
 本節的 RL78 工程由固定 Boot 持有實體 vector，再由軟體 dispatcher 轉送到 App。
 App 不寫入實體 vector，而是在固定位置提供跳轉表；表內的 `BR` 指向該 App 的實際 ISR。
@@ -340,7 +306,7 @@ App slot = App start + (physical vector byte address / 2) * 4
 | CPU 讀取實體 vector | `0x002E`，進入 Boot 固定 stub／dispatcher | App `iodefine.h` 的 `INTTM01`；Boot `f24_boot_vectors.asm` |
 | owner 選擇 App | `0x55`，轉送至 App slot `0x205C` | Boot dispatcher；槽位為 BIN offset `0x5C` |
 | 跳轉至 ISR | 該 slot 的 `BR !!_Device_TimerIsr` | App `app_irq_table.inc`；由 `X(0x2E, Device_TimerIsr)` 產生 |
-| ISR 返回 | `Device_TimerIsr` 執行後以 RETI 返回 | App 的 `common/device_board.c` |
+| ISR 返回 | `Device_TimerIsr` 執行後以 RETI 返回 | App 的 `hal/device/device_board.c` |
 
 `0x205C` 是跳轉槽位，不是 ISR 本體的固定程式位址。
 產生器與 linker 依 App 的 mapping 及實際連結結果填入 `BR` 目的地，無需手動指定 ISR 位址。
@@ -514,7 +480,7 @@ Vector 位址的來源是此 App 的 [iodefine.h](https://github.com/released/RL
 #### C3. F24 device mapping：保留自己的 timer
 
 F24 App 的 `iodefine.h` 定義 `INTTM01 = 0x002E`。
-本工程的 timer ISR 為 `common/device_board.c` 中的 `Device_TimerIsr`，因此使用 `X(0x2E, Device_TimerIsr)`。
+本工程的 timer ISR 為 `hal/device/device_board.c` 中的 `Device_TimerIsr`，因此使用 `X(0x2E, Device_TimerIsr)`。
 `0x0A` 對應此 App header 中的 `INTP1 = 0x000A`，搭配 C1 的 `app_aux_irq` 範例。
 
 修改前：
@@ -579,73 +545,66 @@ flowchart TD
 
 <a id="device-app-build"></a>
 
+<a id="guide-app-development-4"></a>
+
 ### D. 產生與建置
 
-下列是相鄰工程的相對路徑；在自己的 App 根目錄執行。先備份／記錄 matching Boot image 雜湊。
-範例只變動 App 資訊及一般 IRQ，**不應呼叫 Boot 產表或 Boot rebuild**。
-兩個 device 都使用 Windows PowerShell 與工程對應的 CS+／CC-RL。
-CS+ 開啟自己的 App `.mtpj`，建置組態為 `DefaultBuild`。
-下方 PowerShell 腳本以單次 `-ExecutionPolicy Bypass` 執行，不需永久更改系統執行原則。
+在選定的 App 根目錄執行下列命令，或以 CS+ 開啟此 App 的 `.mtpj`，使用 `DefaultBuild` Rebuild。
+兩個工程都自備產表、封裝與驗證工具；不需要相鄰 Boot checkout。
+一般 App 功能或 IRQ 變更只建置 App；改分區、通訊或映像契約時，另依 [移植核對](https://released.github.io/slide_boot_loader_for_RL78/porting.html) 更新搭配安裝的 Boot。
+PowerShell 使用單次 `-ExecutionPolicy Bypass`，不需永久更改系統執行原則。
 
 #### D0. 第一次操作：逐步完成一次 App 變更
 
-1. 選定 F13 或 F24 **device** 的 matching Boot/App，按原名稱放在同一父目錄；確認工程可建置。
-2. 保存 Boot HEX、App 更新 BIN 與兩份 C header，記錄 Boot image 雜湊。
-3. 開啟 App 的 `app_image_config.h`，修改 `APP_IMAGE_VERSION`／`APP_IMAGE_BUILD`；對照 B1 或 B2，保留 target／role／transport。使用 UTF-8，程式註解採英文 C90 寫法。
-4. 若只升版本，跳到第6步。若新增 IRQ，依 C1 新增正常 ISR C 檔，並在 CS+ **此 App** 的 MTPJ 加入來源；還不要啟用硬體 IRQ。
-5. 編輯這個 App 的 `app_irq_handlers.h`，保留既有清單，再加入 `0x0A` 範例或已核對的合法 vector／handler。
-6. 從 App 根目錄執行 D1 或 D2 的產生命令，再執行 CheckOnly。錯誤先修正 C header／MTPJ／ISR，不手改 `.inc`、identity 或 table。
-7. Clean Rebuild **App**，確認 pre-build 與 post-build 都成功。對照下方產物表，確認新 table、version／build、實際 BIN 長度與 CRC；使用此次成功建置的產物。
-8. 在 Tool CAN TAB 載入該 App 的 `*_update.bin`，依 E 節核對映像版本、Metadata VALID 與 CRC MATCH；這一步不寫 MCU。
-9. Open + Probe host、Discover **device**，核對 live target／layout／CAN／IRQ ABI／minimum Boot；相容才 Enter Boot 並開始更新，不以離線 BIN 取代 live 身分。
-10. END／reset 後另外確認 App 版本 INFO／UART、既有 IRQ 與新 IRQ；最後比較 Boot 區／映像未變。硬體 IRQ 啟用前的初始化與故障測試仍需另作。
+1. 下載所選 App 工程，確認 `app_image_config.h`、`app_irq_handlers.h` 與本地建置工具齊全。
+2. 修改 App version／build；各欄位的意義見 [Metadata 設定](#device-app-config)。
+3. 若新增 IRQ，依 [IRQ 範例](#guide-app-development-3) 完成 ISR、MTPJ source registration、mapping 及周邊初始化；只改版本可略過此步。
+4. 在 App 根目錄執行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1`，或 CS+ Rebuild。
+5. 確認 pre-build、linker 及 post-build 全部成功；在 `DefaultBuild/app_build_report.html` 核對實際 BIN、metadata、CRC 與 IRQ table。
+6. 使用此次的 `*_update.bin`，依 [Tool CAN 更新操作](https://released.github.io/slide_simple_renesas_isp_tool/can-update.html) 更新並確認 App；驗證新增 IRQ 的實際動作。
 
-只升 App 版本時不必新增 ISR；只新增 IRQ 時也不必更改 target 或 Boot 版本。
+產生器負責輸出 `.inc`、identity 與 table；這些檔案不作為手動編輯入口。
+只增加一般 App IRQ 時，固定表大小與 Boot 映像不需變動；ISR、周邊初始化與中斷旗標處理仍由 App 完成。
 
 #### D1. F13 device
 
-```powershell
-# Generate this App's metadata INC, IRQ table and identity; never Boot.
-powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File "..\RL78_F13_Boot_loader_CAN\generate_irq_contract.ps1" `
-  -Mode App -AppProject "."
+正常建置會依 App `.mtpj` 自動執行產表與封裝。需要單獨查看產生結果時，可在此 App 根目錄執行：
 
-# Read-only freshness check; run after generating, not instead of generating.
+```powershell
+# Generate this App's metadata, identity and IRQ table.
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File "..\RL78_F13_Boot_loader_CAN\generate_irq_contract.ps1" `
-  -Mode App -AppProject "." -CheckOnly
+  -File .\generate_irq_contract.ps1 -Mode App -AppProject .
+
+# Read-only freshness check; does not repair generated files.
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\generate_irq_contract.ps1 -Mode App -AppProject . -CheckOnly
+
+# Rebuild this App and run its pre/post-build guards.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-然後在 CS+ **Clean Rebuild 此 App**。原有 pre-build 保留上述 App-mode 命令，
-post-build 保留 `generate_update_image.ps1`；該腳本依 map／App HEX 封裝，並非只產表就有新 BIN。
-Tool 的 `scripts/verify_f13_artifacts.ps1` 可作後續檢查，需指定正確 Boot／App project。
-F13 目前仍保留參考 MTPJ／map／輸出檔名與 sibling Boot 假設；若改專案名／搬目錄，
-必須另外對齊 source／include／hook、`-MapFile`、輸出命名、checker 及 Boot HEX 來源。
+Pre-build 使用本地 `generate_irq_contract.ps1 -Mode App -AppProject .`；post-build 使用本地 `generate_update_image.ps1`。
+產表成功不等於已完成新 BIN；封裝還會核對 map、已連結向量與實際程式。
 
 #### D2. F24 device
 
 ```powershell
-# Update this App's projections / registered project settings, never Boot.
+# Generate this App's compiler artifacts without changing project registration.
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File "..\RL78_F24_Boot_loader_CAN\tools\prepare_projects.ps1" `
-  -Kind app -Project "."
+  -File .\tools\prepare_projects.ps1 -Kind app -Project . -ArtifactsOnly
 
-# Read-only freshness / registration check.
+# Check this App's generated artifacts and registered project settings.
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File "..\RL78_F24_Boot_loader_CAN\tools\prepare_projects.ps1" `
-  -Kind app -Project "." -CheckOnly
+  -File .\tools\prepare_projects.ps1 -Kind app -Project . -CheckOnly
 
-# Clean rebuild and mandatory map / image packaging checks.
-powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File "..\RL78_F24_Boot_loader_CAN\build.ps1" `
-  -Kind app -AppProject "."
+# Rebuild this App and run its pre/post-build guards.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-CS+ pre-build 使用 `prepare_projects.ps1 -Kind app -Project . -ArtifactsOnly`；
-post-build 使用 `package_images.ps1 -Kind app -Project .`。`-ArtifactsOnly` 僅產生編譯所需檔案。
-只改一般 App 功能，不用省略 kind 的 all-mode prepare／build；SC 重產後先重新 prepare **app**。
-若改名或搬移，仍須修正相對 source／include／hook 路徑；不是任意 standalone App 加 C header 即可。
-F24 device prepare 使用同一磁碟內的相對路徑。
+Pre-build 使用本地 `tools/prepare_projects.ps1 -Kind app -Project . -ArtifactsOnly`；
+post-build 使用本地 `tools/package_images.ps1 -Kind app -Project .`。
+SC 重新產生後若需恢復 project registration，可先執行本地 `tools/prepare_projects.ps1 -Kind app -Project .`，再 Rebuild。
+搬移或改名工程時，核對本地 source／include、MTPJ hook、map 與產物命名；App 的來源不指向另一份 Boot 工程。
 
 | 產物 | F13 device | F24 device |
 | --- | --- | --- |
@@ -655,9 +614,9 @@ F24 device prepare 使用同一磁碟內的相對路徑。
 | 瀏覽器編譯摘要 | `DefaultBuild/app_build_report.html` | `DefaultBuild/app_build_report.html` |
 | 後續 CAN 更新 | `DefaultBuild/RL78_F13_Boot_loader_CAN_app_update.bin` | `DefaultBuild/<MTPJ stem>_update.bin` |
 | 燒錄器初裝 App | `DefaultBuild/flash_app_variable_CRC.hex` | `DefaultBuild/flash_app_variable_CRC.hex` |
-| matching Boot 初裝 | 先核對 `boot_app.hex` 的來源／產生時間；或 matching Boot＋App HEX | matching `boot0000_1FFF.hex`＋封裝 App HEX，依燒錄器設定核對擦除範圍 |
+| matching Boot 初裝 | matching `boot0000_1FFF.hex`＋封裝 App HEX，核對各自地址範圍 | matching `boot0000_1FFF.hex`＋封裝 App HEX，依燒錄器設定核對擦除範圍 |
 
-F13 若找不到 sibling Boot HEX，post-build 不會產生新的合併檔；先前的 `boot_app.hex` 可能仍留著。
+燒錄器初裝時分別選擇 Boot HEX 與封裝 App HEX，核對兩者的地址範圍。
 任何 build／guard 失敗，先前 BIN 仍可能保留，使用前核對此次建置結果。
 raw App MOT／ABS 可能包含低位實體記錄，不應代替已封裝的 App HEX 或 update BIN。
 post-build 會拒絕 C header 與已編譯 metadata／IRQ 表不同的編譯輸出；C header 修改後進行 clean rebuild。
@@ -695,7 +654,7 @@ F24 device 的 hash 命令使用 `RL78_F24_Boot_loader_CAN_app_update.bin`。
 | 報告種類 | 產生時機與用途 |
 | --- | --- |
 | `app_build_report.html` | MCU App 編譯／封裝完成；核對映像、metadata、vector 與程式設定 |
-| Tool `reports/update_*.json` | 一次實際更新操作結束；記錄結果、分階段耗時、重試、counter 差值與錯誤，見 [更新報告](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation) |
+| Tool `reports/update_*.json` | 一次實際更新操作結束；記錄結果、分階段耗時、重試、counter 差值與錯誤，見 [更新報告](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation) |
 
 編譯摘要不連接 MCU，不代表 Flash 已寫入或 App 已啟動。
 Tool 的更新報告也不取代編譯產物檢查；板上啟動與 IRQ 行為另外依 [驗證步驟](#device-app-validation) 核對。
@@ -704,40 +663,226 @@ Tool 的更新報告也不取代編譯產物檢查；板上啟動與 IRQ 行為�
 
 #### 由現有 App BIN 產生 FF 填充測試映像
 
-F13 Classical CAN、F24 Classical CAN 與 F24 CAN FD 的 App 根目錄皆提供
-`generate_test_bins.bat`／`generate_test_bins.ps1`。
-先完成一般 App 建置，再雙擊 batch，或在該 App 根目錄執行：
+App 在正常建置、封裝及映像檢查成功後，自動於 `test_bins/auto/` 產生大容量測試 BIN。
+在 CS+ 使用 Build／Rebuild，或使用工程原有的 PowerShell 建置入口，皆使用相同的 post-build 流程。
+開啟 `test_bins/auto/index.html`，可依實際 BIN 大小、CRC 與 SHA-256 選擇測試檔。
+產生器不重新編譯 Boot，也不改動 `DefaultBuild/*_update.bin`。
+
+各獨立 App 使用自己的 metadata、Flash 容量與 IRQ 契約。
+CAN、CAN FD、UART、I2C 與 Xmodem 的更新介面沿用來源 BIN，不因填充而改變。
+以下為 RL78 工程的預設容量；其他 MCU 以其配對工程的配置為準：
+
+| MCU | Boot reserve | 最大完整 App BIN | 尾端保護 |
+| --- | --- | --- | --- |
+| F13 | 8 KiB | 119 KiB | 最後 1 KiB |
+| F24 | 8 KiB | 247 KiB | 最後 1 KiB |
+| G16 | 8 KiB | 23 KiB | 最後 1 KiB |
+| G22 | 8 KiB | 55 KiB | 最後 1 KiB |
+
+若需要另外保留一組手動測試批次，可在 App 根目錄雙擊 `generate_test_bins.bat`，或執行：
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\generate_test_bins.ps1
 ```
 
-腳本使用 Windows PowerShell／.NET 及相鄰配對 Boot 的 `app_config.ps1`，
+腳本使用 Windows PowerShell／.NET 及該 App 內的 `app_config.ps1`，
 讀取 `DefaultBuild/*_update.bin`，不重新編譯或修改 Boot／App 原始碼。
 來源的 metadata、CRC、向量範圍與 App C header 身分先通過檢查，才建立測試檔。
 
 | 產物／處理 | 內容 |
 | --- | --- |
-| `test_bins/<batch>/*.bin` | 每次建立新批次；檔名同時標示 Boot＋App 的 Flash 級距與實際 App BIN 大小 |
-| 預設 Flash 級距 | 16／32／64／128／256／512 KiB；扣除來源 metadata 的 Boot reserve，並限制於 App capacity |
+| `test_bins/auto/*.bin` | 自動建置維護的一組測試檔；檔名同時標示 Flash 級距與實際 App BIN 大小 |
+| `test_bins/<batch>/*.bin` | 手動入口每次建立獨立批次，不覆寫先前批次 |
+| 預設 Flash 級距 | 16／32／64／128／256／512／1024 KiB；扣除實際 App 起點，限制於 App capacity；自動產物另確保包含該工程的最大 App 容量 |
 | `0xFF` 填充 | 保留原本可執行 App 與向量表；從原 CRC 位置填到新 CRC 前，不截短程式 |
 | 長度與 CRC | 更新 BIN `0x118..0x11B` 的 image_size；最後 4 bytes 為重新計算的 little-endian CRC32 |
-| `manifest.csv` | 實際 bytes、CRC、SHA-256、來源雜湊、版本、build、CAN mode 與填充值 |
+| `index.html`／`manifest.csv` | 實際 bytes、CRC、SHA-256、來源雜湊、版本、build、更新介面與填充值；HTML 提供各 BIN 的連結 |
 | `skipped.csv` | 說明超出實體 Flash 或現有 App 放不下的級距 |
+| `.owned.csv` | 產生器的檔案歸屬與雜湊紀錄；不作為使用者設定輸入 |
 
 1 KiB 為 1024 bytes。F13 App 上限 119 KiB；F24 兩種 CAN 模式均為 247 KiB，保留末端 1 KiB。
 需要完整 120／248 KiB 時，工程設定與 RFP 安裝限制見 [Flash 尾端保護的重要事項](https://released.github.io/slide_boot_loader_for_RL78/#device-debug-monitor)。
-既有 App 若變大，放不下的級距會略過；其他有效檔案仍可產生。
-輸出目錄由 Git 排除，腳本隨專案分享，來源 App 更新後可再次產生對應測試檔。
+既有 App 若變大，放不下的級距會略過；其他有效檔案仍可產生，同一長度不重複輸出。
+來源及產物相同時，自動建置沿用該組產物；來源更新時，只替換歸屬與雜湊均符合的自動產物。
+若 `auto` 內有手動修改或額外檔案，會停止替換並指出原因，原檔保留。
+需要保留這組內容時，可將整個 `auto` 資料夾改名（例如 `manual_saved`），再重建以產生新的 `auto`。
+既有 `test_bins/<batch>` 不受自動替換影響；整個 `test_bins/` 由 Git 排除。
 
 版本、build、minimum Boot 與更新政策沿用來源，Tool 仍依板上資訊執行原有檢查。
-測試檔依其 CAN mode 使用既有 [Device 更新操作](https://released.github.io/slide_isp_tool_for_RL78/#mcu-can-device)，
-實際結果保留在 [Tool JSON 更新報告](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
+測試檔依其介面使用既有 [CAN Device 更新操作](https://released.github.io/slide_simple_renesas_isp_tool/#mcu-can-device)
+或 [UART／Xmodem／I2C 更新操作](https://released.github.io/slide_simple_renesas_isp_tool/#uart-device-operation)，
+實際結果保留在 [Tool JSON 更新報告](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation)。
 `0xFF` 填充描述這一種資料內容；離線檢查不代表實板更新或任意資料的寫入效能已驗證。
 
+<a id="device-app-runtime-log"></a>
+
+#### D4. App 執行標籤與每秒 counter
+
+診斷 UART 使用 115200。兩個 App 都在主迴圈輸出每秒遞增 counter，
+timer ISR 僅提供時基／事件；不在 ISR 內格式化或傳送文字。
+
+| Device | 可編輯位置 | 用途 |
+| --- | --- | --- |
+| F13 | App `custom_func.h` 的 `APP_RUNTIME_LOG_TAG` | 選擇 `"V1"`／`"V2"` 等觀察標籤；`custom_func.c` 的主迴圈輸出 counter |
+| F24 | App `app_runtime_log.h` 的 `APP_RUNTIME_LOG_TAG` | 同樣選擇觀察標籤；`custom_func.c` 每秒呼叫 App 專用 counter formatter，再經 UART 輸出 |
+
+```text
+app image tag: V1
+log(timer)-V1: 0
+log(timer)-V1: 1
+log(timer)-V1: 2
+```
+
+counter 從 App 啟動後的零開始，以十進位遞增；空白對齊不影響其數值。
+標籤獨立於 metadata 的 `APP_IMAGE_VERSION`；只改標籤不會改變 Tool 的版本比較。
+編輯後依 [App-only 建置](#device-app-build) 重新封裝、載入更新 BIN，
+更新後同時核對 Tool 的 App 啟動確認與 UART 輸出。
+
+<a id="device-app-validation"></a>
+
+<a id="guide-app-development-5"></a>
+
+### E. BIN 與向量驗證
+
+| 步驟 | 要檢查的結果 | 未通過時 |
+| --- | --- | --- |
+| 產表 | 新 C header entry 對應到正確 slot；source 有且僅有對應的正常 ISR | 不手改生成檔，修 source／MTPJ／C header |
+| map／向量 bytes | table 在 `0x2000`，metadata 不佔 code；BR 指向 App code，ISR 應有 RETI | 不更新 MCU；先查 linker／pragma／註冊 |
+| BIN offline | size 等於檔長、metadata reserved FF、CRC match、role／CAN／ABI 正確 | 不用修改 Tool 欄位繞過 |
+| Tool Load Update Image | Metadata VALID、CRC MATCH、新 version／build；這仍只是 offline 資訊 | 重查 producer／封裝及實際載入檔案 |
+| Discover live device | MCU／target／geometry／CAN／IRQ ABI／minimum Boot 相容 | 不送 START；不能把載入 BIN 身分當 live 身分 |
+| 更新與 reset | END 成功後，確認 App INFO／UART 與載入映像一致、正常與新增 IRQ，Boot 區未變 | 保留 log／trace，分別記錄 END ACK 與 App 執行證據 |
+
+#### E1. Tool 驗證與更新後 App 證據
+
+```mermaid
+flowchart TD
+    BUILD["App clean rebuild / packaging guards"] --> OFF["檢查新 BIN<br/>metadata / version / size / CRC"]
+    OFF --> LIVE["Tool：Probe host + Discover device<br/>比對 live contract"]
+    LIVE --> OK{"全部相容？"}
+    OK -->|"否"| STOP["停止；不送 START / 不擦 Flash"]
+    OK -->|"是"| CAN["Enter Boot → metadata SEAL<br/>START → blocks → END"]
+    CAN --> RESET["Reset 後 Boot 再驗證"]
+    RESET --> APP["確認 App 版本 / IRQ 功能<br/>另留 Boot 未變的證據"]
+```
+
+INTP1 範例涵蓋來源登錄與產表；實際 IRQ 功能仍需搭配板端初始化與量測。
+F13 與 F24 device 的正常 CAN App 更新及啟動皆已完成實板驗證；
+F24 的報告與 UART counter 見 [更新結果](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)。
+不同速率、其他 IRQ、取消與斷電等條件分別驗證。
+CRC 用於完整性檢查。
+更新中斷後，Boot 於下次啟動重新驗證現有映像，驗證有效才進入 App。
+
+<a id="guide-app-development-6"></a>
+
+### F. 常見錯誤與只換 App 的邊界
+
+| 變更／錯誤 | 處理原則 |
+| --- | --- |
+| 只改 App version／build 或相容的一般 IRQ | 產表、重建與封裝 App；不因 ISR 名稱改動重燒 Boot |
+| 改 MCU／App start／geometry／IRQ ABI／更新協定 | 屬於共同契約變更；同步 Boot、App、producer、Tool／validator 並重新驗證 |
+| Vector 位址填入 `0x2014`、IRQ index 或保留／奇數 vector | 填寫合法實體 byte address，本例為 `0x0A`；以本工程 header 核對 |
+| C 檔只複製進資料夾，沒有加入 MTPJ | generator 或 linker 應拒絕；先修正專案登錄 |
+| ISR 帶 `vect=`／static／普通函式，或 symbol 拼錯 | 改成正常 global interrupt ISR，再核對 C header 與 generated table |
+| 覆蓋原有 UART／timer mappings | 先恢復仍在用的清單；新增不是替換整份 C header |
+| 手改 `.inc`、generated table、identity、BIN bytes／CRC | 由兩份 C header／ISR 來源修改並重建；CheckOnly 僅檢查，不更新產生檔 |
+
+同一份 Boot 可搭配 App A／B 的不同 ISR 清單，前提是完整共同契約不變。
+新增 IRQ 後，仍核對硬體初始化、stack、pending flag 與實際 IRQ 行為。
+
+<a id="device-can-bitrate"></a>
+
+<a id="guide-app-development-7"></a>
+
+### G. Device CAN 速率：250K／500K／1M
+
+本節設定 MCU CAN device 的 Classical CAN 更新速率，單位為 kbit/s 或 Mbit/s。
+Boot 與 App 的 INFO／ENTER／更新通訊使用相同速率；範例預設 500 kbit/s。
+Tool 的 CAN Nominal 下拉選單設定 MCU CAN host 的 bus timing，不改寫 device register 或 metadata。
+PC 與 host 之間的 Host Baud 仍是獨立的 UART 設定。
+
+#### G1. 修改位置與計算來源
+
+| Device | 實際 CAN timing 輸入 | Boot／App 的引用方式 | 目前時鐘／時序 |
+| --- | --- | --- | --- |
+| F13 | **Boot 與 App 各自**的 `hal/can/RSCANlite.h`：`CAN_CFG_C0_BAUDRATE_L` | 分別修改兩份 driver 設定，並核對各工程的 `can_boot_config.h` metadata 契約 | fCAN 16 MHz；SS／TSEG1／TSEG2＝1／11／4 TQ；sample point 75% |
+| F24 | Boot `hal/device/f24_device_config.h`：`CAN_CFG_NBRP` | Boot／App 的 CS+ preinclude 各自引用本工程 header；保留此設定，不直接修改生成的 `smc_gen` | fCAN 40 MHz；SS／TSEG1／TSEG2＝1／15／4 TQ；sample point 80% |
+
+兩者的計算式皆為 `bitrate = fCAN / ((BRP register + 1) × (1 + TSEG1 + TSEG2))`。
+F13 寫入位置是 `r_rl78_can_drv.c` 的 `C0CFGL/C0CFGH`；
+F24 是生成 driver `r_rscanfd_rl78.c` 的 `C0NCFGL/C0NCFGH`，
+其 `CAN_CFG_NMNL_TSEG1/2` 由設定 header 轉成 register encoding。
+可由各工程上述原始碼及 MCU 硬體手冊的 CAN bit timing／configuration register 核對。
+F13 原始設定可直接開啟 [Boot RSCANlite.h](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/RSCANconf/RSCANlite.h)
+及 [App RSCANlite.h](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/RSCANconf/RSCANlite.h)。
+
+以下只調整 BRP，保留上述 clock、TSEG1／2 與現有 SJW；改 clock 或 TSEG 時需重新計算。
+
+| 選定速率 | F13 `CAN_CFG_BAUDRATEL(...)` 參數 | F24 `CAN_CFG_NBRP` | nominal mask／單一 bit | Metadata LE32 bytes |
+| --- | --- | --- | --- | --- |
+| 250 kbit/s | `3U`，除 4 | `(7)`，除 8 | `0x00000002UL`／bit1 | `02 00 00 00` |
+| 500 kbit/s | `1U`，除 2 | `(3)`，除 4 | `0x00000004UL`／bit2 | `04 00 00 00` |
+| 1 Mbit/s | `0U`，除 1 | `(1)`，除 2 | `0x00000010UL`／bit4 | `10 00 00 00` |
+
+速率宣告位於 Boot 與 App 各自 `can_boot_config.h` 的 `CAN_BOOT_NOMINAL_500K_MASK`，
+數值使用表中的選定速率單一 bit。它提供 metadata 與 live INFO 比對值，不設定 CAN register。
+固定單一速率的 device 不宣告多個速率 bit；例如 `0x16` 不會讓 Boot 自動辨識三種速率。
+Classical 的 `CAN_BOOT_DATA_BITRATE_MASK` 保持零。
+nominal mask 位於 metadata `0x30..0x33`，即 BIN offset `0x130..0x133`、本配置 Flash `0x2130..0x2133`。
+
+#### G2. 以 250 kbit/s 完成一次配置
+
+1. 保存目前 Boot HEX、App BIN 與設定檔；選定配對的 MCU CAN device Boot／App。
+2. 修改實際 timing：F13 在 **兩份** `RSCANlite.h` 將 `CAN_CFG_BAUDRATEL(1U)` 改成 `CAN_CFG_BAUDRATEL(3U)`；
+   F24 在 Boot 與 App 各自的 `hal/device/f24_device_config.h` 將 `CAN_CFG_NBRP (3)` 改成 `(7)`。
+3. 在該 device 各工程的 `can_boot_config.h`，將 `CAN_BOOT_NOMINAL_500K_MASK` 設為 `(0x00000002UL)`。
+   App 的 metadata／INFO 由該工程的本機契約產生，不手改生成的 INC／BIN。
+4. 核對 App 發行版本／build，clean rebuild **Boot 與 App**，執行原有 pre-build／post-build。
+   F13／F24 均可分別在 CS+ 對兩個 `.mtpj` 執行 Rebuild，或在 Boot 與 App 各自的根目錄執行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
+```
+
+5. 核對成功建置結果、Boot 分區／512-byte 餘裕、App metadata、BR table 與 CRC。
+   在 `app_build_report.html` 確認 nominal mask 為 `0x02`，並核對來源 timing；報告不是 bus 波形量測。
+   本節範例改為 1 Mbit/s 時，使用表中的 BRP 與 mask `0x10`，其餘流程相同。
+6. 使用燒錄器分別安裝新速率的 Boot HEX 與封裝 App HEX。
+   保留分區／option bytes／保護範圍；檔案選擇見 [韌體下載與安裝](https://released.github.io/slide_simple_renesas_isp_tool/#downloads)。
+   CAN 更新只改 App，不能將已安裝的 500K Boot 一併換成 250K Boot。
+7. Tool Open + Probe Host，在 CAN 頁選 Classical CAN／250K；analyzer 也設為 250K。
+   載入此次 `*_update.bin`，確認 Interface / Rate、Metadata VALID、CRC MATCH。
+8. Discover device，核對 live INFO 的 nominal mask 與 BIN／Tool 相符。
+   若 App 正在執行，Enter Boot 後接續 Start Device Update；完成後核對 App 確認、UART counter 與下一次 Discover。
+
+```mermaid
+flowchart TD
+    RATE["選定 MCU CAN device 速率"] --> DRIVER["Boot／App 實際 CAN timing"]
+    RATE --> META["CAN 契約的 nominal mask"]
+    DRIVER --> BUILD["Clean rebuild Boot 與 App"]
+    META --> BUILD
+    BUILD --> CHECK["檢查封裝／metadata／CRC／分區"]
+    CHECK --> INSTALL["燒錄器安裝配對 Boot／App"]
+    INSTALL --> TOOL["Tool 與 analyzer 選相同 CAN 速率"]
+    TOOL --> LIVE{"Discover／BIN／live 設定相符？"}
+    LIVE -->|"是"| UPDATE["Enter Boot／更新／確認 App"]
+    LIVE -->|"否"| STOP["停止更新；核對 timing 與契約"]
+```
+
+#### G3. 驗證與錯誤定位
+
+| 現象／檢查 | 核對位置與結果 |
+| --- | --- |
+| Discover timeout | 先核對 device 真正的 Boot／App timing、Tool／analyzer 速率、clock、ACK、接線與終端；尚未收到 INFO 不能以 BIN 宣告證明板上設定 |
+| BIN 或 live rate mismatch | 核對 nominal mask、App producer 與已安裝 Boot／App 是否來自同一次配對建置；只改 driver 或只改 mask 都不完整 |
+| App 可探索，Enter Boot 後失聯 | 核對 Boot 與 App 的實際 timing 是否一致；F13 特別核對兩份 `RSCANlite.h` |
+| 完成更新後的 App 驗證 | CRC／App INFO／UART counter 分別確認；以 analyzer 核對實際速率與 error frame |
+| 速率驗證範圍 | 本節列出依現有 clock 計算的 presets；500K 有正常更新紀錄，250K／1M 的連續更新、重啟與故障復原需分別保留實板證據 |
 <a id="device-update-timing"></a>
 
-#### App BIN 更新耗時參考
+<a id="guide-app-development-8"></a>
+
+### App BIN 更新耗時參考
 
 以下為單次實板更新的粗略等待時間參考，以 Tool 報告的 `elapsed_ms` 換算為秒，顯示至小數一位。
 總時間包含更新流程的檢查、傳輸與 Flash 擦寫、END CRC、App 啟動確認及收尾，不是純 Flash 寫入速度。
@@ -748,7 +893,7 @@ CAN FD 欄位使用 **nominal 500 kbit/s／data 2 Mbit/s／BRS 開啟**，不是
 
 | App BIN | F13 device：Classical CAN 500K | F24 device：Classical CAN 500K | F24 device：CAN FD 500K／2M、BRS |
 | --- | --- | --- | --- |
-| 原始 App（未填充） | 20,308 bytes／— | 4,224 bytes／約 5.2 秒 | 4,756 bytes／約 5.5 秒 |
+| 原始 App（未填充） | 20,308 bytes／約 14.0 秒 | 4,224 bytes／約 5.2 秒 | 4,756 bytes／約 5.5 秒 |
 | 8 KiB（8,192 bytes） | 不適用 | 約 7.3 秒 | 約 7.2 秒 |
 | 24 KiB（24,576 bytes） | 約 15.8 秒 | 約 15.6 秒 | 約 15.6 秒 |
 | 56 KiB（57,344 bytes） | 約 32.3 秒 | 約 32.2 秒 | 約 32.2 秒 |
@@ -764,20 +909,22 @@ CAN FD 欄位使用 **nominal 500 kbit/s／data 2 Mbit/s／BRS 開啟**，不是
 
 | 項目 | 本表使用的實測條件 |
 | --- | --- |
-| 日期／MCU | 2026-10-22／RL78/F13 R5F10BMG |
+| 日期／MCU | 原始 App：2026-10-27；填充 BIN：2026-10-22／RL78/F13 R5F10BMG |
 | Host Link UART／CAN | 115200 baud／Classical CAN 500 kbit/s |
-| Detailed trace | 關閉 |
-| Tool／Host firmware | 0.1.0.0097／1.7.0，Host build 20261019 |
+| Detailed trace | 填充 BIN：關閉；原始 App 的對應 Log 無 `TRACE UART`／`TRACE CAN` 逐幀記錄 |
+| Tool／Host firmware | 原始 App：0.1.0.0109；填充 BIN：0.1.0.0097／Host 1.7.0、build 20261019 |
 | Device Boot／App | Boot 1.7.2、build 20261022／App 1.6.1、build 20261017 |
-| 測試映像內容 | 由原始 App BIN 延伸，以 `0xFF` 填充並更新長度與 CRC32 |
-| 更新結果 | 三份均 PASS，END CRC 通過、APP_READY 與 live image 比對通過 |
-| 重試／已記錄的 Host 錯誤 | 三份 `link_retries=0`；UART overflow、CAN lost／warning／passive／bus-off／recovery／TX failure 差值均為 0 |
+| 測試映像內容 | 原始 App，以及由其延伸、以 `0xFF` 填充並更新長度與 CRC32 的測試 BIN |
+| 更新完成條件 | 四次均 PASS，END CRC、APP_READY／live image 比對及 CAN_STOP 確認通過 |
+| 重試／已記錄的 Host 錯誤 | 四份 `link_retries=0`；UART overflow、CAN lost／warning／passive／bus-off／recovery／TX failure 差值均為 0 |
 
-來源為 Tool 的 JSON／HTML 更新報告；下表報告識別前加 `update_20261022_`，副檔名為 `.json`／`.html`。
-對應 Log 為 `firmware_upgrade_tool_20261022_172301.log`。
+來源為 Tool 的 JSON／HTML 更新報告，副檔名為 `.json`／`.html`。
+下表原始 App 識別碼前加 `update_20261027_`，填充 BIN 識別碼前加 `update_20261022_`，即可對應報告檔名。
+原始 App 對應 Log 為 `firmware_upgrade_tool_20261027_093357.log`；填充 BIN 對應 `firmware_upgrade_tool_20261022_172301.log`。
 
 | 報告識別 | App BIN | elapsed_ms | Image CRC32 |
 | --- | --- | --- | --- |
+| `013422_855_47096_164948546_1` | 原始 App，20,308 bytes | 13960 | `0x0C297B5E` |
 | `092335_621_54044_695182765_1` | 24 KiB | 15845 | `0xCA0DE29D` |
 | `092427_590_54044_695234734_2` | 56 KiB | 32281 | `0x8BF223B3` |
 | `092553_622_54044_695320765_3` | 119 KiB | 65793 | `0x7A2A9624` |
@@ -835,166 +982,4 @@ Tool 0.1.0.0099，Host firmware 1.7.0／build 20261019，Device Boot 1.2.1／App
 - [Software dispatch 的時間與 stack 成本](https://released.github.io/slide_boot_loader_for_RL78/#device-irq-dispatch-cost)
 - [Boot 燒錄方式與 Flash 尾端保護](https://released.github.io/slide_boot_loader_for_RL78/#device-debug-monitor)：CS+ 安裝 Boot 時，App 上限為 119／247 KiB，最後 1 KiB 保留給 debug monitor 所在的擦除區塊。需要完整 120／248 KiB 時，須調整配對工程，且 **Boot 只能由 RFP 安裝**。
 
-<a id="device-app-runtime-log"></a>
-
-#### D4. App 執行標籤與每秒 counter
-
-診斷 UART 使用 115200。兩個 App 都在主迴圈輸出每秒遞增 counter，
-timer ISR 僅提供時基／事件；不在 ISR 內格式化或傳送文字。
-
-| Device | 可編輯位置 | 用途 |
-| --- | --- | --- |
-| F13 | App `custom_func.h` 的 `APP_RUNTIME_LOG_TAG` | 選擇 `"V1"`／`"V2"` 等觀察標籤；`custom_func.c` 的主迴圈輸出 counter |
-| F24 | App `app_runtime_log.h` 的 `APP_RUNTIME_LOG_TAG` | 同樣選擇觀察標籤；`app_main.c` 每秒呼叫 App 專用 counter formatter，再經 UART 輸出 |
-
-```text
-app image tag: V1
-log(timer)-V1: 0
-log(timer)-V1: 1
-log(timer)-V1: 2
-```
-
-counter 從 App 啟動後的零開始，以十進位遞增；空白對齊不影響其數值。
-標籤獨立於 metadata 的 `APP_IMAGE_VERSION`；只改標籤不會改變 Tool 的版本比較。
-編輯後依 [App-only 建置](#device-app-build) 重新封裝、載入更新 BIN，
-更新後同時核對 Tool 的 App 啟動確認與 UART 輸出。
-
-<a id="device-app-validation"></a>
-
-### E. BIN 與向量驗證
-
-| 步驟 | 要檢查的結果 | 未通過時 |
-| --- | --- | --- |
-| 產表 | 新 C header entry 對應到正確 slot；source 有且僅有對應的正常 ISR | 不手改生成檔，修 source／MTPJ／C header |
-| map／向量 bytes | table 在 `0x2000`，metadata 不佔 code；BR 指向 App code，ISR 應有 RETI | 不更新 MCU；先查 linker／pragma／註冊 |
-| BIN offline | size 等於檔長、metadata reserved FF、CRC match、role／CAN／ABI 正確 | 不用修改 Tool 欄位繞過 |
-| Tool Load Update Image | Metadata VALID、CRC MATCH、新 version／build；這仍只是 offline 資訊 | 重查 producer／封裝及實際載入檔案 |
-| Discover live device | MCU／target／geometry／CAN／IRQ ABI／minimum Boot 相容 | 不送 START；不能把載入 BIN 身分當 live 身分 |
-| 更新與 reset | END 成功後，確認 App INFO／UART 與載入映像一致、正常與新增 IRQ，Boot 區未變 | 保留 log／trace，分別記錄 END ACK 與 App 執行證據 |
-
-#### E1. Tool 驗證與更新後 App 證據
-
-```mermaid
-flowchart TD
-    BUILD["App clean rebuild / packaging guards"] --> OFF["檢查新 BIN<br/>metadata / version / size / CRC"]
-    OFF --> LIVE["Tool：Probe host + Discover device<br/>比對 live contract"]
-    LIVE --> OK{"全部相容？"}
-    OK -->|"否"| STOP["停止；不送 START / 不擦 Flash"]
-    OK -->|"是"| CAN["Enter Boot → metadata SEAL<br/>START → blocks → END"]
-    CAN --> RESET["Reset 後 Boot 再驗證"]
-    RESET --> APP["確認 App 版本 / IRQ 功能<br/>另留 Boot 未變的證據"]
-```
-
-INTP1 範例涵蓋來源登錄與產表；實際 IRQ 功能仍需搭配板端初始化與量測。
-F13 與 F24 device 的正常 CAN App 更新及啟動皆已完成實板驗證；
-F24 的報告與 UART counter 見 [更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
-不同速率、其他 IRQ、取消與斷電等條件分別驗證。
-CRC 用於完整性檢查。
-更新中斷後，Boot 於下次啟動重新驗證現有映像，驗證有效才進入 App。
-
-### F. 常見錯誤與只換 App 的邊界
-
-| 變更／錯誤 | 處理原則 |
-| --- | --- |
-| 只改 App version／build 或相容的一般 IRQ | 產表、重建與封裝 App；不因 ISR 名稱改動重燒 Boot |
-| 改 MCU／App start／geometry／IRQ ABI／更新協定 | 屬於共同契約變更；同步 Boot、App、producer、Tool／validator 並重新驗證 |
-| Vector 位址填入 `0x2014`、IRQ index 或保留／奇數 vector | 填寫合法實體 byte address，本例為 `0x0A`；以本工程 header 核對 |
-| C 檔只複製進資料夾，沒有加入 MTPJ | generator 或 linker 應拒絕；先修正專案登錄 |
-| ISR 帶 `vect=`／static／普通函式，或 symbol 拼錯 | 改成正常 global interrupt ISR，再核對 C header 與 generated table |
-| 覆蓋原有 UART／timer mappings | 先恢復仍在用的清單；新增不是替換整份 C header |
-| 手改 `.inc`、generated table、identity、BIN bytes／CRC | 由兩份 C header／ISR 來源修改並重建；CheckOnly 僅檢查，不更新產生檔 |
-
-同一份 Boot 可搭配 App A／B 的不同 ISR 清單，前提是完整共同契約不變。
-新增 IRQ 後，仍核對硬體初始化、stack、pending flag 與實際 IRQ 行為。
-
-<a id="device-can-bitrate"></a>
-
-### G. Device CAN 速率：250K／500K／1M
-
-本節設定 MCU CAN device 的 Classical CAN 更新速率，單位為 kbit/s 或 Mbit/s。
-Boot 與 App 的 INFO／ENTER／更新通訊使用相同速率；範例預設 500 kbit/s。
-Tool 的 CAN Nominal 下拉選單設定 MCU CAN host 的 bus timing，不改寫 device register 或 metadata。
-PC 與 host 之間的 Host Baud 仍是獨立的 UART 設定。
-
-#### G1. 修改位置與計算來源
-
-| Device | 實際 CAN timing 輸入 | Boot／App 的引用方式 | 目前時鐘／時序 |
-| --- | --- | --- | --- |
-| F13 | **Boot 與 App 各自**的 `RSCANconf/RSCANlite.h`：`CAN_CFG_C0_BAUDRATE_L` | 兩份工程各有 driver 設定，兩份 header 都修改；App 的 metadata CAN 契約引用相鄰 Boot | fCAN 16 MHz；SS／TSEG1／TSEG2＝1／11／4 TQ；sample point 75% |
-| F24 | Boot `common/f24_device_config.h`：`CAN_CFG_NBRP` | Boot／App 的 CS+ preinclude 引用同一 header；保留此設定，不直接修改生成的 `smc_gen` | fCAN 40 MHz；SS／TSEG1／TSEG2＝1／15／4 TQ；sample point 80% |
-
-兩者的計算式皆為 `bitrate = fCAN / ((BRP register + 1) × (1 + TSEG1 + TSEG2))`。
-F13 寫入位置是 `r_rl78_can_drv.c` 的 `C0CFGL/C0CFGH`；
-F24 是生成 driver `r_rscanfd_rl78.c` 的 `C0NCFGL/C0NCFGH`，
-其 `CAN_CFG_NMNL_TSEG1/2` 由設定 header 轉成 register encoding。
-可由各工程上述原始碼及 MCU 硬體手冊的 CAN bit timing／configuration register 核對。
-F13 原始設定可直接開啟 [Boot RSCANlite.h](https://github.com/released/RL78_F13_Boot_loader_CAN/blob/main/RSCANconf/RSCANlite.h)
-及 [App RSCANlite.h](https://github.com/released/RL78_F13_Boot_loader_CAN_app/blob/main/RSCANconf/RSCANlite.h)。
-
-以下只調整 BRP，保留上述 clock、TSEG1／2 與現有 SJW；改 clock 或 TSEG 時需重新計算。
-
-| 選定速率 | F13 `CAN_CFG_BAUDRATEL(...)` 參數 | F24 `CAN_CFG_NBRP` | nominal mask／單一 bit | Metadata LE32 bytes |
-| --- | --- | --- | --- | --- |
-| 250 kbit/s | `3U`，除 4 | `(7)`，除 8 | `0x00000002UL`／bit1 | `02 00 00 00` |
-| 500 kbit/s | `1U`，除 2 | `(3)`，除 4 | `0x00000004UL`／bit2 | `04 00 00 00` |
-| 1 Mbit/s | `0U`，除 1 | `(1)`，除 2 | `0x00000010UL`／bit4 | `10 00 00 00` |
-
-速率宣告位於 Boot `can_boot_config.h` 的 `CAN_BOOT_NOMINAL_500K_MASK`，
-數值使用表中的選定速率單一 bit。它提供 metadata 與 live INFO 比對值，不設定 CAN register。
-固定單一速率的 device 不宣告多個速率 bit；例如 `0x16` 不會讓 Boot 自動辨識三種速率。
-Classical 的 `CAN_BOOT_DATA_BITRATE_MASK` 保持零。
-nominal mask 位於 metadata `0x30..0x33`，即 BIN offset `0x130..0x133`、本配置 Flash `0x2130..0x2133`。
-
-#### G2. 以 250 kbit/s 完成一次配置
-
-1. 保存目前 Boot HEX、App BIN 與設定檔；選定配對的 MCU CAN device Boot／App。
-2. 修改實際 timing：F13 在 **兩份** `RSCANlite.h` 將 `CAN_CFG_BAUDRATEL(1U)` 改成 `CAN_CFG_BAUDRATEL(3U)`；
-   F24 在共用 `f24_device_config.h` 將 `CAN_CFG_NBRP (3)` 改成 `(7)`。
-3. 在該 device Boot 的 `can_boot_config.h`，將 `CAN_BOOT_NOMINAL_500K_MASK` 設為 `(0x00000002UL)`。
-   App 的 metadata／INFO 由配對契約取得，保留其引用，不手改生成的 INC／BIN。
-4. 核對 App 發行版本／build，clean rebuild **Boot 與 App**，執行原有 pre-build／post-build。
-   F13 分別在 CS+ 對兩個 `.mtpj` 執行 Rebuild；也可在各工程根目錄以 PowerShell 呼叫 CS+ 安裝目錄的
-   `CubeSuite+.exe /br .\<project>.mtpj`。F24 在 Boot 根目錄執行下列命令：
-
-```powershell
-# Rebuild the paired device Boot, then App; Transfer is independent.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Kind boot
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Kind app
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\test.ps1
-```
-
-5. 核對成功建置結果、Boot 分區／512-byte 餘裕、App metadata、BR table 與 CRC。
-   在 `app_build_report.html` 確認 nominal mask 為 `0x02`，並核對來源 timing；報告不是 bus 波形量測。
-   本節範例改為 1 Mbit/s 時，使用表中的 BRP 與 mask `0x10`，其餘流程相同。
-6. 使用燒錄器安裝新速率的 Boot 與封裝 App HEX，或工程產生的合併 `boot_app.hex`。
-   保留分區／option bytes／保護範圍；檔案選擇見 [韌體下載與安裝](https://released.github.io/slide_isp_tool_for_RL78/#downloads)。
-   CAN 更新只改 App，不能將已安裝的 500K Boot 一併換成 250K Boot。
-7. Tool Open + Probe Host，在 CAN 頁選 Classical CAN／250K；analyzer 也設為 250K。
-   載入此次 `*_update.bin`，確認 Interface / Rate、Metadata VALID、CRC MATCH。
-8. Discover device，核對 live INFO 的 nominal mask 與 BIN／Tool 相符。
-   若 App 正在執行，Enter Boot 後接續 Start Device Update；完成後核對 App 確認、UART counter 與下一次 Discover。
-
-```mermaid
-flowchart TD
-    RATE["選定 MCU CAN device 速率"] --> DRIVER["Boot／App 實際 CAN timing"]
-    RATE --> META["CAN 契約的 nominal mask"]
-    DRIVER --> BUILD["Clean rebuild Boot 與 App"]
-    META --> BUILD
-    BUILD --> CHECK["檢查封裝／metadata／CRC／分區"]
-    CHECK --> INSTALL["燒錄器安裝配對 Boot／App"]
-    INSTALL --> TOOL["Tool 與 analyzer 選相同 CAN 速率"]
-    TOOL --> LIVE{"Discover／BIN／live 設定相符？"}
-    LIVE -->|"是"| UPDATE["Enter Boot／更新／確認 App"]
-    LIVE -->|"否"| STOP["停止更新；核對 timing 與契約"]
-```
-
-#### G3. 驗證與錯誤定位
-
-| 現象／檢查 | 核對位置與結果 |
-| --- | --- |
-| Discover timeout | 先核對 device 真正的 Boot／App timing、Tool／analyzer 速率、clock、ACK、接線與終端；尚未收到 INFO 不能以 BIN 宣告證明板上設定 |
-| BIN 或 live rate mismatch | 核對 nominal mask、App producer 與已安裝 Boot／App 是否來自同一次配對建置；只改 driver 或只改 mask 都不完整 |
-| App 可探索，Enter Boot 後失聯 | 核對 Boot 與 App 的實際 timing 是否一致；F13 特別核對兩份 `RSCANlite.h` |
-| 完成更新後的 App 驗證 | CRC／App INFO／UART counter 分別確認；以 analyzer 核對實際速率與 error frame |
-| 速率驗證範圍 | 本節列出依現有 clock 計算的 presets；500K 有正常更新紀錄，250K／1M 的連續更新、重啟與故障復原需分別保留實板證據 |
 <!-- DEVICE_WORKSHOP_END -->

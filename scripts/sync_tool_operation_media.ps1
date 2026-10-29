@@ -6,12 +6,12 @@ $repo=Split-Path -Parent $PSScriptRoot
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
 $sourceRoot=Join-Path $repo 'docs'
 $source=[IO.File]::ReadAllText((Join-Path $sourceRoot 'SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md'))
-$site=Join-Path $WebRoot 'slide_isp_tool_for_RL78'
+$site=Join-Path $WebRoot 'slide_simple_renesas_isp_tool'
 $updates=@{}
 $assets=@()
 # Validate every block and asset before changing the page or copying assets.
 foreach($section in @('TOOL_CONNECT_MEDIA','TOOL_DEVICE_MEDIA','TOOL_BRIDGE_MEDIA')) {
-    $page=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_isp_tool_for_RL78 -Section $section
+    $page=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder slide_simple_renesas_isp_tool -Section $section
     $text=if($updates.ContainsKey($page)){$updates[$page]}else{[IO.File]::ReadAllText($page)}
     $pattern='(?s)<!-- '+$section+'_BEGIN -->.*?<!-- '+$section+'_END -->'
     $canonical=[regex]::Matches($source,$pattern)

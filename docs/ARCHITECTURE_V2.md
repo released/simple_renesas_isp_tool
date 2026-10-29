@@ -2,7 +2,15 @@
 
 Status: implementation baseline
 
-RH850 CAN/FD device triplets use a self-contained `can_v4` mirror of the
+Device Boot/App/Transfer projects each own their sources, contract headers and
+PowerShell build helpers. CAN, device, image, Flash and ISP APIs live under
+`hal/can`, `hal/device`, `hal/image`, `hal/flash` and `hal/isp`; project workflow
+lives in `custom_func.c` hardware_init()/loop(). Builds do not read a sibling
+Boot source tree. Contract compatibility is explicit across installed images.
+The maintainer initializer clones selected independent golden samples without
+copying compiler outputs, Git history, personal settings or runtime data.
+
+RH850 CAN/FD device triplets use a self-contained `hal/can` mirror of the
 standalone v4 service/register driver,with separate EVM684 config/board/ISP
 adapters. The protocol wrapper services foreground TX/status,never polls
 IRQ-owned RX FIFOs,and accepts reply success only on matching DONE. Unconfirmed
@@ -10,6 +18,9 @@ TX faults that bus without auto restart/replay. Exact filters,source-port
 responses,single-owner staging,metadata/FCL/CRC/vector/policy and independent
 Boot/App tables remain protocol-owned. Hardware error evidence is retained.
 See [RH850 CAN service](RH850_CAN_DEVICE_GUIDE_zh-TW.md#rh850-can-service).
+CanPorts_Stop checks Can_IsReady before entering register-mode waits. The
+valid-image cold/reset Boot path has not initialized CAN;its direct App handoff
+must not touch the clock-gated controller. Running-service stop/cleanup remains.
 
 The independent UART/I2C/Xmodem device projects are described in
 [ISP_UART_DEVICE_DESIGN_zh-TW.md](ISP_UART_DEVICE_DESIGN_zh-TW.md).
@@ -90,6 +101,13 @@ destinations remain validated after metadata/CRC by device_app_vectors.h.
 
 The console uses five system-color MFC groups: Host connection, BIN/live-device
 information, peripheral/target, shared load/update actions and message log.
+Worker events use one outstanding wake and64-event/40ms UI timer batches;
+same-phase percentages coalesce,while bounded overflow remains explicit.
+RichEdit batches adjacent same-color messages and follows/restores the viewport
+once per batch;file recording flushes at each batch boundary. Unknown-duration
+metadata/START/END,restart/APP_READY/live-info and Host reconnect stages use
+marquee activity,not invented percentages. Terminal failure/cancel stops it;
+success feedback remains tied to confirmed results,not transfer100percent.
 Four live cards occupy the first analysis row. The loaded-BIN card and three
 four-field metadata groups occupy the second row. All20 cached field values
 remain refreshed. Loaded BIN paints heading/value plus two single-line detail

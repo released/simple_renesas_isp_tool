@@ -57,6 +57,25 @@ class GuideMarkdownTests(unittest.TestCase):
             "PDF renderer fixture", "Fourth-level heading", "Visible body text."])
         self.assertIs(paragraphs[1].style, styles["h3"])
 
+    def test_portrait_flow_keeps_multiple_short_intro_paragraphs(self):
+        GUIDE.register_fonts()
+        source='# Test\n\n## Flow\n\nFirst short introduction.\n\nSecond short introduction.\n\n![flow](fake.png)\n'
+        with tempfile.TemporaryDirectory(prefix='guide_flow_intro_') as folder:
+            path=Path(folder)/'source.md'
+            path.write_text(source,encoding='utf-8')
+            picture=MagicMock()
+            picture.__enter__.return_value.width=100
+            picture.__enter__.return_value.height=200
+            with patch.object(GUIDE.PillowImage,'open',return_value=picture), \
+                    patch.object(GUIDE,'diagram_image',return_value=(Spacer(1,10),0.5)):
+                story=GUIDE.build_story(path,GUIDE.make_styles())
+        at=next(i for i,value in enumerate(story) if isinstance(value,NextPageTemplate))
+        before=[value.getPlainText() for value in story[:at] if isinstance(value,Paragraph)]
+        after=[value.getPlainText() for value in story[at:] if isinstance(value,Paragraph)]
+        self.assertNotIn('First short introduction.',before)
+        self.assertIn('First short introduction.',after)
+        self.assertIn('Second short introduction.',after)
+
     def test_final_guide_outputs(self):
         expected = {
             "FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.pdf": (0,['CRC 的連續 Flash 位址','0x1FBFC','0x3FBFC','32-bit']),

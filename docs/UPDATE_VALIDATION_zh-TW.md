@@ -6,13 +6,14 @@
 ## 更新確認、差異表與報告
 
 更新流程把「資料已寫入」與「App 已開始執行」分開記錄。
-CAN device 更新完成後由 Tool 自動確認 App；Misc 的 RUN 仍由使用者明確執行。
+Device ISP 更新完成後由 Tool 自動確認 App；Misc 的 RUN 仍由使用者明確執行。
 [MD 原稿](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/UPDATE_VALIDATION_zh-TW.md)／
 [PDF](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/UPDATE_VALIDATION_zh-TW.pdf)提供離線說明與測試表。
 
 | 操作 | 成功條件 | 未確認時 |
 | --- | --- | --- |
 | CAN Start Device Update | metadata、START、所有區塊及 END CRC 通過；同一路 CAN 收到 APP_READY，再取得 live INFO，版本／build／實際大小與載入 BIN 相符 | 顯示 END 已完成但 App 未確認；不自動重寫 |
+| UART／Xmodem／I2C Start Device Update | 完整映像CRC通過；重啟後取得APP_READY及live INFO，核對已安裝metadata與載入映像 | 保留已寫入結果；確認未完成時不自動重寫 |
 | Misc Update HOST APP | 完整映像 CRC、有效標記與 256-byte metadata readback 通過 | 保留 Boot，顯示階段與原因 |
 | Misc Run Validated Bridge App | RUN 只送一次；Tool 自動在同一 COM、115200 重連，核對相同 board ID、APP mode、完整 metadata、版本／build／大小 | 顯示 RUN 未確認；不重送 RUN、不自動擦寫 |
 | Compare Metadata | 開啟 Loaded image／Live device 差異表 | 未取得 live 資訊時不以 BIN 補成 live |
@@ -21,6 +22,48 @@ CAN device 更新完成後由 Tool 自動確認 App；Misc 的 RUN 仍由使用�
 重連等待有時間與次數邊界，可由 Cancel 結束。
 CAN 確認沿用現有 Host Link 與 CAN 路由，不會重新掃描其他 COM。
 版本等摘要與健康回覆是目前執行的韌體回報，不是簽章或功能完整性的認證。
+
+<a id="update-completion"></a>
+
+### 完成提示與下一步
+
+可計量階段的百分比表示該階段進度；等待回覆或 App 重啟時顯示動態等待條與 `waiting...`。
+完整更新條件通過後，Tool 顯示一次完成對話框，並在狀態列與共用映像區保留 `[COMPLETE]` 及下一步操作。
+開始其他作業、切換 TAB 或載入檔案後，畫面回到目前操作的條件判定；歷史結果可從 Log 與報告查看。
+斷線後重新執行 `Open + Probe Host` 時，進度條與階段標籤歸零；不沿用上次的 100%。
+同一連線內的狀態更新不會清除正在執行的進度；`Open Last Report` 仍可查看本次開啟 Tool 後保存的報告。
+
+| 操作結果 | 畫面提示 | 下一步 |
+| --- | --- | --- |
+| CAN device 更新且 App 啟動確認通過 | `Device App update complete`；CRC／App 已確認，Host CAN 停止，COM 保留 | 可檢查 App code 與板上功能；再次更新時重新 Discover Target |
+| App 已確認、CAN 已停止，但本次 Host 錯誤計數增加 | `Device App updated / Host counter warning`；黃色 `[COMPLETE / WARNING]` | 更新成功；查看報告的 counter 差值與 detailed trace，不以重寫 App 清除警告 |
+| App 啟動已確認，但 Host CAN STOP 未確認 | `Device App updated / CAN stop not confirmed`；黃色 `[COMPLETE / WARNING]` | 更新已成功，CAN 可能仍在運作；查看 Shared Log，使用 Disconnect／Close COM 清理後再調整介面，不以重寫 App 處理停止警告 |
+| Misc Host App 寫入與驗證通過 | `Host App update complete - RUN required`；Host 停留 Boot | 按 `Run Validated Bridge App`；若按鈕不可用，先 Read Bridge Update Info／Probe Host |
+| Misc 明確 RUN 並重連確認通過 | `Host App startup confirmed`；同一 COM、board 與已安裝映像核對完成 | 可檢查 Host App 或切換至 device 介面 |
+| 已 END，但 App 未確認、操作失敗或取消 | 保留原始錯誤／取消結果；不顯示更新成功對話框 | 依階段、Log 與報告檢查；不自動重寫或重送 RUN |
+
+CAN 在 APP_READY 與 live INFO 核對完成後才停止，不在 Transfer 100% 或 END ACK 當下停止。
+這裡停止的是 Host CAN controller，不是關閉 COM、切斷 device 電源或停止 App 執行。
+停止後清除當前 live target 快照；上方卡片須經下一次 Discover 才重新取得資訊，完成結果則保留於狀態區。
+App 啟動確認涵蓋必要初始化與映像身分，板上的應用功能仍可另行檢查。
+
+#### Discover Target 與 Enter Boot
+
+`Discover Target` 是唯讀探索，在 Boot 或支援更新協定的 App 模式都可執行，不限於尚未安裝 App 的裝置。
+`Enter Boot` 則是已探索的 App 切入 Boot 的明確操作；探索到 Boot 時不需要再次 ENTER。
+
+| 裝置目前狀態 | 畫面指引 | 操作順序 |
+| --- | --- | --- |
+| 尚未 Probe Host | `Next: Open + Probe Host, then Discover Target.` | Probe → Discover |
+| 已 Probe，尚未 Discover | `Next: Discover Target (available in Boot or App mode).` | Discover → 依回報模式繼續 |
+| Discover 回報 Boot | `Boot mode detected. Enter Boot is not needed` | 核對 BIN／條件 → Start Device Update；有無已安裝 App 都依實際模式判斷 |
+| Discover 回報 App | 粗體黑字 `Next: Enter Boot. App mode detected` | Discover → Enter Boot → 核對 BIN／條件 → Start Device Update；進入 Boot 或作業執行中時，回復一般提示 |
+
+App 的 INFO／ENTER 回覆由該 App 實作。
+若自行開發的 App 未提供更新協定，可使用專案定義的 reset／recovery 方式停留 Boot，再 Discover；Tool 不以未回覆推定裝置已進入 Boot。
+完整操作入口見 [MCU CAN device 更新](https://released.github.io/slide_simple_renesas_isp_tool/#mcu-can-device)。
+
+<a id="tool-ui-fields"></a>
 
 <a id="app-restart-confirmation"></a>
 
@@ -79,54 +122,12 @@ flowchart TD
     CW --> R
 ```
 
-<a id="update-completion"></a>
-
-### 完成提示與下一步
-
-百分比表示當前階段的進度。
-完整更新條件通過後，Tool 顯示一次完成對話框，並在狀態列與共用映像區保留 `[COMPLETE]` 及下一步操作。
-開始其他作業、切換 TAB 或載入檔案後，畫面回到目前操作的條件判定；歷史結果可從 Log 與報告查看。
-斷線後重新執行 `Open + Probe Host` 時，進度條與階段標籤歸零；不沿用上次的 100%。
-同一連線內的狀態更新不會清除正在執行的進度；`Open Last Report` 仍可查看本次開啟 Tool 後保存的報告。
-
-| 操作結果 | 畫面提示 | 下一步 |
-| --- | --- | --- |
-| CAN device 更新且 App 啟動確認通過 | `Device App update complete`；CRC／App 已確認，Host CAN 停止，COM 保留 | 可檢查 App code 與板上功能；再次更新時重新 Discover Target |
-| App 已確認、CAN 已停止，但本次 Host 錯誤計數增加 | `Device App updated / Host counter warning`；黃色 `[COMPLETE / WARNING]` | 更新成功；查看報告的 counter 差值與 detailed trace，不以重寫 App 清除警告 |
-| App 啟動已確認，但 Host CAN STOP 未確認 | `Device App updated / CAN stop not confirmed`；黃色 `[COMPLETE / WARNING]` | 更新已成功，CAN 可能仍在運作；查看 Shared Log，使用 Disconnect／Close COM 清理後再調整介面，不以重寫 App 處理停止警告 |
-| Misc Host App 寫入與驗證通過 | `Host App update complete - RUN required`；Host 停留 Boot | 按 `Run Validated Bridge App`；若按鈕不可用，先 Read Bridge Update Info／Probe Host |
-| Misc 明確 RUN 並重連確認通過 | `Host App startup confirmed`；同一 COM、board 與已安裝映像核對完成 | 可檢查 Host App 或切換至 device 介面 |
-| 已 END，但 App 未確認、操作失敗或取消 | 保留原始錯誤／取消結果；不顯示更新成功對話框 | 依階段、Log 與報告檢查；不自動重寫或重送 RUN |
-
-CAN 在 APP_READY 與 live INFO 核對完成後才停止，不在 Transfer 100% 或 END ACK 當下停止。
-這裡停止的是 Host CAN controller，不是關閉 COM、切斷 device 電源或停止 App 執行。
-停止後清除當前 live target 快照；上方卡片須經下一次 Discover 才重新取得資訊，完成結果則保留於狀態區。
-App 啟動確認涵蓋必要初始化與映像身分，板上的應用功能仍可另行檢查。
-
-#### Discover Target 與 Enter Boot
-
-`Discover Target` 是唯讀探索，在 Boot 或支援更新協定的 App 模式都可執行，不限於尚未安裝 App 的裝置。
-`Enter Boot` 則是已探索的 App 切入 Boot 的明確操作；探索到 Boot 時不需要再次 ENTER。
-
-| 裝置目前狀態 | 畫面指引 | 操作順序 |
-| --- | --- | --- |
-| 尚未 Probe Host | `Next: Open + Probe Host, then Discover Target.` | Probe → Discover |
-| 已 Probe，尚未 Discover | `Next: Discover Target (available in Boot or App mode).` | Discover → 依回報模式繼續 |
-| Discover 回報 Boot | `Boot mode detected. Enter Boot is not needed` | 核對 BIN／條件 → Start Device Update；有無已安裝 App 都依實際模式判斷 |
-| Discover 回報 App | 粗體黑字 `Next: Enter Boot. App mode detected` | Discover → Enter Boot → 核對 BIN／條件 → Start Device Update；進入 Boot 或作業執行中時，回復一般提示 |
-
-App 的 INFO／ENTER 回覆由該 App 實作。
-若自行開發的 App 未提供更新協定，可使用專案定義的 reset／recovery 方式停留 Boot，再 Discover；Tool 不以未回覆推定裝置已進入 Boot。
-完整操作入口見 [MCU CAN device 更新](https://released.github.io/slide_isp_tool_for_RL78/#mcu-can-device)。
-
-<a id="tool-ui-fields"></a>
-
 ### Tool 欄位與狀態判讀
 
 畫面上的資訊分為離線 BIN、目前連線裝置與本次操作設定。
 `LOADED APP BIN | OFFLINE` 與共用映像區大多來自檔案，不代表板上已安裝相同內容。
 `Device LIVE policy` 則來自已探索的裝置；尚未取得的 live 資訊不以 BIN 補入。
-五張資訊卡的位置與來源見 [主畫面](https://released.github.io/slide_isp_tool_for_RL78/#tool-operation)。
+五張資訊卡的位置與來源見 [主畫面](https://released.github.io/slide_simple_renesas_isp_tool/#tool-operation)。
 
 <a id="tool-console-layout"></a>
 
@@ -196,11 +197,11 @@ log_auto_scroll=1
 | 欄位／操作 | 用途 | 正常顯示／選擇 | 未符合時的判讀與處理 |
 | --- | --- | --- | --- |
 | COM／Open + Probe Host | 選擇 PC 到 bridge 的連線，讀取 Host 身分與能力 | `COM6: USB Serial Port (COM6)`；Probe 後 HOST BRIDGE 為 `VERIFIED LINK` | friendly name 不是 MCU 身分；未驗證或逾時時先核對 COM、電源、占用程式與 Host Baud |
-| Host Baud | PC 與 Host Link 的 UART 速度 | `115200`、`460800`、`921600`，依 Host 能力協商 | 不等於 CAN bitrate 或 device 更新 UART；Misc 更新固定 `115200`，詳見 [通訊速度](https://released.github.io/slide_isp_tool_for_RL78/#image-update-policy) |
+| Host Baud | PC 與 Host Link 的 UART 速度 | `115200`、`460800`、`921600`，依 Host 能力協商 | 不等於 CAN bitrate 或 device 更新 UART；Misc 更新固定 `115200`，詳見 [通訊速度](https://released.github.io/slide_simple_renesas_isp_tool/#image-update-policy) |
 | Bridge port | 使用 Host 實際回報的周邊 port | Probe 後選擇列出的 port | `N/A - Probe bridge first` 表示尚未取得能力，不是從 MCU 型號推測 port |
 | CAN Mode／Nominal／Data | 本次 CAN 模式、仲裁段與資料段速度 | `Classical CAN`／`500K`／`N/A` | Classical 的 Data 為 `N/A` 是正常；模式、速度須同時符合 Host、BIN 與 device，改 Tool 不會改 device Boot 的編譯設定 |
 | RX Filter／ID／Mask | Host 接收回覆的篩選條件 | `Metadata/default`，或符合回覆 ID 的自訂 filter | 接收錯 ID 可能造成逾時；自訂 mask 不得為零。這是接收 filter，不會改寫 BIN 裡的 request／response ID |
-| Workflow | 選擇更新或通訊測試 | 更新用 `CAN Upgrade`；通訊驗證用 `Custom Transfer` | Transfer 不使用更新 BIN，也不提供 Boot／App metadata；操作見 [Custom Transfer](https://released.github.io/slide_isp_tool_for_RL78/#custom-transfer) |
+| Workflow | 選擇更新或通訊測試 | 更新用 `CAN Upgrade`；通訊驗證用 `Custom Transfer` | Transfer 不使用更新 BIN，也不提供 Boot／App metadata；操作見 [Custom Transfer](https://released.github.io/slide_simple_renesas_isp_tool/#custom-transfer) |
 | Load Update Image／Update image | 讀入檔案並顯示實際路徑 | CAN 載入 `_update.bin`；Misc 載入 `_bridge_update.bin` | 路徑可用來確認選檔，但檔名不是驗證依據；HEX、MOT、未封裝 BIN 或不同角色的映像不能只改副檔名使用 |
 | App Start Override | CAN 更新起點的額外一致性檢查 | `Auto` 使用 BIN metadata 的起點 | 手動值須與 BIN 起點一致；不會搬移映像、重建向量或改寫 metadata。Misc 不開放此欄位 |
 
@@ -252,7 +253,7 @@ CRC 範例 `0x12345678` 僅示意兩欄相等，不是這份示例的實測 chec
 | Calculated CRC32 | Tool 對檔案最後 4 bytes 之前的內容計算 CRC32 | `0x12345678` | 不含尾端儲存的 CRC32；與 Stored CRC32 比較，不是讀回板上 Flash |
 | Stored CRC32 | 檔案最後 4 bytes 的 little-endian CRC32 | `0x12345678` | 由封裝產生；修改 BIN 內容後須重新封裝，不是手動填入任意相同數字 |
 | CRC Result | 上述兩值的比較 | `MATCH` | `MISMATCH` 拒絕更新；`MATCH` 只代表檔案 checksum 相符，不代表適合目前裝置 |
-| Metadata Status | 離線映像契約的檢查結果 | `VALID` | CAN 與 Misc 的判定邊界不同；`VALID` 仍須搭配目的地及 live 相容性檢查 |
+| Metadata Status | 離線映像契約的檢查結果 | `VALID` | Device ISP、Misc 與 Reference 的判定邊界不同；`VALID` 仍須搭配目的地及 live 相容性檢查 |
 
 ##### 身分與格式
 
@@ -277,8 +278,8 @@ CRC 範例 `0x12345678` 僅示意兩欄相等，不是這份示例的實測 chec
 
 | UI 欄位 | 資料來源與用途 | 顯示範例 | 判讀與處理 |
 | --- | --- | --- | --- |
-| Interface / Rate | BIN 允許的 CAN 模式與 nominal／data bitrate | `Classical; 500K / N/A` | 不是目前下拉選單值或 Host Baud；Classical 的 data rate 不適用。Misc 顯示其更新 UART |
-| Routing / IDs | BIN 的 ID 格式、request／response ID | `STD 0x00000700 / 0x00000701` | 分別為更新請求與回覆，不是兩組 CAN port；與 Boot、接收 filter 及 live 契約核對 |
+| Interface / Rate | BIN 宣告的更新介面與速度 | `Classical; 500K / N/A` | 不是目前下拉選單值或 Host Baud；Classical 的 data rate 不適用。Misc 顯示其更新 UART |
+| Routing / IDs | BIN 的 ID 格式、request／response ID | `STD 0x00000700 / 0x00000701` | CAN 顯示 request／response ID；UART 顯示 bridge 資料通道；I2C 顯示7-bit address。均須與 live 契約核對 |
 | Update Policy | BIN 的角色與允許更新介面 | `DEVICE APP \| CAN` | CAN BIN 切到 I2C／Misc 不會自動變成可更新；不相容時先確認目的地與編譯契約 |
 | Boot / IRQ ABI | BIN 要求的最低 Boot 版本／IRQ 介面識別 | `1.0.0 / 0x31563146` | live Boot 須達最低版本，IRQ ABI 須相符；不要求 App 與 Boot 版號相等，數值與顏色不能取代 live 比較 |
 | BIN Version Policy | 本份 BIN 安裝成功後採用的版本順序政策 | `ENABLED \| same / newer` 或 `DISABLED \| any version` | 不決定本次是否能降版；由目前有效 App 的 Device LIVE policy 決定 |
@@ -290,19 +291,23 @@ CRC 範例 `0x12345678` 僅示意兩欄相等，不是這份示例的實測 chec
 
 <a id="tool-ui-adapters"></a>
 
-#### CAN、Misc 與 I2C 的顯示差異
+<a id="can-misc-與-i2c-的顯示差異"></a>
+
+#### 更新介面與映像格式
 
 共用畫面依辨識出的映像格式顯示資訊；即使選錯 TAB，仍可能讀出檔案身分，再由更新政策拒絕該路由。
 
 | 操作範圍 | 格式與正常顯示 | 驗證範圍與不適用欄位 |
 | --- | --- | --- |
 | CAN device 更新 | CAN device manifest；CRC32；`DEVICE APP \| CAN` | `Metadata Status = VALID` 與 `CRC Result = MATCH` 是分開判定；兩者都通過後仍檢查 live 身分、分區、速度、IRQ 及版本政策 |
+| UART ISP／Xmodem 更新 | Device image format6／CRC32；`DEVICE APP \| UART`；UART baud與資料通道 | protocol區分UART與Xmodem；比對Device baud、live身分、layout、IRQ及版本政策；Host Baud不是Device baud |
+| I2C ISP 更新 | Device image format6／CRC32；`DEVICE APP \| I2C`；kHz與7-bit address | 比對Slave位址、速度、live身分與映像契約；不是下列Reference raw BIN／CRC16流程 |
 | Misc Host App 更新 | BUR1；`Bridge UART contract3 / BUR1`；`UART / 115200`；`PC -> HOST BRIDGE` | `VALID` 包含 BUR1 格式、配置、檔案長度與 CRC 檢查。`INVALID - HOST APP required` 也可能是長度／CRC 錯誤，須看 log。未辨識 BUR1 時 CRC 欄位可能為 `N/A`；兩個版本政策欄位不填入，`N/A` 不代表 disabled |
 | I2C reference 原始 BIN 檢視 | `RAW BIN - no manifest`；欄名為 `Calculated CRC16`／`Stored CRC16`；可顯示 `MATCH (G16 reference)` | 無 manifest 時不從原始 BIN 推測 MCU、版本或 App 起點，也不把 live 值填入離線欄位。CRC16 相符不開放擦寫；目前為唯讀參考操作 |
 
 I2C reference 使用 CRC16/XMODEM、初值 0，計算範圍不含檔案最後 4 bytes；儲存 CRC16 位於檔尾前 4 bytes 起的兩個 bytes，採 little-endian。
-此範圍與 CAN／Misc 的尾端 CRC32 不同，不能交叉解讀 `MATCH`。
-Misc 更新與明確 RUN 的操作見 [Host App 更新](https://released.github.io/slide_isp_tool_for_RL78/#host-bridge-firmware)。
+此範圍與 Device ISP／Misc 的尾端 CRC32 不同，不能交叉解讀 `MATCH`。
+Misc 更新與明確 RUN 的操作見 [Host App 更新](https://released.github.io/slide_simple_renesas_isp_tool/#host-bridge-firmware)。
 
 #### 常見組合與原始訊息
 
@@ -320,7 +325,7 @@ Misc 更新與明確 RUN 的操作見 [Host App 更新](https://released.github.
 | `Reserved metadata extension bytes must be 0xFF for this image format.` | 保留區不是契約要求的 `0xFF` | metadata 產生配置；不在保留區自行填資料 |
 | `Firmware CRC32 trailer does not match the calculated CRC32.` | 尾端 CRC32 不符 | 重新建置／封裝，避免在產出 BIN 後直接修改內容 |
 
-完整更新判定與資料傳遞見 [CAN 更新逐層導讀](https://released.github.io/slide_isp_tool_for_RL78/#can-update-walkthrough)。
+完整更新判定與資料傳遞見 [CAN 更新逐層導讀](https://released.github.io/slide_simple_renesas_isp_tool/#can-update-walkthrough)。
 通訊與裝置回覆錯誤的分類見 [錯誤資訊](#tool-error-guidance)。
 畫面欄位對應實作：[CAN 映像顯示](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_image.cpp)、[狀態色彩](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_status.cpp)、[Misc](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_misc.cpp)、[I2C](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_i2c_image.cpp)。
 
@@ -344,7 +349,7 @@ Tool 的 `Installed Policy` 顯示目前政策，`BIN Version Policy` 顯示成�
 
 需要有意降版時：
 
-1. 在 CAN TAB 載入目標 App BIN，Probe host、Discover device 並 Enter Boot。
+1. 選擇與目標工程相符的 CAN Upgrade、UART ISP、XMODEM-CRC 或 I2C ISP，載入目標 App BIN；Probe host、Discover device 並 Enter Boot。
 2. 核對目前與目標版本。一般更新被版本政策擋下時，點選 `force upgrade old version firmware`。
 3. 在密碼輸入對話框輸入 **3036**。輸入內容遮蔽顯示，不寫入 INI 或 log；取消或密碼錯誤時尚未開始更新。
 4. 再確認目前版本、目標版本、檔案、範圍與 CRC；按 Yes 後僅放行這次更新。
@@ -362,7 +367,7 @@ CAN 請求沒有簽章或身分認證；此功能不作為防止有意修改韌�
 
 #### Metadata 差異表
 
-Compare Metadata 位於共用映像區，CAN 與 Misc 共用相同檢視方式。
+Compare Metadata 位於共用映像區，依目前 Device ISP 或 Misc workflow 核對 Loaded image 與 Live device。
 表格含 Field、Loaded image、Live device、Check；顏色同時搭配文字。
 
 | Check | 顏色 | 意義 |
@@ -371,8 +376,20 @@ Compare Metadata 位於共用映像區，CAN 與 Misc 共用相同檢視方式�
 | CHANGE | 黃色 | 即將更新的版本、build、大小不同；這是資訊差異，不是相容性錯誤 |
 | MISMATCH | 紅色 | 身分、分區、IRQ ABI、介面或其他契約不符；不能更新 |
 
-底部顯示當前階段及該階段的百分比，不把傳輸 100% 當成整次更新完成。
+底部顯示目前階段；傳輸使用已確認區塊的百分比，其他等待階段使用動態進度條。
 CAN 分為 Metadata／START／Transfer／END CRC／Confirm App；Misc 分為 Metadata／BEGIN／Transfer／CRC-readback。
+
+| 畫面階段 | 進度顯示 | 目前正在等待的結果 |
+| --- | --- | --- |
+| Metadata／START／END CRC | `waiting...` 與動態等待條 | 對應命令的確認回覆 |
+| Transfer | 0～100% | 已獲確認的資料區塊；100% 表示資料傳輸完成 |
+| App restart | `waiting...` 與動態等待條 | 依映像大小與 END 耗時安排的無 CAN 查詢重啟時間 |
+| Check APP_READY | `waiting...` 與動態等待條 | App 就緒狀態回覆 |
+| Verify running App | `waiting...` 與動態等待條 | 執行中 App 的身分、版本、build、大小等資料 |
+| 完成結果 | 100% 與完成對話框 | 依[完成條件](#update-confirmation)顯示結果 |
+
+等待動畫表示 Tool 仍在處理該階段，不是 MCU 回報的驗證百分比。
+Cancel 仍可提出取消；失敗或取消會停止等待動畫，保留該次結果。
 FLASH erase 的時間包含在對應區塊／BEGIN 交易中，不以推估值另報成精確硬體擦除時間。
 
 Cancel 與 Close COM 分開。
@@ -384,7 +401,7 @@ Cancel 由 worker 在交易邊界停止，嘗試 ABORT 與必要的 bus cleanup�
 
 <a id="update-html-report"></a>
 
-CAN 更新、Misc 更新及 Misc RUN 結束時，Tool 在 EXE 旁的 `reports/` 自動儲存同名的 UTF-8 JSON 與 HTML。
+CAN、UART／Xmodem／I2C更新、Misc更新及Misc RUN結束時，Tool 在 EXE 旁的 `reports/` 自動儲存同名的 UTF-8 JSON 與 HTML。
 成功、失敗與取消都有紀錄；檔案以時間與唯一尾碼區分，不覆寫既有報告。
 目錄或寫檔失敗會顯示在 shared log，並保留手動 Export Summary。
 
@@ -399,7 +416,7 @@ CAN 更新、Misc 更新及 Misc RUN 結束時，Tool 在 EXE 旁的 `reports/` 
 
 `Open Last Report` 開啟本次 Tool 執行期間最後成功儲存的 HTML；尚未產生時按鈕不啟用。
 重新開啟 Tool 後，可直接從 `reports/` 開啟歷史報告。
-實際畫面見 [MCU CAN device 更新報告範例](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+實際畫面見 [MCU CAN device 更新報告範例](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)。
 
 | 產物 | 閱讀與使用方式 |
 | --- | --- |
@@ -556,7 +573,7 @@ A／B 使用不同 IRQ mapping 與 ISR 名稱，各自執行 CS+ clean compile�
 ### 實板驗證紀錄
 
 F13 與 F24 device 的正常 CAN App 更新已完成實板驗證。
-F24 的更新報告、reset 後 App 確認與 UART counter 集中於 [F24 device 更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+F24 的更新報告、reset 後 App 確認與 UART counter 集中於 [F24 device 更新結果](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)。
 各測試保留自己的證據範圍；尚無對應紀錄的壓力與故障項目維持 NOT RUN。
 CAN 波形、電氣特性與斷電復原仍需對應量測或故障測試，不由正常更新報告推定。
 

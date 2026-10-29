@@ -36,7 +36,7 @@ static rs_canfd_frame_t g_rx[8][40],g_sent[6];
 static unsigned g_heads[8],g_tails[8],g_reads[8],g_sends[6],g_aborts[6],g_stops[6],g_starts[6];
 static rs_canfd_tx_result_t g_tx[6];
 static uint8_t g_pending,g_lost[8],g_tx_fault,g_abort_confirms,g_fd;
-static unsigned g_checks;
+static unsigned g_checks, g_board_stops;
 static rs_canfd_result_t g_prepare_result;
 #define CHECK(c) do {g_checks++;if(!(c)){printf("FAIL line%d: %s\n",__LINE__,#c);exit(1);}}while(0)
 
@@ -71,7 +71,7 @@ rs_canfd_result_t CanBoard_Start(const rs_canfd_config_t *config)
     }
     return RS_CANFD_OK;
 }
-rs_canfd_result_t CanBoard_Stop(void){return RS_CANFD_OK;}
+rs_canfd_result_t CanBoard_Stop(void){g_board_stops++;return RS_CANFD_OK;}
 rs_canfd_result_t CanBoard_StopChannel(uint8_t ch){g_stops[ch]++;return RS_CANFD_OK;}
 rs_canfd_result_t CanBoard_StartChannel(uint8_t ch){g_starts[ch]++;g_status[ch]=0UL;return RS_CANFD_OK;}
 void CanBoard_EnableRxIrq(uint8_t enable){g_test_intc.ICRCANGRECC0.BIT.MKRCANGRECC0=(uint16_t)!enable;}
@@ -127,8 +127,20 @@ int main(int argc,char **argv)
     device_can_frame_t wrapped;
 #endif
     g_fd=(uint8_t)(argc>1&&argv[1][0]=='1');g_step=1UL;
+    /* A valid-image reset path has never opened CAN in this Boot instance.
+     * Stopping it must not access clock-gated hardware or run register waits.
+     */
+    before=g_board_stops;
+    CanPorts_Stop();
+    CHECK(g_board_stops==before);
     for(ch=0U;ch<6U;ch++){CHECK(CanPorts_Enabled(ch)==((CAN_ENABLED_MASK&(1U<<ch))!=0U));}
     memset(data,0,sizeof(data));memset(got,0,sizeof(got));Init();
+    before=g_board_stops;
+    CanPorts_Stop();
+    CHECK(g_board_stops==before+1U && !Can_IsReady());
+    CanPorts_Stop();
+    CHECK(g_board_stops==before+1U);
+    Init();
     first=CanPorts_First();last=first;
     CHECK(CanConfig_Build(&report)==RS_CANFD_OK);
     CHECK(report.message_ram_bytes==CAN_ENABLED_COUNT*16UL*(12UL+(g_fd?64UL:8UL)));

@@ -6,11 +6,13 @@ $tool=Split-Path -Parent $PSScriptRoot
 $DeviceRoot=(Resolve-Path -LiteralPath $DeviceRoot).Path.TrimEnd('\')
 if(!$Configurator){$Configurator=Join-Path ${env:ProgramFiles(x86)} 'Renesas Electronics\SmartConfigurator\RH850\eclipse\SmartConfiguratorc.exe'}
 if(!(Test-Path -LiteralPath $Configurator -PathType Leaf)){throw 'Installed RH850 Smart Configurator is required.'}
-$out=Join-Path $tool ('tmp\internal\tests\rh850_scfg_'+[guid]::NewGuid().ToString('N').Substring(0,8))
-[IO.Directory]::CreateDirectory($out)|Out-Null
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$testScope=New-OwnedTestWorkspace 'rs' -ShortPath
+$out=$testScope.Path
+try {
 function SourceManifest([string]$Folder){
     return (@(Get-ChildItem -LiteralPath $Folder -File -Recurse -Force|Where-Object {
-        $_.FullName.Substring($Folder.Length+1) -notmatch '^(tmp|DefaultBuild|\.git)(\\|$)'
+        $_.FullName.Substring($Folder.Length+1) -notmatch '^(tmp|DefaultBuild|test_bins|\.git)(\\|$)'
     }|Sort-Object FullName|ForEach-Object {
         $_.FullName.Substring($Folder.Length+1)+' '+(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
     }) -join "`n")
@@ -29,7 +31,7 @@ foreach($selectedBus in $Bus){
         [IO.Directory]::CreateDirectory($dest)|Out-Null
         foreach($file in $items|Where-Object {!$_.PSIsContainer}){
             $relative=$file.FullName.Substring($source.Length+1)
-            if($relative -match '^(tmp|DefaultBuild|\.git)(\\|$)'){continue}
+            if($relative -match '^(tmp|DefaultBuild|test_bins|\.git)(\\|$)'){continue}
             $target=Join-Path $dest $relative
             [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target))|Out-Null
             Copy-Item -LiteralPath $file.FullName -Destination $target
@@ -46,7 +48,10 @@ foreach($selectedBus in $Bus){
         & (Join-Path $PSScriptRoot 'prepare_rh850_serial_scfg.ps1') -Project $dest -CheckOnly
         Write-Host ('PASS actual SC regeneration: '+$name)
     }
-    & (Join-Path $out ($bootName+'\build.ps1')) -Kind all
+    foreach($name in $names){
+        & (Join-Path $out ($name+'\build.ps1'))
+        if($LASTEXITCODE){throw ('Roundtrip build failed: '+$name)}
+    }
     if($LASTEXITCODE){throw 'Roundtrip build failed.'}
     $boot=Join-Path $out $bootName
     $bootFiles=@(Get-ChildItem -LiteralPath (Join-Path $boot 'DefaultBuild') -File|Where-Object {$_.Extension -in @('.hex','.mot','.bin')})
@@ -58,3 +63,5 @@ foreach($selectedBus in $Bus){
 }
 foreach($source in $originals.Keys){if((SourceManifest $source) -cne $originals[$source]){throw ('Original source changed: '+$source)}}
 Write-Host ('PASS isolated roundtrip. Original sources preserved. Evidence: '+$out)
+
+} finally { Remove-OwnedTestWorkspace $testScope }

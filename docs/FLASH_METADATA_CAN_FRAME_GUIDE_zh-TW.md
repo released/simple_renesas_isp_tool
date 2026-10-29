@@ -3,6 +3,8 @@
 <!-- FLASH_REFERENCE_BEGIN -->
 <a id="flash-metadata-can-reference"></a>
 
+<a id="guide-reference-1"></a>
+
 ## 1. 適用角色與閱讀方式
 
 本節對照 **F13 (MCU CAN device)** 與 **F24 (MCU CAN device)** 的 App metadata、Flash 位址與 CAN 封包。
@@ -11,6 +13,24 @@
 映像識別碼為 ASCII `CAN\0`（數值 `0x004E4143`，bytes `43 41 4E 00`）。
 這是檔案格式的 magic，與 CAN0／CAN1 等通道編號無關。
 CAN channel 與 pin 由各 MCU 工程設定，bridge port 由 Tool 選擇。
+
+<a id="guide-reference-2"></a>
+
+#### 欄位查閱索引
+
+| 想核對的內容 | Metadata offset | 修改或產生來源 |
+| --- | --- | --- |
+| App 版本／build | `0x10..0x17` | `app_image_config.h` |
+| 實際大小／Flash配置 | `0x18..0x2F`、`0x5C..0x5F` | `image_metadata_config.h`、linker及post-build；實際大小由封裝產生 |
+| 通訊模式、速度與路由 | `0x0E..0x0F`、`0x30..0x3F`、`0x70..0x73` | 通訊header、driver及metadata profile；串列解讀見各介面章節 |
+| 角色、介面、IRQ ABI及最低Boot | `0x60..0x6F` | 映像契約及profile；與live Boot核對 |
+| 版本政策 | `0x74..0x77` | `APP_IMAGE_VERSION_CONTROL`；依目前有效App決定一般更新政策 |
+
+**Metadata offset** 從metadata第一個byte起算；**BIN offset** 從整份App映像起算；**Flash address** 是MCU絕對位址。
+
+App映像起點包含向量／entry與metadata，與C程式碼起點不同；image size是本份BIN長度，capacity是允許上限。
+
+下方保留完整256-byte對照與來源表，可依上述offset定位欄位。
 
 ### Flash絕對位址、BIN offset與metadata offset
 
@@ -38,6 +58,8 @@ crc_bin_offset = image_size - 4
 | Flash 尾端保護 | 0x1FC00..0x1FFFF | 0x3FC00..0x3FFFF |
 | Image CRC32 | 實際 BIN 最後4 bytes | 實際 BIN 最後4 bytes |
 
+<a id="guide-reference-3"></a>
+
 ### CRC 類型、計算範圍與用途
 
 | 名稱 | 存放／傳送位置 | 計算範圍 |
@@ -54,6 +76,8 @@ Image／metadata／block採CRC32/ISO-HDLC，reflected polynomial0xEDB88320，ini
 CRC提供完整性，不是簽章、認證或防回滾。image_size隨linker結果改變，所以CRC實際address必須重新計算。
 
 <a id="image-crc-linear-address"></a>
+
+<a id="guide-reference-4"></a>
 
 ### CRC 的連續 Flash 位址
 
@@ -80,6 +104,8 @@ CC-RL 的 `__far` 指標加法只更新低 16 位。
 移植時一併核對目標編譯器的整數寬度、指標運算與可讀 Flash 範圍。
 實板驗證可使用[各 App 的測試 BIN 產生流程](https://released.github.io/slide_boot_loader_for_RL78/#device-test-images)，
 分別檢查跨界映像的 END CRC 與重啟後 APP_READY；離線 CRC 測試不代替 Flash 擦寫驗證。
+
+<a id="guide-reference-5"></a>
 
 ## 2. 每個metadata byte：address、範例值與來源
 
@@ -131,6 +157,8 @@ CC-RL 的 `__far` 指標加法只更新低 16 位。
 | 0x80..0xFF | 128 | reserved_FF | reserved region |
 
 F13 的來源符號由 ftable.inc 產生；F24 的相同欄位由 device_common.ps1 的 Get-DeviceMetadata 依 App C header／Boot config 產生。
+
+<a id="guide-reference-6"></a>
 
 ### 逐 byte 實體位址與範例值
 
@@ -427,6 +455,8 @@ F13 device 範例BIN SHA-256：`EBF2B63264968F7D9609C9D99EE4F23DD5AE49F4AB9D15CD
 F24 device 範例BIN SHA-256：`CD2B4A51038888FF7E35C0C70A250C598BFCBE1A5760530645C5B6F91E36388C`。
 <!-- METADATA_BYTES_END -->
 
+<a id="guide-reference-7"></a>
+
 ### 欄位的語意與修改限制
 
 - core_length=128，metadata 整區為256 bytes；0x80..0xFF 為保留區，依契約全部填FF。
@@ -441,7 +471,9 @@ F24 device 範例BIN SHA-256：`CD2B4A51038888FF7E35C0C70A250C598BFCBE1A57605306
 - irq_abi是固定向量介面的識別，minimum_boot是最低相容Boot版本，不是App最低版本。
 - CAN device 的 policy_version=3，device_uart_baud 為0；`version_control` 位於 `0x74..0x77`，其後 `0x78..0x7F` 為0。
   `version_control` 由 App header 產生；`0` 允許任意版本，`1` 由 Boot 在一般 START 限制為同版／新版。
-  操作與維護確認見 [Tool 版本政策](https://released.github.io/slide_isp_tool_for_RL78/#force-old-version)。
+  操作與維護確認見 [Tool 版本政策](https://released.github.io/slide_simple_renesas_isp_tool/#force-old-version)。
+
+<a id="guide-reference-8"></a>
 
 ## 3. 範例程式、產生端與修改位置
 
@@ -474,6 +506,8 @@ IMAGE_MANIFEST_TARGET      .EQU 0x0001F13B
 例如改 target_id 要核對 Boot metadata header 的 IMAGE_TARGET_ID、App 的 IMAGE_MANIFEST_TARGET、
 post-build驗證及Tool live INFO，不是只修改0x0210C。改CAN ID還須保持control／response與raw720..727不重疊。
 
+<a id="guide-reference-9"></a>
+
 ### C90示例：讀metadata而不依賴struct padding
 
 ```c
@@ -495,6 +529,8 @@ static unsigned long ExampleDeviceAppStart(const unsigned char *metadata)
 此示例示意 LE 及欄位 offset；完整驗證另核對 magic、format、長度與 CRC。
 讀RL78遠端Flash須依實際編譯器的far pointer／讀取API搬到RAM，不能將上例near pointer直接指向所有Flash。
 Flash erase／write必須走該MCU的FSL／RFD及保護流程，不能用普通pointer賦值取代。
+
+<a id="guide-reference-10"></a>
 
 ## 4. CAN payload逐byte格式
 
@@ -570,6 +606,8 @@ status=00為成功，非零必須依command／狀態解讀；例如01 BAD_COMMAN
 第一個64-byte block成功的ACK為`0C 00 00 00 40 20 00 00`，最後四byte解為下一個Flash address 0x02040。
 ACK範例不是完整燒錄流程；必須先完成live比對、metadata staging／SEAL及START，不能直接拿任意raw frame寫入。
 
+<a id="guide-reference-11"></a>
+
 ### 與Custom Transfer／Bridge Self Test的區別
 
 | Byte | Transfer request 0x710 | Transfer response 0x711 | Self Test 0x123 |
@@ -586,6 +624,8 @@ ACK範例不是完整燒錄流程；必須先完成live比對、metadata staging
 Transfer固定DLC8，CRC8 polynomial07、init00、xorout00、不反射；命令參數見
 [Transfer協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/F13_TRANSFER_PROTOCOL.md)。
 Self Test不是更新協定，也沒有Byte7 CRC；需CAN analyzer觀察實際bus訊號。
+
+<a id="guide-reference-12"></a>
 
 ## 5. 改成自己的專案：修改順序與驗證
 

@@ -1,0 +1,497 @@
+{
+  "can-device": {
+    "title": "Classical CAN／CAN FD device 工程",
+    "topics": [
+      [
+        "工程與用途",
+        "工程與用途",
+        "guide-can-device-1",
+        "guide-can-device-1"
+      ],
+      [
+        "板端與更新設定",
+        "板端與更新設定",
+        "guide-can-device-2",
+        "guide-can-device-2"
+      ],
+      [
+        "Flash 配置",
+        "Flash 配置",
+        "guide-can-device-3",
+        "guide-can-device-3"
+      ],
+      [
+        "Boot 啟動與更新",
+        "Boot 啟動與更新",
+        "f13-boot-decision",
+        "guide-can-device-4"
+      ],
+      [
+        "MCU CAN FD device 工程設定",
+        "MCU CAN FD device 工程設定",
+        "guide-can-device-5",
+        "guide-can-device-5"
+      ],
+      [
+        "設定來源",
+        "設定來源",
+        "guide-can-device-6",
+        "guide-can-device-6"
+      ],
+      [
+        "接收與中斷",
+        "接收與中斷",
+        "guide-can-device-7",
+        "guide-can-device-7"
+      ],
+      [
+        "更新區塊與 Flash 交接",
+        "更新區塊與 Flash 交接",
+        "guide-can-device-8",
+        "guide-can-device-8"
+      ],
+      [
+        "工程與建置",
+        "工程與建置",
+        "guide-can-device-9",
+        "guide-can-device-9"
+      ],
+      [
+        "驗證項目",
+        "驗證項目",
+        "guide-can-device-10",
+        "guide-can-device-10"
+      ]
+    ]
+  },
+  "app-development": {
+    "title": "App Metadata、IRQ 與更新耗時",
+    "topics": [
+      [
+        "A. 專案配置與共用介面",
+        "A. 專案配置與共用介面",
+        "guide-app-development-1",
+        "guide-app-development-1"
+      ],
+      [
+        "B. Metadata 設定與產生來源",
+        "B. Metadata 設定與產生來源",
+        "guide-app-development-2",
+        "guide-app-development-2"
+      ],
+      [
+        "C. App Vector Table：新增 IRQ 範例",
+        "C. App Vector Table：新增 IRQ 範例",
+        "guide-app-development-3",
+        "guide-app-development-3"
+      ],
+      [
+        "D. 產生與建置",
+        "D. 產生與建置",
+        "guide-app-development-4",
+        "guide-app-development-4"
+      ],
+      [
+        "E. BIN 與向量驗證",
+        "E. BIN 與向量驗證",
+        "guide-app-development-5",
+        "guide-app-development-5"
+      ],
+      [
+        "F. 常見錯誤與只換 App 的邊界",
+        "F. 常見錯誤與只換 App 的邊界",
+        "guide-app-development-6",
+        "guide-app-development-6"
+      ],
+      [
+        "G. Device CAN 速率：250K／500K／1M",
+        "G. Device CAN 速率：250K／500K／1M",
+        "guide-app-development-7",
+        "guide-app-development-7"
+      ],
+      [
+        "App BIN 更新耗時參考",
+        "App BIN 更新耗時參考",
+        "guide-app-development-8",
+        "guide-app-development-8"
+      ]
+    ]
+  },
+  "serial-device": {
+    "title": "串列 ISP 共用工程與協定契約",
+    "topics": [
+      [
+        "配置與資料來源",
+        "配置與資料來源",
+        "guide-serial-device-1",
+        "guide-serial-device-1"
+      ],
+      [
+        "編輯、產生與建置",
+        "編輯、產生與建置",
+        "guide-serial-device-2",
+        "guide-serial-device-2"
+      ],
+      [
+        "Metadata offset與協定配置",
+        "Metadata offset與協定配置",
+        "guide-serial-device-3",
+        "guide-serial-device-3"
+      ],
+      [
+        "SC設定與重新產生",
+        "SC設定與重新產生",
+        "guide-serial-device-4",
+        "guide-serial-device-4"
+      ],
+      [
+        "Framed control與INFO",
+        "Framed control與INFO",
+        "guide-serial-device-5",
+        "guide-serial-device-5"
+      ],
+      [
+        "驗證範圍",
+        "驗證範圍",
+        "guide-serial-device-9",
+        "guide-serial-device-9"
+      ]
+    ]
+  },
+  "uart-device": {
+    "title": "UART Bootloader 與協定格式",
+    "topics": [
+      [
+        "工程與接線",
+        "工程與接線",
+        "guide-uart-device-1",
+        "guide-uart-device-1"
+      ],
+      [
+        "通訊設定",
+        "通訊設定",
+        "guide-uart-device-2",
+        "guide-uart-device-2"
+      ],
+      [
+        "Boot 執行流程",
+        "Boot 執行流程",
+        "guide-uart-device-3",
+        "guide-uart-device-3"
+      ],
+      [
+        "Protocol Format",
+        "Protocol Format",
+        "guide-uart-device-4",
+        "guide-uart-device-4"
+      ],
+      [
+        "異常與完成條件",
+        "異常與完成條件",
+        "guide-uart-device-5",
+        "guide-uart-device-5"
+      ],
+      [
+        "程式對照與診斷",
+        "程式對照與診斷",
+        "guide-uart-device-6",
+        "guide-uart-device-6"
+      ]
+    ]
+  },
+  "i2c-device": {
+    "title": "I2C Bootloader 與協定格式",
+    "topics": [
+      [
+        "工程與接線",
+        "工程與接線",
+        "guide-i2c-device-1",
+        "guide-i2c-device-1"
+      ],
+      [
+        "通訊設定",
+        "通訊設定",
+        "guide-i2c-device-2",
+        "guide-i2c-device-2"
+      ],
+      [
+        "Boot 執行流程",
+        "Boot 執行流程",
+        "guide-i2c-device-3",
+        "guide-i2c-device-3"
+      ],
+      [
+        "Protocol Format",
+        "Protocol Format",
+        "guide-i2c-device-4",
+        "guide-i2c-device-4"
+      ],
+      [
+        "異常與完成條件",
+        "異常與完成條件",
+        "guide-i2c-device-5",
+        "guide-i2c-device-5"
+      ],
+      [
+        "程式對照與診斷",
+        "程式對照與診斷",
+        "guide-i2c-device-6",
+        "guide-i2c-device-6"
+      ]
+    ]
+  },
+  "xmodem-device": {
+    "title": "Xmodem Bootloader 與協定格式",
+    "topics": [
+      [
+        "工程與接線",
+        "工程與接線",
+        "guide-xmodem-device-1",
+        "guide-xmodem-device-1"
+      ],
+      [
+        "通訊設定",
+        "通訊設定",
+        "guide-xmodem-device-2",
+        "guide-xmodem-device-2"
+      ],
+      [
+        "Boot 執行流程",
+        "Boot 執行流程",
+        "guide-xmodem-device-3",
+        "guide-xmodem-device-3"
+      ],
+      [
+        "Protocol Format",
+        "Protocol Format",
+        "guide-xmodem-device-4",
+        "guide-xmodem-device-4"
+      ],
+      [
+        "異常與完成條件",
+        "異常與完成條件",
+        "guide-xmodem-device-5",
+        "guide-xmodem-device-5"
+      ],
+      [
+        "程式對照與診斷",
+        "程式對照與診斷",
+        "guide-xmodem-device-6",
+        "guide-xmodem-device-6"
+      ]
+    ]
+  },
+  "porting": {
+    "title": "Boot／App 移植與 Flash",
+    "topics": [
+      [
+        "Basic 範例與 CAN golden sample",
+        "Basic 範例與 CAN golden sample",
+        "guide-porting-1",
+        "guide-porting-1"
+      ],
+      [
+        "1. 工程來源",
+        "1. 工程來源",
+        "guide-porting-2",
+        "guide-porting-2"
+      ],
+      [
+        "2. Flash 與映像配置",
+        "2. Flash 與映像配置",
+        "guide-porting-3",
+        "guide-porting-3"
+      ],
+      [
+        "重要事項：Boot 燒錄方式與 Flash 尾端保護",
+        "重要事項：Boot 燒錄方式與 Flash 尾端保護",
+        "guide-porting-4",
+        "guide-porting-4"
+      ],
+      [
+        "3. Startup、RAM 與中斷交接",
+        "3. Startup、RAM 與中斷交接",
+        "guide-porting-5",
+        "guide-porting-5"
+      ],
+      [
+        "使用者程式入口與 Generate Code",
+        "使用者程式入口與 Generate Code",
+        "guide-porting-6",
+        "guide-porting-6"
+      ],
+      [
+        "Code Flash 擦寫：ROM 儲存與 RAM 執行",
+        "Code Flash 擦寫：ROM 儲存與 RAM 執行",
+        "guide-porting-7",
+        "guide-porting-7"
+      ],
+      [
+        "映像 CRC32 與硬體 CRC",
+        "映像 CRC32 與硬體 CRC",
+        "guide-porting-8",
+        "guide-porting-8"
+      ],
+      [
+        "4. 固定向量介面",
+        "4. 固定向量介面",
+        "guide-porting-9",
+        "guide-porting-9"
+      ],
+      [
+        "5. 設定檔與建置",
+        "5. 設定檔與建置",
+        "guide-porting-10",
+        "guide-porting-10"
+      ],
+      [
+        "6. 初次安裝與後續更新",
+        "6. 初次安裝與後續更新",
+        "guide-porting-11",
+        "guide-porting-11"
+      ],
+      [
+        "7. 啟動與更新流程",
+        "7. 啟動與更新流程",
+        "guide-porting-12",
+        "guide-porting-12"
+      ],
+      [
+        "8. App 變更與驗證",
+        "8. App 變更與驗證",
+        "guide-porting-13",
+        "guide-porting-13"
+      ]
+    ]
+  },
+  "reference": {
+    "title": "Flash、Metadata 與 CAN 封包參考",
+    "topics": [
+      [
+        "1. 適用角色與閱讀方式",
+        "1. 適用角色與閱讀方式",
+        "guide-reference-1",
+        "guide-reference-1"
+      ],
+      [
+        "Flash絕對位址、BIN offset與metadata offset",
+        "Flash絕對位址、BIN offset與metadata offset",
+        "guide-reference-2",
+        "guide-reference-2"
+      ],
+      [
+        "CRC 類型、計算範圍與用途",
+        "CRC 類型、計算範圍與用途",
+        "guide-reference-3",
+        "guide-reference-3"
+      ],
+      [
+        "CRC 的連續 Flash 位址",
+        "CRC 的連續 Flash 位址",
+        "guide-reference-4",
+        "guide-reference-4"
+      ],
+      [
+        "2. 每個metadata byte：address、範例值與來源",
+        "2. 每個metadata byte：address、範例值與來源",
+        "guide-reference-5",
+        "guide-reference-5"
+      ],
+      [
+        "逐 byte 實體位址與範例值",
+        "逐 byte 實體位址與範例值",
+        "guide-reference-6",
+        "guide-reference-6"
+      ],
+      [
+        "欄位的語意與修改限制",
+        "欄位的語意與修改限制",
+        "guide-reference-7",
+        "guide-reference-7"
+      ],
+      [
+        "3. 範例程式、產生端與修改位置",
+        "3. 範例程式、產生端與修改位置",
+        "guide-reference-8",
+        "guide-reference-8"
+      ],
+      [
+        "C90示例：讀metadata而不依賴struct padding",
+        "C90示例：讀metadata而不依賴struct padding",
+        "guide-reference-9",
+        "guide-reference-9"
+      ],
+      [
+        "4. CAN payload逐byte格式",
+        "4. CAN payload逐byte格式",
+        "guide-reference-10",
+        "guide-reference-10"
+      ],
+      [
+        "與Custom Transfer／Bridge Self Test的區別",
+        "與Custom Transfer／Bridge Self Test的區別",
+        "guide-reference-11",
+        "guide-reference-11"
+      ],
+      [
+        "5. 改成自己的專案：修改順序與驗證",
+        "5. 改成自己的專案：修改順序與驗證",
+        "guide-reference-12",
+        "guide-reference-12"
+      ]
+    ]
+  },
+  "tool-guides": {
+    "title": "Tool 操作與通訊驗證入口",
+    "topics": [
+      [
+        "Tool 與其他操作入口",
+        "Tool 與其他操作入口",
+        "tool-links",
+        "tool-links"
+      ],
+      [
+        "下載與操作入口",
+        "下載與操作入口",
+        "downloads",
+        "downloads"
+      ],
+      [
+        "F24 (MCU CAN host)：App 工程與向量設定",
+        "F24 (MCU CAN host)：App 工程與向量設定",
+        "host-app-engineering",
+        "host-app-engineering"
+      ],
+      [
+        "更新政策與通訊速度",
+        "更新政策與通訊速度",
+        "image-update-policy",
+        "image-update-policy"
+      ],
+      [
+        "更新確認與驗證紀錄",
+        "更新確認與驗證紀錄",
+        "update-confirmation",
+        "update-confirmation"
+      ],
+      [
+        "CAN FD App 更新操作",
+        "CAN FD App 更新操作",
+        "can-fd-update",
+        "can-fd-update"
+      ],
+      [
+        "CAN FD Custom Transfer 通訊測試",
+        "CAN FD Custom Transfer 通訊測試",
+        "can-fd-custom-transfer",
+        "can-fd-custom-transfer"
+      ],
+      [
+        "UART／Xmodem／I2C device 操作",
+        "UART／Xmodem／I2C device 操作",
+        "uart-device-operation",
+        "uart-device-operation"
+      ]
+    ]
+  }
+}

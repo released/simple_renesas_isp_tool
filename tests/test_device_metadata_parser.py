@@ -81,9 +81,9 @@ class DeviceMetadataParser(unittest.TestCase):
                 names = [Path(node.text.replace('\\', '/')).name for node in tree.findall('.//Instance/RelativePath') if node.text]
                 for source in ('image_metadata.c', 'image_metadata.h', 'image_metadata_profile.c'):
                     self.assertEqual(names.count(source), 1, (project.name, source))
-            self.assertIn('ImageMetadataValidate(', (boot / ('r_main.c' if boot == F13 else 'boot_main.c')).read_text())
+            self.assertIn('ImageMetadataValidate(', (boot / 'custom_func.c').read_text())
             app = boot.parent / (boot.name + '_app')
-            self.assertIn('ImageMetadataRead32(', (app / ('custom_func.c' if boot == F13 else 'app_main.c')).read_text())
+            self.assertIn('ImageMetadataRead32(', (app / 'custom_func.c').read_text())
 
     def test_sync_check_only_refuses_drift_without_mutation(self):
         with tempfile.TemporaryDirectory(prefix='metadata_sync_') as temporary:

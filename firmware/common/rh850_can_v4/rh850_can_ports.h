@@ -1,7 +1,8 @@
 #ifndef RH850_CAN_PORTS_H
 #define RH850_CAN_PORTS_H
 #include "can_port_config.h"
-typedef struct can_port_frame {
+typedef struct can_port_frame
+{
     unsigned long id;
     unsigned char channel, length, data[64];
 } can_port_frame_t;
@@ -10,7 +11,8 @@ typedef struct can_port_frame {
  * error observations (retained level flags may be observed repeatedly).
  * last_result is the last initialization/TX outcome,not a wire fault history.
  */
-typedef struct can_port_diagnostics {
+typedef struct can_port_diagnostics
+{
     unsigned short irq, dropped, invalid, api_errors, last_result;
     unsigned char peak;
 } can_port_diagnostics_t;
@@ -18,12 +20,12 @@ typedef struct can_port_diagnostics {
  * event, never just queue admission. Raw v4 queue/control APIs must not be
  * used concurrently with this foreground protocol owner.
  */
-unsigned char CanPorts_Init(unsigned char fd, unsigned short request_id,
-    unsigned char raw, unsigned short raw_id, unsigned short raw_mask);
+unsigned char CanPorts_Init(unsigned char fd, unsigned short request_id, unsigned char raw,
+                            unsigned short raw_id, unsigned short raw_mask);
 void CanPorts_Irq(void);
 unsigned char CanPorts_Read(can_port_frame_t *frame);
-unsigned char CanPorts_Send(unsigned char channel, unsigned short id,
-    const unsigned char *data, unsigned char length);
+unsigned char CanPorts_Send(unsigned char channel, unsigned short id, const unsigned char *data,
+                            unsigned char length);
 unsigned char CanPorts_Enabled(unsigned char channel);
 unsigned char CanPorts_First(void);
 void CanPorts_Diagnostics(unsigned char channel, can_port_diagnostics_t *out);

@@ -4,8 +4,7 @@ $Project=(Resolve-Path -LiteralPath $Project).Path
 $name=Split-Path -Leaf $Project
 if($name -notmatch '^RL78_(F24|G16|G22)_(ISP_Boot_loader_(UART|I2C|Xmodem)(_app)?|(UART|Xmodem|I2C_Slave)_Transfer)$'){throw 'Expected a named SC-owned RL78 serial project.'}
 $mcu=$Matches[1];$bus=if($Matches[3]){$Matches[3]}elseif($Matches[5] -eq 'I2C_Slave'){'I2C'}else{$Matches[5]}
-$bootName='RL78_'+$mcu+'_ISP_Boot_loader_'+$bus
-$boot=Join-Path (Split-Path -Parent $Project) $bootName
+$boot=$Project
 function Require($Test,[string]$Message){if(!$Test){throw ('SC consistency: '+$Message)}}
 function Macro([string]$Path,[string]$Key){
     $text=[IO.File]::ReadAllText($Path);$m=[regex]::Match($text,'(?m)^\s*#define\s+'+[regex]::Escape($Key)+'\s+\(?\s*(0[xX][0-9A-Fa-f]+|[0-9]+)[uUlL]*\s*\)?')

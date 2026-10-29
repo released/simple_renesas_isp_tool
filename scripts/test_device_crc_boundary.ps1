@@ -5,13 +5,16 @@ param(
 )
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'device_hal_paths.ps1')
 $projects=@($DeviceBootProjects | ForEach-Object { (Resolve-Path -LiteralPath $_).Path })
 $bins=@($InputBin | ForEach-Object { (Resolve-Path -LiteralPath $_).Path })
-$sources=@($projects | ForEach-Object { Join-Path $_ 'sw_crc32.c' })
+$sources=@($projects | ForEach-Object { Get-DeviceProjectSource $_ 'sw_crc32.c' })
 $hashes=@($sources | ForEach-Object { (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash } | Sort-Object -Unique)
 if($hashes.Count -ne 1){throw 'Device CRC source copies differ.'}
-$out=Join-Path $repo ('tmp\internal\tests\crc_boundary\'+[Guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $out | Out-Null
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$testScope=New-OwnedTestWorkspace 'device_crc_boundary'
+$out=$testScope.Path
+try {
 $vswhere=Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Microsoft Visual Studio\Installer\vswhere.exe'
 $vs=& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if(!$vs){throw 'MSVC developer tools are required for native checks.'}
@@ -36,20 +39,20 @@ foreach($project in $projects){
     New-Item -ItemType Directory -Path $target | Out-Null
     Push-Location -LiteralPath $target
     try{
-        & cl /nologo /std:c++17 /W4 /WX /EHsc ('/I'+$project) (Join-Path $repo 'tests\device_crc_boundary_tests.cpp') /Fe:crc_boundary.exe
+        & cl /nologo /std:c++17 /W4 /WX /EHsc ('/I'+$project) ('/I'+(Join-Path $project 'hal\image')) (Join-Path $repo 'tests\device_crc_boundary_tests.cpp') /Fe:crc_boundary.exe
         if($LASTEXITCODE){throw "Native CRC build failed: $name"}
         & (Join-Path $target 'crc_boundary.exe') @bins
         if($LASTEXITCODE){throw "Native CRC checks failed: $name"}
-        & $Compiler -S -cpu=S3 -Olite -lang=c -strict_std -pass_source -o crc_target.asm (Join-Path $project 'sw_crc32.c')
+        & $Compiler -S -cpu=S3 -Olite -lang=c -strict_std -pass_source -o crc_target.asm (Get-DeviceProjectSource $project 'sw_crc32.c')
         if($LASTEXITCODE){throw "CC-RL CRC compilation failed: $name"}
         $asm=Get-Content -LiteralPath 'crc_target.asm' -Raw
         Assert-AddressCarry $asm
-        $source=Get-Content -LiteralPath (Join-Path $project 'sw_crc32.c') -Raw
+        $source=Get-Content -LiteralPath (Get-DeviceProjectSource $project 'sw_crc32.c') -Raw
         $safe='data = (const unsigned char __far *)((f13_crc_address_t)data + 1UL);'
         if(!$source.Contains($safe)){throw 'Missing mutation anchor.'}
         # Generated local negative fixture; never modify the selected project.
         [IO.File]::WriteAllText((Join-Path $target 'unsafe.c'),$source.Replace($safe,'data++;'))
-        & $Compiler -S -cpu=S3 -Olite -lang=c -strict_std -pass_source ('-I'+$project) -o unsafe.asm unsafe.c
+        & $Compiler -S -cpu=S3 -Olite -lang=c -strict_std -pass_source ('-I'+$project) ('-I'+(Join-Path $project 'hal\image')) -o unsafe.asm unsafe.c
         if($LASTEXITCODE){throw 'Unsafe regression fixture did not compile.'}
         $rejected=$false
         try{Assert-AddressCarry (Get-Content -LiteralPath 'unsafe.asm' -Raw)}catch{
@@ -63,3 +66,5 @@ foreach($project in $projects){
 }
 Write-Host "Evidence: $out"
 Write-Host 'Physical Flash/update/timeout acceptance NOT RUN.'
+
+} finally { Remove-OwnedTestWorkspace $testScope }

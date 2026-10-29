@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include "bridge_image_metadata.h"
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Bridge self-update is a separate destination/contract, never a CAN target

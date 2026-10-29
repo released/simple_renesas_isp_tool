@@ -1,5 +1,6 @@
 """English F24 README parity and source/link checks; no builds or Git writes."""
 from pathlib import Path
+import json
 import os
 import re
 import unittest
@@ -58,7 +59,13 @@ class F24DeviceReadmes(unittest.TestCase):
                 path = WEB / parsed.path.strip('/') / 'index.md'
                 self.assertTrue(path.is_file(), (name, link))
                 if parsed.fragment:
-                    self.assertIn('id="' + parsed.fragment + '"', path.read_text(encoding='utf-8-sig'), (name, link))
+                    anchor = 'id="' + parsed.fragment + '"'
+                    if anchor not in path.read_text(encoding='utf-8-sig'):
+                        routes = json.loads((path.parent / 'guide-map.json').read_text(encoding='utf-8-sig'))
+                        route = routes['aliases'][parsed.fragment]
+                        chapter = (path.parent / route['page']).with_suffix('.md').resolve()
+                        self.assertEqual(chapter.parent, path.parent.resolve())
+                        self.assertIn('id="' + route['anchor'] + '"', chapter.read_text(encoding='utf-8-sig'), (name, link))
 
     def test_device_geometry_timer_and_current_capabilities(self):
         contract = (BOOT / 'image_metadata_config.h').read_text()
@@ -89,7 +96,7 @@ class F24DeviceReadmes(unittest.TestCase):
                                (APP, APP.name + '_update.bin')):
             self.assertIn('DefaultBuild/' + keeper, self.text[folder.name])
             self.assertIn('!/DefaultBuild/' + keeper, (folder / '.gitignore').read_text())
-        runtime = (APP / 'app_main.c').read_text()
+        runtime = (APP / 'custom_func.c').read_text()
         for term in ('boot-validated', 'CAN update: completed', 'log(timer)-'):
             self.assertIn(term, runtime)
             self.assertIn(term, app)

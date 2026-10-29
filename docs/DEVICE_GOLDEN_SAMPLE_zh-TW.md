@@ -5,14 +5,14 @@
 F13 與 F24 CAN device 的獨立 Boot／App 工程共同作為 metadata、向量表與建置流程的參考基準。
 新增 MCU 或修改共通功能時，先對照這兩份工程，再列出新工程的硬體與分區差異。
 基準涵蓋來源、建置、離線驗證及已完成的正常 CAN App 更新／啟動實板驗證。
-兩個 device 沿用相同 Tool 操作順序；F24 的完成報告與 UART counter 見 [更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+兩個 device 沿用相同 Tool 操作順序；F24 的完成報告與 UART counter 見 [更新結果](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)。
 其他速率、周邊 IRQ、壓力與故障驗證按各 MCU／測試條件分別記錄。
 
 | 項目 | 共通基準 | MCU 專屬設定 |
 | --- | --- | --- |
 | Metadata 編輯 | `app_image_config.h` 的六個數值 define | App version／build、target ID、version control |
-| 共用映像契約 | Boot 的 `image_metadata_config.h`，使用 `IMAGE_*` 宣告 | 格式、MCU／Flash、IRQ ABI、政策、Boot version／build |
-| 執行時解析／驗證 | 相同 `image_metadata.c/.h`，無 ISP driver／Flash-write 相依 | 工程提供 config／profile；API 見 [C 模組移植](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser) |
+| 共用映像契約 | 各工程的 `image_metadata_config.h`，使用 `IMAGE_*` 宣告 | 格式、MCU／Flash、IRQ ABI、政策、Boot version／build |
+| 執行時解析／驗證 | 相同 `hal/image/image_metadata.c/.h`，無 ISP driver／Flash-write 相依 | 工程提供 config／profile；API 見 [C 模組移植](https://released.github.io/slide_boot_loader_for_RL78/#device-metadata-parser) |
 | 通訊／啟動交接 | `can_boot_config.h`／`boot_app_handoff.h` 各自獨立 | CAN 參數／no-init RAM 與 owner；產生器讀取同一來源 |
 | IRQ 編輯 | `app_irq_handlers.h` 的 `APP_IRQ_HANDLERS(X)` 清單 | 合法 vector 位址與 ISR 名稱 |
 | 建置 | CS+ pre-build 產表、post-build 驗證及封裝；Windows PowerShell／.NET | 編譯器、linker、startup 與 Flash driver |
@@ -29,15 +29,25 @@ Flash／metadata／CAN byte 規格見 [逐 byte 對照](https://released.github.
 
 ## 設定讀取器
 
-兩份 Boot repository 各自包含相同的 `app_config.ps1`，App 使用相鄰 Boot 的本機副本，
+Boot／App 工程各自包含本機的 `app_config.ps1`，
 建置不依賴 Tool repository 或 Python。
-Tool 的 `scripts/device_app_config.ps1` 維護共通讀取規格；`sync_device_app_config.ps1` 同步及檢查兩份副本。
-`scripts/device_app_report.ps1` 同樣同步為各 Boot repository 的 `app_build_report.ps1`，
+Tool 的 `scripts/device_app_config.ps1` 維護共通讀取規格；`sync_device_app_config.ps1` 同步及檢查相關工程副本。
+`scripts/device_app_report.ps1` 同樣同步為各工程的 `app_build_report.ps1`，
 封裝完成後從實際 BIN 產生離線 HTML，不引入跨 repository 的報告依賴。
 讀取器只接受文件列出的 C header 設定寫法，拒絕條件編譯、重複定義與任意運算式，
 使產生器與實際 C 語意保持一致。
 
 ## 新增 MCU／修改功能的檢查順序
+
+既有工程可整份複製作為起點。Tool 維護端也提供以獨立 golden sample 建立工程的入口：
+
+```powershell
+.\scripts\initialize_device_samples.ps1 -ReferenceRoot .\golden_samples -DeviceRoot .\examples -Mcu F24 -Bus CAN_FD -Role app
+```
+
+`ReferenceRoot` 與 `DeviceRoot` 分別是範例來源及新工程的父目錄。
+初始化保留所選工程的 C header、HAL、SC 與本機 helpers，排除編譯輸出、測試 BIN、個人設定與 Git 資料。
+既有目的工程會停止建立，保留原內容；初始化完成後使用該工程自己的 `build.ps1`。
 
 1. 對照 F13／F24 的設定 header、產表、封裝及 App-only 流程。
 2. 列出 MCU、clock、pins、Flash driver、geometry、IRQ 來源與 ABI 的差異。

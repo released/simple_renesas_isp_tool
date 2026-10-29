@@ -11,8 +11,10 @@ if(!$vs){throw 'MSVC developer tools are required for native models.'}
 $lines=& cmd /d /c ('call "'+(Join-Path $vs 'Common7\Tools\VsDevCmd.bat')+'" -no_logo -arch=amd64 >nul && set')
 if($LASTEXITCODE){throw 'MSVC environment failed.'}
 foreach($line in $lines){if($line -match '^([^=]+)=(.*)$'){[Environment]::SetEnvironmentVariable($Matches[1],$Matches[2],'Process')}}
-$out=Join-Path $repo 'tmp\internal\tests\can_fd'
-New-Item -ItemType Directory -Path $out -Force | Out-Null
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$testScope=New-OwnedTestWorkspace 'can_fd'
+$out=$testScope.Path
+try {
 $core=Join-Path $repo 'src\core'
 $sources=@((Join-Path $repo 'tests\can_fd_upgrade_tests.cpp'),(Join-Path $boot 'image_metadata.c'),
     (Join-Path $boot 'image_metadata_profile.c'))
@@ -26,3 +28,5 @@ try{
     & (Join-Path $out 'can_fd_upgrade_tests.exe') $image
     if($LASTEXITCODE){throw 'FD native model failed.'}
 }finally{Pop-Location}
+
+} finally { Remove-OwnedTestWorkspace $testScope }

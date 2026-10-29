@@ -39,7 +39,8 @@ static uint8_t *g_backend_rx;
 static void BackendCreate(void)
 {
     R_Config_IICA0_Create();
-    IICAMK0 = 1U; IICE0 = 0U;
+    IICAMK0 = 1U;
+    IICE0 = 0U;
     PRS0 = 1U;
     SMC0 = g_backend_speed;
     IICWL0 = g_backend_speed ? 26U : 94U;
@@ -48,8 +49,14 @@ static void BackendCreate(void)
 }
 uint8_t Bridge_I2cBackend_Open(uint8_t port, uint8_t speed)
 {
-    if ((port != 0U) || (speed > 1U)) return 3U;
-    if (F24_CanClockIsReady() == 0U) return BRIDGE_I2C_BUS_ERROR;
+    if ((port != 0U) || (speed > 1U))
+    {
+        return 3U;
+    }
+    if (F24_CanClockIsReady() == 0U)
+    {
+        return BRIDGE_I2C_BUS_ERROR;
+    }
     g_backend_owned = 1U;
     g_backend_state = BACK_IDLE;
     g_backend_error = 0U;
@@ -60,16 +67,23 @@ uint8_t Bridge_I2cBackend_Open(uint8_t port, uint8_t speed)
 
 static uint8_t BackendStart(uint8_t address, uint16_t length, uint8_t read)
 {
-    if ((length == 0U) || (length > BRIDGE_I2C_LIMIT) ||
-        (address < 8U) || (address > 0x77U)) return 3U;
-    if ((g_backend_state != BACK_IDLE) &&
-        (g_backend_state != BACK_HELD)) return 1U;
+    if ((length == 0U) || (length > BRIDGE_I2C_LIMIT) || (address < 8U) || (address > 0x77U))
+    {
+        return 3U;
+    }
+    if ((g_backend_state != BACK_IDLE) && (g_backend_state != BACK_HELD))
+    {
+        return 1U;
+    }
     if (IICE0 == 0U)
     {
         BackendCreate();
     }
     IICAMK0 = 1U;
-    if ((IICBSY0 != 0U) && (MSTS0 == 0U)) return 1U;
+    if ((IICBSY0 != 0U) && (MSTS0 == 0U))
+    {
+        return 1U;
+    }
     g_backend_address = (uint8_t)((address << 1) | read);
     g_backend_length = length;
     g_backend_count = 0U;
@@ -83,8 +97,8 @@ static uint8_t BackendStart(uint8_t address, uint16_t length, uint8_t read)
     return 0U;
 }
 
-uint8_t Bridge_I2cBackend_Write(uint8_t address, const uint8_t *data,
-                              uint16_t length, uint8_t hold_bus)
+uint8_t Bridge_I2cBackend_Write(uint8_t address, const uint8_t *data, uint16_t length,
+                                uint8_t hold_bus)
 {
     g_backend_tx = data;
     g_backend_hold = hold_bus;
@@ -107,9 +121,14 @@ static void BackendError(uint8_t status)
 
 uint8_t Bridge_I2cBackend_Irq(void)
 {
-    if (g_backend_owned == 0U) return 0U;
-    if ((g_backend_state == BACK_IDLE) ||
-        (g_backend_state == BACK_START)) return 1U;
+    if (g_backend_owned == 0U)
+    {
+        return 0U;
+    }
+    if ((g_backend_state == BACK_IDLE) || (g_backend_state == BACK_START))
+    {
+        return 1U;
+    }
     if (MSTS0 == 0U)
     {
         BackendError(BRIDGE_I2C_ARBITRATION);
@@ -214,7 +233,10 @@ uint8_t Bridge_I2cBackend_Poll(void)
 
 void Bridge_I2cBackend_Abort(void)
 {
-    if (g_backend_owned == 0U) return;
+    if (g_backend_owned == 0U)
+    {
+        return;
+    }
     IICAMK0 = 1U;
     SPT0 = 1U;
     IICE0 = 0U;

@@ -1,20 +1,31 @@
 param([Parameter(Mandatory=$true)][string]$DeviceRoot,
-    [ValidateSet('RL78Serial','RH850Can','V4')][string[]]$Group=@('RL78Serial','RH850Can','V4'),
-    [string[]]$ProjectName=@())
+    [ValidateSet('RL78Can','RL78Serial','RH850Can','RH850Serial','V4')][string[]]$Group=@('RL78Serial','RH850Can','V4'),
+    [string[]]$ProjectName=@(),[switch]$BuildWithoutScfg)
 $ErrorActionPreference='Stop'
 $tool=Split-Path -Parent $PSScriptRoot
 $DeviceRoot=(Resolve-Path -LiteralPath $DeviceRoot).Path.TrimEnd('\')
-$out=Join-Path $tool ('tmp\internal\tests\device_scfg_'+[guid]::NewGuid().ToString('N').Substring(0,8))
-[IO.Directory]::CreateDirectory($out)|Out-Null
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$testScope=New-OwnedTestWorkspace 'sc' -ShortPath
+$out=$testScope.Path
+try {
 $cs=Join-Path ${env:ProgramFiles(x86)} 'Renesas Electronics\CS+\CC\CubeSuite+.exe'
 if(!(Test-Path -LiteralPath $cs)){throw 'Installed CS+ is required; no installation is performed.'}
 $names=@()
+if('RL78Can' -in $Group){foreach($mcu in @('F13','F24')){foreach($suffix in @('CAN','CAN_FD')){
+    if($mcu -eq 'F13' -and $suffix -eq 'CAN_FD'){continue}
+    $boot='RL78_'+$mcu+'_Boot_loader_'+$suffix
+    $names+=@($boot,($boot+'_app'),('RL78_'+$mcu+'_'+$suffix+'_Transfer'))
+}}}
 if('RL78Serial' -in $Group){foreach($mcu in @('F13','F24','G16','G22')){foreach($bus in @('UART','I2C','Xmodem')){
     $boot='RL78_'+$mcu+'_ISP_Boot_loader_'+$bus
     $names+=@($boot,($boot+'_app'),('RL78_'+$mcu+'_'+$(if($bus -eq 'I2C'){'I2C_Slave_Transfer'}else{$bus+'_Transfer'})))
 }}}
 if('RH850Can' -in $Group){foreach($suffix in @('CAN','CAN_FD')){
     $names+=@(('Sample_Project_RH850_S1_Boot_loader_'+$suffix),('Sample_Project_RH850_S1_Boot_loader_'+$suffix+'_app'),('Sample_Project_RH850_S1_'+$suffix+'_Transfer'))
+}}
+if('RH850Serial' -in $Group){foreach($bus in @('UART','I2C','Xmodem')){
+    $boot='Sample_Project_RH850_S1_ISP_Boot_loader_'+$bus
+    $names+=@($boot,($boot+'_app'),('Sample_Project_RH850_S1_'+$(if($bus -eq 'I2C'){'I2C_Slave'}else{$bus})+'_Transfer'))
 }}
 if('V4' -in $Group){$names+='Sample_Project_RH850_S1_CAN_FD_MultiCHv4'}
 if($ProjectName.Count){
@@ -48,8 +59,8 @@ $originals=@{};$selected=@();$notApplicable=@()
 foreach($name in $names){
     $source=Join-Path $DeviceRoot $name
     $configs=@(Get-ChildItem -LiteralPath $source -Filter '*.scfg' -File)
-    if(!$configs.Count){$notApplicable+=$name;Write-Host ('N/A no SC-owned configuration: '+$name);continue}
-    if($configs.Count -ne 1 -or $configs[0].BaseName -cne $name){throw 'Ambiguous SC configuration.'}
+    if(!$configs.Count){$notApplicable+=$name;Write-Host ('N/A no SC-owned configuration: '+$name);if(!$BuildWithoutScfg){continue}}
+    elseif($configs.Count -ne 1 -or $configs[0].BaseName -cne $name){throw 'Ambiguous SC configuration.'}
     $items=@(Get-Item -LiteralPath $source)+@(Get-ChildItem -LiteralPath $source -Recurse -Force)
     if($items|Where-Object {$_.Attributes -band [IO.FileAttributes]::ReparsePoint}){throw 'Reparse project refused before copy.'}
     $originals[$source]=SourceManifest $source
@@ -65,6 +76,7 @@ foreach($name in $names){
 }
 foreach($dest in $selected){
     $name=Split-Path -Leaf $dest
+    if(!(Test-Path -LiteralPath (Join-Path $dest ($name+'.scfg')))){continue}
     $family=if($name.StartsWith('RL78_')){'RL78'}else{'RH850'}
     $sc=Join-Path ${env:ProgramFiles(x86)} ('Renesas Electronics\SmartConfigurator\'+$family+'\eclipse\SmartConfiguratorc.exe')
     if(!(Test-Path -LiteralPath $sc)){throw ('Installed '+$family+' SC is required.')}
@@ -75,16 +87,26 @@ foreach($dest in $selected){
     $marker='/* SC_ROUNDTRIP_PRIVATE_REGENERATION_PROOF */'
     [IO.File]::WriteAllText($proof,([IO.File]::ReadAllText($proof)+"`n"+$marker+"`n"),(New-Object Text.UTF8Encoding($false)))
     $before=SourceManifest (Join-Path $dest 'src\smc_gen')
+    $callbacks=@{}
+    foreach($file in @('custom_func.c','custom_func.h','main.c','r_main.c')){
+        $entry=Join-Path $dest $file
+        if(Test-Path -LiteralPath $entry -PathType Leaf){$callbacks[$entry]=(Get-FileHash -LiteralPath $entry).Hash}
+    }
     $log=Join-Path $out ($name+'_sc.log')
     $args='-nosplash -application com.renesas.smc.headlessGeneration -scfg "'+(Join-Path $dest ($name+'.scfg'))+'" -data "'+(Join-Path $out ('sc_workspace_'+$family))+'"'
     $process=Start-Process -FilePath $sc -ArgumentList $args -WindowStyle Hidden -PassThru -Wait -RedirectStandardOutput $log -RedirectStandardError ($log+'.stderr')
     if($null -eq $process.ExitCode -or $process.ExitCode -ne 0){throw ('Actual SC generation failed: '+$log)}
     if(!(Test-Path -LiteralPath $proof) -or [IO.File]::ReadAllText($proof).Contains($marker) -or (SourceManifest (Join-Path $dest 'src\smc_gen')) -ceq $before){throw ('No actual SC regeneration proof: '+$name)}
+    foreach($entry in $callbacks.Keys){if((Get-FileHash -LiteralPath $entry).Hash -cne $callbacks[$entry]){throw ('SC changed a user entry file: '+$entry)}}
     Write-Host ('PASS actual vendor '+$family+' generation: '+$name)
 }
 foreach($dest in $selected){Build-Copy $dest 'regenerated'}
 foreach($dest in $selected|Where-Object {(Split-Path -Leaf $_).EndsWith('_app')}){
     $boot=$dest.Substring(0,$dest.Length-4)
+    if(!(Test-Path -LiteralPath $boot)){
+        Write-Host ('PASS standalone App rebuild without a sibling Boot: '+(Split-Path -Leaf $dest))
+        continue
+    }
     $files=@(Get-ChildItem -LiteralPath (Join-Path $boot 'DefaultBuild') -File|Where-Object {$_.Extension -in @('.bin','.hex','.mot')})
     if(!$files.Count){throw 'No paired Boot delivery to preserve.'}
     $before=(@($files|ForEach-Object {$_.Name+' '+(Get-FileHash -LiteralPath $_.FullName).Hash}) -join "`n")
@@ -95,3 +117,16 @@ foreach($dest in $selected|Where-Object {(Split-Path -Leaf $_).EndsWith('_app')}
 }
 foreach($source in $originals.Keys){if((SourceManifest $source) -cne $originals[$source]){throw ('Original source changed during isolated audit: '+$source)}}
 Write-Host ('PASS actual SC roundtrip count='+$selected.Count+'; N/A no SC='+$notApplicable.Count+'; original sources preserved; '+$out)
+
+} catch {
+    foreach($log in Get-ChildItem -LiteralPath $out -Filter '*build.log' -File){
+        $body=[IO.File]::ReadAllText($log.FullName)
+        if($body -match 'Build ended\(Error:[1-9]|Failed:[1-9]'){
+            Write-Host ('Failed private target log: '+$log.Name)
+            $body -split '\r?\n' | Where-Object {$_ -match '(?:[EF]\d{7}|Exception|#error|Cannot|Could not|Missing|Stale|failed|not found)'} | Select-Object -First 20 | Write-Host
+            Get-Content -LiteralPath $log.FullName -Tail 45 | Write-Host
+        }
+    }
+    Write-Host ('SC roundtrip failed: '+$_.Exception.Message)
+    throw
+} finally { Remove-OwnedTestWorkspace $testScope }

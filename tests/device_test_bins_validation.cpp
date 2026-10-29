@@ -15,8 +15,12 @@ int wmain(int argc,wchar_t** argv) {
         std::vector<std::uint8_t> bytes((std::istreambuf_iterator<char>(stream)),std::istreambuf_iterator<char>());
         firmware_upgrade::firmware_update::ImageInfo info;
         std::wstring error;
-        if(!firmware_upgrade::firmware_update::ValidateImage(
-            firmware_upgrade::firmware_update::Profile::CanUpgrade,bytes,&info,&error)) {
+        if(bytes.size()<516U) return 9;
+        using firmware_upgrade::firmware_update::Profile;
+        const auto profile=bytes[0x100U]=='C'?Profile::CanUpgrade:
+            bytes[0x108U]==0x49U?Profile::I2cUpgrade:
+            bytes[0x108U]==0x58U?Profile::XmodemUpgrade:Profile::UartUpgrade;
+        if(!firmware_upgrade::firmware_update::ValidateImage(profile,bytes,&info,&error)) {
             std::wcerr<<L"Tool validation: "<<error<<L'\n';return 4;
         }
         std::array<unsigned long,64> words{};

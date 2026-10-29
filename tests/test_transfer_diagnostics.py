@@ -19,10 +19,10 @@ class TransferDiagnostics(unittest.TestCase):
         self.assertIn('C0ERFLL & 0x7FFFU', block)
         self.assertIn('~flags & 0x7FFFU', block)
         self.assertNotIn('R_CAN_GetChBusErrFlag()', block)
-        main = (TRANSFER / 'transfer_main.c').read_text(encoding='utf-8-sig')
-        loop = main.split('for (;;) {', 1)[1]
+        main = (TRANSFER / 'custom_func.c').read_text(encoding='utf-8-sig')
+        loop = main.split('void loop(void)', 1)[1]
         self.assertLess(loop.index('Device_CanPollErrors()'), loop.index('CAN_TransferProtocol_Process()'))
-        self.assertIn('CAN_TransferProtocol_OnChannelError(errors)', loop)
+        self.assertIn('CAN_TransferProtocol_OnChannelError(', loop)
         for label in ('clock status:', 'CAN init:', 'stage=', 'global_status=',
                       'channel_status=', 'filter=', 'diagnostics.standby'):
             self.assertIn(label, main)
@@ -49,19 +49,23 @@ class TransferDiagnostics(unittest.TestCase):
                          re.sub(pattern, 'IDENTITY', f24, flags=re.S))
 
     def test_sync_and_check_only_drift_preserve_source(self):
-        block = re.search(r'<!-- TRANSFER_DIAGNOSTICS_BEGIN -->.*?<!-- TRANSFER_DIAGNOSTICS_END -->',
-                          (ROOT / 'docs/MULTIBUS_TOOL_GUIDE_zh-TW.md').read_text(encoding='utf-8-sig'), re.S).group()
+        source = (ROOT / 'docs/MULTIBUS_TOOL_GUIDE_zh-TW.md').read_text(encoding='utf-8-sig')
+        sections = ('TRANSFER_EXAMPLES', 'TRANSFER_DIAGNOSTICS')
+        blocks = [re.search(r'<!-- ' + section + r'_BEGIN -->.*?<!-- ' + section + r'_END -->',
+                            source, re.S).group() for section in sections]
         with tempfile.TemporaryDirectory() as temporary:
-            page = Path(temporary) / 'slide_isp_tool_for_RL78/index.md'
+            page = Path(temporary) / 'slide_simple_renesas_isp_tool/custom-transfer.md'
             page.parent.mkdir()
-            page.write_text('before\n<!-- TRANSFER_DIAGNOSTICS_BEGIN -->\nstale\n<!-- TRANSFER_DIAGNOSTICS_END -->\nafter', encoding='utf-8')
+            stale = ['<!-- ' + section + '_BEGIN -->\nstale\n<!-- ' + section + '_END -->'
+                     for section in sections]
+            page.write_text('before\n' + '\n'.join(stale) + '\nafter', encoding='utf-8')
             args = ['powershell.exe', '-NoProfile', '-File', str(ROOT / 'scripts/sync_transfer_diagnostics.ps1'),
                     '-WebRoot', temporary]
             before = page.read_bytes()
             self.assertNotEqual(subprocess.run(args + ['-CheckOnly'], capture_output=True).returncode, 0)
             self.assertEqual(page.read_bytes(), before)
             self.assertEqual(subprocess.run(args, capture_output=True).returncode, 0)
-            self.assertEqual(page.read_text(encoding='utf-8-sig'), 'before\n' + block + '\nafter')
+            self.assertEqual(page.read_text(encoding='utf-8-sig'), 'before\n' + '\n'.join(blocks) + '\nafter')
             self.assertEqual(subprocess.run(args + ['-CheckOnly'], capture_output=True).returncode, 0)
             page.write_text('missing marker', encoding='utf-8')
             before = page.read_bytes()

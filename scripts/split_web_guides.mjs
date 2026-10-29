@@ -9,6 +9,7 @@ const web=resolve(process.argv[2]||'');
 const mode=process.argv[3];
 assert.ok(process.argv[2]&&['--migrate','--refresh'].includes(mode),'supply web root and --migrate/--refresh');
 const layout=JSON.parse(await readFile(join(tool,'scripts/web_guide_layout.json'),'utf8'));
+const bootTopics=JSON.parse(await readFile(join(tool,'scripts/bootloader_guide_contract.json'),'utf8'));
 const escapeHtml=s=>s.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
 const slug=s=>s.trim().toLowerCase().replace(/[`~!@#$%^&*()+=\[\]{}\\|;:'",.<>/?，。；：「」『』（）]/g,'').replace(/\s+/g,'-');
 function outline(source){
@@ -36,13 +37,31 @@ for(const [site,config] of Object.entries(layout)){
   if(mode==='--refresh'){
     const map=JSON.parse(await readFile(join(root,'guide-map.json'),'utf8'));
     map.pages=config.pages;
-    const seen=new Set();
+    const seen=new Set(),owners=new Map();
     for(const page of Object.keys(config.pages)){
       const source=await readFile(join(root,page+'.md'),'utf8');
       for(const match of source.matchAll(/<a id="([^"]+)"><\/a>/g)){
         const id=match[1];if(id==='article_top')continue;
         assert.ok(!seen.has(id),'duplicate stable anchor across chapters '+site+'/'+id);seen.add(id);
         map.aliases[id]={page:page+'.html',anchor:id};
+        owners.set(id,page+'.html');
+      }
+    }
+    // Existing heading aliases can point at a stable anchor moved to another chapter.
+    for(const target of Object.values(map.aliases)){
+      if(owners.has(target.anchor))target.page=owners.get(target.anchor);
+    }
+    if(/^slide_boot_loader_for_(?:RL78|RH850)$/.test(site)){
+      for(const [old,bus,anchor] of [['uart診斷格式','uart','serial-uart-diagnostics'],['i2c-mailbox','i2c','i2c-protocol'],['xmodem-crc128資料與診斷','xmodem','xmodem-protocol'],['xmodem-串流完成','xmodem','xmodem-boot-flow']]){
+        map.aliases[old]={page:bus+'-device.html',anchor};
+      }
+    }
+    if(/^slide_boot_loader_for_(?:RL78|RH850)$/.test(site)){
+      const platform=site.endsWith('RH850')?3:2;
+      for(const [page,entry] of Object.entries(bootTopics)){
+        for(const [,heading,...ids] of entry.topics){
+          map.aliases[slug(heading)]={page:page+'.html',anchor:ids[platform-2]};
+        }
       }
     }
     await writeFile(join(root,'guide-map.json'),JSON.stringify(map,null,2)+'\n');
@@ -146,8 +165,8 @@ for(const [site,config] of Object.entries(layout)){
   const modeMarker=site.includes('isp_tool')?'ISP_MODE_NAV':'DEVICE_MODE_NAV';
   const modeBlock=original.match(new RegExp('<!-- '+modeMarker+'_BEGIN -->[^]*?<!-- '+modeMarker+'_END -->'))[0];
   const intro=site.includes('isp_tool')?
-    'FirmwareUpgradeTool 透過 MCU bridge 連接 device，依需求選擇下載、操作、更新或通訊驗證。\nDevice Boot／App 開發見 [Bootloader 指南](../slide_boot_loader_for_RL78/)。':
-    '依閱讀目的選擇 MCU device 工程、App 設定、移植或格式參考。\n日常更新與通訊驗證見 [ISP Tool 指南](../slide_isp_tool_for_RL78/)。';
+    'Simple Renesas ISP Tool 是個人開發與分享的 MCU 韌體更新及通訊測試工具。\n透過 MCU bridge 連接 device，依需求選擇下載、操作、更新或通訊驗證。\nDevice Boot／App 開發見 [Bootloader 指南](../slide_boot_loader_for_RL78/)。':
+    '依閱讀目的選擇 MCU device 工程、App 設定、移植或格式參考。\n日常更新與通訊驗證見 [ISP Tool 指南](../slide_simple_renesas_isp_tool/)。';
   let overview=`<!-- GUIDE_OVERVIEW -->\n[知識庫首頁](https://released.github.io/)\n\n<a id="article_top"></a>\n\n# ${config.pages.index.title}\n\n${intro}\n\n## 主題指南\n\n| 主題 | 內容 |\n| --- | --- |\n`;
   for(const page of pages)overview+=`| [${config.pages[page].title}](${page}.html) | ${config.pages[page].description} |\n`;
   overview+='\n## CAN 範例分類\n\n'+modeBlock+'\n';

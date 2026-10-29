@@ -3,14 +3,14 @@
 
 #include <stdint.h>
 
-#define F24_CAN_CLOCK_READY                 (0U)
-#define F24_CAN_CLOCK_NOT_STARTED           (1U)
-#define F24_CAN_CLOCK_X1_TIMEOUT            (2U)
-#define F24_CAN_CLOCK_MAIN_TIMEOUT          (3U)
-#define F24_CAN_CLOCK_PLL_TIMEOUT           (4U)
-#define F24_CAN_CLOCK_SELECT_TIMEOUT        (5U)
-#define F24_CAN_CLOCK_BAD_STARTUP           (6U)
-#define F24_CAN_CLOCK_FALLBACK_TIMEOUT      (7U)
+#define F24_CAN_CLOCK_READY (0U)
+#define F24_CAN_CLOCK_NOT_STARTED (1U)
+#define F24_CAN_CLOCK_X1_TIMEOUT (2U)
+#define F24_CAN_CLOCK_MAIN_TIMEOUT (3U)
+#define F24_CAN_CLOCK_PLL_TIMEOUT (4U)
+#define F24_CAN_CLOCK_SELECT_TIMEOUT (5U)
+#define F24_CAN_CLOCK_BAD_STARTUP (6U)
+#define F24_CAN_CLOCK_FALLBACK_TIMEOUT (7U)
 
 /* This board revision uses a user-confirmed 20 MHz X1 crystal. RS-CANFD lite
  * requires fCLK = fMP/2 and forbids HOCO as the communication clock.

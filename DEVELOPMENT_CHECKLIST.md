@@ -1,5 +1,193 @@
 # Firmware Upgrade Tool Development Checklist
 
+## Reader-flow and current-contract review (2026-10-29)
+
+- [x] Correct stale sibling build requirements and publication scope;preserve
+  installed Boot/App compatibility and single-project source ownership.
+- [x] Align both platform entry paths,add RH850 Tool categories,consolidate App
+  examples and add porting/field lookup without changing measurements/byte tables.
+- [x] Distinguish Device ISP/Misc/Reference formats and document serial outcomes;
+  keep normal ISP before Reference and test successful/error wire examples.
+- [x] Synchronize MD/web and12 existing PDFs;pass26 focused tests,actual browser
+  destination/desktop/narrow checks,245-page PDF inspection and preservation hashes.
+- [x] Retire owned test/browser/render payload and run final safe clean;
+  preserve private recovery and existing retained data. No publication performed.
+
+## Paired serial guide entry points (2026-10-29)
+
+- [x] Split UART/I2C/Xmodem Boot/protocol topics equally for RL78/RH850;
+  keep platform configuration and shared frame/INFO/status definitions in one place.
+- [x] Add direct home and Tool links;preserve previous bookmarks and independent
+  build instructions;maintain one transport source and paired chapter contract.
+- [x] Pass focused guide/source/CRC/parity/link checks,actual desktop/narrow
+  browser routes and visual checks of the three existing updated serial PDFs.
+- [x] Preserve Tool/firmware hashes;retire owned scratch and retain concise receipts.
+
+## RH850 C99-format modes (2026-10-28)
+
+- [x] Implement Full/Current selector with default Full, exact retained Current
+  branch and independent16-project files; preserve local editable selectors.
+- [x] Implement C99 format/parser/length/precision/rounding behavior and checked
+  UART errors;document C-locale/ASCII/IEEE/matching-long-double platform scope.
+- [x] Pass73598 native assertions,16 actual target builds,four mode/float-ABI
+  compile cases,wide ABI probe,v4 profiles/rejections and isolated preparation.
+- [x] Preserve1447 protected hashes/original references,16 workflows/settings,
+  exact Current branch and64KiB Boot guard(minimum17264B tail).
+- [x] Sync16 README and existing MD/Web/PDF;10 guide tests and browser/PDF visual
+  checks pass. Retire owned payloads/1743 compiler files with formal hashes kept.
+- [ ] Physical UART/FPU/board acceptance and separately authorized publication.
+
+## RH850 formatter hardening and v4 (2026-10-28)
+
+- [x] Keep full original features; harden float/special-value/precision/exponent/
+ integer-range and count handling, and align16 independent local retarget pairs.
+- [x] Preserve each project's actual UART/clock/custom_func/protocol settings;
+ align v4 C99/export/preparation and separately compiled native CAN tests.
+- [x] Pass16 target builds,27160 console assertions, v4 five profiles/six rejected
+ configurations, isolated preparation and ownership-safe cleanup guards.
+- [x] Preserve1484 protected hashes and original reference samples; check all16
+ project configurations/mirrors and64KiB Boot space (minimum19148B tail).
+- [x] Synchronize the existing Log chapter/MD/Web/PDF; pass10 selected guide tests,
+ actual browser and PDF review; clean owned test/compiler outputs with receipts.
+- [ ] Physical UART/FPU/board acceptance and separately authorized publication.
+
+## RH850 full original formatter (2026-10-28)
+
+- [x] Restore original full formatting across15 RH850 ISP projects; preserve
+  original three reference samples, all formats/helpers and alternative source.
+- [x] Improve control-flow readability, character counts, integer minima/precision
+  and incomplete-format handling; retain existing bounded putchar/SendChar path.
+- [x] Align required C99 project setting, full local/canonical API inputs, README/
+  rules and single-owner RH850 MD/Web/PDF documentation without feature stripping.
+- [x] Pass15 real target builds,24850 native assertions,1397 source/reference/
+  product hashes and15 non-language setting checks; retain64KiB Boot/spare guards.
+- [x] Pass10 guide tests, actual changed-page browser and PDF visual checks;
+  retire owned fixtures/1268 mapped intermediates and record formal preservation,
+  source recovery, final safe clean/audit and existing full-folder budget exception.
+- [ ] Physical UART/FPU/board validation and separately authorized publication;
+  prior native runtime evidence is reused for unchanged protocol sources.
+
+## RH850 existing tiny_printf integration (2026-10-28)
+
+- [x] Reuse existing v4 C90 retarget in all15 independent RH850 projects; register
+  local sources and replace redundant Log/Hex/character/numeric format wrappers.
+- [x] Preserve bounded UART0 SendChar hook, exact text/CRLF/trace/counters and
+  foreground-only logging; keep protocol, ISR, Flash and project settings intact.
+- [x] Align canonical serial inputs/API sync/local initialization copies and add
+  direct-use README examples plus single-owner RH850 MD/Web/PDF log explanation.
+- [x] Pass15 actual target builds,24784 console assertions and9 serial runtime
+  cases; preserve1361 source/product hashes and15 non-console CS+ configurations.
+- [x] Pass10 document tests,actual changed-page browser/PDF visual review and
+  canonical/route gates. Retire owned test/MCU intermediates; record exact hashes,
+  retained source recovery, folder budget exception and engineering evidence.
+- [ ] Revalidate UART log/communication on boards and publish under separately
+  authorized scope; neither physical nor Git/Web actions ran in this task.
+
+## RL78 / RH850 Bootloader chapter parity (2026-10-28)
+
+- [x] Use equal six chapter titles/order, RL78 template/theme and60 paired topic
+  bodies; provide local and counterpart-platform topic links on each chapter.
+- [x] Expose timing directly on both guide homepages/knowledge-base entry; keep
+  the full table single-owned and all original measured rows unchanged.
+- [x] Complete RH850 metadata/header/IRQ/build/rate/serial/Flash/reference topics
+  using actual RH850 specifications; retain architecture and monitor differences.
+- [x] Add future RL78 generic-heading coverage and actual body/anchor/style guards;
+  preserve old aliases and validate456 actual-JS destinations against browser IDs.
+- [x] Pass15 selected tests, canonical projections/publication hook,26-route real
+  browser review plus3 final reruns, both timing clicks and12 counterpart clicks.
+- [x] Regenerate three affected PDFs/59pages and visually inspect; clean892 owned
+  files/90,540,317B, run safe clean/audit and preserve16 formal/user file hashes.
+- [x] Record evidence/recovery retention and automatic-review refusal for ten
+  small migration scratch files; preserve existing full-folder budget exception.
+- [ ] Publish local edited content only under a separate authorized release scope;
+  no firmware/Tool rebuild, board action or Git publication occurred in this task.
+
+## Simple Renesas ISP Tool guide name (2026-10-27)
+
+- [x] Rename local guide and explicitly authorized existing GitHub repository;
+  preserve .git/history/branch/remote ID and update origin without commit/push.
+- [x] Align display labels,personal-project provenance,all live guide/canonical/
+  script/test/sample-README links and batch publication examples.
+- [x] Retarget84 PDF URI annotations;prove210 pages unchanged and visually review.
+- [x] Pass12 document tests,actual publish hook/DryRun and14-route real browser
+  desktop/narrow verification;clean owned scratch and preserve16 formal hashes.
+- [ ] Publish edited Tool/peer/homepage content when separately authorized;
+  repository rename alone does not publish the local prose changes.
+
+## RH850 guide separation, measured timing and comments (2026-10-27)
+
+- [x] Reconcile refreshed actual reports;publish portable6-report summaries and
+  5-size timing table with original outcome/counters/phase/source-hash provenance.
+- [x] Keep RL78 guide;prepare independent RH850 entry/six chapters;align shared
+  readers/navigation/homepage,canonical topic ownership and public writing rules.
+- [x] Document RH850 full Metadata byte/address/frame examples,editable headers,
+  IRQ/startup/FCL RAM/local build flow;link shared Tool operation without copies.
+- [x] Add English comments across60 Device projects/canonical API inputs;prove
+  identical C tokens for1007files and preserve source mirrors/firmware behavior.
+- [x] Pass7 selected tests,local/static routes,desktop/narrow real browser review
+  and two existing PDF rebuilds/visual checks;keep report input and example apart.
+- [x] Remove owned browser/PDF fixtures;safe clean/audit,preserve16 formal/user
+  hashes,record recovery retention and existing full-folder budget exception.
+- [ ] Hardware acceptance of current sources and publication require separate
+  scope;neither was performed for this document/comment task.
+
+## Independent Boot/App/Transfer HAL projects (2026-10-27)
+
+- [x] Organize60 MCU Device projects by local HAL responsibility; integrate
+  orchestration in custom_func hardware_init/loop and preserve selected adapters.
+- [x] Localize source/config/build helpers and independent App contracts; preserve
+  protocol,metadata,IRQ,Flash partitions and all original debugger/linker settings.
+- [x] Adapt independent template creation/API sync/runtime/SC/timing runners;
+  keep user workflows/configuration outside automatic API synchronization.
+- [x] Verify60 targets,20 standalone Apps,16 real SC App regenerations,selected
+  native runtime/callback/CAN/CRC/protocol and20-App timing/preservation checks.
+- [x] Align local README/protocol/docs/Web/PDF build instructions;actual browser
+  and affected PDF visual review;remove personal generated-comment output paths.
+- [x] Retire owned scratch/compiler intermediates;preserve formal artifacts,
+  user data/settings and source recovery;record exact retention/budget exception.
+- [ ] Physical board/Flash/reset/fault acceptance,F13 actual Code Generator
+  regeneration and any separately authorized GitHub/Web publication.
+
+## RH850 restart / waiting progress (2026-10-27)
+
+- [x] Verify supplied report/UART;separate successful programming/startup from
+  new Host counter increases and the cold Boot-to-App delay.
+- [x] Guard unopened CAN stop in the shared ISP adapter and its projections;
+  preserve normal stop,protocol,Flash/CRC/vector and user clock/debug settings.
+- [x] Negative regression,10port/mode cases/1445assertions,six target builds and
+  packaging guards;extra real-frame/RichEdit batches and8368restart timing checks.
+- [x] Synchronize architecture,operation/local Web/PDF;pass document/browser and
+  affected-page visual review. Retire owned fixtures and final compiler outputs.
+- [ ] Reinstall repaired RH850 Boot and physically check startup/counter deltas;
+  live960KiB Alt-Tab behavior remains unverified. No publication in this scope.
+
+## Firmware user entry and readability (2026-10-27)
+
+- [x] Route62 ISP/Bridge projects through custom_func hardware_init/loop; preserve
+  role-specific startup, return/handoff and backend boundaries; retire alternate mains.
+- [x] Synchronize source selection/preparation/templates, readable C/header flow,
+  README/rules and entry tutorial with local Web/PDF projections.
+- [x] Verify62 target builds plus v4,24 actual isolated SC roundtrips/eight App-only
+  Boot hash checks, selected native runtime/callback/CRC/protocol and document checks.
+- [x] Retire fresh test/SC/browser/PDF and proven rebuilt objects; preserve formal
+  deliveries/Tool EXE/INI, user data and source rollback; record exact retention.
+- [ ] Physical board/COM/programming and F13 actual Code Generator regeneration.
+- [ ] Git/publication and the separate pre-existing full-folder20MB provenance review.
+
+## App build timing images (2026-10-27)
+
+- [x] Integrate20 existing Device App post-package hooks with local PS/BAT helpers.
+- [x] Preserve normal BIN input, IRQ/code/interface/policy; reseal FF test lengths
+  and CRC using actual Flash/start/capacity, including the maximum supported size.
+- [x] Bound automatic output to one hash-owned set; preserve manual batches and
+  reject unknown/changed/reparse/interrupted output. Keep outputs Git-ignored.
+- [x] Verify20 actual target App builds/68 outputs, native Tool/Boot parser matrix,
+  hook-failure propagation, boundary protection, canonical mirrors and source hashes.
+- [x] Synchronize20 App READMEs, canonical workshop/local Web/PDF; pass selected
+  source/link/document checks and real browser verification; retire owned scratch.
+- [x] Preserve formal Tool EXE/private INI during safe clean; retain compact evidence.
+- [ ] Hardware timing and publication remain separate; neither ran in this task.
+
 ## Current publication scope (2026-10-25 clarification)
 
 - [x] Tool-side54RH850 support files are eligible under explicit user authority;
@@ -2057,4 +2245,16 @@ superseded only for the explicitly evidenced normal 500K transport checks.
   do not combine a new boot with the previous HOCO-only valid app.
 
 
+
+## CAN publication scope (2026-10-27)
+
+- [x] Replace blanket refusal with a fixed nine-project CAN device entry.
+- [x] Bind exact source/image snapshot to validation/release evidence; -Yes
+  alone refuses, changed snapshots do not inherit approval, Tool stays excluded.
+- [x] PASS28 isolated local-Git checks; fixtures retired, safe clean/formal files
+  preserved. Current hardware not retested; reuse documented offline regression.
+- [x] Commit/push nine selected repositories and verify remote main SHA equality.
+- [x] Keep six tracked personal settings per user instruction; ignore new F13
+  object/QualityReport outputs. Retain23 archived build outputs for recovery.
+- No Tool/RH850/serial/Web publication or public development-validation narrative.
 

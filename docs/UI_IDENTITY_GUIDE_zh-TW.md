@@ -1,7 +1,7 @@
 # FirmwareUpgradeTool 主機、裝置與映像資訊
 
 本文件整理連線裝置與載入映像的資料來源。
-各欄位、狀態及錯誤訊息的完整對照見 [Tool 欄位說明](https://released.github.io/slide_isp_tool_for_RL78/#tool-ui-fields)。
+各欄位、狀態及錯誤訊息的完整對照見 [Tool 欄位說明](https://released.github.io/slide_simple_renesas_isp_tool/#tool-ui-fields)。
 
 ## 1. 五種資訊來源
 
@@ -64,9 +64,9 @@ Bridge變速經UART SET_CAN_CONFIG（bus stopped），不會自動改device bitr
 
 ## 5. 操作圖與驗證範圍
 
-COM 連線、Device App 更新與 Host App 更新的實際畫面集中於 [Tool 操作圖](https://released.github.io/slide_isp_tool_for_RL78/#device-update-example)。
+COM 連線、Device App 更新與 Host App 更新的實際畫面集中於 [Tool 操作圖](https://released.github.io/slide_simple_renesas_isp_tool/#device-update-example)。
 F13 與 F24 device 的正常 CAN App 更新、CRC 及重啟後 App 確認皆已完成實板驗證；
-F24 的報告與 UART counter 見 [更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+F24 的報告與 UART counter 見 [更新結果](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)。
 
 畫面中的 PASS 描述該次操作，不涵蓋其他速率、所有 IRQ 或斷電復原。
-各項測試與證據範圍集中於 [更新驗證矩陣](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
+各項測試與證據範圍集中於 [更新驗證矩陣](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation)。

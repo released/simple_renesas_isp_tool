@@ -8,7 +8,7 @@
 Tool可選115200／460800／921600，完成身分驗證後才切速。這不是 device
 更新周邊速度；CAN、I2C與device UART各自獨立。
 UART / Xmodem TAB的Device baud可選擇或輸入；I2C使用所選7-bit位址及port宣告的100／400kHz。
-Boot／App初始化、BIN metadata及live INFO的對應條件集中於[串列更新必要條件](https://released.github.io/slide_isp_tool_for_RL78/#serial-update-requirements)。
+Boot／App初始化、BIN metadata及live INFO的對應條件集中於[串列更新必要條件](https://released.github.io/slide_simple_renesas_isp_tool/#serial-update-requirements)。
 BIN／metadata／log仍共用，不建立另一個PC COM；Misc維持host App更新。
 操作時先Close COM、選Host Baud，再Open + Probe；連線期間下拉選單鎖定。
 成功後Host狀態列／log顯示實際會話名義速度，不只顯示選單偏好。
@@ -47,7 +47,7 @@ ReadTotalTimeoutConstant為剩餘期限與50ms的較小值。**50ms只限制無�
 使用者182253 log已確認Host115200／CAN500K：19244B、301區塊、10963ms／1755B/s，
 END CRC CA0DF55C相符、無重試或CAN錯誤；較舊約79秒快約7.2倍，但BIN略有不同且
 僅單次效能結果，該筆 log 未包含完整 reset 後 App 確認。
-目前正常 CAN 更新的 App 啟動確認已由 F13／F24 device 紀錄核對，見 [更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)；
+目前正常 CAN 更新的 App 啟動確認已由 F13／F24 device 紀錄核對，見 [更新結果](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)；
 高速、連續壓力與多次 A/B 仍依各條件驗證。
 詳見[區塊更新指南](CAN_BLOCK_TRANSFER_V5_zh-TW.md)。
 
@@ -91,7 +91,7 @@ HOST policy1 的112..127保持0。以上皆獨立於上方 Host Link 的三組 p
 Target Boot／App共用該工程的isp_transport_config.h，周邊初始化與產表／封裝
 使用同一編譯契約。Tool解析BIN後，比對所選Device baud、live INFO及metadata；
 值相符才允許更新，不修改已載入BIN，也不以切換Host Baud代替device設定。
-修改位置與核對表見[串列更新必要條件](https://released.github.io/slide_isp_tool_for_RL78/#serial-update-requirements)。
+修改位置與核對表見[串列更新必要條件](https://released.github.io/slide_simple_renesas_isp_tool/#serial-update-requirements)。
 
 BUR1原有metadata48..51的uart_baud是bridge自身BOOT固定更新速度；不是此
 DEVICE UART欄位，也不是APP暫時協商速度。現行HOST policy仍version1且

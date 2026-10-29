@@ -1,48 +1,187 @@
 {
-  "slide_isp_tool_for_RL78": {
+  "slide_simple_renesas_isp_tool": {
     "pages": {
-      "index": {"title": "RL78 ISP Tool 與 MCU bridge 操作", "description": "下載、操作與各介面指南入口。"},
-      "downloads": {"title": "下載與韌體產物", "description": "Tool、Host 與 Device 原始碼、安裝檔及更新 BIN。"},
-      "operation": {"title": "Tool 連線與操作", "description": "COM／Host 識別、畫面、接線、更新政策與錯誤資訊。"},
-      "status-and-reports": {"title": "欄位、更新確認與報告", "description": "BIN／live 資料、狀態訊息、進度、取消及 HTML 更新報告。"},
-      "can-update": {"title": "CAN／CAN FD App 更新", "description": "Classical CAN：F13／F24；CAN FD：F24。"},
-      "can-protocol": {"title": "CAN 更新逐層導讀", "description": "對照 Tool、MCU CAN host 與 MCU CAN device 的資料流。"},
-      "serial-isp": {"title": "UART／Xmodem／I2C 操作", "description": "接線、可調通訊設定、App 更新及串列通訊測試。"},
-      "custom-transfer": {"title": "Custom Transfer 通訊驗證", "description": "F13／F24 Classical CAN 與 F24 CAN FD 的獨立通訊測試。"},
-      "host-firmware": {"title": "MCU host 韌體與自身更新", "description": "Misc／UART 更新 Host App，以及 Host 工程與向量設定。"},
-      "device-guides": {"title": "MCU device 工程入口", "description": "Boot／App、Metadata、IRQ 與移植的主題連結。"}
+      "index": {
+        "title": "Simple Renesas ISP Tool 與 MCU bridge 操作",
+        "description": "下載、操作與各介面指南入口。"
+      },
+      "downloads": {
+        "title": "下載與韌體產物",
+        "description": "Tool、Host 與 Device 原始碼、安裝檔及更新 BIN。"
+      },
+      "operation": {
+        "title": "Tool 連線與操作",
+        "description": "COM／Host 識別、畫面、接線、更新政策與錯誤資訊。"
+      },
+      "status-and-reports": {
+        "title": "欄位、更新確認與報告",
+        "description": "BIN／live 資料、狀態訊息、進度、取消及 HTML 更新報告。"
+      },
+      "can-update": {
+        "title": "CAN／CAN FD App 更新",
+        "description": "Classical CAN：F13／F24／RH850；CAN FD：F24／RH850。"
+      },
+      "can-protocol": {
+        "title": "CAN 更新逐層導讀",
+        "description": "對照 Tool、MCU CAN host 與 MCU CAN device 的資料流。"
+      },
+      "serial-isp": {
+        "title": "UART／Xmodem／I2C 操作",
+        "description": "接線、可調通訊設定、App 更新及串列通訊測試。"
+      },
+      "custom-transfer": {
+        "title": "Custom Transfer 通訊驗證",
+        "description": "F13／F24／RH850 Classical CAN，以及F24／RH850 CAN FD的獨立通訊測試。"
+      },
+      "host-firmware": {
+        "title": "MCU host 韌體與自身更新",
+        "description": "Misc／UART 更新 Host App，以及 Host 工程與向量設定。"
+      },
+      "device-guides": {
+        "title": "MCU device 工程入口",
+        "description": "Boot／App、Metadata、IRQ 與移植的主題連結。"
+      }
     },
     "sections": {
-      "PUBLIC_RESOURCES": "downloads", "TOOL_CONNECT_MEDIA": "operation",
-      "COMMON_IMAGE_POLICY": "operation", "UPDATE_EVIDENCE": "status-and-reports",
-      "TOOL_DEVICE_MEDIA": "can-update", "FD_UPDATE": "can-update",
-      "CAN_WALKTHROUGH": "can-protocol", "UART_TOOL_GUIDE": "serial-isp",
-      "TRANSFER_EXAMPLES": "custom-transfer", "TRANSFER_DIAGNOSTICS": "custom-transfer",
-      "CUSTOM_TRANSFER_MEDIA": "custom-transfer", "FD_TRANSFER": "custom-transfer",
-      "TOOL_BRIDGE_MEDIA": "host-firmware", "F24_APP_IRQ": "host-firmware",
-      "F13_BOOT_DECISION": "device-guides", "F24_DEVICE": "device-guides",
-      "DEVICE_WORKSHOP": "device-guides", "FD_DEVICE": "device-guides",
-      "SERIAL_DEVICE_GUIDE": "device-guides", "RH850_DEVICE": "index"
+      "PUBLIC_RESOURCES": "downloads",
+      "TOOL_CONNECT_MEDIA": "operation",
+      "COMMON_IMAGE_POLICY": "operation",
+      "UPDATE_EVIDENCE": "status-and-reports",
+      "TOOL_DEVICE_MEDIA": "can-update",
+      "FD_UPDATE": "can-update",
+      "CAN_WALKTHROUGH": "can-protocol",
+      "UART_TOOL_GUIDE": "serial-isp",
+      "TRANSFER_EXAMPLES": "custom-transfer",
+      "TRANSFER_DIAGNOSTICS": "custom-transfer",
+      "CUSTOM_TRANSFER_MEDIA": "custom-transfer",
+      "FD_TRANSFER": "custom-transfer",
+      "TOOL_BRIDGE_MEDIA": "host-firmware",
+      "F24_APP_IRQ": "host-firmware",
+      "F13_BOOT_DECISION": "device-guides",
+      "F24_DEVICE": "device-guides",
+      "DEVICE_WORKSHOP": "device-guides",
+      "FD_DEVICE": "device-guides",
+      "SERIAL_DEVICE_GUIDE": "device-guides",
+      "RH850_DEVICE": "index"
     }
   },
   "slide_boot_loader_for_RL78": {
     "pages": {
-      "index": {"title": "RL78 Bootloader 實作指南", "description": "MCU device Boot／App 開發與參考入口。"},
-      "can-device": {"title": "Classical CAN／CAN FD device 工程", "description": "F13／F24 Classical CAN、F24 CAN FD 的 Boot／App 工程與啟動流程。"},
-      "app-development": {"title": "App Metadata 與 IRQ 編輯", "description": "C header 編輯、產表、App 建置、驗證、CAN 速率與更新耗時。"},
-      "serial-device": {"title": "UART／Xmodem／I2C device 工程", "description": "四系列獨立串列工程的 Flash、Metadata、IRQ 與通訊契約。"},
-      "porting": {"title": "Boot／App 移植與 Flash", "description": "分區、Boot 安裝、debug monitor、Flash RAM 執行與 CRC 後端。"},
-      "reference": {"title": "Flash、Metadata 與 CAN 封包參考", "description": "位址、全部 Metadata bytes、對應程式與 CAN payload。"},
-      "tool-guides": {"title": "Tool 操作與通訊驗證入口", "description": "下載、更新、報告、MCU host 與 Custom Transfer 的主題連結。"}
+      "index": {
+        "title": "RL78 Bootloader 實作指南",
+        "description": "MCU device Boot／App 開發與參考入口。"
+      },
+      "can-device": {
+        "title": "Classical CAN／CAN FD device 工程",
+        "description": "F13／F24 Classical CAN、F24 CAN FD 的 Boot／App 工程與啟動流程。"
+      },
+      "app-development": {
+        "title": "App Metadata、IRQ 與更新耗時",
+        "description": "C header 編輯、產表、App 建置、驗證、CAN 速率與更新耗時。"
+      },
+      "serial-device": {
+        "title": "串列 ISP 共用工程與協定契約",
+        "description": "平台配置、C header、建置、Metadata、SC 與共用 Frame／命令／INFO／Status。"
+      },
+      "uart-device": {
+        "title": "UART Bootloader 與協定格式",
+        "description": "資料 UART、接收中斷、framed ISP 更新、封包範例與診斷。"
+      },
+      "i2c-device": {
+        "title": "I2C Bootloader 與協定格式",
+        "description": "I2C Slave、STOP mailbox、111-byte reply window 與更新完成條件。"
+      },
+      "xmodem-device": {
+        "title": "Xmodem Bootloader 與協定格式",
+        "description": "Framed control、XMODEM-CRC128、串流寫入、重送與最終 ACK。"
+      },
+      "porting": {
+        "title": "Boot／App 移植與 Flash",
+        "description": "分區、Boot 安裝、debug monitor、Flash RAM 執行與 CRC 後端。"
+      },
+      "reference": {
+        "title": "Flash、Metadata 與 CAN 封包參考",
+        "description": "位址、全部 Metadata bytes、對應程式與 CAN payload。"
+      },
+      "tool-guides": {
+        "title": "Tool 操作與通訊驗證入口",
+        "description": "下載、更新、報告、MCU host 與 Custom Transfer 的主題連結。"
+      }
     },
     "sections": {
-      "F13_BOOT_DECISION": "can-device", "F24_DEVICE": "can-device", "FD_DEVICE": "can-device",
-      "DEVICE_WORKSHOP": "app-development", "SERIAL_DEVICE_GUIDE": "serial-device",
-      "RL78_PORTING": "porting", "FLASH_REFERENCE": "reference",
-      "PUBLIC_RESOURCES": "tool-guides", "F24_APP_IRQ": "tool-guides",
-      "COMMON_IMAGE_POLICY": "tool-guides", "UPDATE_EVIDENCE": "tool-guides",
-      "FD_UPDATE": "tool-guides", "FD_TRANSFER": "tool-guides",
-      "UART_TOOL_GUIDE": "tool-guides", "RH850_DEVICE": "index"
+      "F13_BOOT_DECISION": "can-device",
+      "F24_DEVICE": "can-device",
+      "FD_DEVICE": "can-device",
+      "DEVICE_WORKSHOP": "app-development",
+      "SERIAL_DEVICE_GUIDE": "serial-device",
+      "RL78_PORTING": "porting",
+      "FLASH_REFERENCE": "reference",
+      "PUBLIC_RESOURCES": "tool-guides",
+      "F24_APP_IRQ": "tool-guides",
+      "COMMON_IMAGE_POLICY": "tool-guides",
+      "UPDATE_EVIDENCE": "tool-guides",
+      "FD_UPDATE": "tool-guides",
+      "FD_TRANSFER": "tool-guides",
+      "UART_TOOL_GUIDE": "tool-guides",
+      "RH850_DEVICE": "index",
+      "UART_DEVICE": "uart-device",
+      "I2C_DEVICE": "i2c-device",
+      "XMODEM_DEVICE": "xmodem-device"
+    }
+  },
+  "slide_boot_loader_for_RH850": {
+    "pages": {
+      "index": {
+        "title": "RH850 Bootloader 實作指南",
+        "description": "RH850 MCU device 的 Boot、App 與通訊驗證入口。"
+      },
+      "can-device": {
+        "title": "Classical CAN／CAN FD device 工程",
+        "description": "EVM、CAN port、接收資源、更新 owner 與 Boot 啟動流程。"
+      },
+      "app-development": {
+        "title": "App Metadata、IRQ 與更新耗時",
+        "description": "C header 編輯、512-entry IRQ table、建置產物及 CAN FD 實測時間。"
+      },
+      "serial-device": {
+        "title": "串列 ISP 共用工程與協定契約",
+        "description": "平台配置、C header、建置、Metadata、SC 與共用 Frame／命令／INFO／Status。"
+      },
+      "uart-device": {
+        "title": "UART Bootloader 與協定格式",
+        "description": "資料 UART、接收中斷、framed ISP 更新、封包範例與診斷。"
+      },
+      "i2c-device": {
+        "title": "I2C Bootloader 與協定格式",
+        "description": "I2C Slave、STOP mailbox、111-byte reply window 與更新完成條件。"
+      },
+      "xmodem-device": {
+        "title": "Xmodem Bootloader 與協定格式",
+        "description": "Framed control、XMODEM-CRC128、串流寫入、重送與最終 ACK。"
+      },
+      "porting": {
+        "title": "Boot／App 移植與 Flash",
+        "description": "位址、HAL 入口、FCL RAM 執行、startup 與映像交接。"
+      },
+      "reference": {
+        "title": "Flash、Metadata 與 CAN 封包參考",
+        "description": "RH850 位址、256-byte Metadata 範例、8-byte control 與 raw data。"
+      },
+      "tool-guides": {
+        "title": "Tool 操作與通訊驗證入口",
+        "description": "共用 ISP Tool、更新報告、Custom Transfer 與操作章節的連結。"
+      }
+    },
+    "sections": {
+      "RH850_DEVICE": "can-device",
+      "RH850_APP_CHAPTER": "app-development",
+      "RH850_TIMING": "app-development",
+      "RH850_SERIAL_CHAPTER": "serial-device",
+      "RH850_PORTING_CHAPTER": "porting",
+      "RH850_REFERENCE_CHAPTER": "reference",
+      "UART_DEVICE": "uart-device",
+      "I2C_DEVICE": "i2c-device",
+      "XMODEM_DEVICE": "xmodem-device"
     }
   }
 }

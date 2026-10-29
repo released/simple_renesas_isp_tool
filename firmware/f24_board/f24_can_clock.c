@@ -1,20 +1,19 @@
 #include "platform.h"
 #include "f24_can_clock.h"
 
-#define F24_X1_POLL_LIMIT      (1000000UL)
-#define F24_SWITCH_POLL_LIMIT  (60000UL)
+#define F24_X1_POLL_LIMIT (1000000UL)
+#define F24_SWITCH_POLL_LIMIT (60000UL)
 
-#if (BSP_CFG_MAINCLK_SOURCE != 0) || (BSP_CFG_FMP_DIVIDE != 0) || \
-    (BSP_CFG_PLL_MODE != 0) || (BSP_CFG_PLL_OPERATION != 0) || \
-    (BSP_CFG_HISYSCLK_SOURCE != 1) || (BSP_CFG_FMX_HZ != 20000000) || \
-    (BSP_CFG_HISYSCLK_OPERATION != 1) || (BSP_CFG_FCLK_SOURCE != 0)
+#if (BSP_CFG_MAINCLK_SOURCE != 0) || (BSP_CFG_FMP_DIVIDE != 0) || (BSP_CFG_PLL_MODE != 0) ||       \
+    (BSP_CFG_PLL_OPERATION != 0) || (BSP_CFG_HISYSCLK_SOURCE != 1) ||                              \
+    (BSP_CFG_FMX_HZ != 20000000) || (BSP_CFG_HISYSCLK_OPERATION != 1) ||                           \
+    (BSP_CFG_FCLK_SOURCE != 0)
 #error F24_CAN_bridge_requires_HOCO_startup_before_bounded_runtime_clock_setup
 #endif
 
 static uint8_t g_clock_status = F24_CAN_CLOCK_NOT_STARTED;
 
-static uint8_t wait_register(volatile __near uint8_t *reg,
-                             uint8_t mask, uint8_t expected,
+static uint8_t wait_register(volatile __near uint8_t *reg, uint8_t mask, uint8_t expected,
                              uint32_t limit)
 {
     uint32_t count;
@@ -34,8 +33,7 @@ static uint8_t clock_fail(uint8_t status)
 {
     /* Restore clock-through mode before selecting HOCO as fMAIN. */
     SELPLL = 0U;
-    if (wait_register(&PLLSTS, 0x08U, 0U,
-                      F24_SWITCH_POLL_LIMIT) == 0U)
+    if (wait_register(&PLLSTS, 0x08U, 0U, F24_SWITCH_POLL_LIMIT) == 0U)
     {
         g_clock_status = F24_CAN_CLOCK_FALLBACK_TIMEOUT;
         return g_clock_status;
@@ -44,8 +42,7 @@ static uint8_t clock_fail(uint8_t status)
      * selecting clock-through mode. Stop PLL before selecting HOCO. */
     PLLON = 0U;
     MCM0 = 0U;
-    if (wait_register(&CKC, 0x20U, 0U,
-                      F24_SWITCH_POLL_LIMIT) == 0U)
+    if (wait_register(&CKC, 0x20U, 0U, F24_SWITCH_POLL_LIMIT) == 0U)
     {
         g_clock_status = F24_CAN_CLOCK_FALLBACK_TIMEOUT;
         return g_clock_status;
@@ -58,11 +55,9 @@ static uint8_t clock_fail(uint8_t status)
 
 uint8_t F24_CanClockIsReady(void)
 {
-    return (uint8_t)((g_clock_status == F24_CAN_CLOCK_READY) &&
-        (MDIV == 1U) && (MCS != 0U) && (CLS == 0U) &&
-        ((PLLSTS & 0x88U) == 0x88U) && (MSTOP == 0U) &&
-        ((CMC & 0xC1U) == 0x41U) && ((CKSEL & 0xE0U) == 0xE0U) &&
-        (PLLCTL == 0xE7U));
+    return (uint8_t)((g_clock_status == F24_CAN_CLOCK_READY) && (MDIV == 1U) && (MCS != 0U) &&
+                     (CLS == 0U) && ((PLLSTS & 0x88U) == 0x88U) && (MSTOP == 0U) &&
+                     ((CMC & 0xC1U) == 0x41U) && ((CKSEL & 0xE0U) == 0xE0U) && (PLLCTL == 0xE7U));
 }
 
 uint8_t F24_CanClockInit(void)
@@ -73,8 +68,7 @@ uint8_t F24_CanClockInit(void)
     {
         return F24_CAN_CLOCK_READY;
     }
-    if ((MCS != 0U) || (CLS != 0U) || (MDIV != 0U) ||
-        (SELPLLS != 0U) || (PLLON != 0U) ||
+    if ((MCS != 0U) || (CLS != 0U) || (MDIV != 0U) || (SELPLLS != 0U) || (PLLON != 0U) ||
         ((CMC & 0xC1U) != 0x41U))
     {
         g_clock_status = F24_CAN_CLOCK_BAD_STARTUP;
@@ -87,15 +81,13 @@ uint8_t F24_CanClockInit(void)
      * mode (OSCSEL=1, EXCLK=0, AMPH=1); never try to rewrite it here. */
     OSTS = 7U; /* 2^18 startup selection; same as the supplied CAN examples. */
     MSTOP = 0U;
-    if (wait_register(&OSTC, 0xFFU, 0xFFU,
-                      F24_X1_POLL_LIMIT) == 0U)
+    if (wait_register(&OSTC, 0xFFU, 0xFFU, F24_X1_POLL_LIMIT) == 0U)
     {
         return clock_fail(F24_CAN_CLOCK_X1_TIMEOUT);
     }
 
     MCM0 = 1U;
-    if (wait_register(&CKC, 0x20U, 0x20U,
-                      F24_SWITCH_POLL_LIMIT) == 0U)
+    if (wait_register(&CKC, 0x20U, 0x20U, F24_SWITCH_POLL_LIMIT) == 0U)
     {
         return clock_fail(F24_CAN_CLOCK_MAIN_TIMEOUT);
     }
@@ -112,8 +104,7 @@ uint8_t F24_CanClockInit(void)
         BSP_NOP();
     }
     PLLON = 1U;
-    if (wait_register(&PLLSTS, 0x80U, 0x80U,
-                      F24_SWITCH_POLL_LIMIT) == 0U)
+    if (wait_register(&PLLSTS, 0x80U, 0x80U, F24_SWITCH_POLL_LIMIT) == 0U)
     {
         return clock_fail(F24_CAN_CLOCK_PLL_TIMEOUT);
     }
@@ -121,8 +112,7 @@ uint8_t F24_CanClockInit(void)
     /* Divide before selecting PLL so the CPU never exceeds 40 MHz. */
     MDIV = 1U;
     SELPLL = 1U;
-    if (wait_register(&PLLSTS, 0x88U, 0x88U,
-                      F24_SWITCH_POLL_LIMIT) == 0U)
+    if (wait_register(&PLLSTS, 0x88U, 0x88U, F24_SWITCH_POLL_LIMIT) == 0U)
     {
         return clock_fail(F24_CAN_CLOCK_SELECT_TIMEOUT);
     }

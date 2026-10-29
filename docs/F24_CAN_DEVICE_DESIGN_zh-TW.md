@@ -8,7 +8,9 @@
 F24 CAN device 使用獨立的 Transfer、Boot 與 App 工程。
 板端為 RL78/F24 Target Board R7F124FPJ5xFB。
 正常 CAN App 更新已完成實板驗證，操作與 F13 device 相同：載入配對 BIN、Discover、必要時 Enter Boot、更新並確認 App。
-完成報告與 UART counter 見 [F24 device 更新結果](https://released.github.io/slide_isp_tool_for_RL78/#f24-device-update-example)。
+完成報告與 UART counter 見 [F24 device 更新結果](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)。
+
+<a id="guide-can-device-2"></a>
 
 ### 板端與更新設定
 
@@ -23,6 +25,8 @@ F24 CAN device 使用獨立的 Transfer、Boot 與 App 工程。
 | IRQ owner | `0xAA`：Boot；`0x55`：App |
 | CAN IDs | Control `0x700`、response `0x701`、raw `0x720..0x727` |
 | 更新格式 | App image format6、CAN protocol5、64-byte blocks |
+
+<a id="guide-can-device-3"></a>
 
 ### Flash 配置
 
@@ -59,37 +63,35 @@ flowchart TD
     END -->|否| WAIT
 ```
 
+<a id="guide-can-device-9"></a>
+
 ### 工程與建置
 
-三個工程放在同一父目錄。
-Boot 的 `common` 提供 board／clock／CAN backend，Boot 內含 RFD 來源。
-App 與 Transfer 各自保存 SC 與 MTPJ。
+每個工程自備 `hal` API、設定 header、SC 與 MTPJ，可獨立建置。
+目錄分工見 [工程目錄與程式入口](https://released.github.io/slide_boot_loader_for_RL78/#device-project-entry)。
 
-在 Boot 目錄使用 PowerShell：
+在所選工程根目錄使用 PowerShell：
 
 ```powershell
-# Clean rebuild Transfer, Boot and App.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Kind all
+# Rebuild this project and run its linked-image/package guards.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
-# App-only clean rebuild.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Kind app
-
-# Safe artifact and contract checks.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\test.ps1
 ```
 
 日常建置使用 Windows PowerShell、CS+／CC-RL。
 CS+ hooks 依序執行產表與封裝；map、ROM／RAM、向量、metadata 與 CRC 由腳本核對。
 
 C header 編輯、ISR 與 App-only 命令集中於 [Device App 設定與建置](https://released.github.io/slide_boot_loader_for_RL78/#device-app-build)。
-初裝檔為 Boot `boot0000_1FFF.hex`＋App `flash_app_variable_CRC.hex`，或 App 根目錄 `boot_app.hex`。
+初裝檔為 Boot `boot0000_1FFF.hex`＋App `flash_app_variable_CRC.hex`，核對兩者的地址範圍。
 CAN 更新使用 App `*_update.bin`。App 產表為 `ftable.inc`、`app_identity.h`、`app_irq_table.inc`，
 由 `ftable_RL78_F24.asm` 組譯；兩份 C header 仍是編輯入口。
+
+<a id="guide-can-device-10"></a>
 
 ### 驗證項目
 
 軟體檢查涵蓋編譯、向量／RETI、IRQ stack、RFD RAM 路徑及 metadata／區塊處理。
 正常 500K CAN App 寫入、END CRC、reset 後 APP_READY／live INFO 與 UART timer counter 已確認。
 CAN 波形量測、250K／1M、其他 IRQ、長時間壓力、取消、斷線及斷電復原分項驗證，
-見 [更新驗證矩陣](https://released.github.io/slide_isp_tool_for_RL78/#update-confirmation)。
+見 [更新驗證矩陣](https://released.github.io/slide_simple_renesas_isp_tool/#update-confirmation)。
 <!-- F24_DEVICE_END -->

@@ -10,7 +10,7 @@ $blocks=[regex]::Matches($source,$pattern)
 if($blocks.Count -ne 1){throw 'Expected one canonical device workshop block.'}
 $updates=@()
 # Validate both targets before writing either. Never insert a missing block.
-foreach($folder in @('slide_boot_loader_for_RL78','slide_isp_tool_for_RL78')){
+foreach($folder in @('slide_boot_loader_for_RL78','slide_simple_renesas_isp_tool')){
     $expected=Get-WebGuideProjection -Section DEVICE_WORKSHOP -Folder $folder -Canonical $blocks[0].Value
     $path=Get-WebGuideSectionPath -WebRoot $WebRoot -Folder $folder -Section DEVICE_WORKSHOP
     $web=[IO.File]::ReadAllText($path)

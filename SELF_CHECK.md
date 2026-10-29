@@ -1,5 +1,343 @@
 # Host Link v2 Self-Check
 
+## Guide consistency and reader flow (2026-10-29)
+
+- PASS26 focused document/source/CRC/provenance/parity tests;local commands tied
+  to actual MTPJ hooks and publication scope tied to the current batch.
+- PASS9 paired chapters/75 topics/150 real topic anchors,848 local references,
+ 51 public-content sources and530 legacy-JS routes against actual browser IDs.
+- PASS38 browser route observations across4 successful runs;34 unique paths;
+  desktop,narrow,TOC,Mermaid,timing/counterpart and legacy navigation checked.
+- PASS12 existing PDFs/245 pages rendered and visually reviewed;no out-of-page
+  text,invalid glyphs,private source paths or blank pages found.
+- PASS all explicit IDs/previous aliases,256+256 Metadata rows,original RL78
+  timing block and118 protected runtime/source hashes preserved.
+- PASS disposable browser/render scopes retired;final safe clean removed0 files.
+  Recovery/evidence:tmp/internal/verification/guide_review_20261029;existing
+  Tool folder-budget exception retained. No user/runtime/Git data removed.
+- NOT RUN MCU/Tool rebuild,COM/board/programmer or Git publication:docs-only scope.
+
+## Paired UART/I2C/Xmodem guides (2026-10-29)
+
+- PASS9 matching RL78/RH850 chapters,75 topic pairs,150 real topic anchors;
+  direct home Boot/protocol links and all457 previous cross-guide aliases kept.
+- PASS17 focused document tests,527 route simulations/real destination IDs,
+ 792 local resources,51 public-content sources and canonical CheckOnly parity.
+- PASS actual Chromium37 full-site/legacy routes plus7 changed protocol and1
+  final Tool route;desktop/narrow/TOC/Mermaid/counterpart navigation observed.
+- PASS CRC32 INFO request,CRC16 block/test vector and command/status definitions
+  against production C headers;one authoritative frame/INFO/status table owner.
+- PASS refreshed existing PDFs20/20/6 pages,8 diagrams;all46 pages rendered by
+  Poppler and visually reviewed,with full-size diagram/browser detail checks.
+- PASS118 protected hashes unchanged;no firmware/Tool EXE/interface changes.
+  Disposable browser/PDF payload retired;final safe clean removed0 files.
+  Evidence/retention:tmp/internal/verification/serial_guide_split_20261029.
+- NOT RUN firmware builds,board/COM/programmer or Git publication:docs-only task.
+
+## RH850 Full/Current formatter (2026-10-28)
+
+- PASS TINY_PRINTF_FULL1(default)/0 in16 independent projects; exact Current
+  branch retained. C99 formats/lengths/dynamic fields/decimal-hex floats/n and
+  checked output implemented without new third-party formatter source/heap.
+- PASS fixed C locale/ASCII wide conversion,IEEE32/64/matching long double and
+  nearest/ties-to-even documented; no hosted locale/fenv conformance claim.
+- PASS73598 native assertions:19272 Full format comparisons/bounds,27164 Current
+  and27162 Full actual Log/trace/checked UART-hook assertions. Binary32 native
+  reader emulates the target representation; actual ABI compilation is separate.
+- PASS16 real CC-RH target builds, four mode/double-size compiler cases and
+  wide-literal ABI probe. Only reviewed license/library-alignment warnings.
+  Five64KiB Boots retain at least17264B tail; source/settings gates preserved.
+- PASS v4 five actual driver/service configurations/six pre-register rejections/
+  disabled-port rejection;isolated preparation retains C99,files and local mode0.
+- PASS1447 unchanged protected hashes,90 intended changes;16 restored workflows,
+  settings equal except header registrations and canonical/current branch parity.
+- PASS10 guide tests, real App-page/deep-link/narrow browser and21-page PDF visual
+  review. Existing untouched runtime/SC evidence reused without rerunning suites.
+- PASS1743 fresh compiler/assembly files23178619B retired;861 formal hashes
+  preserved. Native/docs/ABI/preparation fixtures removed;safe clean/audit passed.
+  Keep565074B recovery through first review, existing Tool capacity exception.
+- NOT RUN physical board/UART/FPU/COM/programmer/Git. Evidence:
+  tmp/internal/verification/rh850_printf_standard. Tool/Host/RL78 runtime intact.
+
+## RH850 hardened full formatter and standalone v4 (2026-10-28)
+
+- PASS16 identical local retarget.c/.h copies plus canonical; preserved full
+ formats/original alternate source. NaN/Inf/negative zero, streamed precision,
+ complete exponents, large finite values and format/count overflow checked.
+- PASS27160 native assertions, original normal-output comparison, actual ISP/v4
+ UART hooks and foreground Logs with trace off/on; return count is attempted
+ output, not guaranteed UART delivery. Original finite rounding remains.
+- PASS16 real target builds; reviewed license/library-alignment warnings remain.
+ Five64KiB Boots retain at least19148B tail spare; no board/clock/protocol changes.
+- PASS v4 five actual CAN profiles/six pre-register rejection cases/disabled-port
+ rejection; separate C90 core and C99 formatter. Isolated preparation retains
+ C99 and export parity. Local cleanup rejects5 unsafe ownership/boundary cases.
+- PASS1536 protected inventory:52 intended edits and1484 unchanged hashes;
+16 project configurations compared, v4 language only. Canonical mirrors aligned.
+- PASS10 selected guide tests; changed-page actual browser/deep link/narrow and
+21-page PDF visual/bounds checks. Prior unchanged runtime/SC evidence reused.
+- PASS owned native/document fixtures removed;1339 mapped intermediates/13701245B
+ retired and829 formal hashes preserved. Final safe-clean/audit/retention receipts
+ are in tmp/internal/verification/rh850_printf_hardening;519383B recovery retained
+ through first board acceptance, existing Tool folder-budget exception retained.
+- NOT RUN hardware/FPU/COM/programmer/Git publication; no RL78/Host/Tool runtime
+ change. This is an offline formatter/build result, not physical acceptance.
+
+## RH850 original full tiny_printf (2026-10-28)
+
+- PASS complete original-derived formatter in15 RH850 ISP projects; all original
+  cases/helpers/alternative source branch retained. Float/scientific,ll,pointer,
+  octal,flags,width/precision remain available; no compact replacement.
+- PASS local count/signed-min/integer-precision/format-termination fixes and
+  expanded readable control flow. Existing SendChar/UART guard and custom_func
+  workflow remain unchanged. Three original sample sources are hash-preserved.
+- PASS15 actual target builds/linked image/512IRQ/FCL/RAM/package gates; only
+  reviewed license/prebuilt-alignment target warnings remain. C99 is the sole
+  non-document project setting change. Five64KiB Boots retain at least19608B tail.
+- PASS24850 native assertions with trace off/on, untouched-original comparison,
+  full formats and emitted counts/boundaries/traces/counter/UART guard. Native x86
+  keeps target32-bit ABI; reviewed legacy MSVC4142/4244 forms are explicitly
+  exempted, not source warnings hidden in the target compiler.
+- PASS1397 protected source/reference/product files;15 non-language CS+ settings
+  equal and canonical/API mirrors aligned. Reused prior9 serial runtime/CAN core
+  evidence for unchanged code; NOT a new physical or complete runtime test run.
+- PASS10 selected guide tests, actual changed-page browser checks, common topic/
+  route parity; one PDF20pages/two contacts/two detailed visual pages reviewed.
+- PASS1268 mapped intermediates/12,407,983B and269 document/browser files/
+  16,285,066B retired;775 formal hashes preserved; native fixtures/EXEs removed.
+  Retain385880B recovery/concise receipts through first board review. Existing
+  Tool full-folder budget exception retained; inventory in rh850_retarget_full.
+- NOT RUN hardware/UART/FPU/COM/programmer or Git publication. No Tool or RL78
+  runtime change. Detail:tmp/internal/verification/rh850_retarget_full.
+
+## RH850 existing retarget console reuse (2026-10-28)
+
+- PASS15 RH850 Boot/App/Transfer local retarget bindings and actual target rebuilds;
+  tiny_printf replaces redundant text/hex/counter facades, SendChar retains bounded
+  UART0 output. Protocol/metadata/Flash/IRQ/clock and Tool/RL78 behavior preserved.
+- PASS24784 actual formatter/call-excerpt assertions, trace0/1, decimal/hex/signed
+  boundaries, literal percent/data, CRC OK/BAD, six ports, FD8/64bytes, counter wrap
+  and UART busy timeout/resume. Actual retarget/protocol compiled C90 /Za /W4 /WX.
+- PASS9 actual serial runtime role regressions. Prior CAN core/Flash evidence is
+  reused for unchanged sources; no physical success inferred. Target builds retain
+  only reviewed license W0561017/prebuilt alignment W0561322 categories.
+- PASS1361 protected source/product hashes, all15 non-console CS+ configurations,
+  canonical/API sync and relative/standalone source registration. Two local file
+  entries added per project; compiler-generated QualityReport outputs refreshed.
+- PASS10 selected guide tests, common chapter/anchor routes, two real changed-page
+  browser checks, two PDF29pages, three contact sheets/two detailed-page reviews.
+- PASS1268 mapped intermediates/11,749,563B removed with775 protected formal hashes;
+  owned native fixtures/EXEs and382 document/browser files/18,668,689B removed in
+  finally. Preserve formal images/reports/auto timing sets for subsequent board use.
+  Retain459258B recovery and concise evidence through review/first board acceptance;
+  exact folder measurements/existing budget exception:rh850_console/retention.json.
+- NOT RUN board/UART/COM/programmer/Git publication. Evidence and final checks:
+  tmp/internal/verification/rh850_console; Tool EXE/INI and all RL78 firmware intact.
+
+## RL78 / RH850 Bootloader reader parity (2026-10-28)
+
+- PASS equal RL78 template/theme, six chapter titles/order,60 paired topic bodies,
+  120 real topic anchors, corresponding-platform links and direct timing entries.
+  Actual RH850 metadata/IRQ/Flash/RAM/build values are retained; original timing
+  table rows on both platforms are unchanged, with no new hardware measurements.
+- PASS15 impact-selected tests, including missing-body/theme-drift/new-RL78-topic
+  negative guards and read-only projection hashes; seven canonical CheckOnly
+  projections and actual read-only publication hook.21 chapters/456 actual-JS
+  routes also checked against real browser DOM IDs, including preserved aliases.
+- PASS private Chromium26 routes plus3 final page reruns, desktop/narrow/TOC/
+  anchors/Mermaid/images/console and visual review. Actually clicked both timing
+  shortcuts and counterpart topic links in all12 Bootloader chapters.
+- PASS three affected existing PDFs/59 pages, bounds/text/link checks, six contact
+  sheets and two detailed-page visual reviews. No file-launch links remain.
+- PASS fresh browser/PDF workspace cleanup in finally:892 files/90,540,317B;
+  final safe clean0files, clean-script audit5scripts,16 formal/user SHA256 matches.
+  Retain202588B source recovery and compact evidence through editorial review.
+  Ten one-off migration scripts/drafts remain because automatic approval review
+  rejected deletion (blocked by policy, no detail); never rerun these migrations.
+  Final sizes and the existing full-folder retention exception:retention.json in
+  tmp/internal/verification/bootloader_parity. No20MB-compliance claim.
+- NOT RUN firmware/Tool build, board/COM/programmer, Git changes or publication;
+  these are unaffected by this documentation/navigation task. See HANDOFF and
+  tmp/internal/verification/bootloader_parity/final_verification.json.
+
+## Simple Renesas ISP Tool public-guide rename (2026-10-27)
+
+- PASS151 live-reference migrations,platform-neutral personal-project branding,
+  both MCU guides/homepage/navigation/source readers and51 sample README links.
+- PASS12 selected document tests;actual publication hook and production selected-
+  site DryRun;498 resources/21 chapters/256 routes/41 reader files/3 policy copies.
+- PASS private Chromium14 routes,desktop/narrow/TOC/anchors/Mermaid/no console
+  errors and latest visual review. Owned browser/PDF workspace removed in finally.
+- PASS13 PDFs/84 URI edits;all210 pages' text,geometry,pixels,TOC,metadata and
+  link rectangles preserved. Three contact sheets visually reviewed.
+- PASS explicitly authorized GitHub rename,same repository id1420573374 and
+  gh-pages SHA1157cb3d4bb22dbe0b41b4edcf846af43791e894,local history preserved,
+  new origin,unchanged semantic index. Raw index stat-cache refresh recorded.
+- PASS safe clean0files/workspace audit5scripts,16 formal EXE/INI/user-report
+  SHA256 preserved,no obsolete live links. Compact evidence/source recovery
+  retained through review;existing full-folder retention exception is not20MB
+  compliance. Details/sizes:tmp/internal/verification/isp_site_rename.
+- NOT RUN commit/push of edited content,live new-prose deployment,hardware or
+  firmware/product rebuild. Only repository rename was authorized externally.
+
+## RH850 independent guide, timing and code comments (2026-10-27)
+
+- PASS refreshed report provenance:6 RH850 FD reports/5 actual input sizes;
+  rough totals26.8/44.6/111.4/244.7/511.8s at500K/2M,Host115200. Original results,
+  counter deltas, phases and SHA256 preserved in portable summaries.
+- PASS60 Device projects/1007 annotated C/header files including canonical API
+  inputs; lexical tokens identical to private originals. Source mirrors/HAL
+  ownership and paired metadata copies remain consistent. No firmware rebuild,
+  Tool rebuild, version/format/partition or functional change in this task.
+- PASS7 selected unit checks;21 chapter pages/256 actual-JS routes;new RH850
+  guide7pages/94resources/256 Metadata byte-address rows;41 public-reader checks
+  and3 common-policy projections. RL78 content preserved; topics have one owner.
+- PASS actual private Chromium12 routes plus2 changed-chapter/report reruns;
+  desktop/narrow/TOC/links/Mermaid/console and visual review. Two PDFs18pages
+  rebuilt, bounds checked and affected pages visually reviewed.
+- PASS final safe clean0files,workspace audit5scripts;16 Tool EXE/INI/user-report
+  hashes unchanged. Owned browser/PDF payload removed;no fresh MCU objects.
+  Retained comment recovery1621629B and compact receipts through source review/
+  first board acceptance. Tool2890704218B/15links skipped,Web121509B at recorded
+  inventory;existing full-folder retention/budget exception is not20MB compliance.
+- NOT RUN hardware/COM/programmer or Git/Web publication. Prior HAL offline
+  build/runtime/SC evidence reused for unchanged tokens. Detail:HANDOFF and
+  tmp/internal/verification/rh850_site_comments/final_verification.json.
+
+## Independent device HAL layout (2026-10-27)
+
+- PASS60 actual target builds;20 Apps independently rebuilt without a Boot
+  checkout;16 unique real SC App regenerations with original sources preserved.
+  Four F13 Apps have no SCFG; their actual Code Generator regeneration is NOT RUN.
+- PASS local HAL/custom_func entry/bindings and API/reader/report mirrors;
+ 60 independent template clones/3 refusal cases;18 SFR comment-only personal-
+  path removals. All60 multi-instance MTPJ debugger/linker/define settings equal
+  recovered originals. F24 Host and standalone v4 excluded.
+- PASS36 RL78+9 RH850 runtime cases,36 callback slices,10 CAN mode/mask cases/
+ 1445 assertions,318 CRC checks/3 target guards/3 mutation rejections and
+ 2 Boot+2 Transfer production-client models. Existing target warnings retained.
+- PASS20 timing Apps/68 images/223 failure cases,actual Tool/metadata parsers,
+ F13 Flash bounds,post-hook refusal and preservation;all20 local mirrors/hooks.
+ Eight selected source/guide tests PASS across initial6 and final2 checks.
+- PASS canonical MD/Web parity,404 resources/236 routes/15 chapters;actual five-
+ page Chromium desktop/narrow/anchors/TOC checks with16 diagrams/71 tables.
+ Five PDFs/67pages regenerated,bounds checked and affected pages visually reviewed.
+- PASS final safe clean/audit5scripts,formal Tool EXE/INI preserved;3163 owned
+ MCU intermediates/21,840,766B retired with2744 protected hashes unchanged.
+ All fresh owned fixtures removed;source recovery33,875,903B and Tool-script
+ recovery54,508B retained through first board acceptance. Existing2.888GB full-
+ folder retention/provenance exception remains;not20MB compliance.
+- NOT RUN hardware/COM/programming/Git publication,external vendor override
+ inputs or the optional maintenance rebuild wrapper. Independent actual builds
+ cover production post-hooks. Detail/receipts:tmp/internal/verification/hal_layout.
+
+## RH850 CAN restart / Tool waiting progress (2026-10-27)
+
+- PASS negative cold-stop regression before fix;10 Classical/FD mask cases and
+ 1445 assertions after fix: unopened stop avoids hardware,active stop executes,
+ repeated stop remains harmless. Actual production service/driver/ISP wrapper
+ compiled with modeled hardware boundaries;not a real-board test.
+- PASS six actual CC-RH Boot/App/Transfer builds and post-package guards;
+ six MTPJ SHA256 unchanged. Existing license/alignment warnings retained.
+- PASS current RichEdit mixed-color/hidden/pause/follow and real-frame fixture:
+ 4830000history chars,1200recorded lines,no overflow,118heartbeats/max125ms,
+ 6paints/max16ms;restart timing8368 checks. Owned fixtures removed in finally.
+- PASS canonical document/Web sync,404resources/236routes;actual headless browser
+ 2pages/6diagrams/37tables,desktop/narrow/anchors/TOC/no console errors. Two PDFs
+ rebuilt;affected pages visually checked. Three selected PDF renderer tests pass.
+- User's075005 report is successful update with new Host counter increases;
+ source/report/UART support9015ms Boot-to-App gap,not a long END CRC. Preserve
+ raw reports and warnings. No timeout inflation,counter suppression,CRC bypass
+ or F24 Host firmware change. Repaired RH850 Boot requires physical reinstallation.
+- NOT RUN physical counter/timing confirmation,live960KiB Alt-Tab,COM/programmer
+ or publication. Exact counter-event cause requires the next real-board trace.
+ Compact evidence and cleanup receipt:tmp/internal/verification/rh850_restart_fix.
+
+## Nine-project CAN publisher (2026-10-27)
+
+- PASS28 synthetic local-Git production-entry checks; exact nine-device scope,
+  current/explicit-exception receipts, source/image SHA drift, -Yes refusal,
+  index preservation, recoverable keepers, verified push, no tags/empty commits,
+  cache reuse, post-fetch drift and owner-boundary guards. All owned fixtures
+  removed on completion; no synthetic hardware result used as board evidence.
+- PASS actual nine-repository commits/pushes and origin main SHA equality.
+  Publication receipt: tmp/internal/can_release_20261027/publication_result.json.
+  Nine exact DefaultBuild keepers;23 other outputs retained in recovery archive.
+- PASS source candidates exclude root objects/QualityReport; user-kept six
+  tracked personal settings remain local and tracked without content changes.
+- PASS static clean audit5 scripts, safe clean0 removals/formal EXE+INI2 preserved.
+  Existing source rollback/history/budget retention remains separate.
+- Reuse existing62-target offline regression, not a new target build or board
+  test. User-scoped prior-board/refactor release basis remains private.
+  NOT RUN physical tests, Tool/Host/RH850/serial/Web publication; no new Web prose.
+
+## Firmware user entry structure (2026-10-27)
+
+- PASS62 target builds/linked hardware_init+loop symbols; no alternate main
+  source files, compressed handwritten control lines or personal source paths.
+- PASS standalone v4 target/MOT/RX23; common v4 and metadata/runtime mirrors.
+  Preserve MCU defaults,8KiB/min512spare,metadata/CRC/IRQ/policy and Flash RAM gates.
+- PASS24 actual isolated SC regenerations/rebuilds, user entry/original preservation,
+  eight App-only Boot hash checks; no test-copy payload retained. F13 actual CG N/R.
+- PASS45 runtime cases,36 actual RL78 callback cases, FD/RH850/production-PC models,
+  CRC318 cases/three target carry and negative mutation guards,15 focused Python tests.
+- PASS neutral single-owner MD/local Web236routes/404resources, actual browser
+  desktop/narrow/anchor/TOC,3PDF bounds and affected-page visual review.
+- PASS fresh workspace nonce/boundary/junction/readonly failure teardown; retired
+  own MCUs1,342 objects/27,010,138B with298 formal hashes preserved; regular clean
+  and formal Tool EXE/INI hashes preserved. Source rollback/old-cache retention and
+  pre-existing20MB gap are recorded in private final results, not marked compliant.
+- NOT RUN hardware/COM/programmer, Git/publication or F13 actual Code Generator.
+
+## RH850 FD Custom Transfer user evidence (2026-10-27)
+
+- PASS two user-confirmed MCU CAN1 runs:Discover,PING,ECHO,PATTERN,three64B
+  FD+BRS echo patterns(59payload bytes/CRC8),GET_STATS indexes0..11.
+- PASS100 UART frame CRCs plus50 matching Tool trace observations;second run
+  byte-exact Tool/UART pairing. Device counter snapshots14/14 then39/39;2..11
+  all0. Bridge25RX/25TX and error counters0 on both operations.
+- Reset Host HELLO UART timeout once,retry2 and reconnect succeed;outside
+  CAN discovery/transfer. No CAN transaction timeout in the test windows.
+- All4 user Log inputs preserved. No generated payloads,firmware/product build,
+  live COM/programmer,public guide or Git changes. Receipt in private verification.
+- NOT COVERED:CAN4/Classical/concurrent traffic/fault/timing/Boot-App programming;
+  no claim that the installed artifact hash matches the current local MOT.
+
+## F13 original-App timing documentation (2026-10-27)
+
+- PASS new user JSON/HTML/Log:20308B,13960ms,CRC0x0C297B5E,318 ACKs,PASS,
+  APP_READY/live/CAN_STOP,retries0/error deltas0; current original BIN length/CRC.
+- PASS existing three filled-BIN JSON/HTML records, rough timing/single owner,
+  PDF bounds/six diagrams. Separate historical172301 Log check SKIPPED(absent).
+- PASS canonical Web check-only,404 references,15 chapters/235 legacy routes;
+  actual browser desktop/narrow/anchor/TOC,6 diagrams/31 tables,no console errors.
+  PDF30 pages; affected21/22 reviewed, source table kept together.
+- Source logs/reports preserved; own browser/PDF payload retired. No MCU/Tool
+  rebuild,physical action or Git/website publication for this document-only edit.
+
+## Automatic App timing images (2026-10-27)
+
+- PASS20 actual CS+ App rebuilds/post-hooks and paired Boot SHA preservation;
+  final68 timing BINs validate CRC, source identity, owned outputs and path privacy.
+- PASS20-App actual Tool/Boot native parser matrix:68 images/200 failure cases;
+  F13 Flash bounds19 invalid calls. Focused hook3/33 negatives, ownership/staging/
+  junction1/14 and refreshed F13 I2C actual-parser1/14 checks PASS. Catalog selected
+  F13 works with the other19 App folders absent; unknown selection rejected.
+- PASS canonical20 helper mirrors/post-package hooks and ignored auto outputs;
+  maximum capacities119/247/23/55/960KiB. Generator source hashes remain unchanged;
+  ordinary compilation may refresh a previously retained normal delivery.
+- PASS5 focused document tests, common guidelines,404 resource references,
+  15 chapters/235 legacy routes; real browser6 Mermaid/31 tables, deep link,
+  desktop/narrow/TOC with no DOM/console errors. PDF30 pages/six diagrams, bounds
+  check and visual contact/pages20/21 PASS. Canonical MD/Web check-only PASS.
+- PASS fresh owned native/browser/PDF teardown; retained disposable payload0.
+  Requested deliverables remain11,994,112B BIN +108,515B indexes. Retired objects
+  in successful target records5,855,384B; normal clean PASS and formal EXE/INI
+  SHA preserved. Compact evidence in tmp/internal/verification/app_timing_*.
+- NOT RUN hardware update/time, COM/programmer, fresh scaffold generation or
+  Git/website publication. Existing compiler warnings remain in build evidence.
+  Pre-existing project-wide20MB gap is not resolved by this scoped change.
+
 ## Post-user cleanup verification (2026-10-26)
 
 - PASS122 reviewed paths absent /2,837,093,499B retired;39approved run directories

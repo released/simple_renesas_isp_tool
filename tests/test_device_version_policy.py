@@ -91,7 +91,7 @@ class DeviceVersionPolicy(unittest.TestCase):
         self.assertIn('3036',text)
         self.assertIn('force upgrade old version firmware',text)
         web=companion_path('Web')
-        owner=(web/'slide_isp_tool_for_RL78/index.md').read_text(encoding='utf-8-sig')
+        owner=(web/'slide_simple_renesas_isp_tool/index.md').read_text(encoding='utf-8-sig')
         other=(web/'slide_boot_loader_for_RL78/index.md').read_text(encoding='utf-8-sig')
         self.assertEqual(owner.count('<a id="force-old-version"></a>'),1)
         self.assertNotIn('<a id="force-old-version"></a>',other)

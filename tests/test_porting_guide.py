@@ -1,5 +1,6 @@
 """Check canonical porting content, local entry links and bounded web sync."""
 from pathlib import Path
+import json
 import re
 import subprocess
 import tempfile
@@ -14,6 +15,7 @@ WEB = companion_path('Web')
 DOC = ROOT / "docs/RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md"
 SCRIPT = ROOT / "scripts/sync_rl78_porting_guide.ps1"
 PATTERN = re.compile(r"<!-- RL78_PORTING_BEGIN -->.*?<!-- RL78_PORTING_END -->", re.S)
+OWNER = json.loads((ROOT / 'scripts/web_guide_layout.json').read_text(encoding='utf-8-sig'))['slide_boot_loader_for_RL78']['sections']['RL78_PORTING'] + '.md'
 
 
 class PortingGuideTests(unittest.TestCase):
@@ -26,23 +28,27 @@ class PortingGuideTests(unittest.TestCase):
 
     def test_canonical_web_and_reader_entries(self):
         source = DOC.read_text(encoding="utf-8-sig")
-        page = (WEB / "slide_boot_loader_for_RL78/index.md").read_text(encoding="utf-8-sig")
+        page = (WEB / 'slide_boot_loader_for_RL78' / OWNER).read_text(encoding="utf-8-sig")
         self.assertEqual(len(PATTERN.findall(source)), 1)
         self.assertEqual(PATTERN.findall(source), PATTERN.findall(page))
         self.assertIn('<a id="boot-app-porting"></a>', page)
         for path in [ROOT / "README.md",
-                     WEB / "slide_isp_tool_for_RL78/index.md",
+                     WEB / "slide_simple_renesas_isp_tool/device-guides.md",
                      WEB / "released.github.io/README.md"]:
             text = path.read_text(encoding="utf-8-sig")
-            self.assertTrue("RL78_BOOT_APP_PORTING_GUIDE" in text or "#boot-app-porting" in text)
+            self.assertTrue(any(entry in text for entry in (
+                'RL78_BOOT_APP_PORTING_GUIDE', '#boot-app-porting',
+                'slide_boot_loader_for_RL78/', 'porting.html')), str(path))
+        overview = (WEB / 'slide_simple_renesas_isp_tool/index.md').read_text(encoding='utf-8-sig')
+        self.assertIn('(device-guides.html)', overview)
 
     def test_links_and_source_contract(self):
         text = DOC.read_text(encoding="utf-8-sig")
         self.assertEqual(len(re.findall(r"(?m)^```", text)) % 2, 0)
-        self.assertEqual(text.count("```mermaid"), 2)
+        self.assertEqual(text.count("```mermaid"), 3)
         for link in re.findall(r"\]\(([^)]+)\)", text):
             if link.startswith('https://'):
-                self.assertIn(urlsplit(link).hostname, ['github.com', 'released.github.io'])
+                self.assertIn(urlsplit(link).hostname, ['github.com', 'released.github.io', 'www.renesas.com'])
             else:
                 self.assertTrue((DOC.parent / link.split("#")[0]).exists(), link)
         config = (companion_path('F13Boot') / 'image_metadata_config.h').read_text()
@@ -55,17 +61,20 @@ class PortingGuideTests(unittest.TestCase):
         self.assertRegex(f24_config,r'BOOT_APP_RAM_OWNER_BOOT\s+\(0xAAU\)')
         self.assertRegex(f24_config,r'BOOT_APP_RAM_OWNER_APPLICATION\s+\(0x55U\)')
         for phrase in ["0x2100..0x217F", "0x2180..0x21FF", "app_image_config.h",
-                       "Physical BRK", "RETI", "0xAA", "0x55", "F1V1", "F2V1",
+                       "RETI", "0xAA", "0x55", "F1V1", "F2V1",
                        "package_images.ps1", "Windows PowerShell"]:
             self.assertIn(phrase, text)
         self.assertIn('0xFF700',text)
         self.assertIn('0xFF71C',text)
+        self.assertIn('#device-irq-ownership', text)
+        irq_owner = (ROOT / 'docs/DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md').read_text(encoding='utf-8-sig')
+        self.assertIn('BRK `0x7E`', irq_owner)
         self.assertNotRegex(text,r'F24.{0,12}host|BUR1|Python|python')
 
     def test_check_only_is_read_only_and_sync_preserves_surroundings(self):
         with tempfile.TemporaryDirectory(prefix="rl78_porting_") as folder:
             web = Path(folder)
-            target = web / "slide_boot_loader_for_RL78/index.md"
+            target = web / 'slide_boot_loader_for_RL78' / OWNER
             target.parent.mkdir()
             original = "Existing user prefix\n<!-- RL78_PORTING_BEGIN -->\nstale\n<!-- RL78_PORTING_END -->\nExisting suffix\n"
             target.write_text(original, encoding="utf-8")
@@ -85,7 +94,7 @@ class PortingGuideTests(unittest.TestCase):
             self.assertNotEqual(self.run_sync(web).returncode, 0)
             self.assertEqual(target.read_bytes(), before)
 
-    def test_offline_pdf_has_content_and_both_diagrams(self):
+    def test_offline_pdf_has_content_and_all_diagrams(self):
         reader = PdfReader(DOC.with_suffix(".pdf"))
         self.assertGreater(len(reader.pages), 2)
         text = "\n".join(page.extract_text() for page in reader.pages)
@@ -95,7 +104,7 @@ class PortingGuideTests(unittest.TestCase):
         self.assertNotIn("RL78_PORTING_BEGIN", text)
         self.assertNotIn("f24_board", text)
         self.assertNotIn("RL78_F24_CAN_host_upgrade", text)
-        self.assertEqual(sum(len(page.images) for page in reader.pages), 2)
+        self.assertEqual(sum(len(page.images) for page in reader.pages), 3)
 
 
 if __name__ == "__main__":

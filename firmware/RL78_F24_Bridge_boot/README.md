@@ -54,3 +54,12 @@ from RAM into recovery. Build/link checks are not physical proof.
 Physical IRQ handoff, UART timing, supply, erase/write, cancellation/power loss,
 and debug/standalone reset require a controlled lab verification before release.
 See ../../docs/SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md and its PDF directly in docs.
+
+## User code entry
+
+`custom_func.c` provides `hardware_init()` for initialization and `loop()` for
+foreground service. Add application initialization and foreground work through
+these callbacks, retaining the existing communication service calls.
+The selected main/startup adapter owns entry and handoff. Generated peripheral
+files remain under `src/`; retain the project's MTPJ source selection when using
+Code Generator or Smart Configurator, then rebuild to validate the image and vectors.

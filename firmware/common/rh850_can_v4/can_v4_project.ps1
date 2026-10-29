@@ -7,7 +7,7 @@ function Set-CanV4Project([xml]$Xml,[string]$Project,[string]$SourceRoot) {
     foreach($node in @($files.Instance | Where-Object {$_.Type -eq 'File'})) {
         if([string]$node.RelativePath -in $legacy) {[void]$files.RemoveChild($node)}
     }
-    $prefix=$SourceRoot+'can_v4\'
+    $prefix='hal\can\'
     $names=@('can_service.c','can_service.h','can_board.c','can_board.h','can_config.c','can_config.h','can_user_config.h',
         'rs_canfd.c','rs_canfd.h','rs_canfd_platform.h','rs_canfd_regs.h','rs_canfd_validate.c')
     $parent=[string]$Xml.SelectSingleNode('//FileCategoryGuid').InnerText
