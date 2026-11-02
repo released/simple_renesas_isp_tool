@@ -1,5 +1,142 @@
 # Firmware Upgrade Tool Development Checklist
 
+## CAN publication scope and revision review (2026-11-02)
+
+- [x] User confirms15CAN device roles across F13/F24/RH850;serial scope retained.
+- [x] Batch16-repository catalog,paths,Schema3 receipts and explicit new setup.
+- [x] Isolated publication/initialization regressions and actual local preflight.
+- [x] RH850 Web hook,resource sync,4-site dry run,browser and existing PDF review.
+- [x] Private October27/current BIN/source/compiler comparison with provenance limits.
+- [ ] Actual remote creation/project Git initialization/commit/push: not requested
+  in this preparation;use the explicit first-time entry before normal publication.
+
+## RH850 Classical CAN revalidation (2026-11-02)
+
+- [x] Audit four Logs/five JSON-HTML pairs,22Transfer pairs/44CRC8 frames,
+  five END/App/live metadata/STOP/timer segments and current producer BINs.
+- [x] Preserve FD evidence and RL78 data;add Classic measurements and separated
+  Host/bus conditions. Update overview and remove size-only report matching.
+- [x] Explicitly selected report imports prevent concurrent unreviewed FD data
+  from entering local Web;preserve raw files. Five focused guide tests pass.
+- [x] Verify five import cases,853refs,browser/new3-page timing PDF,existing
+  FD/RL78 evidence and input preservation;concurrent INI retained. Owned
+  scratch removed;no MCU/Tool rebuild,compiled test binary or hardware action.
+
+## F24 CAN FD revalidation (2026-11-02)
+
+- [x] Audit four Logs/six JSON-HTML pairs;25Transfer exchanges/50CRC8 frames,
+  three FD64 patterns/full59-byte echoes and actual RXMB interrupt snapshots.
+- [x] Verify six CRC/App/live metadata/STOP results,timer segments,current
+  producer BINs,zero retry/error deltas;no MCU/Tool rebuild or board action.
+- [x] Refresh only FD timing/original size/conditions/six report sources;
+  preserve F13 and F24Classical measurements and original user evidence.
+- [x] Check six source/Web rows,848references,browser/PDF,unchanged other
+  measurements,24protected inputs and owned scratch cleanup. No compiled
+  test binary generated;prior cleanup exception untouched.
+
+## F24 Classical CAN revalidation (2026-11-02)
+
+- [x] Audit four Logs/six JSON-HTML pairs,22Transfer pairs/44CRC8 frames,
+  six App confirmations/UART timer segments,all metadata/CRC/STOP and deltas.
+- [x] Distinguish pre-reset Host counters from the zero-delta update sessions;
+  validate current producer BINs without rebuilding or programming hardware.
+- [x] Refresh only F24 Classical timing/original size/environment/report sources;
+  preserve F13 and F24FD data and retain original user evidence.
+- [x] Check six source/Web rows,848references,browser/PDF,data preservation and
+  owned scratch cleanup.23protected inputs match;concurrent live INI preserved.
+
+## F13 physical revalidation evidence (2026-11-02 evening)
+
+- [x] Audit four user Logs and four JSON/HTML pairs:22 Transfer exchanges,
+  independently checked CRC8,all tests/statistics pass;four App updates pass
+  CRC/live identity/STOP with zero Host error deltas and retries.
+- [x] Cross-check four App UART launches/monotonic timer segments and current
+  BIN length/trailer/CRC32,without programming or rebuilding anything.
+- [x] Refresh only F13 timing/environment/report sources in the canonical
+  workshop;preserve F24 measurements pending the user's next physical tests.
+- [x] Verify canonical/Web data parity,848 references,actual browser desktop/
+  narrow/TOC/deep link and30-page PDF/6diagrams;18protected input hashes match.
+  Owned render/browser workspaces retired;no build/test EXE was generated.
+
+## F13 Custom Transfer RX rule (2026-11-02)
+
+- [x] Read the failing Tool Log and actual09:07MOT:Transfer hardware rules were
+  Boot0x700/0x720..727 despite UART labels declaring0x710.
+- [x] Restore one exact standard-data0x710/0x7FF RX FIFO0 rule;add a UART entry
+  breadcrumb before CAN init,without clock/rate/TX/protocol changes.
+- [x] Project-local CS+ pre/post guards validate source and linked map/MOT;
+  actual target build passes0errors/2existing license warnings;9 guard cases pass.
+- [x] User UART Log confirms22 request/reply pairs,all CRC OK;user subsequently
+  confirms Standalone works after checking wiring. No agent board operation.
+- [x] Sync README,architecture,Transfer Web/PDF;retire owned tests and22 linked
+  compiler intermediates. Keep formal ABS/MOT/map and current user debug state.
+
+## Offline BIN progress / COM investigation (2026-11-02)
+
+- [x] Restore/manual BIN inspection success,failure and cancellation return
+  the footer to idle0%;keep inspection data and actual update completion.
+- [x] Add actionable Device Manager/USB-data/driver checks to empty COM Log.
+- [x] Debug/Release builds and54 frame/flow checks each;read-only catalog
+  regressions,12 existing completion/settings checks,Web/PDF checks.
+- [x] Retire fresh test outputs and run final safe compiler clean;formal0114
+  EXE/settings/firmware retained. Prior nine-file cleanup exception unchanged.
+- [ ] COM list mismatch: user sees a port in Device Manager;await actual COM
+  number. Automation API counts0 are not sufficient physical-device evidence;
+  native desktop helper is unavailable. Enumeration logic remains unchanged.
+
+## Misc Host mode guidance (2026-11-02)
+
+- [x] Use verified live APP/BOOT mode for Misc notes, action captions and
+  Preflight; a loaded BIN never establishes the board mode.
+- [x] Already-BOOT first installation skips ENTER; distinguish absent/valid
+  installed App, completed write awaiting explicit RUN, unknown mode and busy.
+- [x] Preserve image/Flash/RUN gates; enable ENTER only for verified APP.
+- [x] Debug/Release builds and42 actual MFC checks per configuration;9 existing
+  completion checks; owned expected-failure/finalizer verification.
+- [x] Synchronize Host operation guide/Web;27-page PDF, browser and local links.
+- [x] Retire fresh owned test/product copies and compiler intermediates;keep
+  formal Tool0.1.0.0113 and existing settings/firmware. Previous nine-file
+  automatic-review cleanup exception remains unchanged;no deletion retry.
+- [ ] Physical first-install/daily-update checks of the new UI remain separate.
+
+## Approved review follow-up N1-N7 (2026-11-01)
+
+- [x] N1: preserve CFrameWnd auto-delete ownership on failed creation.
+- [x] N2: retain operation cancellation through cleanup/reconnect and shutdown.
+- [x] N3: known-ABI CAN vector preflight before staging/START; preserve unknown
+  CAN ABI extensibility and the serial strict-ABI contract.
+- [x] N4: bind current/previous report status to operation IDs, paths and errors;
+  distinguish report storage from confirmed firmware results.
+- [x] N5: owned/finally retirement in three legacy runners; align the ISP model
+  runner with project-local hal/image and test failure/cancellation exceptions.
+- [x] N6: latch uncertain UART/I2C cleanup and gate UI/worker bus operations;
+  explicit verified Open/Probe requires advertised ABORT ACKs after CAN STOP.
+- [x] N7: session-local stable startup guard, bounded notification and deferred
+  activation preserving popup state; no secondary settings/UI/COM work.
+- [x] Focused native/CAN regressions,52 actual worker/MFC checks per configuration,
+  Debug/Release product startup and existing prerequisite/font fixture.
+- [x] Synchronize canonical operation/architecture docs and Web/PDF;validate
+  references, browser and PDF layout. Hardware/publication remain separate.
+- [x] Final safe-clean/preservation audit and explicit retention receipt.
+- [ ] Nine reviewed outputs remain:automatic review rejected retirement
+  (blocked by policy);exact paths/25889482bytes are recorded,not silently kept.
+
+## Approved Tool reliability review (2026-10-31)
+
+- [x] R1: checked UTF-8/log writes, exclusive log names and explicit save failures.
+- [x] R2: deterministic binary COM flags, independent of inherited driver settings.
+- [x] R3: bounded worker-owned BIN loading/inspection and exact-byte cache;
+  preserve fresh worker/device validation before Flash operations.
+- [x] R4: bind actual PC compile/include dependencies to publication receipts;
+  reject changed/missing withheld inputs without expanding publication scope.
+- [x] R5/R6: preserve uncertain STOP state and use the active CAN session mode
+  for burst capabilities; require explicit verified-host recovery.
+- [x] R7/R8: concrete I2C status guidance and one CAN compatibility policy for
+  UI, worker and difference tables.
+- [x] Complete actual-frame responsiveness, focused publication regressions,
+  Release/Debug delivery checks, Web/PDF acceptance and owned-artifact cleanup.
+- [ ] Physical adapter/device checks and separately authorized publication.
+
 ## Reader-flow and current-contract review (2026-10-29)
 
 - [x] Correct stale sibling build requirements and publication scope;preserve

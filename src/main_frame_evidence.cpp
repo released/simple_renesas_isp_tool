@@ -81,10 +81,15 @@ bool CMainFrame::ConfirmForceOldFirmware() {
 void CMainFrame::UpdateCompletionFeedback() {
     namespace feedback=firmware_upgrade::feedback;
     if (worker_command_pending_ || session_state_.busy || !last_operation_error_.empty() ||
-        last_update_result_==feedback::Result::None || (IsI2cTab()&&!IsI2cIsp())) return;
+        last_update_result_==feedback::Result::None || session_state_.SerialCleanupUnconfirmed() ||
+        (IsI2cTab()&&!IsI2cIsp())) return;
     if(last_update_result_==feedback::Result::UartAppConfirmed||last_update_result_==feedback::Result::UartAppConfirmedRxWarning) {if(!IsIspTab()||UartTransferSelected())return;}
     else if (feedback::IsDevice(last_update_result_) ? IsMiscTab() || IsUartTab() || SelectedProfile()!=L"CAN Upgrade" : !IsMiscTab()) return;
-    const auto view=feedback::Describe(last_update_result_);
+    auto view=feedback::Describe(last_update_result_);
+    if (report_status_.operation) {
+        view.compact += L"\r\n" + report_status_.Summary();
+        view.next += L"\r\n" + report_status_.Details();
+    }
     const auto tone=view.warning ? firmware_upgrade::visual::Tone::Pending : firmware_upgrade::visual::Tone::Ready;
     operation_status_card_.SetWindowTextW(view.status.c_str()); operation_status_card_.SetTone(tone);
     firmware_prerequisites_label_.SetWindowTextW(view.compact.c_str());
@@ -147,18 +152,21 @@ void CMainFrame::OnBinDetails() {
     dialog.DoModal();
 }
 void CMainFrame::SaveUpdateReport(const firmware_upgrade::ui::WorkerEvent& event) {
-    if(!event.report_json_path.empty()) AppendLog(L"Automatic JSON update report: "+event.report_json_path);
-    if(!event.report_html_path.empty()) {
-        latest_report_path_=event.report_html_path;
-        AppendLog(L"Automatic HTML update report: "+latest_report_path_);
+    if (event.report_pending) {
+        report_status_.Begin(event.report_operation_id);
+    } else {
+        report_status_.Save(event.report_operation_id, event.report_json_path,
+            event.report_html_path, event.text);
+        AppendLog(report_status_.Details());
     }
-    if(!event.text.empty()) AppendLog(L"Automatic report warning: "+event.text);
     UpdateUi();
 }
 void CMainFrame::OnOpenLatestReport() {
-    if(latest_report_path_.empty()) return;
-    const auto result=reinterpret_cast<INT_PTR>(ShellExecuteW(m_hWnd,L"open",latest_report_path_.c_str(),nullptr,nullptr,SW_SHOWNORMAL));
-    if(result<=32) AppendLog(L"Report open failed (Shell error "+std::to_wstring(result)+L"): "+latest_report_path_);
+    const auto path = report_status_.Path();
+    if (path.empty()) return;
+    AppendLog(report_status_.Details());
+    const auto result=reinterpret_cast<INT_PTR>(ShellExecuteW(m_hWnd,L"open",path.c_str(),nullptr,nullptr,SW_SHOWNORMAL));
+    if(result<=32) AppendLog(L"Report open failed (Shell error "+std::to_wstring(result)+L"): "+path);
 }
 void CMainFrame::OnErrorDetails() {
     if(last_operation_error_.empty()) return;
@@ -179,7 +187,12 @@ void CMainFrame::OnPreflight() {
     if(IsMiscTab()) {
         const bool info=session_state_.host_validated && session_state_.bridge_info_valid;
         const auto& d=session_state_.bridge_info;
-        gate(L"Destination",info && d.mode==BU_MODE_BOOT,L"HOST BRIDGE APP / UART",L"Enter Bridge Boot; external device flash is not selected");
+        const bool boot=info && d.mode==BU_MODE_BOOT;
+        const bool app=info && d.mode==BU_MODE_APP;
+        gate(L"Host mode / destination",boot,
+            boot ? L"HOST BRIDGE - BOOT / UART" : app ? L"HOST BRIDGE - APP / UART" : L"Host mode not verified",
+            boot ? L"Boot mode confirmed; update HOST APP directly" :
+            app ? L"Enter Bridge Boot (UART) for a Host App update" : L"Open + Probe Host; Read Bridge Update Info");
         gate(L"Image / CRC32",binary_bridge_inspection_.valid,binary_bridge_inspection_.error,L"Valid _bridge_update.bin / full CRC32");
         gate(L"Flash backend",info && (d.flags&BU_FLAG_FLASH_READY),info?L"Live descriptor":L"Unavailable",L"Boot FLASH_READY required");
         gate(L"Update UART",info && session_state_.baudrate==d.uart_baud,
@@ -269,4 +282,24 @@ void CMainFrame::OnPreflight() {
         }
     }
     MetadataDialog dialog(rows,this,evidence::PreflightTitle(rows)); dialog.DoModal();
+}
+
+bool CMainFrame::ApplyBusRecoveryUi() {
+    if (!session_state_.SerialCleanupUnconfirmed()) return false;
+    CWnd* blocked[] = {&bus_tabs_, &bus_port_combo_, &can_mode_combo_, &can_bitrate_combo_,
+        &can_data_combo_, &can_filter_combo_, &can_filter_id_edit_, &can_filter_mask_edit_,
+        &profile_combo_, &connect_target_btn_, &enter_bootloader_btn_, &transfer_test_btn_,
+        &start_firmware_update_btn_, &force_old_firmware_btn_, &can_tx_test_btn_,
+        &i2c_probe_btn_, &i2c_speed_combo_, &i2c_address_edit_, &uart_baud_combo_,
+        &uart_workflow_combo_, &i2c_workflow_combo_, &reset_host_btn_};
+    for (auto* control : blocked) {
+        if (control->GetSafeHwnd()) control->EnableWindow(FALSE);
+    }
+    const auto text = L"[BLOCKED] Device bus cleanup is not confirmed. Next: Close COM, then Open + Probe Host and Discover Target.";
+    firmware_prerequisites_label_.SetWindowTextW(text);
+    firmware_prerequisites_label_.SetEmphasized(true);
+    firmware_prerequisites_label_.SetTone(firmware_upgrade::visual::Tone::Pending);
+    operation_status_card_.SetWindowTextW(text);
+    operation_status_card_.SetTone(firmware_upgrade::visual::Tone::Pending);
+    return true;
 }

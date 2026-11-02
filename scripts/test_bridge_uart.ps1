@@ -1,8 +1,6 @@
 param()
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
-$out=Join-Path $root 'tmp\internal\tests\bridge_uart'
-New-Item -ItemType Directory -Path $out -Force | Out-Null
 $vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 $vs=& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if(!$vs){throw 'MSVC is required for native verification.'}
@@ -12,8 +10,13 @@ foreach($line in $lines){if($line -match '^([^=]+)=(.*)$'){[Environment]::SetEnv
 $common=Join-Path $root 'firmware\common'
 $isp=Join-Path $common 'isp_device'
 $core=Join-Path $root 'src\core'
-Push-Location -LiteralPath $out
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$scope=New-OwnedTestWorkspace 'bridge_uart' -ShortPath
+$out=$scope.Path
+$pushed=$false
 try {
+    Push-Location -LiteralPath $out
+    $pushed=$true
     & cl /nologo /TC /W4 /WX /c /DISP_DEVICE_TRANSFER ('/I'+$common) ('/I'+$isp) (Join-Path $common 'bridge_uart.c') (Join-Path $isp 'isp_protocol.c') (Join-Path $isp 'isp_device.c')
     if($LASTEXITCODE){throw 'Production C compilation failed.'}
     & cl /nologo /std:c++17 /EHsc /W4 /WX ('/I'+$common) ('/I'+$isp) ('/I'+$core) (Join-Path $root 'tests\bridge_uart_tests.cpp') (Join-Path $core 'uart_host_client.cpp') (Join-Path $core 'bridge_port_catalog.cpp') (Join-Path $core 'host_link_client.cpp') (Join-Path $core 'host_link_protocol.cpp') bridge_uart.obj isp_protocol.obj isp_device.obj /Fe:bridge_uart_tests.exe
@@ -32,4 +35,11 @@ try {
     if($LASTEXITCODE){throw 'Existing transport regression client compilation failed.'}
     & '.\bridge_transport_regression.exe'
     if($LASTEXITCODE){throw 'Existing transport regression failed.'}
-} finally { Pop-Location }
+} finally {
+    try {
+        if($pushed){Pop-Location}
+    } finally {
+        Remove-OwnedTestWorkspace $scope
+    }
+}
+Write-Host ('Owned test payload retired: '+$scope.Path)

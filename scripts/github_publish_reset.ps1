@@ -87,9 +87,15 @@ function Move-PublishOutputs($Target,[string]$Backup) {
 }
 
 function Assert-PublishIndex($Target) {
+    $deferred=@(Get-PublishDeferredPaths $Target)
     foreach($path in (Invoke-PublishGit $Target.Root @('diff','--cached','--name-only','-z')).Text.Split([char]0)) {
-        if($path -and $Target.DeferredPattern -and $path -match $Target.DeferredPattern) {
+        if($path -and $path -cin $deferred) {
             throw "Deferred development file entered the index: $path"
+        }
+    }
+    foreach($relative in @($Target.RequiredFiles | Where-Object {$_})) {
+        if(!(Invoke-PublishGit $Target.Root @('ls-files','--error-unmatch','--',$relative) @(0,1)).Text) {
+            throw "Required delivery missing from index: $relative"
         }
     }
     foreach($group in $Target.Plan) {
@@ -149,11 +155,17 @@ function Invoke-GithubPublication($Targets,[string]$Backup,[string]$Message,
                 [void](Invoke-PublishGit $target.Root @('add','-f','--',($group.Relative+'/'+$keep.Name)))
             }
         }
+        foreach($relative in @($target.RequiredFiles | Where-Object {$_})) {
+            [void](Invoke-PublishGit $target.Root @('add','-f','--',$relative))
+        }
         Assert-PublishIndex $target
     }
     if($ReleaseGuard) { & $ReleaseGuard }
     foreach($target in $Targets) {
-        if((Invoke-PublishGit $target.Root @('diff','--quiet','--no-ext-diff') @(0,1)).Code) {
+        $deferred=@(Get-PublishDeferredPaths $target)
+        $unstaged=@((Invoke-PublishGit $target.Root @('diff','--name-only','--no-ext-diff','-z')).Text.Split([char]0) |
+            Where-Object { $_ -and $_ -cnotin $deferred })
+        if($unstaged.Count) {
             throw "Working files changed while staging the reviewed release: $($target.Name)"
         }
     }

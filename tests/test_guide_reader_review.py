@@ -33,12 +33,13 @@ class GuideReaderReviewTests(unittest.TestCase):
         self.assertIn('-CheckOnly', build)
         self.assertIn('-ArtifactsOnly', build)
 
-    def test_publish_prose_matches_nine_repo_batch_scope(self):
+    def test_publish_prose_matches_tool_host_and_fifteen_device_scope(self):
         text = self.doc('MULTIBUS_TOOL_GUIDE_zh-TW.md')
         batch = (ROOT/'github_push.bat').read_text(encoding='utf-8-sig')
-        self.assertIn('九個 repository', text)
-        self.assertIn('Tool／Host、RH850、串列工程與網站', text)
-        self.assertIn('Nine repositories only', batch)
+        self.assertIn('十五個 F13／F24／RH850 Classical CAN／CAN FD device repository', text)
+        self.assertIn('共十六個 repository', text)
+        self.assertIn('Tool 的來源、EXE、文件', text)
+        self.assertIn('sixteen repositories total', batch)
         self.assertNotIn('App會引用相鄰Boot', text)
 
     def test_serial_request_reply_examples_have_independent_valid_crc(self):

@@ -68,6 +68,17 @@ bool SerialPort::Open(const std::wstring& com_port, std::uint32_t baudrate, std:
     dcb.StopBits = ONESTOPBIT;
     dcb.fBinary = TRUE;
     dcb.fParity = FALSE;
+    // Host Link is a binary 8-N-1 link without hardware/software flow control.
+    // Do not inherit a terminal's CTS/DSR, XON/XOFF or byte-filter settings.
+    dcb.fOutxCtsFlow = FALSE;
+    dcb.fOutxDsrFlow = FALSE;
+    dcb.fDsrSensitivity = FALSE;
+    dcb.fOutX = FALSE;
+    dcb.fInX = FALSE;
+    dcb.fTXContinueOnXoff = TRUE;
+    dcb.fErrorChar = FALSE;
+    dcb.fNull = FALSE;
+    dcb.fAbortOnError = FALSE;
     dcb.fDtrControl = DTR_CONTROL_ENABLE;
     dcb.fRtsControl = RTS_CONTROL_ENABLE;
     if (!SetCommState(handle_, &dcb)) {

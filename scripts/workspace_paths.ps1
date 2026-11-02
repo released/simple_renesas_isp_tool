@@ -2,7 +2,8 @@
 function Get-CompanionPath {
     param(
         [ValidateSet('F13Transfer','F13Boot','F13App','F24Transfer','F24Boot','F24App',
-                     'F24FdTransfer','F24FdBoot','F24FdApp','Web')][string]$Kind,
+                     'F24FdTransfer','F24FdBoot','F24FdApp',
+                     'Rh850Transfer','Rh850Boot','Rh850App','Rh850FdTransfer','Rh850FdBoot','Rh850FdApp','Web')][string]$Kind,
         [string]$ExplicitPath,
         [string]$ToolRoot = (Split-Path -Parent $PSScriptRoot)
     )
@@ -19,6 +20,12 @@ function Get-CompanionPath {
         'F24FdTransfer' { 'FIRMWARE_F24_DEVICE_FD_TRANSFER_PROJECT' }
         'F24FdBoot' { 'FIRMWARE_F24_DEVICE_FD_BOOT_PROJECT' }
         'F24FdApp' { 'FIRMWARE_F24_DEVICE_FD_APP_PROJECT' }
+        'Rh850Transfer' { 'FIRMWARE_RH850_DEVICE_TRANSFER_PROJECT' }
+        'Rh850Boot' { 'FIRMWARE_RH850_BOOT_PROJECT' }
+        'Rh850App' { 'FIRMWARE_RH850_APP_PROJECT' }
+        'Rh850FdTransfer' { 'FIRMWARE_RH850_DEVICE_FD_TRANSFER_PROJECT' }
+        'Rh850FdBoot' { 'FIRMWARE_RH850_DEVICE_FD_BOOT_PROJECT' }
+        'Rh850FdApp' { 'FIRMWARE_RH850_DEVICE_FD_APP_PROJECT' }
         'Web' { 'FIRMWARE_WEB_ROOT' }
     }
     $configured = [Environment]::GetEnvironmentVariable($variable)
@@ -37,6 +44,12 @@ function Get-CompanionPath {
         'F24FdTransfer' { 'RL78_F24_CAN_FD_Transfer' }
         'F24FdBoot' { 'RL78_F24_Boot_loader_CAN_FD' }
         'F24FdApp' { 'RL78_F24_Boot_loader_CAN_FD_app' }
+        'Rh850Transfer' { 'Sample_Project_RH850_S1_CAN_Transfer' }
+        'Rh850Boot' { 'Sample_Project_RH850_S1_Boot_loader_CAN' }
+        'Rh850App' { 'Sample_Project_RH850_S1_Boot_loader_CAN_app' }
+        'Rh850FdTransfer' { 'Sample_Project_RH850_S1_CAN_FD_Transfer' }
+        'Rh850FdBoot' { 'Sample_Project_RH850_S1_Boot_loader_CAN_FD' }
+        'Rh850FdApp' { 'Sample_Project_RH850_S1_Boot_loader_CAN_FD_app' }
     }
     return Join-Path $parent $name
 }

@@ -2,6 +2,62 @@
 
 Status: implementation baseline
 
+Repository publication is independent of Tool/device execution. The batch selects
+15 CAN device repositories plus Tool/F24 Host; the catalog and exact-file SHA256
+receipt gate this 16-repository scope. The six RH850 CAN/CAN FD projects join as
+independent Transfer/Boot/App repositories, without enabling serial firmware.
+First-time Git/public-remote initialization is explicit and preflights all local
+deliveries and empty remotes before creating Git state. It creates an empty
+initial commit only; normal snapshot/staging/ancestry checks still gate source
+publication. Cancellation after initialization does not roll back created Git
+or remote repositories. See GITHUB_PUBLISH_zh-TW.md for operations and recovery.
+
+Production startup acquires a session-local, stable application guard before UI,
+settings or workers. Renamed/configuration copies notify the existing window
+with bounded readiness/message waits; modal/menu/operation state is retained.
+CFrameWnd remains auto-deleting on both normal teardown and failed creation.
+
+Cancellation belongs to the submitted operation, not transport teardown.
+Scoped cleanup suppression retains the request across reconnects and exceptions;
+shutdown independently remains canceled. UART/I2C ABORT failures latch uncertain
+reservation state. UI/worker reject new bus actions until explicit Close/Open;
+Open/Probe requires advertised ABORT acknowledgments after confirmed CAN STOP.
+Known IRQ ABIs share transport-neutral image-vector preflight. Unknown CAN ABIs
+remain subject to live/device contracts; serial profiles retain strict ABI gates.
+
+Report events bind an operation identifier to pending/saved/error state. The UI
+labels current HTML, current JSON-only or previous evidence without converting
+a confirmed device result into a report-storage failure. Storage stays on worker.
+Legacy native runners use fresh owned workspaces and retire generated binaries
+in finally, preserving only concise evidence and the formal product executable.
+
+The PC serial adapter explicitly applies binary 8-N-1/no-flow-control settings,
+including byte filtering and abort-on-error flags, while retaining its DTR/RTS
+levels. The worker owns active CAN settings. An unconfirmed STOP retains a
+conservative active/unknown state; UI blocks update/ENTER/bus switching. Explicit
+Open/Probe verifies identity and stopped CAN before admitting a new session.
+
+Image file reads and inspection run as a serialized worker command without COM
+access. The reader checks the16-MiB product limit before allocation, excludes
+concurrent writers and checks complete reads/cancellation. Its result transfers
+bytes and inspections together to UI ownership. Offline edits reuse that cache;
+submitted image bytes still receive fresh worker/device validation. The common
+CAN contract visitor supplies UI/worker acceptance and report differences;
+release changes stay informational, while App confirmation checks the release.
+
+Foreground text-file helpers provide checked UTF-8 conversion, exclusive unique
+Log creation, short-write/flush/close handling and nonrecursive failure feedback.
+Report storage remains independently worker-owned. Publication checks actual
+PC compile/quoted-include dependencies; withheld inputs must match the existing
+Git base and are hash-bound without being staged. They never become implicitly
+eligible firmware.
+
+State refreshes update values and permissions without relaying out an unchanged
+console. Tab/workflow/size changes still lay out the affected controls; operation
+captions relayout only the footer. Geometry checks include combo dropdown extents.
+Log batches reuse the appended caret position; saved preferences are rewritten
+only when changed. These bounds complement worker-side image inspection.
+
 Device Boot/App/Transfer projects each own their sources, contract headers and
 PowerShell build helpers. CAN, device, image, Flash and ISP APIs live under
 `hal/can`, `hal/device`, `hal/image`, `hal/flash` and `hal/isp`; project workflow
@@ -121,6 +177,12 @@ minimum height remain separate from protocol.
 Provenance is independent of acceptance: Host live uses blue-gray, related
 Device live cards use teal, and offline BIN/header groups use tan borders.
 Misc live cards switch to Host provenance; errors retain their red status.
+Misc notes and Preflight use the validated live bridge descriptor mode, never
+the offline image or COM description. APP mode alone enables/instructs ENTER;
+BOOT labels that button as already active and guides a direct HOST APP update.
+BOOT without a valid App cannot RUN. A confirmed HostAppWritten result guides
+explicit RUN; busy notes label the last verified mode rather than a completed
+transition. These UI hints do not bypass worker image/Flash/RUN checks.
 Device LIVE policy is explicitly labeled as live among offline BIN fields.
 Log follow defaults on and persists as ui/log_auto_scroll in the portable INI.
 The isolated RichEdit append helper preserves pixel viewport/selection when
@@ -397,6 +459,11 @@ The copied Host Link v1 bridge/update modules are removed from this project.
 fixed eight-byte Custom Transfer frame, CRC-8, response validation, multi-page
 device-identity assembly, target sequences, and non-destructive command
 workflows while depending only on the generic CAN client.
+The standalone F13 Transfer controller owns one exact standard-data request
+rule from can_transfer_config.h into RX FIFO0. Its project-local pre/post build
+guard reads the linked map/MOT table; Boot control/raw-block rules are not
+valid Transfer inputs. Startup UART text precedes CAN initialization; missing
+text and missing CAN responses remain separate observations until verified.
 `f13_boot_profile` currently implements the generic format-3 manifest/CRC
 validation, paged read-only INFO identity, and strict CAN Upgrade v5
 HELLO/ENTER/metadata/START/BLOCK/END/ABORT transactions.
@@ -423,6 +490,10 @@ descriptor-only reconnect without installed metadata validation is not allowed.
 0078 footer layout measures the operation caption with the actual UI font and
 reserves its complete `: 100%` suffix. The progress label is explicitly
 single-line; label/bar/elapsed/build rectangles stay inside the footer band.
+Startup BIN restoration and explicit BIN loading are offline preparation.
+After their terminal event (success, failure or cancellation), the footer
+returns to Progress0%; inspection/error details remain in the cards and Log.
+This does not reset a completed update or manufacture an update success.
 The bar fills the remaining width instead of starting at a fixed145px label.
 Only a changed operation name triggers re-layout; percentage packets do not.
 GDI metrics at100/125/150-percent fonts and supported widths are regression

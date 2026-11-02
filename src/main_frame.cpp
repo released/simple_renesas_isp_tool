@@ -1,4 +1,5 @@
 #include "main_frame.h"
+#include "core/application_instance.h"
 
 #include <afxdlgs.h>
 
@@ -13,6 +14,7 @@
 #include "resource.h"
 #include "core/operation_guidance.h"
 #include "ui/log_view.h"
+#include "core/text_file.h"
 #include <dbt.h>
 
 namespace {
@@ -44,23 +46,6 @@ std::wstring NowFileTimeText() {
     return std::wstring(buffer);
 }
 
-std::string WideToUtf8(const std::wstring& value) {
-    if (value.empty()) {
-        return {};
-    }
-
-    const int bytes = WideCharToMultiByte(
-        CP_UTF8, 0, value.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    if (bytes <= 1) {
-        return {};
-    }
-
-    std::string output(static_cast<std::size_t>(bytes - 1), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1, output.data(),
-                        bytes - 1, nullptr, nullptr);
-    return output;
-}
-
 bool ContainsCanceled(const std::wstring& text) {
     return text.find(L"canceled") != std::wstring::npos ||
            text.find(L"cancelled") != std::wstring::npos;
@@ -87,6 +72,8 @@ bool IsErrorLogText(const std::wstring& text) {
 } // namespace
 
 BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
+    ON_REGISTERED_MESSAGE(firmware_upgrade::application_instance::kActivateMessage, &CMainFrame::OnActivateExisting)
+    ON_MESSAGE(WM_APP + 2U, &CMainFrame::OnActivateExistingDeferred)
     ON_WM_CREATE()
     ON_WM_SIZE()
     ON_WM_GETMINMAXINFO()
@@ -516,6 +503,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
     }
     worker_session_.SetDetailedTrace(
         detailed_trace_check_.GetCheck() == BST_CHECKED);
+    if (!binary_path_.empty()) LoadBinaryFromPath(binary_path_, true);
 
     UpdateUi();
     AppendLog(L"Firmware Upgrade Tool initialized.");
@@ -544,12 +532,20 @@ void CMainFrame::AppendLog(const std::wstring& text) {
     else firmware_upgrade::log_view::Append(log_edit_.GetSafeHwnd(),line,color,log_auto_scroll_);
 
     if (log_recording_ && log_record_fp_ != nullptr) {
-        const std::string utf8 = WideToUtf8(line);
-        if (!utf8.empty()) {
-            fwrite(utf8.data(), 1U, utf8.size(), log_record_fp_);
-            if(!batching_worker_events_) fflush(log_record_fp_);
-        }
+        std::string utf8;
+        std::wstring error;
+        if (!firmware_upgrade::text_file::Utf8(line, &utf8, &error) ||
+            !firmware_upgrade::text_file::Write(log_record_fp_, utf8, &error) ||
+            (!batching_worker_events_ && !firmware_upgrade::text_file::Flush(log_record_fp_, &error)))
+            HandleLogFailure(error);
     }
+}
+
+void CMainFrame::SetControlText(CWnd& control, const wchar_t* text) {
+    CString current;
+    control.GetWindowTextW(current);
+    // Avoid redundant WM_SETTEXT/accessibility notifications on state refresh.
+    if (current != text) control.SetWindowTextW(text);
 }
 
 std::wstring CMainFrame::BuildSessionSummary() const {
@@ -647,13 +643,16 @@ void CMainFrame::ExportSessionSummary() {
                     MB_ICONERROR | MB_OK);
         return;
     }
-    const unsigned char bom[3] = {0xEFU, 0xBBU, 0xBFU};
-    const std::string utf8 = WideToUtf8(BuildSessionSummary());
-    fwrite(bom, 1U, sizeof(bom), file);
-    if (!utf8.empty()) {
-        fwrite(utf8.data(), 1U, utf8.size(), file);
+    std::string utf8;
+    std::wstring error;
+    const bool written = firmware_upgrade::text_file::Utf8(BuildSessionSummary(), &utf8, &error) &&
+        firmware_upgrade::text_file::Write(file, std::string("\xEF\xBB\xBF", 3U) + utf8, &error);
+    const bool closed = firmware_upgrade::text_file::Close(&file, &error);
+    if (!written || !closed) {
+        AppendLog(L"Session summary export failed: " + path + L"; " + error);
+        MessageBoxW(error.c_str(), L"Export Summary failed", MB_ICONERROR | MB_OK);
+        return;
     }
-    fclose(file);
     AppendLog(L"Session summary exported: " + path);
 }
 
@@ -673,19 +672,20 @@ void CMainFrame::StartLogRecording() {
         directory = L".";
     }
 
-    log_record_path_ =
-        directory + L"\\firmware_upgrade_tool_" + NowFileTimeText() + L".log";
     FILE* file = nullptr;
-    if (_wfopen_s(&file, log_record_path_.c_str(), L"wb") != 0 ||
-        file == nullptr) {
+    std::wstring error;
+    if (!firmware_upgrade::text_file::OpenLog(directory, &log_record_path_, &file, &error)) {
         MessageBoxW(
-            L"Failed to create log file.", L"Start Log",
+            error.c_str(), L"Start Log",
             MB_ICONERROR | MB_OK);
         return;
     }
 
-    const unsigned char bom[3] = {0xEFU, 0xBBU, 0xBFU};
-    fwrite(bom, 1U, sizeof(bom), file);
+    if (!firmware_upgrade::text_file::Write(file, std::string("\xEF\xBB\xBF", 3U), &error)) {
+        firmware_upgrade::text_file::Close(&file, nullptr);
+        MessageBoxW(error.c_str(), L"Start Log", MB_ICONERROR | MB_OK);
+        return;
+    }
     log_record_fp_ = file;
     log_recording_ = true;
     UpdateUi();
@@ -708,17 +708,27 @@ void CMainFrame::StopLogRecording(bool emit_log) {
     }
 
     const std::wstring path = log_record_path_;
-    if (log_record_fp_ != nullptr) {
-        fflush(log_record_fp_);
-        fclose(log_record_fp_);
-    }
-    log_record_fp_ = nullptr;
     log_recording_ = false;
+    std::wstring error;
+    const bool closed = firmware_upgrade::text_file::Close(&log_record_fp_, &error);
     log_record_path_.clear();
     UpdateUi();
-    if (emit_log) {
+    if (!closed) {
+        AppendLog(L"Log recording failed: " + path + L"; " + error);
+    } else if (emit_log) {
         AppendLog(L"Log recording stopped: " + path);
     }
+}
+
+void CMainFrame::HandleLogFailure(const std::wstring& error) {
+    const auto path = log_record_path_;
+    // Release ownership before reporting; the diagnostic must not write recursively.
+    log_recording_ = false;
+    firmware_upgrade::text_file::Close(&log_record_fp_, nullptr);
+    log_record_path_.clear();
+    last_operation_error_ = L"Log recording stopped after a save failure: " + path + L"; " + error;
+    AppendLog(last_operation_error_);
+    UpdateUi();
 }
 
 void CMainFrame::RefreshComPorts() {
@@ -745,7 +755,7 @@ void CMainFrame::RefreshComPorts() {
     GetClientRect(&client);
     LayoutControls(client.Width(), client.Height());
     if (com_combo_.GetCount() == 0) {
-        AppendLog(L"No COM ports found.");
+        AppendLog(L"No COM ports found. Check Windows Device Manager (Ports), the USB data cable and USB-to-UART driver, then Refresh. Board power alone does not confirm a USB serial connection.");
         return;
     }
 
@@ -780,29 +790,6 @@ DWORD CMainFrame::SelectedBaudrate() const {
     return 115200U;
 }
 
-void CMainFrame::SetProgress(int value, const std::wstring& label, bool indeterminate) {
-    const int clamped = (std::max)(0, (std::min)(value, 100));
-    const bool mode_changed=progress_indeterminate_!=indeterminate;
-    if(mode_changed) {
-        if(indeterminate) {
-            progress_bar_.ModifyStyle(0,PBS_MARQUEE);
-            progress_bar_.SetMarquee(TRUE,40U);
-        } else {
-            progress_bar_.SetMarquee(FALSE,0U);
-            progress_bar_.ModifyStyle(PBS_MARQUEE,0);
-        }
-        progress_indeterminate_=indeterminate;
-    }
-    if(!indeterminate) progress_bar_.SetPos(clamped);
-    progress_label_.SetWindowTextW(
-        (label + (indeterminate ? L": waiting..." : L": "+std::to_wstring(clamped)+L"%")).c_str());
-    if (progress_operation_ != label || mode_changed) {
-        progress_operation_ = label;
-        CRect client;
-        GetClientRect(&client);
-        LayoutControls(client.Width(), client.Height());
-    }
-}
 
 void CMainFrame::ApplyWorkerEvent(
     const firmware_upgrade::ui::WorkerEvent& event) {
@@ -858,8 +845,20 @@ void CMainFrame::ApplyWorkerEvent(
         case WorkerEventKind::UpdateReport:
             SaveUpdateReport(event);
             break;
+        case WorkerEventKind::ImageLoaded:
+            ApplyLoadedImage(event);
+            break;
         case WorkerEventKind::OperationComplete:
             StopProgressActivity();
+            if (image_loading_) {
+                image_loading_ = false;
+                // BIN inspection is offline preparation, not a completed update.
+                // Keep its result in the cards/log and return the footer to idle.
+                SetProgress(0, L"Progress");
+                if (!event.success) {
+                    file_path_label_.SetWindowTextW((L"Image load failed: " + binary_path_).c_str());
+                }
+            }
             worker_command_pending_ = false;
             last_update_result_=event.update_result;
             last_operation_error_ = event.success ? L"" : event.text;
@@ -883,7 +882,13 @@ void CMainFrame::ApplyWorkerEvent(
             }
             UpdateUi();
             if (event.success && event.update_result!=firmware_upgrade::feedback::Result::None && !closing_) {
-                const auto feedback=firmware_upgrade::feedback::Describe(event.update_result);
+                auto feedback=firmware_upgrade::feedback::Describe(event.update_result);
+                if (session_state_.SerialCleanupUnconfirmed()) {
+                    feedback.next = L"Device bus cleanup is not confirmed. Next: Close COM, then Open + Probe Host and Discover Target. The confirmed App result is retained.";
+                }
+                if (event.report_operation_id && event.report_operation_id == report_status_.operation) {
+                    feedback.next += L"\r\n\r\n" + report_status_.Details();
+                }
                 SetProgress(100,feedback.progress);
                 MessageBoxW((feedback.status+L"\r\n\r\n"+feedback.next).c_str(),feedback.title.c_str(),
                     MB_OK | (feedback.warning ? MB_ICONWARNING : MB_ICONINFORMATION));
@@ -1076,4 +1081,13 @@ void CMainFrame::OnClose() {
     worker_session_.StopAndJoin();
     StopLogRecording(false);
     CFrameWnd::OnClose();
+}
+
+LRESULT CMainFrame::OnActivateExisting(WPARAM, LPARAM) {
+    // Acknowledge the secondary before any foreground/modal window messages.
+    return PostMessage(WM_APP + 2U) ? 1 : 0;
+}
+
+LRESULT CMainFrame::OnActivateExistingDeferred(WPARAM, LPARAM) {
+    return firmware_upgrade::application_instance::Activate(GetSafeHwnd());
 }

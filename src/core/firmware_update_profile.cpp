@@ -56,7 +56,7 @@ bool ReadAsciiField(const std::uint8_t* data,
 
 bool ParseMetadata(const std::vector<std::uint8_t>& image,
                    ImageInfo* info,
-                   std::wstring* error) {
+                   std::wstring* error, const std::uint32_t* calculated_crc = nullptr) {
     if (info == nullptr) {
         return Fail(L"Firmware metadata output is null.", error);
     }
@@ -184,11 +184,15 @@ bool ParseMetadata(const std::vector<std::uint8_t>& image,
                     L"differ.", error);
     }
 
+    if (!uart && !ValidateImageVectors(image, parsed, error)) {
+        return false;
+    }
+
     parsed.application_end = parsed.application_start +
                              parsed.image_size - 1U;
     const std::size_t crc_offset = image.size() - 4U;
     parsed.stored_crc32 = ReadLe32(&image[crc_offset]);
-    parsed.calculated_crc32 = Crc32(image.data(), crc_offset);
+    parsed.calculated_crc32 = calculated_crc ? *calculated_crc : Crc32(image.data(), crc_offset);
     *info = parsed;
     if (error != nullptr) {
         error->clear();
@@ -253,7 +257,7 @@ ImageInspection InspectImage(const std::vector<std::uint8_t>& image) {
         (ReadLe32(&image[kManifestOffset]) == kManifestMagic ||
          ReadLe32(&image[kManifestOffset]) == 0x00505349U);
     result.metadata_valid = ParseMetadata(
-        image, &result.metadata, &result.metadata_error);
+        image, &result.metadata, &result.metadata_error, &result.calculated_crc32);
     return result;
 }
 
@@ -261,15 +265,18 @@ bool ValidateImage(Profile profile,
                    const std::vector<std::uint8_t>& image,
                    ImageInfo* info,
                    std::wstring* error) {
+    return ValidateInspection(profile, InspectImage(image), info, error);
+}
+
+bool ValidateInspection(Profile profile, const ImageInspection& inspection,
+                        ImageInfo* info, std::wstring* error) {
     if (profile != Profile::CanUpgrade && profile != Profile::UartUpgrade &&
         profile != Profile::I2cUpgrade && profile != Profile::XmodemUpgrade) {
         return Fail(L"The selected target protocol does not support firmware "
                     L"updates.", error);
     }
-    ImageInfo parsed;
-    if (!ParseMetadata(image, &parsed, error)) {
-        return false;
-    }
+    if (!inspection.metadata_valid) return Fail(inspection.metadata_error, error);
+    const ImageInfo& parsed = inspection.metadata;
     if (parsed.profile != profile) return Fail(L"Loaded BIN protocol does not match the selected device workflow.",error);
     if (parsed.stored_crc32 != parsed.calculated_crc32) {
         return Fail(L"Firmware CRC32 trailer does not match the calculated "

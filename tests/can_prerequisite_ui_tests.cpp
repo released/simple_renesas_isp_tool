@@ -55,6 +55,18 @@ static int Run(int argc, wchar_t** argv) {
     if (!frame->Create(nullptr,L"Offline prerequisite fixture",WS_OVERLAPPEDWINDOW,CRect(0,0,1366,768))) return 3;
     test_app.m_pMainWnd=frame;
     auto& state=frame->session_state_;
+    const auto load_offline = [&](const std::wstring& path, bool restored) {
+        auto loaded = std::make_shared<firmware_upgrade::image_analysis::Result>();
+        std::wstring error;
+        const bool success = firmware_upgrade::image_analysis::Load(path, {}, loaded.get(), &error);
+        loaded->restored = restored;
+        firmware_upgrade::ui::WorkerEvent result;
+        result.kind = firmware_upgrade::ui::WorkerEventKind::ImageLoaded;
+        result.success = success; result.text = error; result.image_analysis = std::move(loaded);
+        frame->ApplyLoadedImage(result);
+        frame->UpdateUi();
+        return success;
+    };
     check(firmware_upgrade::guidance::Explain(L"Device UART reply timeout").next.find(L"115200")==std::wstring::npos&&
         firmware_upgrade::guidance::Explain(L"Selected device bus rate differs from live INFO").layer==L"Device bus settings",
         "device diagnostics use selected settings rather than fixed115200 advice");
@@ -101,7 +113,7 @@ static int Run(int argc, wchar_t** argv) {
     frame->profile_combo_.SetCurSel(frame->profile_combo_.FindStringExact(-1,L"CAN Upgrade"));
     frame->can_mode_combo_.SetCurSel(0);
     frame->can_bitrate_combo_.SetCurSel(frame->can_bitrate_combo_.FindStringExact(-1,L"500K"));
-    check(frame->LoadBinaryFromPath(argv[2],true),"actual FD BIN loads");
+    check(load_offline(argv[2],true),"actual FD BIN loads");
     frame->UpdateUi();
     const auto verify_bin_card=[&](const wchar_t* snapshot) {
         auto& card=frame->firmware_overview_cards_[2];
@@ -208,7 +220,7 @@ static int Run(int argc, wchar_t** argv) {
     check(text().find(L"Custom Transfer")==0 && !frame->firmware_prerequisites_label_.emphasized_,"Custom Transfer clears emphasis and ignores BIN mode");
     check(frame->connect_target_btn_.IsWindowEnabled(),"Custom Transfer discovery remains available");
     frame->profile_combo_.SetCurSel(frame->profile_combo_.FindStringExact(-1,L"CAN Upgrade"));
-    check(frame->LoadBinaryFromPath(argv[1],true),"actual Classical BIN loads");
+    check(load_offline(argv[1],true),"actual Classical BIN loads");
     frame->UpdateUi();
     check(text().find(L"Next: Discover Target")==0 && !frame->firmware_prerequisites_label_.emphasized_,"matching BIN restores normal discovery hint");
     check(frame->connect_target_btn_.IsWindowEnabled(),"matching BIN enables discovery");
@@ -220,7 +232,7 @@ static int Run(int argc, wchar_t** argv) {
     frame->can_data_combo_.SetCurSel(frame->can_data_combo_.FindStringExact(-1,L"2M"));
     frame->UpdateUi();
     check(text().find(L"[BLOCKED] Selected CAN mode")==0,"reverse mismatch prioritizes mode over data-rate mismatch");
-    check(frame->LoadBinaryFromPath(argv[2],true),"FD BIN reloads");
+    check(load_offline(argv[2],true),"FD BIN reloads");
     frame->UpdateUi();
     check(text().find(L"Next: Discover Target")==0 && !frame->firmware_prerequisites_label_.emphasized_,"FD match clears previous mode/rate error");
     check(frame->connect_target_btn_.IsWindowEnabled(),"matching FD BIN enables discovery");
@@ -246,7 +258,7 @@ static int Run(int argc, wchar_t** argv) {
     state.busy=false;
     state.can_started=false;state.target_validated=false;
     state.target_profile=firmware_upgrade::ui::TargetProfile::None;
-    frame->latest_report_path_=L"offline-report-placeholder.html";
+    frame->report_status_.Save(1U,L"offline-report-placeholder.json",L"offline-report-placeholder.html",L"");
     frame->SetProgress(100,L"Device update complete");
     frame->last_update_result_=firmware_upgrade::feedback::Result::DeviceAppConfirmed;
     firmware_upgrade::ui::WorkerEvent connection;
@@ -262,7 +274,7 @@ static int Run(int argc, wchar_t** argv) {
     check(frame->progress_bar_.GetPos()==0 && progress_text==L"Progress: 0%",
         "disconnect/reconnect clears old percentage and operation caption");
     check(frame->last_update_result_==firmware_upgrade::feedback::Result::None &&
-        frame->latest_report_path_==L"offline-report-placeholder.html",
+        frame->report_status_.Path()==L"offline-report-placeholder.html",
         "new connection clears stale completion without losing last report");
     frame->SetProgress(37,L"3/5 Transfer");
     connection.state.busy=true;frame->ApplyWorkerEvent(connection);
@@ -280,7 +292,7 @@ static int Run(int argc, wchar_t** argv) {
         uart_port.flags=1U;uart_port.rates=1U;uart_port.maximum_rx=uart_port.maximum_tx=512U;
         uart_port.label=L"UART1 TX74/RX75";state.uart_ports={uart_port};
         frame->bus_tabs_.SetCurSel(2);frame->uart_workflow_combo_.SetCurSel(0);
-        check(frame->LoadBinaryFromPath(argv[3],true),"actual UART BIN loads");frame->UpdateUi();
+        check(load_offline(argv[3],true),"actual UART BIN loads");frame->UpdateUi();
         check(frame->IsUartTab()&&!frame->IsMiscTab(),"UART inserted before Misc");
         check(frame->binary_image_valid_&&text().find(L"Next: Discover Target")==0,"UART BIN uses independent validator and next step");
         check(frame->connect_target_btn_.IsWindowEnabled()&&!frame->start_firmware_update_btn_.IsWindowEnabled(),"UART discover before write");
@@ -331,7 +343,7 @@ static int Run(int argc, wchar_t** argv) {
         frame->last_update_result_=firmware_upgrade::feedback::Result::UartAppConfirmed;frame->UpdateUi();
         check(text().find(L"App confirmed;")==0&&text().find(L"CAN")==std::wstring::npos,"UART completion avoids CAN hints after target released");
         frame->last_update_result_=firmware_upgrade::feedback::Result::None;
-        frame->LoadBinaryFromPath(argv[1],true);frame->UpdateUi();
+        load_offline(argv[1],true);frame->UpdateUi();
         check(!frame->binary_image_valid_&&text().find(L"[BLOCKED] Check BIN update interface")==0,"CAN BIN cannot enter UART update");
         check(frame->firmware_overview_cards_[2].heading_.find(L"WRONG ROUTE")!=std::wstring::npos&&
             std::count(frame->firmware_overview_cards_[2].detail_.begin(),frame->firmware_overview_cards_[2].detail_.end(),L'\n')>=2,
@@ -352,7 +364,7 @@ static int Run(int argc, wchar_t** argv) {
         i2c_port.maximum_rx=i2c_port.maximum_tx=512U;i2c_port.flags=1U;i2c_port.rates=1U;i2c_port.label=L"IICA0 SCL62/SDA63";
         state.i2c_ports={i2c_port};state.isp_contract=2U;
         frame->bus_tabs_.SetCurSel(1);frame->i2c_workflow_combo_.SetCurSel(0);
-        check(frame->LoadBinaryFromPath(argv[4],true),"actual I2C BIN loads");frame->UpdateUi();
+        check(load_offline(argv[4],true),"actual I2C BIN loads");frame->UpdateUi();
         check(frame->binary_image_valid_&&frame->IsI2cIsp()&&text().find(L"Next: Discover Target")==0,"I2C ISP independent image and workflow");
         check((frame->connect_target_btn_.GetStyle()&WS_VISIBLE)&&frame->connect_target_btn_.IsWindowEnabled(),"I2C ISP discovery has visible style and is enabled");
         const auto& m=frame->binary_inspection_.metadata;auto& t=state.uart_target;t={};t.contract=2U;t.transport=IP_I2C;
@@ -393,7 +405,7 @@ static int Run(int argc, wchar_t** argv) {
         state.busy=true;frame->UpdateUi();check(frame->cancel_btn_.IsWindowEnabled()&&!frame->start_firmware_update_btn_.IsWindowEnabled(),"I2C independent cancel");state.busy=false;
         frame->i2c_workflow_combo_.SetCurSel(1);t={};t.contract=2U;t.transport=IP_I2C;t.mode=ISP_MODE_TRANSFER;
         state.uart_valid=true;frame->UpdateUi();check(frame->transfer_test_btn_.IsWindowEnabled()&&!frame->start_firmware_update_btn_.IsWindowEnabled(),"I2C Transfer never enables Flash");
-        frame->bus_tabs_.SetCurSel(2);frame->uart_workflow_combo_.SetCurSel(2);frame->LoadBinaryFromPath(argv[3],true);frame->UpdateUi();
+        frame->bus_tabs_.SetCurSel(2);frame->uart_workflow_combo_.SetCurSel(2);load_offline(argv[3],true);frame->UpdateUi();
         check(!frame->binary_image_valid_&&!frame->IsUartSelectionCurrent(),"Xmodem never reuses UART BIN/live session");
         frame->bus_tabs_.SetCurSel(1);frame->i2c_workflow_combo_.SetCurSel(2);frame->UpdateUi();
         check(!frame->start_firmware_update_btn_.IsWindowEnabled(),"G16 reference remains read-only");
@@ -401,7 +413,7 @@ static int Run(int argc, wchar_t** argv) {
     if(argc==6&&argv[5][0]) {
         state.host_validated=true;state.serial_open=true;state.can_started=false;state.busy=false;
         frame->bus_tabs_.SetCurSel(2);frame->uart_workflow_combo_.SetCurSel(2);
-        check(frame->LoadBinaryFromPath(argv[5],true),"actual Xmodem BIN loads");frame->UpdateUi();
+        check(load_offline(argv[5],true),"actual Xmodem BIN loads");frame->UpdateUi();
         check(frame->SelectedIspContract()==3U&&frame->binary_image_valid_,"UART workflow selects XMODEM-CRC with matching image");
         state.isp_contract=3U;state.uart_configuration={0U,115200U};
         const auto& m=frame->binary_inspection_.metadata;auto& t=state.uart_target;t={};

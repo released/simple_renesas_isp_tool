@@ -25,10 +25,10 @@ bool WorkerSession::UartAction(unsigned action,const isp::BusConfiguration& conf
 void WorkerSession::AbortUartBestEffort() {
     if(!state_.host_validated||!serial_port_.IsOpen()||
         !(state_.host_capabilities.feature_flags&bridge::kFeatureUart))return;
-    const bool old=cleanup_in_progress_;cleanup_in_progress_=true;
+    ScopedFlag cleanup(cleanup_in_progress_);
     std::wstring error;
-    if(!uart_client_.Abort(&error))PostLog(L"Device UART bridge cleanup not confirmed: "+error);
-    cleanup_in_progress_=old;uart_client_.Reset();state_.uart_valid=false;
+    const bool acknowledged = uart_client_.Abort(&error);
+    RecordBusCleanup(true, acknowledged, error);
 }
 bool WorkerSession::ReadUartTarget(std::wstring* error) {
     isp::TargetInfo target;
@@ -68,6 +68,10 @@ bool WorkerSession::ProcessUart(const Command& command,std::wstring* error) {
     AbortI2cBestEffort();
     state_.i2c_probe_validated=false;
     AbortUartBestEffort();
+    if (state_.SerialCleanupUnconfirmed()) {
+        *error = L"Device bus cleanup is not confirmed. Close COM, then Open + Probe Host.";
+        return false;
+    }
     state_.isp_contract=command.isp_contract;
     state_.uart_valid=false;
     state_.target_validated=false;state_.f13_bootloader_ready=false;

@@ -12,6 +12,13 @@ the current manual-execution/automatic-review restriction before agent Apply.
 
 Workspace profile exception: integrated PC/firmware/public-guide release; retain existing root RC/res and coupled diagrams/reference assets. Do not relocate frozen delivery files or publish raw captures for cosmetic uniformity. clean_mfc.bat uses clean_intermediates.ps1 scoped to tmp/internal/build, file allowlist only, reparse preflight; never purge tmp or obj/tests trees.
 
+Post-verification retirement is separate from normal clean: verified test-only
+EXEs/native BINs and completed Tool smoke copies are disposable,including
+canonical Debug/Release outputs. Keep the formal build/FirmwareUpgradeTool.exe,
+sources,settings and concise evidence;an EXE hash is not a reason to retain its
+rebuildable payload. Codex owns exact-path/provenance/hash/process checks and
+retirement under the workspace retention rule;do not broaden clean allowlists.
+
 
 ## Purpose
 
@@ -28,6 +35,13 @@ documents are authoritative. Do not restore the removed Nuvoton Host Link v1
 design or its target-specific bridge commands.
 
 ## Required documents
+
+Publication batch scope is fifteen independent CAN device projects (F13
+Classical,F24 Classical/FD,RH850 Classical/FD Transfer/Boot/App),plus Tool/F24
+Host:16 repositories. Keep serial MCU material withheld. Schema3 receipts bind
+the exact selected sources/images;legacy10/9 receipts do not authorize16/15.
+First-time Git/public-remote creation is explicit via batch new,preflighted and
+confirmed separately;never initialize real projects during a plan or fixture run.
 
 - `DEVELOPMENT_CHECKLIST.md`: ordered implementation and release checklist.
 - `docs/HOST_LINK_PROTOCOL_V2.md`: PC-to-MCU-host wire protocol.
@@ -278,6 +292,19 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
 
 ### PC tool
 
+- BIN loading/restoration runs on the existing worker with a16MiB allocation
+  guard and cancellation;move inspected bytes/cache together to the UI.
+  Image-load terminal events return the footer to idle0%;retain card/Log
+  inspection results without representing offline analysis as an update100%.
+  UI route changes reuse offline inspection;write workers still validate fresh
+  bytes and live contracts. CAN authorization uses confirmed active settings;
+  failed STOP preserves unknown/active state until explicit Close/Open+Probe.
+  Use can_image_contract for UI/worker/difference compatibility policy.
+  Binary COM DCB flags must not inherit handshake/filtering from prior users.
+  Text logs use checked UTF-8/write/flush/close and exclusive filenames.
+  Publication receipts bind actual PC quoted-include dependencies;withheld
+  changed/missing inputs stop publication,never silently broaden its scope.
+
 - Keep the native system-gray/white five-group console. Analysis has four
   live cards on row1;row2 owns the offline BIN card/details button and three
   four-field metadata groups. Refresh all20 cached fields;show12 in the main
@@ -383,6 +410,10 @@ Device image magic is CAN plus NUL (0x004E4143), independent of CAN port.
   and docs/ISP_UART_TOOL_GUIDE_zh-TW.md. sync_isp_uart_guide.ps1 owns its web block.
 
 ### Target firmware
+
+- F13 Classical Transfer owns one exact standard-data RX FIFO0 rule from its
+  local can_transfer_config.h; never substitute Boot control/raw-block rules.
+  Its CS+ pre/post guard validates the source and linked map/MOT table.
 
 - RH850 CAN ISP now uses self-contained can_v4 mirrors: byte-identical v4
   service/driver,ISP-owned EVM/config/wrapper. sync_rh850_can_v4 checks the
@@ -562,9 +593,12 @@ logic outside generated files except in preserved user-code sections.
   Detailed slimming measurements stay in tmp/internal, with concise current
   SELF_CHECK/HANDOFF records. Reuse unchanged device/guide evidence explicitly.
 - github_push.bat / scripts/push_github.ps1 is the explicit maintainer publish
-  entry. Plain PowerShell invocation is read-only. The entry selects exactly
-  nine repos: F13 CAN and F24 Classical/FD device Transfer/Boot/App. The shared
-  catalog's Tool/Host target is NOT selected; RH850/serial/web remain excluded.
+  entry. Plain PowerShell invocation is read-only. The default entry selects ten
+  repos:nine F13/F24 Classical/FD Transfer/Boot/App repositories plus Tool.
+  Tool includes PC source,build/FirmwareUpgradeTool.exe,eligible docs and the
+  explicitly selected F24 Host Boot/App/shared sources and three deliveries.
+  Firmware outside those ownership paths and dedicated unvalidated MCU support
+  stay local. -CanOnly retains the nine-repository mode;web remains separate.
   github_publish_release binds the reviewed source/delivery inventory to SHA256.
   Execute needs current-board confirmation or an exact AcceptanceFile. A narrowly
   user-authorized prior-board/offline-regression exception must keep
@@ -573,7 +607,7 @@ logic outside generated files except in preserved user-code sections.
   User requests scripts/checks only: do not initialize/create/commit/push actual
   repositories without a separate request. Missing .git stops before pruning.
 - DefaultBuild release pruning is a recoverable move to ignored tmp/internal/
-  github_publish, never normal clean/build. Preserve the exact nine selected delivery
+  github_publish, never normal clean/build. Preserve the exact twelve firmware delivery
   files in the catalog; validate bounds/reparse points, remote ancestry and
   index before commit/push. Never force push, auto-merge or publish web sites.
   Reject tracked or unignored local-only data before archiving/staging. Permit
@@ -581,7 +615,8 @@ logic outside generated files except in preserved user-code sections.
   source changes/deletions remain blocked. Never repair an actual index or
   remove tracking without user approval; preserve local files and index backups.
   Read docs/GITHUB_PUBLISH_zh-TW.md and select affected publication checks.
-  Scoped-entry changes use verify_can_publication.ps1 (the old hold test name
+  Default-entry changes use verify_isp_publication.ps1;CAN-only compatibility
+  uses verify_can_publication.ps1 (the old hold test name
   forwards to its GateOnly mode); owned fixtures retire on pass/fail. Run the workspace
   safe-clean audit when archive/deletion/clean behavior changes, not for this
   early refusal alone. No product rebuild/version bump for policy-only changes.
@@ -592,7 +627,7 @@ logic outside generated files except in preserved user-code sections.
   Compile/model tests do not establish hardware acceptance; check actual-version
   board evidence and every proposed publication path. Unknown status is withheld.
   The existing six-family regex is only an additional legacy guard, not the
-  publication boundary. The selected nine-project source/image snapshot needs
+  publication boundary. The selected ten-repository source/image snapshot needs
   evidence-backed acceptance before archive/index/commit/network actions;
   -Yes does not bypass it. Do not call lower-level
   publication helpers to evade the hold. Pure PC-tool/document changes require

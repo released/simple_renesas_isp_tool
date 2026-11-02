@@ -2,12 +2,17 @@
 #include <richedit.h>
 
 namespace firmware_upgrade::log_view {
+namespace {
+void RevealEnd(HWND window) {
+    SendMessageW(window,EM_SCROLLCARET,0,0);
+    SendMessageW(window,WM_VSCROLL,SB_BOTTOM,0);
+}
+}
 void ScrollToEnd(HWND window) {
     if (!IsWindow(window)) return;
     CHARRANGE end={-1,-1};
     SendMessageW(window,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&end));
-    SendMessageW(window,EM_SCROLLCARET,0,0);
-    SendMessageW(window,WM_VSCROLL,SB_BOTTOM,0);
+    RevealEnd(window);
 }
 void Append(HWND window,const std::wstring& text,COLORREF color,bool follow) {
     AppendBatch(window,{{text,color}},follow);
@@ -33,7 +38,9 @@ void AppendBatch(HWND window,const std::vector<Line>& lines,bool follow) {
     }
     if (follow) {
         if(visible) SendMessageW(window,WM_SETREDRAW,TRUE,0);
-        ScrollToEnd(window);
+        // EM_REPLACESEL already left the caret at the appended end. Repeating
+        // EM_EXSETSEL(-1,-1) can rescan a long history without moving it.
+        RevealEnd(window);
         if(visible) InvalidateRect(window,nullptr,FALSE);
     }
     else {

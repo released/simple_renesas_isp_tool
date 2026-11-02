@@ -1,4 +1,5 @@
 # Git process helpers: no shell evaluation, force push, reset, or automatic merge.
+. (Join-Path $PSScriptRoot 'github_publish_dependencies.ps1')
 function ConvertTo-PublishArgument([string]$Value) {
     '"'+[regex]::Replace([regex]::Replace($Value,'(\\*)"','$1$1\"'),'(\\+)$','$1$1')+'"'
 }
@@ -45,9 +46,12 @@ function Test-PublishLocalOnlyPath([string]$Path) {
 }
 
 function Get-PublishDeferredPaths($Target) {
-    if(!$Target.DeferredPattern) { return }
+    if(!$Target.DeferredPattern -and !$Target.ToolScope) { return }
     $paths=(Invoke-PublishGit $Target.Root @('ls-files','--cached','--others','--exclude-standard','-z')).Text.Split([char]0)
-    $paths | Where-Object { $_ -and $_ -match $Target.DeferredPattern } | Sort-Object -Unique
+    $paths | Where-Object {
+        $_ -and (($Target.DeferredPattern -and $_ -match $Target.DeferredPattern) -or
+                 ($Target.ToolScope -and !(Test-ToolPublicationPath $_)))
+    } | Sort-Object -Unique
 }
 
 function Assert-PublishLocalOnlyData($Target) {
@@ -79,7 +83,7 @@ function Assert-PublishRepository($Target) {
     if((Split-Path -Leaf $root) -cne $Target.Name) { throw "Unexpected repository directory: $root" }
     Assert-PublishTree $root $root
     if(!(Test-Path -LiteralPath (Join-Path $root '.git'))) {
-        throw "Git repository is not initialized: $root. Configure its main branch, initial commit and origin before publication; no files were pruned."
+        throw "Git repository is not initialized: $root. Use github_push.bat new for reviewed first-time setup, or recover its existing main/history/origin; no files were pruned."
     }
     $actual=(Invoke-PublishGit $root @('rev-parse','--show-toplevel')).Text.Replace('/','\').TrimEnd('\')
     if($actual -ine $root.Replace('/','\')) { throw "Not an exact repository root: $root" }
@@ -99,9 +103,17 @@ function Assert-PublishRepository($Target) {
     }
     Assert-PublishStagedChanges $root
     Assert-PublishLocalOnlyData $Target
+    foreach($relative in @($Target.RequiredFiles | Where-Object {$_})) {
+        $path=Join-Path $root $relative
+        Assert-PublishTree $root $path
+        if(!(Test-Path -LiteralPath $path -PathType Leaf) -or !(Get-Item -LiteralPath $path).Length) {
+            throw "Missing/empty required delivery: $relative in $root"
+        }
+    }
     foreach($key in @('user.name','user.email')) {
         if(!(Invoke-PublishGit $root @('config','--get',$key) @(0,1)).Text) { throw "Missing Git $key in $root" }
     }
+    if($Target.ToolScope) { $Target.Dependencies=@(Get-PublishToolDependencies $Target) }
     $Target.Root=$root
     $Target.Head=(Invoke-PublishGit $root @('rev-parse','HEAD')).Text
     $Target.Status=(Invoke-PublishGit $root @('status','--short','--untracked-files=all')).Text
@@ -114,12 +126,24 @@ function Assert-PublishAncestry($Targets) {
             if((Invoke-PublishGit $target.Root @('ls-remote','origin')).Text) {
                 throw "Remote is not empty and has no main branch. Review before publishing: $($target.Name)"
             }
+            if($target.ToolScope) {
+                foreach($path in (Invoke-PublishGit $target.Root @('log','--root','--format=','--name-only','--no-renames','-z','HEAD')).Text.Split([char]0)) {
+                    $path=$path.Trim("`r","`n")
+                    if($path -and !(Test-ToolPublicationPath $path)) { throw "Unvalidated/withheld content exists in outgoing Tool history: $path" }
+                }
+            }
             Write-Host "Verified empty origin; initial main publication: $($target.Name)"
             continue
         }
         [void](Invoke-PublishGit $target.Root @('fetch','--no-tags','origin','refs/heads/main'))
         if((Invoke-PublishGit $target.Root @('merge-base','--is-ancestor','FETCH_HEAD','HEAD') @(0,1)).Code) {
             throw "Remote main contains changes not in local main. Review/synchronize before publishing: $($target.Name)"
+        }
+        if($target.ToolScope) {
+            foreach($path in (Invoke-PublishGit $target.Root @('log','--format=','--name-only','--no-renames','-z','FETCH_HEAD..HEAD')).Text.Split([char]0)) {
+                $path=$path.Trim("`r","`n")
+                if($path -and !(Test-ToolPublicationPath $path)) { throw "Unvalidated/withheld content exists in outgoing Tool history: $path" }
+            }
         }
     }
 }

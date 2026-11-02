@@ -18,6 +18,10 @@ inline Advice Explain(const std::wstring& message) {
         return {L"App confirmation",L"Keep the current image and report. Check power and App initialization, then read live INFO. Do not repeat erase or RUN to resolve an unknown result."};
     if(has(L"host returned timeout for command 0x21."))
         return {L"Host / device bus",L"Host UART returned a CAN transaction timeout, not a PC serial-response timeout. Check attempts/last TX result, then compare the CAN request/reply with device UART FIFO/TX snapshots and analyzer trace. Check mode/BRS/rates/IDs and transceiver wiring. TX_END does not prove device software processed the request. Save the failure before resetting; do not erase or increase timeouts as a diagnosis."};
+    // Returned bus statuses take priority over generic Host Link/stage wording.
+    if (has(L"host returned i2c_nack") || has(L"host returned i2c_arbitration_lost") ||
+        has(L"host returned i2c_bus_error") || has(L"host returned timeout for command 0x41."))
+        return {L"Host / I2C device", L"The host returned an I2C transaction result. Check the selected port, 7-bit address, SCL rate, pull-ups and device power. Save the exact status and device Log. Repeat only supported read-only discovery; do not repeat erase/END to diagnose this result."};
     if(has(L"device bus rate")||has(L"selected port/rate/address"))
         return {L"Device bus settings",L"Match the selected Device baud or I2C rate/7-bit address to Boot/App initialization, live INFO and BIN metadata; check the bridge port capability and Discover again."};
     if(has(L"uart device")||has(L"device uart")||has(L"isp response")||has(L"command 0x61."))

@@ -5,8 +5,21 @@
 namespace {
 using firmware_upgrade::console::Rect;
 void Move(CWnd& control, const Rect& r) {
-    if (control.GetSafeHwnd() != nullptr)
-        control.MoveWindow(r.x, r.y, (std::max)(0, r.width), (std::max)(0, r.height), FALSE);
+    if (control.GetSafeHwnd() == nullptr) return;
+    const CRect wanted(r.x, r.y, r.x + (std::max)(0, r.width), r.y + (std::max)(0, r.height));
+    CRect current;
+    control.GetWindowRect(&current);
+    // A closed combo reports only its edit/button height. Compare the full
+    // dropdown extent requested by MoveWindow, otherwise every state refresh
+    // resizes it and sends expensive accessibility/layout notifications again.
+    if (control.IsKindOf(RUNTIME_CLASS(CComboBox))) {
+        static_cast<CComboBox&>(control).GetDroppedControlRect(&current);
+    }
+    if (auto* parent = control.GetParent()) parent->ScreenToClient(&current);
+    // RichEdit reformats its entire history on WM_SIZE, even when the supplied
+    // geometry is unchanged. State-only refreshes must not resize it again.
+    if (current == wanted) return;
+    control.MoveWindow(wanted, FALSE);
 }
 int CaptionWidth(CWnd& control, int minimum = 0, const wchar_t* caption = nullptr) {
     if (control.GetSafeHwnd() == nullptr) return minimum;
@@ -19,6 +32,9 @@ int CaptionWidth(CWnd& control, int minimum = 0, const wchar_t* caption = nullpt
     if (old) dc.SelectObject(old);
     return (std::max)(minimum, measured);
 }
+}
+void CMainFrame::MoveControl(CWnd& control, const firmware_upgrade::console::Rect& rectangle) {
+    Move(control, rectangle);
 }
 void CMainFrame::LayoutControls(int width, int height) {
     if (GetSafeHwnd() == nullptr || layout_in_progress_ || width <= 0 || height <= 0 ||
@@ -148,5 +164,38 @@ void CMainFrame::OnGetMinMaxInfo(MINMAXINFO* info) {
         CRect window,client; GetWindowRect(&window); GetClientRect(&client);
         info->ptMinTrackSize.y=(std::max)(700,
             firmware_upgrade::console::MinimumClientHeight(metric.tmHeight)+window.Height()-client.Height());
+    }
+}
+
+void CMainFrame::SetProgress(int value, const std::wstring& label, bool indeterminate) {
+    const int clamped = (std::max)(0, (std::min)(value, 100));
+    const bool mode_changed=progress_indeterminate_!=indeterminate;
+    if(mode_changed) {
+        if(indeterminate) {
+            progress_bar_.ModifyStyle(0,PBS_MARQUEE);
+            progress_bar_.SetMarquee(TRUE,40U);
+        } else {
+            progress_bar_.SetMarquee(FALSE,0U);
+            progress_bar_.ModifyStyle(PBS_MARQUEE,0);
+        }
+        progress_indeterminate_=indeterminate;
+    }
+    if(!indeterminate) progress_bar_.SetPos(clamped);
+    progress_label_.SetWindowTextW(
+        (label + (indeterminate ? L": waiting..." : L": "+std::to_wstring(clamped)+L"%")).c_str());
+    if (progress_operation_ != label || mode_changed) {
+        progress_operation_ = label;
+        // Only the footer depends on the operation caption. Keep the rest of
+        // the console, especially long RichEdit history, out of this refresh.
+        const auto footer = firmware_upgrade::console::CalculateFooter(console_layout_.footer,
+            CaptionWidth(progress_label_, 145, (progress_operation_ + L": waiting...").c_str()),
+            CaptionWidth(operation_timer_label_, 145), CaptionWidth(build_info_label_, 270));
+        Move(progress_label_, footer.progress_label);
+        Move(progress_bar_, footer.progress_bar);
+        Move(operation_timer_label_, footer.elapsed);
+        Move(build_info_label_, footer.build);
+        const auto& area = console_layout_.footer;
+        CRect band(area.x, area.y, area.x + area.width, area.y + area.height);
+        RedrawWindow(&band, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
     }
 }

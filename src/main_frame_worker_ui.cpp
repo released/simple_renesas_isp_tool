@@ -1,11 +1,15 @@
 #include "main_frame.h"
+#include "core/text_file.h"
 
 void CMainFrame::FlushWorkerLogBatch() {
     if(!worker_log_batch_.empty()) {
         firmware_upgrade::log_view::AppendBatch(log_edit_.GetSafeHwnd(),worker_log_batch_,log_auto_scroll_);
         worker_log_batch_.clear();
     }
-    if(log_recording_ && log_record_fp_!=nullptr) fflush(log_record_fp_);
+    if (log_recording_ && log_record_fp_ != nullptr) {
+        std::wstring error;
+        if (!firmware_upgrade::text_file::Flush(log_record_fp_, &error)) HandleLogFailure(error);
+    }
 }
 
 LRESULT CMainFrame::OnWorkerEvent(WPARAM,LPARAM) {
@@ -21,7 +25,9 @@ void CMainFrame::PumpWorkerEvents() {
     for(const auto& event:events) {
         if(event.kind!=firmware_upgrade::ui::WorkerEventKind::Log) {
             FlushWorkerLogBatch();
-            batching_worker_events_=false;
+            // Inspection/report/state handlers may append several related lines.
+            // Keep them in one RichEdit batch; terminal dialogs must flush first.
+            batching_worker_events_=event.kind!=firmware_upgrade::ui::WorkerEventKind::OperationComplete;
             ApplyWorkerEvent(event);
             batching_worker_events_=true;
         } else {

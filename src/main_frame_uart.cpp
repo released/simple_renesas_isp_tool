@@ -56,6 +56,7 @@ void CMainFrame::OnUartSettingsChanged() {
     session_state_.uart_valid=false;
     last_operation_error_.clear();last_update_result_=firmware_upgrade::feedback::Result::None;
     ValidateLoadedFirmwareImage(false);SaveUiSettings();UpdateUi();
+    CRect client; GetClientRect(&client); LayoutControls(client.Width(), client.Height());
 }
 void CMainFrame::UpdateUartUi() {
     using firmware_upgrade::visual::Tone;
@@ -84,13 +85,13 @@ void CMainFrame::UpdateUartUi() {
     CWnd* other[]={&can_mode_combo_,&can_bitrate_combo_,&can_data_combo_,&can_tx_test_btn_,
         &can_filter_combo_,&can_filter_id_edit_,&can_filter_mask_edit_,&profile_combo_,&i2c_probe_btn_};
     for(auto* control:other)control->EnableWindow(FALSE);
-    connect_target_btn_.SetWindowTextW(transfer?L"Discover Test Target":L"Discover Target");
+    SetControlText(connect_target_btn_, transfer?L"Discover Test Target":L"Discover Target");
     connect_target_btn_.EnableWindow(host&&port&&!busy);
-    enter_bootloader_btn_.SetWindowTextW(L"Enter Boot");
+    SetControlText(enter_bootloader_btn_, L"Enter Boot");
     enter_bootloader_btn_.EnableWindow(host&&current&&!transfer&&t.mode==ISP_MODE_APP&&!busy);
-    transfer_test_btn_.SetWindowTextW(transfer?L"Transfer Test":L"Verify Installed");
+    SetControlText(transfer_test_btn_, transfer?L"Transfer Test":L"Verify Installed");
     transfer_test_btn_.EnableWindow(host&&current&&!busy&&(transfer||(boot&&t.valid)));
-    start_firmware_update_btn_.SetWindowTextW(L"Start Device Update");
+    SetControlText(start_firmware_update_btn_, L"Start Device Update");
     start_firmware_update_btn_.EnableWindow(!busy&&host&&boot&&match&&address&&!older);
     force_old_firmware_btn_.ShowWindow(transfer?SW_HIDE:SW_SHOW);
     force_old_firmware_btn_.EnableWindow(!busy&&host&&boot&&match&&address&&older);
@@ -122,7 +123,9 @@ void CMainFrame::UpdateUartUi() {
     if(IsI2cIsp())i2c_notes_.SetWindowTextW(L"Bridge IICA0 P62/P63 > device SCL/SDA; match the selected7-bit address and speed to Boot/App metadata. Shared ground and voltage-compatible pull-ups.\r\nDevice examples SCL/SDA: F13/F24 P62/P63; G16/G22 P60/P61; RH850 RIIC1 P8_1/P8_0. Diagnostic UART is independent.");
     else i2c_notes_.SetWindowTextW(L"Bridge UART1 TX P74/RX P75 > device RX/TX; share ground and verify voltage.\r\nDevice examples TX/RX: F13/F24 P74/P75; G16 P11/P10; G22 P00/P01; RH850 RLIN31 P0_5/P0_4. Diagnostic UART is independent.");
     UpdateFirmwareImageInfoText();UpdateTargetMetadataText();UpdateOverviewUi(false);UpdateCompletionFeedback();
-    CRect client;GetClientRect(&client);LayoutControls(client.Width(),client.Height());
+    if (active_tab_ != bus_tabs_.GetCurSel()) {
+        CRect client; GetClientRect(&client); LayoutControls(client.Width(), client.Height());
+    }
 }
 void CMainFrame::QueueUartAction(unsigned action,bool force) {
     if(worker_command_pending_||session_state_.busy)return;
@@ -134,7 +137,7 @@ void CMainFrame::QueueUartAction(unsigned action,bool force) {
         firmware_upgrade::firmware_update::ImageInfo image;std::wstring error;
         std::uint32_t start=0U;
         if(transfer||session_state_.uart_target.mode!=ISP_MODE_BOOT||
-            !firmware_upgrade::firmware_update::ValidateImage(SelectedIspProfile(),binary_data_,&image,&error)||
+            !firmware_upgrade::firmware_update::ValidateInspection(SelectedIspProfile(),binary_inspection_,&image,&error)||
             !firmware_upgrade::isp::Matches(image,session_state_.uart_target,&error)||
             !SelectedApplicationStart(&start,&error)||start!=image.application_start) {
             AppendLog(L"UART update blocked: "+(error.empty()?L"Enter Boot and check App start.":error));return;

@@ -1,4 +1,533 @@
 # Development Handoff
+
+## CAN16 publication preparation and version ledger (2026-11-02 late)
+
+User explicitly confirms current F13 Classical,F24 Classical/FD,RH850
+Classical/FD Transfer/Boot/App validation:15 device projects. This supersedes
+the earlier RH850 exclusion for these six CAN projects only; serial firmware
+remains withheld. Batch/Tool work was completed before the requested private
+October27-to-current comparison. No real GitHub publication/creation,project
+Git initialization,MCU/Tool build or board action was performed. Historical FD
+report26 remains FAIL; no replacement PASS report was invented.
+
+Batch selects IncludeRh850:15 devices plus Tool/F24 Host,16 repositories,
+18 named DefaultBuild deliveries plus Tool EXE. Schema3/16-or15 receipts stay
+separate from legacy10/9. Tool RH850 selection is limited to CAN mirrors/docs/
+named build inputs. Explicit batch new initializes missing Git/public remotes
+after CREATE and complete local delivery/empty-remote preflight; initial commits
+are empty and source publication retains normal snapshot/ancestry/staging gates.
+Initialization is not rolled back on later cancellation. The six real RH850
+projects remain without Git until that explicit operation. Local ignored paths
+and the public path example include six new roots.
+
+Existing web/push-all.cmd required no change; the RH850 site now owns a read-only
+canonical/verify_local publication hook. Actual Web root is
+D:\SourceCode\_Avery_Markdown\web; the shorter legacy spelling is absent.
+Resource-owner paragraph and existing16-page/4-diagram PDF describe16repos.
+No timing data was imported. New checks:56 isolated16-repo publication checks,
+16 initialization checks plus duplicate refusal,5 guide-reader checks,selected
+4-site dry run/531 routes,actual Chromium downloads desktop/narrow/TOC,PDF
+bounds/63links/contact views and changedpage2. Initial reader failure lacked the
+local F13 path environment; setting that existing path resolves it without code.
+Actual GitHub creation remains NOT RUN. Owned local repositories,synthetic
+EXE/images and browser/PDF scratch are retired by finally.
+
+Evidence:tmp/internal/verification/can_scope_20261102_09eef304.
+Its RH850_CAN_VERSION_CHANGES_20261027_20261102.md separates stop guard,HAL/
+custom_func,console/formatter/C99 from comments/moves.20 core-module token
+comparisons equal the post-stop-fix/pre-HAL recovery;4old/current BIN pairs
+match manifests/SHA256/fullCRC/trailers;actual language option None->C99.
+Old original29876/CRC124A14E6 versus current35768/47BDE4F7;960KiB CRC49986C9A
+versusF54CD5D8. Recovery is not an exact source/Boot snapshot bound to the old
+measured BIN, so source equality does not establish old/new hardware equality
+or the historical960KiB root cause. No firmware was changed in this phase.
+
+Final preservation:15 selected BIN/raw-report/EXE inputs and20 current core
+source hashes match;Tool EXE also matches the earlier physical-evidence audit.
+All six real RH850 roots still lack Git. Safe clean removed0 files;fresh
+workspace clean-script audit checks10 scripts,PASS. Initialization fixture
+retired374795B,publication fixture1192079B,PDF render404581B;browser/profile
+scope retired. Automatic approval review rejected a command deleting four
+reviewed/redundant PNGs with only "blocked by policy";no removal retried.
+Those4images/1131880B remain,along with three representative views and concise
+records (about1.62MB total);retention.json records exact paths/hashes and the
+cleanup exception. No rebuildable test EXE/native BIN remains from this task.
+
+## RH850 Classical CAN revalidation (2026-11-02 evening)
+
+User's four Logs/five JSON-HTML pairs audited without new hardware actions,
+MCU/Tool builds,version bumps or publication. Tool0114/Host1.8.1 build20261023,
+Host Link115200/Classical500K,DeviceBoot1.0.0 build20261022/App1.0.0 build20261021.
+TransferUART183935 identifies CAN1,seq83..104,22pairs/44independent CRC8 checks;
+identity/PING/ECHO/PATTERN/12stats pass,Host0->22RX/TX,error counters0.
+COM6 absent at18:40:22,then refresh/probe succeeds before discovery;no permanent
+enumeration defect is inferred. Upgrade reports do not identify physical RH850
+channel,so CAN1 Transfer evidence is not also CAN4/update-channel acceptance.
+
+Reports update_20261102_{104340_302_63508_432104234_17,
+104440_865_63508_432164796_18,104640_859_63508_432284781_19,
+105059_529_63508_432543421_20,105946_691_63508_433070515_21} all PASS.
+Bytes/elapsedms:35768/21291,65536/36234,196608/103513,458752/238036,983040/506058.
+CRCsAD7DD399/2D01230A/434C2F85/7ADB00FA/54AE5981;559/1024/3072/7168/15360blocks.
+JSON/HTML/Tool phases/session agree,23live fields match each,END CRC/App/STOP
+PASS,one health probe,zero retries/Host error deltas. AppUART184050 has five
+END CRC/vector validation messages,X1=16M/CPU120/CAN40 boot-validated launches
+and22/13/16/16/16consecutive timer samples. Current fiveBIN lengths/trailers/
+fullCRC32 agree. Quiet waits1.0/1.012/2.036/4.084/6.0s and App-confirmation
+1.489/1.506/2.515/4.565/6.488s are within existing scheduling bounds.
+
+RH850 timing previously imported FD only and assumed a single bus condition.
+Generator now imports Classical/FD and renders separate Host/bus groups;
+source-report matching replaces ambiguous size-only document checks. Existing
+FD summaries/outcomes/counters remain unchanged. Overview/README descriptions
+now include Classical. Canonical timing stores explicit Classic environment,
+original35768B and all five measured capacities,with portable report summaries.
+
+During initial sync,user was concurrently generating FD22/23 reports. Legacy
+auto-scan picked them up before review. Only this invocation's six generated
+cache/Web summary files were removed;raw reports remain untouched. New
+ReportName/--report= explicitly selects imports;default/check-only use cached
+reviewed names and validate available source hashes. New/unselected reports
+cannot drift the guide during ongoing tests. An intermediate read-only test
+also caught the source paragraph edited after sync;final re-sync resolves it.
+Current five guide tests pass,including equal-capacity cross-mode provenance
+and non-import of live unselected reports. No MCU/PC wire contract changed.
+Evidence:tmp/internal/verification/rh850_classic_revalidation_20261102.
+PASS5guide tests plus5import checks:cached selected,basename traversal,missing
+file,unselected-valid dry-run and wrong MCU(private fixture). First wrong-MCU
+test referenced a user's F24 raw report no longer present;it was replaced by
+an owned fixture,not a recreated user report. Explicit5-name CheckOnly passes.
+Public wording gate caught development-style wording;canonical prose corrected
+and re-synchronized.853local refs,9chapter/75topic parity and531actual-JS routes
+pass. Real Chromium verifies timing chapter/deep link/TOC/narrow/peer navigation
+and the trusted generated Classic report summary. Raw report HTML was not run.
+NewRH850_UPDATE_TIMING_zh-TW.pdf is3pages/0diagrams/14links;all-page bounds/text,
+contact and full first-page visual checks pass. Existing engineering/serial PDFs,
+old sixFD summaries,metadata snapshot and RL78 workshop MD/PDF hashes unchanged.
+20protected evidence/BIN/formal EXE inputs match;live Tool INI changed during
+ongoing user tests and is preserved as-is. No source/INI restoration was done.
+Owned import fixture38919B and PDF source6419B removed;browser/inspection
+scratch removed,four redundant PNGs retired,four representative views retained.
+No compiled test binary generated;prior nine-file retirement exception untouched.
+Final receipt records all changed documentation/generator/test outputs and scope.
+
+## F24 CAN FD revalidation (2026-11-02 evening)
+
+User's four Logs and six JSON/HTML report pairs were audited without new
+hardware actions,Tool/MCU rebuilds,version changes or Git publication.
+Tool0114/Host1.8.1 build20261023,Host Link115200,FD500K/2M/BRS;
+DeviceBoot1.2.1 build20261022/App1.0.4 build20261020,capacity247KiB.
+
+TransferUART180327 and Tool180335 agree:25pairs,seq45..69,50FD+BRS frames;
+7identity/1PING/1ECHO/1PATTERN/3FD64/12GET_STATS. All50CRC8 recomputed;
+FD64DLC15/64bytes and all59echo bytes match increment/decrement/AA55 patterns.
+Device stats0/1=14,2..11=0. IRQ snapshots entries/queued/dequeued are
+7/7/7/16/25/25/25;last25/25/25,depth0,peak1,drops0,APIerrors0,RMIEC1,
+mask0,pending0. No hardware overwrite or recorded error. This supports normal
+Transfer interrupt reception,not queue-saturation/stress acceptance. The16-entry
+snapshot is the documented periodic diagnostic,not an extra request.
+Host counts8456/74575->8481/74600;all recorded error counters zero.
+
+Six reports update_20261102_{100733_867_63508_429937812_11,
+100757_675_63508_429961609_12,100837_509_63508_430001437_13,
+100926_042_63508_430049968_14,101057_657_63508_430141562_15,
+101328_375_63508_430292265_16} all PASS. Bytes/elapsedms:
+4780/5527,8192/7266,24576/15590,57344/32232,122880/65894,252928/133070.
+CRCs2089154D/D9EE0401/5DF8A8EB/B96554B0/8E554348/8AAD47CE.
+JSON/HTML/session/phases agree,23live fields each,FDmode200/data-mask2,
+one health probe,END CRC/App confirmation/CAN_STOP PASS,zero retries/error
+deltas. Current producer BIN length/trailer/fullCRC32 matches. AppUART180636
+has six boot-validated/X1=4M/CPU-CAN40 launches,14/16/14/23/13/11consecutive
+timer samples and RXMB0-IRQ/queue8/vector4C banners. App banners alone are not
+App IRQ-counter evidence. Tool update Log180627 has no per-frame TRACE;
+no explicit trace-toggle entry is claimed.
+
+Canonical workshop now uses this FD batch (5.5/7.3/15.6/32.2/65.9/133.1s),
+original App4780B. F13 and F24Classical data are preserved. Existing FD guide
+already describes the same interrupt/FD64 behavior;no duplicate public test
+history was added. Auditing initially assumed the wrong packed CAN mode and
+six IRQ snapshots;actual production packing200 and periodic snapshot16 were
+confirmed and only the auditor was corrected. No firmware/report changes.
+Evidence:tmp/internal/verification/f24_fd_revalidation_20261102/audit.py+audit.json.
+Canonical/Web six data rows/rounding agree;848local references,guide parity/
+layout and actual Chromium desktop/narrow/TOC/deep-link/peer navigation pass.
+Updated30-page PDF/6diagrams passes text/bounds/links;pages27/29/30 visually
+reviewed. F13/F24Classical sections and comparison columns unchanged.24protected
+Logs/reports/BINs/formal EXE/INI hashes match. Owned renderer/browser/inspection
+scratch removed;eight redundant PNGs retired,keeping three representative views.
+No compiled test binary was generated;prior nine-file retirement exception
+untouched. Source-preservation checker initially encountered shell conversion
+of Chinese literals;ASCII Unicode escapes restored the intended comparison.
+Final receipt records hashes,retired/retained bytes and verification scope.
+
+## F24 Classical CAN revalidation (2026-11-02 evening)
+
+User supplied four Logs/six JSON-HTML pairs;agent audited existing physical
+evidence only,no COM/programmer action,firmware/Tool build,version bump or push.
+Tool0114,Host1.8.1/build20261023,DeviceBoot1.1.1/build20261022,
+App1.0.3/build20261019,Host Link115200,Classical CAN500K.
+Transfer710/711,sequence23..44:22pairs/44independently recomputed CRC8 frames,
+7identity/1PING/1ECHO/1PATTERN/12GET_STATS,Tool and device agree;HostRX/TX0->22
+with error counters zero. Existing offline F13 BIN shown in Transfer Log is
+irrelevant to non-Flash discovery/test;no image-route defect is inferred.
+
+Six reports are update_20261102_{095507_201_63508_429191234_5,
+095544_285_63508_429228312_6,095612_784_63508_429256812_7,
+095658_334_63508_429302359_8,095820_776_63508_429384781_9,
+100051_164_63508_429535156_10}. All PASS;bytes/ms:
+4252/5253,8192/7240,24576/15551,57344/32211,122880/65912,252928/132962.
+CRC32 CB558EB5/1C3D3D65/53023D7D/AC393491/BD9980C1/2E5DCE5B.
+JSON/HTML/Tool sizes/CRC/phases/session agree;23 live metadata matches each,
+one App health probe,END CRC/App confirmation/CAN_STOP PASS;zero retries and
+Host error deltas. DeviceUART175038 has six boot-validated/X1=4M/CPU-CAN40
+launches with28/10/11/13/12/6 consecutive timer samples. Current producer BIN
+length/trailer/fullCRC32 independently agrees. UpdateLog175402 has no per-frame
+TRACE;no explicit trace-toggle entry is claimed.
+
+Log starts with pre-reset TXfailure/warning/passive1each. Explicit RESET_HOST
+at17:54:45 reconnects and clears those counters;all subsequent snapshots and
+six update deltas are zero. Origin of those prior counts is absent from this
+capture,so do not classify them as faults in these six updates or claim a
+cause. Counter reset is a boundary,not evidence of a clean earlier session.
+
+Canonical workshop refreshes only F24 Classical column/environment/six report
+sources (5.3/7.2/15.6/32.2/65.9/133.0s);original App now4252B. Preserve F13
+and older F24FD measurements until separate FD evidence arrives. Existing
+Transfer guide matches current protocol;no duplicate public test history.
+Evidence:tmp/internal/verification/f24_classic_revalidation_20261102.
+Canonical/Web six data rows and rounding agree;848local references,guide
+parity/layout and actual private-Chromium desktop/narrow/TOC/timing deep link/
+peer navigation pass. Updated30-page PDF/6diagrams passes text/bounds/links;
+timing page27 and source page29 visually reviewed. F13/FD source sections and
+their comparison columns are unchanged.23protected Logs/reports/BINs/formal
+EXE hashes match;the running Tool/user changed FirmwareUpgradeTool.ini during
+review. Preserve that live INI as-is;agent did not write or restore it.
+Owned render/browser/inspection scratch removed;seven redundant PNGs retired,
+keeping three representative visual captures. No compiled test binary generated;
+prior nine-file retirement exception untouched. Final receipt records remaining
+evidence size,output hashes and the concurrent INI change separately.
+
+## F13 revalidation and timing refresh (2026-11-02 evening)
+
+User supplied four Logs and four JSON/HTML pairs from the completed physical
+F13 Custom Transfer/Classical500K tests. Agent audited existing evidence only;
+no COM/programmer action,Tool/firmware build,version bump or publication.
+Tool0114,Host1.8.1/build20261023,DeviceBoot1.7.2/build20261022,
+App1.6.1/build20261017,Host Link115200. Transfer uses710/711;update700/701.
+
+20261102_165012_1.log has22 RX/TX pairs:7identity,1PING,1ECHO,1PATTERN,
+12GET_STATS. All44 frames pass independent CRC8,sequence/command/ID/DLC
+checks;Tool165039 session agrees. HostRX/TX29->51. TXfailure/warning/passive
+are historical3each before/after,not new errors. No Transfer startup banner
+is in this capture;the prior user's Standalone wiring confirmation remains
+the evidence for that separate episode,not an independently measured cause.
+
+Reports update_20261102_{085806_769_63508_425770703_1,
+085928_650_63508_425852578_2,090021_234_63508_425905156_3,
+090148_942_63508_425992843_4} all PASS. Sizes/elapsed are
+20320B/13458ms,24576B/15586ms,57344B/32332ms,121856B/65778ms.
+CRC32 CD08B2B9/51F4F5C7/ED614B1F/AC872843;318/384/896/1904blocks.
+JSON/HTML phases/session/details agree;each has23 live identity matches,
+one successful App health probe,CAN_STOP PASS,zero retries/error deltas.
+App UART165055 shows four clock/CAN OK,boot-validated launches and
+63/18/18/10 consecutive timer samples. Current producer BINs independently
+match all four lengths/CRC32 trailers. Tool update Log165702 has no per-frame
+TRACE;no explicit trace-toggle entry is claimed. Version-policy1 in reports
+means valid installed App/disabled ordering,consistent with metadata0.
+
+Canonical workshop now uses this F13 batch (13.5/15.6/32.3/65.8s),retaining
+old F13 measurement provenance privately and F24 public measurements unchanged.
+Existing Transfer guide already matches the tested710/711 protocol,so no
+duplicate public test-history section was added. F24 revalidation is the user's
+next activity;do not label those older measurements as newly verified.
+Concise evidence/protected hashes:tmp/internal/verification/f13_revalidation_20261102.
+Web projection/CheckOnly and848local references pass;paired guide layout remains
+valid. Real private Chromium verifies timing deep link,desktop/narrow/TOC and
+peer navigation. Updated30-page workshop PDF/6diagrams passes text/bounds/link
+checks;timing page27 and source page28 visually reviewed. F24 source section
+hash unchanged. All18protected user Logs/reports/BINs/formal EXE/INI hashes match.
+Owned renderer/browser scratch removed;609226bytes retired by PDF generator;
+six redundant task PNGs retired,keeping only representative visual evidence.
+No compiler/native binary was generated;prior nine-file retirement exception
+remains untouched. Final data/preservation checks are recorded in final_receipt.
+
+## F13 CAN Transfer filter and hardware follow-up (2026-11-02)
+
+Current Tool stays0.1.0.0114;PC protocol/UI and F24 host were not changed here.
+User's firmware_upgrade_tool_20261102_160656_245_39840_1.log confirms COM6/Host
+UART works,Classical500K/CAN0/filter711 discovery times out. One attempt has
+ABORT_OVER/warning/passive;two have TX_END and Host RX0. Previous COM inventory
+concern now has actual successful COM6 probe evidence;do not infer a permanent
+COM enumeration defect from the earlier automation environment's empty list.
+
+Confirmed firmware defect in RL78_F13_CAN_Transfer:hal/can/RSCANlite.c included
+can_boot_config.h and linked two Boot rules700/720..727,while the console printed
+Transfer710. Actual09:07MOT table@223E bytes were
+00 07 00 00 FF 07 00 C0 01 00 00 00 20 07 00 00 F8 07 00 C0 01 00 00 00.
+RSCANlite.c now uses Transfer macros;RSCANlite.h counts one rule. Corrected
+linked table@226E is ID710,mask7FF,standard-data maskC000,destinationRX FIFO0.
+custom_func.c prints an entry breadcrumb before CAN init. Clock/UART rates,
+pins,TX,protocol and startup flow were preserved;no new runtime main module.
+
+tools/verify_transfer_filter.ps1 is independent/project-local. MTPJ pre-build
+checks source ownership/config;post-build reads map and S-record MOT,including
+length/checksum and all six rule words. Existing local build.ps1 invokes the
+same CS+ hooks. Nine focused cases exercise real target map/MOT,wrongBootID,
+mask/type/FIFO mutations,repaired/corrupt S-records,stale config,two-rule table
+and copied Boot source. Owned127257-byte fixture removed on completion.
+Installed CC-RL target rebuild:0errors,2W0561017 existing license warnings;
+both hooks execute and pass. No Tool rebuild or firmware publication occurred.
+
+User's20261102_162846.log contains the new breadcrumb plus22 RX/TX pairs:
+7identity,1PING,1ECHO,1PATTERN,12GET_STATS;all CRC OK. User then reported failure
+only without E2/Debug,so startup/X1/PLL/UART and board VDD/EVDD were inspected.
+No speculative clock/power changes were made. User confirmed Standalone also
+works after checking wiring. This is user-reported physical acceptance;the
+agent did not measure rails,program the board or capture a Standalone trace.
+Do not record a proven oscillator/debugger/rail root cause for that episode.
+
+README/local AGENTS,architecture and canonical Transfer diagnostics/Web/PDF
+are updated.16-page MultiBus PDF/4diagrams,848 references and actual Chromium
+desktop/narrow/TOC pass.164 protected files match;two Boot/App QualityReports
+were later regenerated during user activity and preserved. The Transfer
+AveryC.mtud changed during later Debug activity and was preserved as-is,
+without changing tracking. Formal Transfer ABS/MOT/map remain
+in its DefaultBuild for CS+/programmer use.22 proven linked.obj/generated.lib
+intermediates were retired;source and real user UART/Tool logs remain.
+Cleanup initially failed only while aggregating a receipt after deletion;
+all22paths were rechecked absent and formal images revalidated. Per-file
+pre-delete hashes were not persisted;record counts,not an invented total size.
+Recipe now saves its manifest before deleting. No rebuild recreated deleted
+objects merely for evidence. Prior unrelated nine-file cleanup exception was
+not retried. Evidence:tmp/internal/verification/f13_transfer_filter_20261102
+and f13_transfer_filter_result.json. Full fault/throughput acceptance NOT RUN.
+
+## Offline BIN progress and COM investigation (2026-11-02 afternoon)
+
+Formal Tool is0.1.0.0114. User screenshot showed BIN analysis complete100% on
+startup:OnCreate restores the saved BIN and OperationComplete explicitly set
+100 for image_loading_. src/main_frame.cpp now resets only image-load terminal
+progress to0/Progress,including success/failure/cancellation;cards and Log
+retain the inspection/error. Actual update completion remains separate and
+keeps its100-percent result. No new state or wire changes were introduced.
+Empty COM Log now points to Device Manager,USB data connection and USB-UART
+driver checks. Serial enumeration/selection/open/probe rules were not changed.
+
+Expanded tests/misc_host_ui_tests.cpp runs real UI LoadBinaryFromPath/worker/
+image inspector/event pump for restored/manual and missing images;checks UI
+cancel completion and preserved update result. scripts/test_misc_host_ui.ps1
+links existing serial_port_catalog_tests as a read-only regression. Debug and
+Release each pass54 checks;12 existing completion/settings tests pass. Previous
+42-state Misc behavior is included. No COM was opened and no board was changed.
+
+COM diagnosis is unresolved:automation SERIALCOMM,.NET GetPortNames and actual
+C++ Enumerate returned0,but user explicitly reports a COM in Device Manager
+and will provide its number. Treat that discrepancy as requiring verification,
+not as proof the user's USB is disconnected. Read the computer-use skill and
+attempted sky.list_apps;it returned native pipe unavailable/OS error2. No target
+desktop view or driver/settings change occurred. Await COM number/local view
+before changing enumeration. The reported unsupported file-link dialog followed
+the chat EXE link;give the ordinary Explorer path instead of another drive-URI
+link:build/FirmwareUpgradeTool.exe. Source has no corresponding Chinese dialog.
+
+Canonical architecture/Shared Console guide and Web operation/status pages are
+updated. Operation projections match;848 references/route checks and actual
+desktop/narrow/TOC browser checks pass. Affected PDF regenerated with4 diagrams;
+27 pages,rendered bounds/visual inspection. Final notes formatting does not
+change browser structure;reuse that browser result after wording-only cleanup.
+
+Evidence:tmp/internal/verification/bin_idle_com_20261102 plus latest
+misc_host_ui_Release/Debug. Fresh two-run payload134777476bytes removed;final
+safe clean removed131 compiler files/225327203bytes.179 original settings/C/H
+files and formal EXE preservation pass. Prior nine-file25889482-byte cleanup
+rejection remains unchanged,not retried. Native finalizer-failure evidence is
+reused from the preceding task because that code is unchanged. Physical COM
+enumeration/USB cause,new board acceptance and Git publication remain NOT RUN.
+
+## Misc Host mode guidance (2026-11-02)
+
+Formal Tool is now0.1.0.0113. UpdateMiscUi and Misc Preflight use the validated
+bridge descriptor to distinguish APP from BOOT. APP alone enables/instructs
+Enter Bridge Boot (UART). BOOT shows disabled Bridge Boot active and directly
+guides Load/Update;VALID_APP independently gates RUN. A confirmed HostAppWritten
+result guides explicit Run Validated Bridge App without repeating ENTER/write.
+Busy notes identify the last verified mode and waiting/cancel;unknown/stale
+descriptor or offline-only BIN never claims a live mode. Worker/wire/firmware
+and image/Flash/RUN checks were not changed by this task.
+
+Changed production files:src/main_frame_misc.cpp and main_frame_evidence.cpp.
+tests/misc_host_ui_tests.cpp and scripts/test_misc_host_ui.ps1 cover actual MFC
+controls/Preflight against synthetic live states and the current real BUR1 BIN;
+no COM is opened. Debug/Release each pass42 checks,including absent BIN/App,
+valid installed App, completed write, busy/unknown/stale mode, wrong image and
+FLASH_READY gates. Notes fit normal/125-percent fonts;actual painted snapshots
+are private UI fixtures,not board evidence. Initial hidden snapshots were black;
+the fixture now requires painted pixels and captures after real window paint.
+
+9 existing completion checks pass. Canonical Shared Console Bridge Guide and
+Web host-firmware page now branch by live mode;three operation projections/
+16 existing public screenshots match. Local references and actual Chromium
+desktop/narrow/TOC pass. The affected27-page PDF has4 diagrams and a mode/next
+action table;bounds,links and rendered pages were reviewed. Existing public
+captures remain the APP-to-BOOT example and are labeled accordingly.
+
+User-supplied Tool0112 Log confirms Boot/no-valid-App -> Host write/CRC/readback
+-> explicit RUN -> APP1.8.1 confirmation. This is reused historical evidence,
+not a new physical test. The named Nov2 reports/logs were not available locally.
+No programmer/COM/firmware build/Git publication was performed.
+
+Evidence:tmp/internal/verification/misc_host_guidance_20261102 plus
+misc_host_ui_Release, misc_host_ui_Debug and misc_host_ui_expected_failure_Release.
+Latest three owned runs retired136607156bytes,including the injected invalid
+fixture invocation failure;it did not replace the delivery EXE. PDF render
+scratch was retired. Final safe clean removed131 compiler files/221881789bytes;
+192 original settings/firmware files and the formal EXE passed preservation.
+git status refreshed index stat-cache bytes;current staged diff is empty.
+No add/reset/commit/push command was used. Previous nine-file25889482-byte
+cleanup rejection remains unchanged and was not retried. New UI hardware
+acceptance,physical cancellation and the unrelated full test suite were NOT RUN.
+
+## Approved review follow-up N1-N7 (2026-11-01)
+
+All seven recommendations are implemented in the existing Tool architecture.
+N1 removes the second delete after MFC failed Create;CFrameWnd still owns its
+heap lifetime. N2 uses scoped teardown suppression without clearing user Cancel
+and includes stopping in cancellation. The real dispatcher now has deterministic
+cancel/unknown-reservation tests. N3 shares image_vectors across CAN and serial;
+known RL78/RH850 ABIs validate structure before START,unknown CAN ABIs retain
+live/device validation rather than silently becoming unsupported.
+
+N4 worker report events carry per-operation identity and pending/saved/error
+state. UI labels current HTML,current JSON-only or previous report and appends
+storage details to confirmed operation feedback. Report failure never requests
+a rewrite or changes a confirmed firmware result. Storage remains worker-owned.
+N6 UART/I2C ABORT failure latches uncertain cleanup,blocks further bus/Misc work
+and has explicit Close/Open/Probe recovery. Open requires advertised ABORT ACKs
+after CAN STOP. No target erase/END/RUN is repeated for recovery.
+
+N7 app startup acquires the stable session-local OS guard before UI/settings/
+workers. Secondary readiness/notification is bounded;the owner acknowledges then
+queues activation to preserve modal/menu/work state. Product copies across
+Debug/Release/renaming are verified;no production multi-instance bypass exists.
+N5 moves three old runners to owned workspaces/finally retirement and fixes the
+ISP test's stale root metadata paths to project-local hal/image. Success and
+six failure/cancellation-exception paths are checked;no MCU project was edited.
+
+Verification:Debug/Release builds,52 actual worker/MFC assertions per config,
+2912 new core checks,eight real images,existing selected CAN fault regressions,
+19 process-ownership checks,actual copied product startup and existing Release
+prerequisite/font checks pass. F13 UART/F24 I2C engine/client models and bundled
+Bridge regressions pass;the earlier restart runner still passes8368checks.
+17 source/document checks,Web projection/references,actual browser report page
+and the20-page operation PDF pass. Current formal EXE is0.1.0.0112.
+
+Retain concise failed fixture evidence rather than presenting first attempts as
+passes. Modal/foreground fixtures originally conflicted on the shared desktop;
+only exact owned no-COM processes were retired,then UI tests ran serially with
+deferred activation. No user process,data,real COM or board was touched.
+Earlier Tool improvements and unrelated dirty files are preserved. Existing
+storage/transport/UI stress evidence is reused only for unchanged components.
+No real Git commit/push,firmware rebuild or hardware acceptance is implied.
+Final disposable output retirement and protected hashes are recorded below.
+
+- Final safe-clean PASS:fixture/idempotence/junction rejection and actual clean;
+  132 allowlisted intermediates retired,233 protected build hashes unchanged.
+  All209 pre-task firmware/settings/reports/log/index hashes remain unchanged.
+- Retirement exception:automatic approval review rejected the separate9-file
+  EXE/startup-fixture retirement command with only "blocked by policy". It did
+  not execute and was not retried. Retain25889482bytes at the exact paths in
+  review_followup_20261101/retirement_manifest.json;the formal EXE is excluded.
+  Other fresh native/UI/browser/PDF runner payloads were removed in finally.
+  This exception remains pending;do not claim all rebuildable outputs removed.
+- Formal delivery SHA/size,source recovery and concise receipts are in
+  review_followup_20261101/preservation_and_retention.json. No active owned
+  native/UI/product test process remains. Keep current source recovery and
+  representative rendering evidence until this change is accepted.
+- Size receipt:2795963663 ordinary-file bytes including hidden/Git data;
+  15 existing reparse directories were excluded from traversal. The existing
+  integrated-project retention profile remains;no unrelated data was purged.
+
+## Rebuildable test binary retirement (2026-10-31)
+
+- User reiterated that compiled/reproducible test binaries must be removed
+  after verification. Added the project-local distinction between formal EXE
+  preservation and test-output retirement;normal clean allowlists are unchanged.
+- Reviewed retained producers/native PE/COFF identity and exact path/hash
+  inventory;checked project/run boundaries,reparse ancestors and active test
+  processes before exact-file removal. No directory purge or process kill.
+- Removed436 outputs/181239919bytes:89 EXEs,345 OBJ units and two generated
+  A/B IRQ fixture BINs. Includes canonical HostLinkProtocolTests Debug/Release,
+  completed GUI smoke copies and this batch's internal Tool Debug/Release copies.
+  Formal build/FirmwareUpgradeTool.exe remains0.1.0.0111 with its original hash.
+- PASS all436 reviewed outputs absent;825 protected source/firmware/delivery/
+  INI/log/screenshot/index hashes unchanged. Keep converter dependencies,real
+  firmware/timing BINs,recovery archives and required evidence. No rebuild or
+  hardware/COM/Git publication was performed for this cleanup.
+- The older prerequisite manifest's122 files were already absent at inspection;
+  its previously rejected Apply was not retried. This retirement uses its own
+  reviewed native-output manifest and does not alter that historical helper.
+- Evidence:tmp/internal/verification/test_binary_retirement_20261031 contains
+  manifest,producer/output hashes,protected hashes and actual removal results.
+  Prior application/build tests remain valid and were reused,not rerun.
+
+## Approved Tool reliability improvements (2026-10-31)
+
+- Implemented R1..R8:checked/exclusive UTF-8 logs;explicit binary DCB;
+  bounded cancellable worker image loading;publication compile/include closure;
+  unknown STOP state;active-session CAN feature gate;specific I2C guidance;
+  shared CAN metadata compatibility visitor. Wire formats and MCU firmware stay
+  unchanged. UI cached inspection never replaces fresh worker/device gates.
+- Image results transfer exact bytes and inspection together. Startup restore
+  waits for the worker. The16MiB file allocation limit is independent of a
+  device's smaller Flash capacity. Cancel/failure cannot revive an old image.
+- Actual UI profiling found repeated interface MoveWindow,caption writes,
+  whole-console footer relayout and unchanged INI writes. State refresh now
+  avoids those operations. Log batches avoid selecting the appended end twice;
+  follow/pause/selection/file recording remain independently checked.
+- PASS73 focused native review cases,4806 serial exchanges,8368 restart cases,
+  17 source/document checks,actual Release/Debug MFC prerequisite/font states
+  with Classical/FD/UART/I2C/Xmodem images,and fresh-INI product startup/close.
+  Native tests use mocks at the electrical boundary;no COM was opened.
+- PASS actual frame stress with4830000 history characters/1200 recorded lines:
+  maximum trace heartbeat79ms;16MiB load queue15ms,total828ms,maximum heartbeat
+  203ms. These are local test observations,not physical upgrade timing guarantees.
+- Release/Debug x64 builds pass. Delivery build/FirmwareUpgradeTool.exe is
+  0.1.0.0111. MD/Web UPDATE_EVIDENCE parity,browser desktop/narrow/TOC/anchors
+  and the20-page UPDATE_VALIDATION PDF were checked. Public text retains
+  ordinary operation descriptions,not development milestones.
+- Publication regressions and final retention/preservation results are recorded
+  in SELF_CHECK and tmp/internal/verification/review_20261031. Earlier fixture
+  timing failures are retained with final results rather than hidden.
+- PASS39 ten-repository/20 CAN-only/3 boundary checks;only owned local bare
+  remotes received synthetic commits. Final safe clean removed132 compiler
+  intermediates and preserved242 protected build files. Actual index and all
+  original INI/report/log hashes are unchanged;only the product EXE changed.
+- No real Git commit/push,MCU compiler/programmer or physical device testing.
+  Existing unpublished changes were preserved. Recovery before.zip includes
+  the pre-task state;retain it until these changes are accepted.
+
+## Tool/Host and CAN publication entry (2026-10-29)
+
+- github_push.bat now defaults to ten repositories:nine CAN device examples plus
+  Tool PC source/EXE/eligible docs and selected F24 Host Boot/App/shared sources.
+  Twelve firmware keepers and build/FirmwareUpgradeTool.exe are required.
+  -CanOnly preserves the nine-repository entry and its separate receipt.
+- Unclassified firmware and dedicated unvalidated MCU support stay local.
+  Deferred tracked changes are preserved without blocking allowed changes;
+  outgoing commits that add/remove withheld files are rejected before archiving.
+  Ten-repository schema2 receipts bind every selected path/hash;no inferred
+  hardware acceptance or automatic reuse of a nine-repository receipt.
+- PASS36 actual default-entry local-Git checks,20 CAN-only gate checks,3 scoped
+  lower-level publication checks and5 document checks. Real worktree plan-only
+  exits0 without index/network/publication changes. Browser downloads page and
+  regenerated16-page MultiBus PDF were visually checked;no Tool/MCU rebuild.
+- Tool EXE and actual Git index hashes unchanged. No real commit/push/COM/board
+  activity. Main evidence:tmp/internal/verification/isp_publish_20261029 and
+  isp_publication_result.json;owned fixtures retired in finally.
+- User workflow:build and sync documents,then github_push.bat,then Web push-all.
+  First ten-repository execution requires review of the new exact scope and
+  actual-current-version acceptance;only the scripts were authorized this turn.
+
 ## Published-guide link and category corrections (2026-10-29)
 
 - Repaired two F13 source URLs in canonical guides and RL78 reference / ISP

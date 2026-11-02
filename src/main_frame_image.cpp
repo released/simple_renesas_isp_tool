@@ -71,39 +71,45 @@ void CMainFrame::OnBnClickedLoadBinary() {
 }
 
 bool CMainFrame::LoadBinaryFromPath(const std::wstring& path, bool silent) {
-    last_update_result_=firmware_upgrade::feedback::Result::None;
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        if (!silent) {
-            AppendLog(L"Firmware load failed: " + path);
-        }
-        return false;
-    }
+    if (!worker_started_ || worker_command_pending_ || session_state_.busy ||
+        !worker_session_.LoadImage(path, silent)) return false;
+    worker_command_pending_ = true;
+    image_loading_ = true;
+    binary_path_ = path;
+    binary_data_.clear();
+    binary_inspection_ = {};
+    binary_bridge_inspection_ = {};
+    binary_i2c_inspection_ = {};
+    binary_image_valid_ = false;
+    last_update_result_ = firmware_upgrade::feedback::Result::None;
+    SetProgress(0, L"Load BIN");
+    StartOperationElapsedTimer();
+    file_path_label_.SetWindowTextW((L"Loading image: " + path).c_str());
+    UpdateUi();
+    return true;
+}
 
-    binary_data_.assign(
-        std::istreambuf_iterator<char>(file),
-        std::istreambuf_iterator<char>());
-    if (binary_data_.empty()) {
+void CMainFrame::ApplyLoadedImage(const firmware_upgrade::ui::WorkerEvent& event) {
+    if (!event.image_analysis) return;
+    auto& loaded = *event.image_analysis;
+    const auto& path = loaded.path;
+    const bool silent = loaded.restored;
+    // The worker no longer accesses the result. Move the exact inspected bytes
+    // and cache together; no second full-image read/hash runs on the UI thread.
+    binary_data_ = std::move(loaded.bytes);
+    binary_inspection_ = std::move(loaded.device);
+    binary_i2c_inspection_ = loaded.reference;
+    binary_bridge_inspection_ = std::move(loaded.bridge);
+    if (!event.success) {
         binary_image_valid_ = false;
-        binary_image_validation_error_ = L"firmware image is empty";
-        binary_path_.clear();
-        binary_inspection_ = {};
-        binary_i2c_inspection_ = {};
-        binary_bridge_inspection_ = {};
-        file_path_label_.SetWindowTextW(L"Update image: none (empty file)");
-        if (!silent) {
-            AppendLog(L"Firmware load failed: empty file.");
-        }
+        binary_image_validation_error_ = event.text;
+        binary_path_ = path;
+        file_path_label_.SetWindowTextW((L"Image load failed: " + path).c_str());
         SaveUiSettings();
-        UpdateUi();
-        return false;
+        return;
     }
 
     binary_path_ = path;
-    binary_i2c_inspection_ = firmware_upgrade::g16_i2c::InspectImage(binary_data_);
-    binary_bridge_inspection_ = firmware_upgrade::bridge_update::Inspect(binary_data_);
-    binary_inspection_ =
-        firmware_upgrade::firmware_update::InspectImage(binary_data_);
     if (!IsMiscTab() && !IsI2cTab() && !IsUartTab() && binary_inspection_.metadata_valid &&
         binary_inspection_.metadata.profile==firmware_upgrade::firmware_update::Profile::CanUpgrade) {
         if (!session_state_.can_started) {
@@ -143,7 +149,6 @@ bool CMainFrame::LoadBinaryFromPath(const std::wstring& path, bool silent) {
     if (IsI2cTab()) AppendLog(BuildI2cSummary());
     SaveUiSettings();
     UpdateUi();
-    return true;
 }
 
 void CMainFrame::ValidateLoadedFirmwareImage(bool emit_log) {
@@ -180,9 +185,9 @@ void CMainFrame::ValidateLoadedFirmwareImage(bool emit_log) {
 
     firmware_upgrade::firmware_update::ImageInfo image_info;
     binary_image_validation_error_.clear();
-    binary_image_valid_ = firmware_upgrade::firmware_update::ValidateImage(
+    binary_image_valid_ = firmware_upgrade::firmware_update::ValidateInspection(
         IsIspTab()?SelectedIspProfile():firmware_upgrade::firmware_update::Profile::CanUpgrade,
-        binary_data_, &image_info,
+        binary_inspection_, &image_info,
         &binary_image_validation_error_);
     if (binary_image_valid_) {
         std::uint32_t selected_application_start = 0U;

@@ -2,6 +2,7 @@
 
 #include "core/firmware_update_profile.h"
 #include "core/device_version_policy.h"
+#include "core/can_image_contract.h"
 
 #include <afxdlgs.h>
 
@@ -49,28 +50,7 @@ std::wstring Hex32(std::uint32_t value) {
 bool ImageMatchesTarget(
     const firmware_upgrade::firmware_update::ImageInfo& image,
     const firmware_upgrade::f13_boot::TargetInfo& target) {
-    return image.policy.role==IP_ROLE_DEVICE_APP && (image.policy.transports&IP_CAN) &&
-           target.policy.role==IP_ROLE_DEVICE_APP && (target.policy.transports&IP_CAN) &&
-           image.policy.irq_abi==target.policy.irq_abi && image.policy.minimum_boot_version<=target.boot_version &&
-           image.target_id == target.target_id &&
-           image.protocol_id == target.protocol_id &&
-           image.protocol_version == target.protocol_version &&
-           image.format == target.image_format &&
-           image.checksum_type == target.checksum_type &&
-           image.application_start == target.application_start &&
-           image.application_capacity == target.application_capacity &&
-           image.code_flash_size == target.code_flash_size &&
-           image.boot_reserved_size == target.boot_reserved_size &&
-           image.erase_block_size == target.erase_block_size &&
-           image.minimum_image_size == target.minimum_image_size &&
-           image.can_mode_mask == target.can_mode_mask &&
-           image.can_id_format == target.can_id_format &&
-           image.nominal_bitrate_mask == target.nominal_bitrate_mask &&
-           image.data_bitrate_mask == target.data_bitrate_mask &&
-           image.request_id == target.request_id &&
-           image.response_id == target.response_id &&
-           image.mcu_part == target.mcu_part &&
-           image.mcu_family == target.mcu_family;
+    return firmware_upgrade::can_contract::Matches(image, target);
 }
 
 } // namespace
@@ -373,11 +353,11 @@ void CMainFrame::UpdateUi() {
         ImageMatchesTarget(binary_inspection_.metadata,
                            session_state_.target_metadata);
 
-    connect_target_btn_.SetWindowTextW(
+    SetControlText(connect_target_btn_,
         boot_profile ? L"Discover Target" : L"Discover Test Target");
-    enter_bootloader_btn_.SetWindowTextW(L"Enter Boot");
-    transfer_test_btn_.SetWindowTextW(boot_profile?L"Verify Installed":L"Transfer Test");
-    start_firmware_update_btn_.SetWindowTextW(L"Start Device Update");
+    SetControlText(enter_bootloader_btn_, L"Enter Boot");
+    SetControlText(transfer_test_btn_, boot_profile?L"Verify Installed":L"Transfer Test");
+    SetControlText(start_firmware_update_btn_, L"Start Device Update");
     open_com_btn_.EnableWindow(!busy && !port_open);
     close_com_btn_.EnableWindow(port_open || busy);
     reset_host_btn_.EnableWindow(!busy && host_ready);
@@ -387,26 +367,29 @@ void CMainFrame::UpdateUi() {
     cancel_btn_.EnableWindow(busy);
     preflight_btn_.EnableWindow(!busy);
     bin_details_btn_.EnableWindow(!busy && !binary_data_.empty());
-    open_report_btn_.EnableWindow(!busy && !latest_report_path_.empty());
+    SetControlText(open_report_btn_, report_status_.Button());
+    open_report_btn_.EnableWindow(!busy && !report_status_.Path().empty());
     error_details_btn_.EnableWindow(!busy && !last_operation_error_.empty());
     compare_metadata_btn_.EnableWindow(!busy && !binary_data_.empty() &&
         (IsMiscTab()?session_state_.bridge_info_valid:!IsI2cTab() && target_ready));
     force_old_firmware_btn_.ShowWindow(!IsMiscTab() && !IsI2cTab() ? SW_SHOW : SW_HIDE);
     force_old_firmware_btn_.EnableWindow(FALSE);
-    if(IsIspTab()) {UpdateUartUi();return;}
+    if(IsIspTab()) {UpdateUartUi();ApplyBusRecoveryUi();return;}
     if (IsMiscTab()) {
         load_binary_btn_.EnableWindow(!busy);
         start_log_btn_.EnableWindow(!log_recording_);
         stop_log_btn_.EnableWindow(log_recording_);
         export_summary_btn_.EnableWindow(!busy);
-        UpdateBridgeImageFields(); UpdateMiscUi(); UpdateCompletionFeedback(); return;
+        UpdateBridgeImageFields(); UpdateMiscUi();
+        if (!ApplyBusRecoveryUi()) UpdateCompletionFeedback();
+        return;
     }
 
     can_mode_combo_.EnableWindow(!busy && host_ready && !can_started);
     can_bitrate_combo_.EnableWindow(!busy && host_ready && !can_started);
     can_data_combo_.EnableWindow(
         !busy && host_ready && !can_started && !classical_mode);
-    can_tx_test_btn_.SetWindowTextW(
+    SetControlText(can_tx_test_btn_,
         can_tx_test_active ? L"Stop Bridge Self Test" :
                              L"Start Bridge Self Test");
     can_tx_test_btn_.EnableWindow(
@@ -519,6 +502,19 @@ void CMainFrame::UpdateUi() {
     UpdateFirmwareImageInfoText();
     UpdateTargetMetadataText();
     UpdateBusUi();
+    if (ApplyBusRecoveryUi()) return;
+    if (session_state_.can_stop_unconfirmed) {
+        connect_target_btn_.EnableWindow(FALSE);
+        enter_bootloader_btn_.EnableWindow(FALSE);
+        transfer_test_btn_.EnableWindow(FALSE);
+        start_firmware_update_btn_.EnableWindow(FALSE);
+        force_old_firmware_btn_.EnableWindow(FALSE);
+        firmware_prerequisites_label_.SetWindowTextW(
+            L"[BLOCKED] CAN stop is not confirmed; the controller may still be active. Next: Close COM, then Open + Probe Host and Discover Target.");
+        firmware_prerequisites_label_.SetEmphasized(true);
+        firmware_prerequisites_label_.SetTone(firmware_upgrade::visual::Tone::Pending);
+        return;
+    }
     if (!boot_profile || image_blocker.empty()) UpdateCompletionFeedback();
 }
 
@@ -699,8 +695,8 @@ void CMainFrame::StartDeviceUpdate(bool force_old_version) {
 
     firmware_upgrade::firmware_update::ImageInfo image_info;
     std::wstring error;
-    if (!firmware_upgrade::firmware_update::ValidateImage(
-            profile, binary_data_, &image_info, &error)) {
+    if (!firmware_upgrade::firmware_update::ValidateInspection(
+            profile, binary_inspection_, &image_info, &error)) {
         AppendLog(L"Firmware update blocked: " + error);
         MessageBoxW(error.c_str(), L"Invalid Firmware Image",
                     MB_ICONERROR | MB_OK);

@@ -82,6 +82,10 @@ Profile FromDisplayName(const std::wstring& display_name);
 const wchar_t* DisplayName(Profile profile);
 std::uint32_t Crc32(const std::uint8_t* data, std::size_t length);
 ImageInspection InspectImage(const std::vector<std::uint8_t>& image);
+// Offline UI may reuse the inspection of its unchanged, privately owned bytes.
+// Write-time worker/device checks must still inspect the submitted image afresh.
+bool ValidateInspection(Profile profile, const ImageInspection& inspection,
+                        ImageInfo* info, std::wstring* error);
 bool ValidateImage(Profile profile,
                    const std::vector<std::uint8_t>& image,
                    ImageInfo* info,

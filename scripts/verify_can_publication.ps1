@@ -32,7 +32,7 @@ function Run-Entry([string[]]$Arguments,[int]$ExpectedExit,[string]$Pattern,[str
     $mode=@('-NoProfile')
     if(!$InputText) { $mode+='-NonInteractive' }
     $info.Arguments=($mode+@('-ExecutionPolicy','Bypass','-File',
-        (Join-Path $fixtureTool 'scripts\push_github.ps1'))+$Arguments |
+        (Join-Path $fixtureTool 'scripts\push_github.ps1'),'-CanOnly')+$Arguments |
         ForEach-Object {ConvertTo-PublishArgument $_}) -join ' '
     $info.UseShellExecute=$false
     $info.CreateNoWindow=$true
@@ -62,8 +62,8 @@ try {
     }
     $fixtureTool=Join-Path $scope.Path 'simple_renesas_isp_tool'
     [void][IO.Directory]::CreateDirectory((Join-Path $fixtureTool 'scripts'))
-    foreach($name in @('push_github.ps1','workspace_paths.ps1','github_publish_git.ps1',
-        'github_publish_reset.ps1','github_publish_release.ps1')) {
+    foreach($name in @('push_github.ps1','workspace_paths.ps1','github_publish_git.ps1','github_publish_dependencies.ps1',
+        'github_publish_reset.ps1','github_publish_release.ps1','github_publish_initialize.ps1')) {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $fixtureTool ('scripts\'+$name))
     }
     $targets=@(Get-GithubPublishTargets $fixtureTool)

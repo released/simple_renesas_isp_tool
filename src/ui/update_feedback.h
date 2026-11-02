@@ -46,14 +46,14 @@ inline View Describe(Result result) {
     case Result::UartAppConfirmed:
         return {L"Device App update complete",
             L"[COMPLETE] ISP device App written, CRC verified and startup confirmed. Host COM remains open.",
-            L"Check App code and the device UART0 Log.\r\nNext update: Discover Target > Enter Boot (App mode) > Start Device Update.\r\nOpen Last Report shows the saved evidence.",
+            L"Check App code and the device UART0 Log.\r\nNext update: Discover Target > Enter Boot (App mode) > Start Device Update.\r\nThe report status below identifies the saved evidence.",
             L"ISP device update complete",L"App confirmed; device bus transaction released; COM open. Check App / UART0 Log."};
     case Result::DeviceAppConfirmed:
         return {L"Device App update complete",
             L"[COMPLETE] Device App written, CRC verified and App startup confirmed. CAN stopped; Host COM remains open.",
             L"You can now check your App code and board behavior.\r\n"
             L"To update again: Discover Target > Enter Boot (if App mode) > Start Device Update.\r\n"
-            L"Open Last Report shows the saved operation evidence.", L"Device update complete",
+            L"The report status below identifies this operation.", L"Device update complete",
             L"App confirmed; CAN stopped; COM open. Check App.\r\nNext update: Discover Target > Enter Boot (App mode)."};
     case Result::DeviceAppConfirmedBusWarning:
         return {L"Device App updated / Host counter warning",
@@ -74,13 +74,13 @@ inline View Describe(Result result) {
             L"[COMPLETE] Host App written; CRC and metadata readback verified. Host remains in Boot.",
             L"Next: Run Validated Bridge App to start the installed App.\r\n"
             L"The App has not been started yet. If RUN is unavailable, Read Bridge Update Info / Probe Host first.\r\n"
-            L"Open Last Report shows the saved operation evidence.", L"Host update complete",
+            L"The report status below identifies this operation.", L"Host update complete",
             L"Host App written and verified; still in Boot.\r\nNext: Run Validated Bridge App."};
     case Result::HostAppRunning:
         return {L"Host App startup confirmed",
             L"[COMPLETE] Host App is running. Same-COM reconnect and installed image identity verified.",
             L"You can now check the Host App or select a device interface.\r\n"
-            L"Open Last Report shows the saved RUN confirmation.", L"Host App confirmed",
+            L"The report status below identifies this RUN confirmation.", L"Host App confirmed",
             L"Host App started; identity confirmed.\r\nCheck App or choose a device interface."};
     default:
         return {};

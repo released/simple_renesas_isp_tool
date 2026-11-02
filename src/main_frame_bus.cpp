@@ -172,7 +172,9 @@ void CMainFrame::UpdateBusUi() {
         CardText(firmware_prerequisites_label_,L"This host reports no CAN port. Bridge boot mode: use Misc; otherwise check advertised capabilities.",Tone::Pending);
     }
     UpdateOverviewUi(i2c_current);
-    CRect client; GetClientRect(&client); LayoutControls(client.Width(), client.Height());
+    if (active_tab_ != bus_tabs_.GetCurSel()) {
+        CRect client; GetClientRect(&client); LayoutControls(client.Width(), client.Height());
+    }
 }
 void CMainFrame::OnBusTabChanged(NMHDR*, LRESULT* result) {
     *result = 0;
@@ -265,7 +267,7 @@ void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, in
     i2c_notes_.ShowWindow(i2c || misc || uart ? SW_SHOW : SW_HIDE);
     const int step = row + 2;
     const auto move = [&](CWnd& c, int left, int top, int w, int h) {
-        if (c.GetSafeHwnd()) c.MoveWindow(left, top, w, h, FALSE);
+        MoveControl(c,{left,top,w,h});
     };
     const auto pair_at = [&](CWnd& label, CWnd& value, int top,int left,int span) {
         CClientDC dc(&label); CFont* old=dc.SelectObject(&ui_font_);

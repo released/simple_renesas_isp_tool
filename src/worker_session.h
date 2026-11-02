@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <deque>
 #include <mutex>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -25,6 +26,8 @@
 #include "core/bridge_update_profile.h"
 #include "ui/update_feedback.h"
 #include "ui/worker_event_queue.h"
+#include "core/image_analysis.h"
+#include "core/scoped_flag.h"
 
 struct WorkerResponsivenessFixture;
 
@@ -36,6 +39,7 @@ enum class WorkerEventKind {
     Progress,
     OperationComplete,
     UpdateReport,
+    ImageLoaded,
 };
 
 enum class TargetProfile {
@@ -69,6 +73,14 @@ struct SessionState {
     bool serial_open = false;
     bool host_validated = false;
     bool can_started = false;
+    bool can_stop_unconfirmed = false;
+    bool uart_cleanup_unconfirmed = false;
+    bool i2c_cleanup_unconfirmed = false;
+    bool SerialCleanupUnconfirmed() const {
+        return uart_cleanup_unconfirmed || i2c_cleanup_unconfirmed;
+    }
+    bool active_can_settings_valid = false;
+    CanSettings active_can_settings;
     bool target_validated = false;
     bool f13_bootloader_ready = false;
     bool can_tx_test_active = false;
@@ -120,8 +132,12 @@ struct WorkerEvent {
     feedback::Result update_result = feedback::Result::None;
     std::wstring text;
     std::wstring guidance;
+    std::uint64_t report_operation_id = 0U;
+    bool report_pending = false;
     std::wstring report_json_path;
     std::wstring report_html_path;
+    // Ownership transfers to the UI after the worker has finished inspection.
+    std::shared_ptr<image_analysis::Result> image_analysis;
 };
 
 class WorkerSession {
@@ -137,6 +153,7 @@ public:
     void StopAndJoin();
 
     bool OpenAndProbe(const std::wstring& port_name, std::uint32_t baudrate);
+    bool LoadImage(const std::wstring& path, bool restored);
     bool ApplyCanSettings(const CanSettings& settings);
     bool ConnectF13Transfer(const CanSettings& settings);
     bool RunF13TransferTest();
@@ -164,6 +181,7 @@ public:
 private:
     enum class CommandType {
         OpenAndProbe,
+        LoadImage,
         ApplyCanSettings,
         ConnectF13Transfer,
         RunF13TransferTest,
@@ -200,6 +218,7 @@ private:
         std::uint8_t isp_contract=1U;
         bool force_old_version = false;
         std::uint32_t approved_installed_version = 0U;
+        bool restored_image = false;
     };
 
     bool Submit(Command command);
@@ -217,6 +236,7 @@ private:
     bool ProcessEnterF13Bootloader(const Command& command,
                                    std::wstring* error);
     bool ProcessProgramF13Boot(const Command& command, std::wstring* error);
+    bool ValidateCanUpdateSession(std::wstring* error) const;
     bool ConfirmDeviceApp(const firmware_update::ImageInfo& image,
                           std::uint64_t end_crc_ms, std::wstring* error);
     bool StopCanAfterAppConfirmation();
@@ -227,6 +247,7 @@ private:
     bool RefreshBridgeInfo(std::wstring* error);
     bool RefreshBridgePorts(std::wstring* error);
     bool PrepareCanPort(const CanSettings& settings, std::wstring* error);
+    void RecordBusCleanup(bool uart, bool acknowledged, const std::wstring& error);
     void AbortI2cBestEffort();
     void AbortUartBestEffort();
     bool ProcessUart(const Command& command,std::wstring* error);
@@ -239,6 +260,7 @@ private:
     bool ValidateF13BootTarget(std::wstring* error);
     void ProcessDisconnect();
     void StopCanBestEffort();
+    bool StopCanController(std::wstring* error);
     void RefreshHostStatsBestEffort();
     void PollHostEvents();
     void HandleHostLinkEvent(const host_link::Frame& event);

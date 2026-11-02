@@ -1058,7 +1058,13 @@ std::vector<std::uint8_t> MakeValidF13BootImage(
     using namespace firmware_upgrade::f13_boot;
 
     std::vector<std::uint8_t> image(image_size, 0xFFU);
-    WriteLe32At(&image, 0U, application_start);
+    for (std::size_t at = 0U; at < 256U; at += 4U) {
+        image[at] = 0xECU;
+        const auto destination = application_start + 512U;
+        image[at + 1U] = static_cast<std::uint8_t>(destination);
+        image[at + 2U] = static_cast<std::uint8_t>(destination >> 8U);
+        image[at + 3U] = static_cast<std::uint8_t>(destination >> 16U);
+    }
     WriteLe32At(&image, kManifestOffset, kManifestMagic);
     image[kManifestOffset + 4U] = kImageFormatVersion;
     image[kManifestOffset + 5U] = kManifestSize;
@@ -1990,6 +1996,7 @@ int TestPackagedCan(const char* path);
 int TestF24AppReadback(const char* path);
 int TestToolExperience();
 int TestLogView();
+#ifndef FIRMWARE_CAN_REVIEW_ONLY
 int main(int argc, char** argv) {
     Check(TestLogView()==0,"Real RichEdit follow / preserve viewport and selection");
     Check(TestSerialPortIo() == 0, "Real SerialPort low-latency reads and bounded deadlines");
@@ -2040,3 +2047,4 @@ int main(int argc, char** argv) {
     std::cout << "Host Link v2, CAN client, F13 Boot, and Custom Transfer tests passed\n";
     return 0;
 }
+#endif

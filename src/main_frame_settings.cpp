@@ -39,6 +39,9 @@ std::wstring CMainFrame::ReadIniValue(const wchar_t* key,
 void CMainFrame::WriteIniValue(const wchar_t* key,
                                const std::wstring& value) {
     if (ini_path_.empty()) return;
+    // Most state refreshes leave preferences unchanged. Avoid rewriting the
+    // complete INI repeatedly on the UI thread after background inspection.
+    if (ReadIniValue(key, L"\x0001") == value) return;
     if (WritePrivateProfileStringW(kIniSectionUi, key, value.c_str(), ini_path_.c_str()))
         return;
     const DWORD error = GetLastError();
@@ -113,15 +116,7 @@ void CMainFrame::LoadUiSettings() {
     log_auto_scroll_check_.SetCheck(log_auto_scroll_ ? BST_CHECKED : BST_UNCHECKED);
 
     binary_path_ = ReadIniValue(L"binary_path", L"");
-    if (!binary_path_.empty() &&
-        !LoadBinaryFromPath(binary_path_, true)) {
-        file_path_label_.SetWindowTextW(
-            (L"Update image: " + binary_path_ + L" (missing)").c_str());
-        binary_data_.clear();
-        binary_inspection_ = {};
-        binary_image_valid_ = false;
-        binary_image_validation_error_ = L"firmware file is missing";
-    }
+    if (!binary_path_.empty()) file_path_label_.SetWindowTextW((L"Saved image: " + binary_path_).c_str());
     loading_ui_settings_ = false;
 }
 

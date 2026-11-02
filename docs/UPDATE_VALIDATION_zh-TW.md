@@ -31,7 +31,7 @@ CAN 確認沿用現有 Host Link 與 CAN 路由，不會重新掃描其他 COM�
 完整更新條件通過後，Tool 顯示一次完成對話框，並在狀態列與共用映像區保留 `[COMPLETE]` 及下一步操作。
 開始其他作業、切換 TAB 或載入檔案後，畫面回到目前操作的條件判定；歷史結果可從 Log 與報告查看。
 斷線後重新執行 `Open + Probe Host` 時，進度條與階段標籤歸零；不沿用上次的 100%。
-同一連線內的狀態更新不會清除正在執行的進度；`Open Last Report` 仍可查看本次開啟 Tool 後保存的報告。
+同一連線內的狀態更新不會清除正在執行的進度；報告按鈕依本次儲存結果顯示可開啟的產物，見[更新報告](#update-html-report)。
 
 | 操作結果 | 畫面提示 | 下一步 |
 | --- | --- | --- |
@@ -45,6 +45,16 @@ CAN 確認沿用現有 Host Link 與 CAN 路由，不會重新掃描其他 COM�
 CAN 在 APP_READY 與 live INFO 核對完成後才停止，不在 Transfer 100% 或 END ACK 當下停止。
 這裡停止的是 Host CAN controller，不是關閉 COM、切斷 device 電源或停止 App 執行。
 停止後清除當前 live target 快照；上方卡片須經下一次 Discover 才重新取得資訊，完成結果則保留於狀態區。
+
+一般操作收尾與 App 確認後的收尾都以 CAN STOP 回覆作為停止依據。
+若顯示 `CAN stop is not confirmed`，CAN 可能仍在運作，更新、Enter Boot 與介面切換會保持停用。
+可先 `Close COM`，再明確執行 `Open + Probe Host`；Tool 核對 Host 身分後確認 CAN 已停止，再重新 Discover。
+此操作保留 Host 電源與 Device Flash，不重送 erase、END 或 RUN。
+
+UART／I2C 的 ABORT 未確認時，Tool 保留 bus cleanup 未確認狀態，停用 device 操作、介面切換與 Misc 更新。
+下一步為 `Close COM` → `Open + Probe Host` → `Discover Target`；重新開啟時須確認已支援介面的 ABORT 回覆與 CAN STOP。
+這項狀態與 App 更新結果分開：若 App 已確認，收尾未確認不表示需要重新寫入。
+
 App 啟動確認涵蓋必要初始化與映像身分，板上的應用功能仍可另行檢查。
 
 #### Discover Target 與 Enter Boot
@@ -192,6 +202,30 @@ log_auto_scroll=1
 這個選項只控制視窗，不停止通訊、不取消操作，也不影響已啟用的檔案 Log 紀錄。
 `Detailed trace` 控制詳細訊息量；`Start Log`／`Stop Log` 控制檔案紀錄，三者用途各自獨立。
 
+每次 `Start Log` 都建立獨立的 UTF-8 檔案，快速停止後重新開始也不覆寫前一份 Log。
+若轉碼、寫入或保存失敗，Tool 會停止檔案錄製並在 Message Log 顯示原因與檔案路徑；畫面訊息與通訊操作可繼續。
+`Export Summary` 只會在寫入及關閉檔案通過後顯示匯出成功。
+
+
+<a id="tool-image-loading"></a>
+
+#### Tool 啟動與既有視窗
+
+同一 Windows session 保留一個 Tool，EXE 改名、移動或 Debug／Release 副本使用相同識別。
+再次啟動會嘗試切回既有視窗，保留目前映像、更新作業與對話框；啟動等待或通知逾時會明確停止，不另開第二個操作視窗。
+
+#### BIN 載入與檢查
+
+`Load Update Image` 與啟動時還原檔案會在背景讀取、解析及檢查 CRC，期間顯示 `Load BIN / inspect image` 動態等待條。
+完成後資訊卡顯示這次實際讀入的內容；可由 `BIN Details` 查看完整離線欄位。
+載入期間可使用 `Cancel`；取消或讀取失敗後，更新按鈕保持停用，重新選檔後再繼續。
+
+Tool 的檔案載入上限為 16 MiB，超過時會在配置映像記憶體前拒絕。
+實際可更新容量仍以 BIN 與 Device 的 Flash 配置契約為準。
+切換介面或修改 App Start 會重新判斷這份離線資料的適用條件；開始更新時，worker 與 Device 仍各自驗證映像與 live 資訊。
+已知 RL78／RH850 IRQ ABI 會在 PC 預檢檢查 App 入口及向量目的地；RH850 也檢查 EBASE／512-entry INTBP。
+CRC 正確但向量結構錯誤的 BIN 會在 START 前拒絕。未知 CAN IRQ ABI 保留擴充能力，仍須與 live Boot 契約一致並通過 device 驗證；不代表 PC 已了解該 ABI 的向量結構。
+
 #### 連線、介面與載入欄位
 
 | 欄位／操作 | 用途 | 正常顯示／選擇 | 未符合時的判讀與處理 |
@@ -231,6 +265,8 @@ log_auto_scroll=1
 | `[COMPLETE]`／狀態與共用映像區 | 綠；CAN 停止未確認時為黃色警告 | 更新／啟動核對已完成，保留本次結果與下一步 | 依 [完成提示](#update-completion) 檢查 App 或明確 RUN；不把下一次更新需要進入 Boot 當成這次失敗 |
 | `Missing:`／prerequisite，或停用按鈕 | 黃；不相容時可為紅 | 缺少連線、Boot 模式、映像、能力或其他條件；作業執行中也會停用按鈕 | 先讀該區文字，再開 Preflight；不一定是 BIN 錯誤 |
 | `[BLOCKED] Selected CAN mode/bitrate...`／前置條件區 | 粗體黑字、錯誤底色與邊框 | 已載入 BIN 不支援所選 CAN 模式或速率 | 依 `Check BIN supported...` 提示，核對 `Interface / Rate`、Device Boot 與 CAN 設定；相容後才顯示 Discover／Enter Boot 等下一步 |
+| `CAN stop is not confirmed` | 粗體操作提示 | Host CAN 的停止結果尚未確認 | Close COM → Open + Probe Host → Discover；確認前不切換介面或開始更新 |
+| `Host returned I2C_NACK / I2C_ARBITRATION_LOST / I2C_BUS_ERROR` | 錯誤 | Host 已回覆 I2C 交易結果 | 核對所選 port、7-bit address、SCL 速度、pull-up 與 Device 供電；保留原始錯誤與 Log |
 | `Next: Enter Boot.`／前置條件區 | 粗體黑字、等待底色 | Discover 已確認 App 模式，且 Enter Boot 可操作 | 先 Enter Boot，再依 BIN／條件執行 Start Device Update；BIN 模式／速率不符時，優先顯示阻擋原因 |
 
 `Update Policy` 與 `Boot / IRQ ABI` 的背景色目前表示映像角色／允許介面與所選 TAB 是否相符。
@@ -394,6 +430,7 @@ FLASH erase 的時間包含在對應區塊／BEGIN 交易中，不以推估值�
 
 Cancel 與 Close COM 分開。
 Cancel 由 worker 在交易邊界停止，嘗試 ABORT 與必要的 bus cleanup，不額外要求 COM 斷線；Close COM 則在清理後再斷線。
+取消要求跨內部清理與重連持續有效；必要 cleanup 可完成，但不消耗使用者的取消要求。下一筆明確操作才開始新的取消狀態。
 若作業本身正在重連，取消時可能尚未建立新的 COM 連線。
 已送出的 Flash 操作不能以 PC 按鈕立即撤回；END 後取消確認不會復原映像。
 
@@ -414,7 +451,16 @@ CAN、UART／Xmodem／I2C更新、Misc更新及Misc RUN結束時，Tool 在 EXE 
 4. 需要保存或分享紀錄時，可從 EXE 旁的 `reports/` 取得同名 `update_*.html` 與 `update_*.json`。
    HTML 可直接離線閱讀；對外分享前可先核對其中的 COM、檔案路徑及裝置資訊。
 
-`Open Last Report` 開啟本次 Tool 執行期間最後成功儲存的 HTML；尚未產生時按鈕不啟用。
+報告狀態與本次操作編號、路徑及儲存錯誤一起顯示，獨立於韌體更新結果。
+
+| 按鈕／狀態 | 開啟內容 |
+| --- | --- |
+| `Open Last Report` | 本次已儲存的 HTML；若 JSON 未儲存，另外列出錯誤 |
+| `Open Report JSON` | 本次僅成功儲存 JSON；使用系統預設程式開啟 |
+| `Open Previous Report` | 本次沒有可開啟產物，按鈕明確指向前一筆已保存的報告 |
+| 尚無已保存報告 | 按鈕停用；完成訊息與 Log 列出儲存狀態 |
+
+報告儲存失敗時，保留已確認的更新結果，依 Log 檢查目錄權限與剩餘空間；不需要為了報告重燒 App。
 重新開啟 Tool 後，可直接從 `reports/` 開啟歷史報告。
 實際畫面見 [MCU CAN device 更新報告範例](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)。
 

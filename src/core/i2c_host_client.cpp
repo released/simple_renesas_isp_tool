@@ -112,6 +112,7 @@ bool Client::Abort(std::wstring* error) {
     if (link_ == nullptr || !link_->IsHostValidated()) return true;
     host_link::Response response;
     return link_->RequestWithPolicy(host_link::Command::I2cTransaction,
-        {4U}, 500U, 1U, &response, error) && response.payload.empty();
+        {4U}, 500U, 1U, &response, error) &&
+        (response.payload.empty() || Fail(error, L"Invalid I2C ABORT response."));
 }
 } // namespace firmware_upgrade::i2c_host

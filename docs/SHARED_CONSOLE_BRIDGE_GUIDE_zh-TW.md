@@ -11,6 +11,7 @@
 
 BIN、檔案路徑、metadata與Log由各TAB共用。
 主畫面顯示12項常用欄位，`BIN Details...`提供全部20項唯讀資料與Workflow檢查結果。
+啟動時會還原上次選取的 BIN；還原或手動載入的離線分析結束後，底部進度回到待命 0%，分析結果留在資訊卡與 Log。載入 BIN 不代表已連接板子或已更新韌體；實際更新的完成結果另行顯示。
 
 CAN、I2C與UART / Xmodem TAB提供port、speed、ID／mask或slave address等介面參數及適用的image contract。
 最後一個 TAB 是 Misc，更新目的地為 host bridge。
@@ -42,6 +43,8 @@ I2C的G16 Reference (read-only)回報常數，其erase／write／jump仍封鎖�
 Misc 的 BOOT／APP 卡改為 host bridge 自己的資訊，且目的地卡明確顯示 HOST BRIDGE。離線 BIN 仍獨立。CRC 是完整性檢查，不是簽章、授權或防回滾。
 
 <!-- TOOL_CONNECT_MEDIA_BEGIN -->
+COM 清單為空時，先核對裝置管理員的連接埠、USB 資料線與驅動，再按 `Refresh`；板子有供電不代表 USB 串口已被辨識。
+
 <a id="tool-connect-example"></a>
 
 ### COM 連線操作圖
@@ -189,8 +192,10 @@ flowchart TD
     A[Open + Probe Host] --> B{宣告 bridge self-update 能力?}
     B -->|否| C[封鎖 Misc 更新；先以 debugger 安裝 matching boot/app]
     B -->|是| D[Read Bridge Update Info]
-    D --> E[明確確認 HOST BRIDGE；Enter Bridge Boot]
+    D --> M{Host 目前模式?}
+    M -->|APP| E[明確確認 HOST BRIDGE；Enter Bridge Boot]
     E --> F[同一 COM 重新 Probe 並核對 board／UART／boot descriptor]
+    M -->|BOOT| F
     F --> G[Load matching HOST APP BIN；檢查 BUR1、長度與 CRC32]
     G --> H{live identity／geometry／boot version 全部相符?}
     H -->|否| I[封鎖；不送 BEGIN、不擦除]
@@ -230,6 +235,19 @@ flowchart TD
 以下使用 F24 (MCU CAN host)。Misc 更新的是 PC 所連接 host 自身的 App，固定以 UART115200 操作。
 初裝 Boot MOT、燒錄器 App MOT 與 Misc BIN 的選用，見[下載與操作總覽](https://released.github.io/slide_simple_renesas_isp_tool/#downloads)。
 
+先看 Misc 的 **LIVE Host 模式**，再選下一步。此資訊來自已連線 Host 的 descriptor；載入的 BIN 不代表板子目前正在執行 App 或 Boot。
+
+| Host 回報狀態 | 下一步 | Enter Bridge Boot |
+| --- | --- | --- |
+| BOOT，沒有有效 App（例如剛安裝 Boot） | 載入 HOST APP BIN → Update HOST APP → Run Validated Bridge App | 已在 Boot；按鈕顯示 `Bridge Boot active` 並停用 |
+| BOOT，已有有效 App | 可直接更新；若只要啟動已安裝 App，可按 Run Validated Bridge App | 已在 Boot，無須再 Enter |
+| APP，正在執行 Host App（日常更新） | Enter Bridge Boot (UART) → 確認 Boot → 載入／核對 BIN → Update HOST APP → Run | 需先切換到 Boot |
+| 寫入、CRC 與 metadata readback 已完成，仍停留 Boot | **Run Validated Bridge App**；不要重複寫入 | 不需 Enter |
+| 模式尚未確認 | Open + Probe Host，再 Read Bridge Update Info | 取得有效模式前不開放 |
+
+Misc 左側指引與 Preflight 依此模式更新；作業中標示最後確認的模式並提示等待，完成後以作業結果決定下一步。
+以下 Enter Boot 截圖示範的是 **APP → BOOT 的日常更新**；初裝 Boot 後已回報 BOOT 時，直接從步驟 1 接步驟 3。
+
 #### 1. 載入 Host App BIN
 
 選取 Misc，載入 `RL78_F24_Bridge_app_bridge_update.bin`。
@@ -237,17 +255,17 @@ flowchart TD
 
 [![Misc 載入 Host App BIN 並核對目的地](images/tool_operation/tool_Bridge_update1_load_image.jpg)](images/tool_operation/tool_Bridge_update1_load_image.jpg)
 
-#### 2. 確認 Enter Bridge Boot
+#### 2. 確認 Host 模式；App 模式才進入 Boot
 
-按 `Read Bridge Update Info` 取得目前資訊，再按 `Enter Bridge Boot (UART)`。
-確認視窗列出的 HOST BRIDGE、COM 與 MCU；此步進入 Boot，不擦寫 App。
+按 `Read Bridge Update Info` 取得目前資訊。**只有回報 APP 時**，才按 `Enter Bridge Boot (UART)`。
+確認視窗列出的 HOST BRIDGE、COM 與 MCU；此步進入 Boot，不擦寫 App。回報 BOOT 時略過 Enter，直接核對更新條件。
 
 [![確認將 Host App 切換到 Bridge Boot](images/tool_operation/tool_Bridge_update2_enter_boot.jpg)](images/tool_operation/tool_Bridge_update2_enter_boot.jpg)
 
 #### 3. 確認 Host Boot 已連線
 
-等 Tool 以同一 COM／115200 重新 Probe。
-目的地回報 `HOST BRIDGE - BOOT mode`，且 prerequisite 為 Ready 後，才可更新。
+若剛從 App 進入 Boot，等 Tool 以同一 COM／115200 重新 Probe；原本已在 Boot 則直接核對 live descriptor。
+目的地回報 BOOT 模式，且 prerequisite 為 Ready 後，才可更新。`Bridge Boot active` 表示已在 Boot，不是缺少進入 Boot 的步驟。
 
 [![重新連線確認 Host Boot 模式與更新條件](images/tool_operation/tool_Bridge_update3_enter_boot.jpg)](images/tool_operation/tool_Bridge_update3_enter_boot.jpg)
 

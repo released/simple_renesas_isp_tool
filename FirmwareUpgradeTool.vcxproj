@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -155,6 +155,7 @@
 
   <ItemGroup>
     <ClCompile Include="src\app.cpp" />
+    <ClCompile Include="src\core\image_analysis.cpp" />
     <ClCompile Include="src\ui\console_geometry.cpp" />
     <ClCompile Include="src\main_frame_misc.cpp" />
     <ClCompile Include="src\worker_bridge_update.cpp" />
@@ -205,6 +206,9 @@
 
   <ItemGroup>
     <ClInclude Include="src\app.h" />
+    <ClInclude Include="src\core\image_analysis.h" />
+    <ClInclude Include="src\core\text_file.h" />
+    <ClInclude Include="src\core\can_image_contract.h" />
     <ClInclude Include="src\ui\overview_model.h" />
     <ClInclude Include="src\ui\update_feedback.h" />
     <ClInclude Include="src\ui\log_view.h" />
@@ -215,6 +219,10 @@
     <ClInclude Include="src\core\f13_transfer_profile.h" />
     <ClInclude Include="src\core\firmware_update_profile.h" />
     <ClInclude Include="src\core\serial_image_vectors.h" />
+    <ClInclude Include="src\core\image_vectors.h" />
+    <ClInclude Include="src\core\scoped_flag.h" />
+    <ClInclude Include="src\core\application_instance.h" />
+    <ClInclude Include="src\ui\report_status.h" />
     <ClInclude Include="src\core\device_version_policy.h" />
     <ClInclude Include="src\core\host_link_client.h" />
     <ClInclude Include="src\core\host_link_protocol.h" />

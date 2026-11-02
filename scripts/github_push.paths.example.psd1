@@ -10,4 +10,10 @@
     F24FdTransferProject = '<F24-device-FD-Transfer-checkout>'
     F24FdBootProject = '<F24-device-FD-Boot-checkout>'
     F24FdAppProject  = '<F24-device-FD-App-checkout>'
+    Rh850TransferProject = '<RH850-device-CAN-Transfer-checkout>'
+    Rh850BootProject = '<RH850-device-CAN-Boot-checkout>'
+    Rh850AppProject = '<RH850-device-CAN-App-checkout>'
+    Rh850FdTransferProject = '<RH850-device-FD-Transfer-checkout>'
+    Rh850FdBootProject = '<RH850-device-FD-Boot-checkout>'
+    Rh850FdAppProject = '<RH850-device-FD-App-checkout>'
 }

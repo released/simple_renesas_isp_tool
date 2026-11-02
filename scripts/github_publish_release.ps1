@@ -1,16 +1,22 @@
-# A release decision belongs to one exact nine-project CAN source/image snapshot.
-function Assert-CanPublishScope($Targets) {
+# A release decision belongs to one exact selected source/image inventory.
+function Assert-CanPublishScope($Targets,[switch]$IncludeTool) {
     $expected=@('RL78_F13_Boot_loader_CAN','RL78_F13_Boot_loader_CAN_app','RL78_F13_CAN_Transfer',
         'RL78_F24_CAN_Transfer','RL78_F24_Boot_loader_CAN','RL78_F24_Boot_loader_CAN_app',
         'RL78_F24_CAN_FD_Transfer','RL78_F24_Boot_loader_CAN_FD','RL78_F24_Boot_loader_CAN_FD_app')
+    if(@($Targets | Where-Object { $_.Name -like 'Sample_Project_RH850_*' }).Count) {
+        $expected+=@('Sample_Project_RH850_S1_CAN_Transfer','Sample_Project_RH850_S1_Boot_loader_CAN',
+            'Sample_Project_RH850_S1_Boot_loader_CAN_app','Sample_Project_RH850_S1_CAN_FD_Transfer',
+            'Sample_Project_RH850_S1_Boot_loader_CAN_FD','Sample_Project_RH850_S1_Boot_loader_CAN_FD_app')
+    }
+    if($IncludeTool) { $expected+='simple_renesas_isp_tool' }
     if($Targets.Count -ne $expected.Count -or
        @(Compare-Object ($Targets.Name | Sort-Object) ($expected | Sort-Object)).Count) {
-        throw 'Release scope must contain exactly the nine F13/F24 Classical CAN and F24 CAN FD device repositories.'
+        throw 'Release scope must contain the nine RL78 CAN device repositories, optionally all six RH850 CAN device repositories, plus Tool only when explicitly selected. Partial or serial firmware scopes are not accepted.'
     }
 }
 
-function Get-CanPublishSnapshot($Targets) {
-    Assert-CanPublishScope $Targets
+function Get-CanPublishSnapshot($Targets,[switch]$IncludeTool) {
+    Assert-CanPublishScope $Targets -IncludeTool:$IncludeTool
     $projects=@()
     foreach($target in ($Targets | Sort-Object { [string]$_.Name })) {
         $keepers=@($target.Plan | ForEach-Object {
@@ -18,8 +24,10 @@ function Get-CanPublishSnapshot($Targets) {
             $_.Keep | ForEach-Object { $relative+'/'+$_.Name }
         })
         $paths=@((Invoke-PublishGit $target.Root @('ls-files','--cached','--others','--exclude-standard','-z')).Text.Split([char]0))
+        $deferred=@(Get-PublishDeferredPaths $target)
         $files=@()
-        foreach($path in (@($paths+$keepers) | Where-Object {$_} | Sort-Object -Unique)) {
+        foreach($path in (@($paths+$keepers+@($target.RequiredFiles)) | Where-Object {$_} | Sort-Object -Unique)) {
+            if($path -cin $deferred) { continue }
             $inBuild=$false
             foreach($group in $target.Plan) {
                 if($path.StartsWith($group.Relative.Replace('\','/')+'/',[StringComparison]::OrdinalIgnoreCase)) {
@@ -34,14 +42,22 @@ function Get-CanPublishSnapshot($Targets) {
             if(!(Test-Path -LiteralPath $full -PathType Leaf)) { continue }
             $files+= [ordered]@{Path=$path;Sha256=(Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash}
         }
-        $projects+= [ordered]@{Name=$target.Name;Root=$target.Root;Remote=$target.Remote;Files=$files}
+        $project=[ordered]@{Name=$target.Name;Root=$target.Root;Remote=$target.Remote;Files=$files}
+        if($target.ToolScope) { $project.Dependencies=@(Get-PublishToolDependencies $target) }
+        $projects+=$project
     }
     $json=ConvertTo-Json -InputObject $projects -Depth 8 -Compress
     $sha=[Security.Cryptography.SHA256]::Create()
     try {
         $id=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($json))).Replace('-','')
     } finally { $sha.Dispose() }
-    [pscustomobject][ordered]@{Schema=1;Scope='rl78-can-golden-9';SnapshotId=$id
+    $schema=1; $scope='rl78-can-golden-9'
+    if($IncludeTool) { $schema=2; $scope='renesas-isp-tool-host-can-10' }
+    if(@($Targets | Where-Object { $_.Name -like 'Sample_Project_RH850_*' }).Count) {
+        $schema=3; $scope='renesas-can-golden-15'
+        if($IncludeTool) { $scope='renesas-isp-tool-host-can-16' }
+    }
+    [pscustomobject][ordered]@{Schema=$schema;Scope=$scope;SnapshotId=$id
         CreatedUtc=[DateTime]::UtcNow.ToString('o');BoardValidated=$false
         ValidationBasis='current-board';ExceptionAuthorized=$false;Evidence='';Projects=$projects}
 }
@@ -51,11 +67,11 @@ function Assert-CanReleaseAcceptance($Acceptance,$Snapshot) {
         ($Acceptance.ValidationBasis -ceq 'prior-board-offline-regression' -and
          $Acceptance.BoardValidated -eq $false -and $Acceptance.ExceptionAuthorized -is [bool] -and
          $Acceptance.ExceptionAuthorized -eq $true)
-    if($Acceptance.Schema -ne 1 -or $Acceptance.Scope -cne 'rl78-can-golden-9' -or
+    if($Acceptance.Schema -ne $Snapshot.Schema -or $Acceptance.Scope -cne $Snapshot.Scope -or
        $Acceptance.BoardValidated -isnot [bool] -or !$basis -or
        [string]::IsNullOrWhiteSpace($Acceptance.Evidence) -or
        $Acceptance.SnapshotId -cne $Snapshot.SnapshotId) {
-        throw 'Current CAN release has no matching acceptance. Confirm current-board validation or an explicitly authorized prior-board/offline-regression exception for these nine source/image versions. An older acceptance or -Yes cannot authorize this snapshot.'
+        throw 'Current release has no matching acceptance. Confirm current-board validation or an explicitly authorized prior-board/offline-regression exception for the displayed source/image inventory. An older acceptance or -Yes cannot authorize this snapshot.'
     }
     $accepted=ConvertTo-Json -InputObject @($Acceptance.Projects) -Depth 8 -Compress
     $current=ConvertTo-Json -InputObject @($Snapshot.Projects) -Depth 8 -Compress
@@ -68,10 +84,10 @@ function Confirm-CanRelease($Snapshot,[string]$AcceptanceFile) {
         Assert-CanReleaseAcceptance $record $Snapshot
         return $record
     }
-    Write-Host 'Only these nine device CAN repositories will be published. Tool/Host, RH850, UART/I2C/Xmodem and websites are excluded.'
+    Write-Host "Publish scope: $($Snapshot.Projects.Count) repositories. Review every selected file in the displayed inventory; withheld MCU files and websites remain excluded."
     Write-Host 'Confirm actual-board tests of the CURRENT source/images, not just an older build or offline tests.' -ForegroundColor Yellow
     try {
-        $confirmation=Read-Host 'If all nine CURRENT versions passed real-board validation and should be pushed, type VALIDATED_AND_PUSH'
+        $confirmation=Read-Host 'If all selected CURRENT MCU firmware passed real-board validation and this exact inventory should be published, type VALIDATED_AND_PUSH'
     } catch {
         throw 'NonInteractive publication requires a matching -AcceptanceFile; board validation was not confirmed.'
     }
@@ -79,6 +95,6 @@ function Confirm-CanRelease($Snapshot,[string]$AcceptanceFile) {
         throw 'Current-version board acceptance was not confirmed. No delivery files/index/commits/remotes changed.'
     }
     $Snapshot.BoardValidated=$true
-    $Snapshot.Evidence='Maintainer explicitly confirmed real-board validation and publication of the displayed current nine-project source/image snapshot at '+[DateTime]::UtcNow.ToString('o')
+    $Snapshot.Evidence='Maintainer explicitly confirmed real-board validation and publication of the displayed current source/image inventory at '+[DateTime]::UtcNow.ToString('o')
     return $Snapshot
 }

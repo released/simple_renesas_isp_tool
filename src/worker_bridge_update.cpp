@@ -46,6 +46,11 @@ bool WorkerSession::ProcessBridgeAction(const Command& command, std::wstring* er
     }
     const auto board=state_.host_info.board_id;
     AbortI2cBestEffort();
+    AbortUartBestEffort();
+    if (state_.SerialCleanupUnconfirmed()) {
+        *error = L"Device bus cleanup is not confirmed. Close COM, then Open + Probe Host.";
+        return false;
+    }
     if (!RefreshBridgeInfo(error)) return false;
     if (command.type==CommandType::BridgeInfo) { PostState(); return true; }
     if (command.type==CommandType::BridgeEnter) {

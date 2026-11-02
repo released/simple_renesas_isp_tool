@@ -16,6 +16,7 @@ struct Driver {
     std::uint64_t now = 0;
     DWORD error = ERROR_DEVICE_NOT_CONNECTED;
     COMMTIMEOUTS timeouts = {};
+    DCB configured = {};
     std::deque<Fragment> incoming;
     std::vector<COMMTIMEOUTS> timeout_history;
     std::vector<std::uint8_t> written;
@@ -42,8 +43,14 @@ DWORD Collect(void* output, DWORD capacity) {
 HANDLE WINAPI Open(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE) {
     return reinterpret_cast<HANDLE>(static_cast<std::uintptr_t>(1U));
 }
-BOOL WINAPI GetState(HANDLE, LPDCB state) { state->DCBlength = sizeof(*state); return TRUE; }
-BOOL WINAPI SetState(HANDLE, LPDCB) { return TRUE; }
+BOOL WINAPI GetState(HANDLE, LPDCB state) {
+    state->DCBlength = sizeof(*state);
+    state->fOutxCtsFlow = state->fOutxDsrFlow = state->fDsrSensitivity = TRUE;
+    state->fOutX = state->fInX = state->fErrorChar = state->fNull = state->fAbortOnError = TRUE;
+    state->fTXContinueOnXoff = FALSE;
+    return TRUE;
+}
+BOOL WINAPI SetState(HANDLE, LPDCB state) { driver.configured = *state; return TRUE; }
 BOOL WINAPI SetTimeouts(HANDLE, LPCOMMTIMEOUTS timeouts) {
     if (driver.fail_timeouts) return FALSE;
     driver.timeouts = *timeouts; driver.timeout_history.push_back(*timeouts); return TRUE;
@@ -141,6 +148,13 @@ int TestSerialPortIo() {
     std::wstring error; std::vector<std::uint8_t> bytes;
     {
         reset(); SerialPort port; check(port.Open(L"MOCK", 115200U, &error), "mock open");
+        const auto& dcb = driver.configured;
+        check(!dcb.fOutxCtsFlow && !dcb.fOutxDsrFlow && !dcb.fDsrSensitivity &&
+              !dcb.fOutX && !dcb.fInX && !dcb.fErrorChar && !dcb.fNull && !dcb.fAbortOnError &&
+              dcb.fTXContinueOnXoff && dcb.fBinary && !dcb.fParity && dcb.ByteSize == 8U &&
+              dcb.Parity == NOPARITY && dcb.StopBits == ONESTOPBIT &&
+              dcb.fDtrControl == DTR_CONTROL_ENABLE && dcb.fRtsControl == RTS_CONTROL_ENABLE,
+              "binary configuration clears inherited flow/filter/abort flags and preserves control lines");
         Schedule({1U, 2U, 3U}, 0U);
         check(port.ReadSome(&bytes, 512U, 50U, &error) && bytes.size() == 3U && driver.now == 0U,
               "buffered short reply returns without waiting20ms/full512bytes");

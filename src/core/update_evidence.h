@@ -2,10 +2,12 @@
 #include "firmware_update_profile.h"
 #include "f13_boot_profile.h"
 #include "bridge_update_profile.h"
+#include "can_image_contract.h"
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
 #include <cstring>
+#include <type_traits>
 
 namespace firmware_upgrade::evidence {
 struct Difference {
@@ -23,31 +25,14 @@ inline void Add(std::vector<Difference>& rows, const wchar_t* field,
 inline std::vector<Difference> Compare(const firmware_update::ImageInfo& i,
                                       const f13_boot::TargetInfo& t) {
     std::vector<Difference> r;
-    Add(r,L"Target",i.target_id,t.target_id);
-    r.push_back({L"MCU",i.mcu_family+L" / "+i.mcu_part,t.mcu_family+L" / "+t.mcu_part,
-        i.mcu_family==t.mcu_family && i.mcu_part==t.mcu_part ? L"MATCH" : L"MISMATCH"});
-    Add(r,L"App version",i.version,t.app_version,true); Add(r,L"Build",i.build,t.app_build,true);
-    Add(r,L"Version control",i.policy.version_control,t.policy.version_control,true);
-    Add(r,L"Image bytes",i.image_size,t.installed_app_size,true);
-    Add(r,L"App start",i.application_start,t.application_start);
-    Add(r,L"Capacity",i.application_capacity,t.application_capacity);
-    Add(r,L"Flash bytes",i.code_flash_size,t.code_flash_size);
-    Add(r,L"Boot reserve",i.boot_reserved_size,t.boot_reserved_size);
-    Add(r,L"Erase bytes",i.erase_block_size,t.erase_block_size);
-    Add(r,L"Minimum image",i.minimum_image_size,t.minimum_image_size);
-    Add(r,L"Protocol / format",(i.protocol_id<<16U)|(i.protocol_version<<8U)|i.format,
-        (t.protocol_id<<16U)|(t.protocol_version<<8U)|t.image_format);
-    Add(r,L"Checksum",i.checksum_type,t.checksum_type);
-    Add(r,L"CAN mode / ID type",(i.can_mode_mask<<8U)|i.can_id_format,(t.can_mode_mask<<8U)|t.can_id_format);
-    Add(r,L"Nominal mask",i.nominal_bitrate_mask,t.nominal_bitrate_mask);
-    Add(r,L"Data mask",i.data_bitrate_mask,t.data_bitrate_mask);
-    Add(r,L"Request ID",i.request_id,t.request_id); Add(r,L"Response ID",i.response_id,t.response_id);
-    Add(r,L"Image role",i.policy.role,t.policy.role);
-    r.push_back({L"Allowed CAN",Hex(i.policy.transports),Hex(t.policy.transports),
-        (i.policy.transports&IP_CAN) && (t.policy.transports&IP_CAN) ? L"MATCH" : L"MISMATCH"});
-    Add(r,L"IRQ ABI",i.policy.irq_abi,t.policy.irq_abi);
-    r.push_back({L"Minimum Boot",Hex(i.policy.minimum_boot_version),Hex(t.boot_version),
-        t.boot_version>=i.policy.minimum_boot_version ? L"MATCH" : L"MISMATCH"});
+    const auto text = [](const auto& value, bool live) -> std::wstring {
+        using Value = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<Value, std::wstring>) return value;
+        else return live && value == 0xFFFFFFFFU ? L"not installed" : Hex(value);
+    };
+    can_contract::Visit(i, t, [&](const wchar_t* field, const auto& a, const auto& b, bool passed, bool info) {
+        r.push_back({field, text(a, false), text(b, true), passed ? L"MATCH" : info ? L"CHANGE" : L"MISMATCH"});
+    });
     return r;
 }
 inline bool ConfirmApp(const firmware_update::ImageInfo& image,

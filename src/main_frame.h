@@ -17,6 +17,7 @@
 #include "ui/status_card.h"
 #include "ui/console_geometry.h"
 #include "ui/log_view.h"
+#include "ui/report_status.h"
 
 class CMainFrame : public CFrameWnd {
     friend struct CanPrerequisiteUiFixture;
@@ -76,6 +77,8 @@ protected:
     afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnClose();
     afx_msg LRESULT OnWorkerEvent(WPARAM wParam, LPARAM lParam);
+    afx_msg LRESULT OnActivateExisting(WPARAM, LPARAM);
+    afx_msg LRESULT OnActivateExistingDeferred(WPARAM, LPARAM);
 
     DECLARE_MESSAGE_MAP()
 
@@ -171,10 +174,15 @@ private:
     void ApplyComboSelection(CComboBox& combo, const std::wstring& value);
     void StartLogRecording();
     void StopLogRecording(bool emit_log);
+    void HandleLogFailure(const std::wstring& error);
     void ExportSessionSummary();
     std::wstring BuildSessionSummary() const;
     void SaveUpdateReport(const firmware_upgrade::ui::WorkerEvent& event);
+    bool ApplyBusRecoveryUi();
     bool LoadBinaryFromPath(const std::wstring& path, bool silent);
+    void ApplyLoadedImage(const firmware_upgrade::ui::WorkerEvent& event);
+    static void SetControlText(CWnd& control, const wchar_t* text);
+    static void MoveControl(CWnd& control, const firmware_upgrade::console::Rect& rectangle);
     void ValidateLoadedFirmwareImage(bool emit_log);
     void UpdateFirmwareImageInfoText();
     void UpdateTargetMetadataText();
@@ -272,7 +280,7 @@ private:
     std::wstring last_operation_error_;
     firmware_upgrade::feedback::Result last_update_result_ = firmware_upgrade::feedback::Result::None;
     std::wstring last_error_guidance_;
-    std::wstring latest_report_path_;
+    firmware_upgrade::ui::ReportStatus report_status_;
     firmware_upgrade::g16_i2c::ImageInspection binary_i2c_inspection_;
     firmware_upgrade::bridge_update::Image binary_bridge_inspection_;
     CBrush page_background_brush_;
@@ -311,6 +319,7 @@ private:
     std::vector<std::uint8_t> binary_data_;
     firmware_upgrade::firmware_update::ImageInspection binary_inspection_;
     bool binary_image_valid_ = false;
+    bool image_loading_ = false;
     std::wstring binary_image_validation_error_;
     std::wstring summary_host_;
     std::wstring summary_target_;

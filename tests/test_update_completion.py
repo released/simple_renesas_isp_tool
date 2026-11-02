@@ -41,12 +41,15 @@ class UpdateCompletion(unittest.TestCase):
         finish = finish.split("bool WorkerSession::ConfirmDeviceApp", 1)[0]
         self.assertIn("} else {\n        const bool stopped=StopCanAfterAppConfirmation();", finish)
         stop = finish.split("bool WorkerSession::StopCanAfterAppConfirmation()", 1)[1]
-        self.assertIn("can_client_.Stop(&controller_state,&stop_error)", stop)
-        self.assertLess(stop.index("if (!stopped)"), stop.index("state_.can_started=false"))
-        self.assertIn("return false;", stop.split("state_.can_started=false", 1)[0])
+        self.assertIn("StopCanController(&stop_error)", stop)
+        self.assertIn("return false;", stop.split('PostLog(L"App confirmed;', 1)[0])
+        common = read("src/worker_session.cpp").split("bool WorkerSession::StopCanController", 1)[1].split("void WorkerSession::RefreshHostStatsBestEffort", 1)[0]
+        self.assertLess(common.index("can_client_.Stop("), common.index("state_.can_started = false"))
+        self.assertIn("state_.can_stop_unconfirmed = true", common)
+        self.assertIn("return false;", common.split("state_.can_started = false", 1)[0])
         for forbidden in ("serial_port_.Close", "ProcessDisconnect", "RestoreLinkBaud"):
             self.assertNotIn(forbidden, stop)
-        self.assertIn("state_.target_metadata={}", stop)
+        self.assertIn("state_.target_metadata = {}", common)
         self.assertIn("DeviceAppConfirmedCanActive", finish)
 
     def test_typed_success_event_and_reports(self):
@@ -69,8 +72,10 @@ class UpdateCompletion(unittest.TestCase):
         self.assertIn("IsI2cTab()", feedback)
         self.assertIn("SelectedProfile()!=L\"CAN Upgrade\"", feedback)
         workflow = read("src/main_frame_workflow.cpp")
-        self.assertIn("UpdateBusUi();\n    if (!boot_profile || image_blocker.empty()) UpdateCompletionFeedback();", workflow)
-        self.assertIn("UpdateMiscUi(); UpdateCompletionFeedback();", workflow)
+        self.assertLess(workflow.index("UpdateBusUi();"), workflow.index("if (session_state_.can_stop_unconfirmed)"))
+        self.assertIn("if (!boot_profile || image_blocker.empty()) UpdateCompletionFeedback();", workflow)
+        self.assertIn("UpdateMiscUi();", workflow)
+        self.assertIn("if (!ApplyBusRecoveryUi()) UpdateCompletionFeedback();", workflow)
         for path in ("src/main_frame.cpp", "src/main_frame_image.cpp", "src/main_frame_bus.cpp"):
             self.assertIn("last_update_result_=firmware_upgrade::feedback::Result::None;", read(path))
 

@@ -4,9 +4,11 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'github_publish_git.ps1')
 . (Join-Path $PSScriptRoot 'github_publish_reset.ps1')
 . (Join-Path $PSScriptRoot 'github_publish_catalog.ps1')
-$testRoot=Join-Path (Split-Path -Parent $PSScriptRoot) ('tmp\internal\github_publish_tests\'+[guid]::NewGuid().ToString('N').Substring(0,8))
-[void](New-Item -ItemType Directory -Path $testRoot -Force)
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$scope=New-OwnedTestWorkspace 'github_publish' -ShortPath
+$testRoot=$scope.Path
 $passed=0
+$ownedJunctions=New-Object 'Collections.Generic.List[string]'
 $pendingProjects=@('Sample_Project_RH850_S1_Boot_loader_CAN',
     'Sample_Project_RH850_S1_ISP_Boot_loader_UART','RL78_G16_ISP_Boot_loader_UART',
     'RL78_G22_ISP_Boot_loader_I2C','RL78_F13_ISP_Boot_loader_Xmodem','RL78_F24_ISP_Boot_loader_UART')
@@ -43,6 +45,13 @@ function New-TestCase([string]$Name) {
         [void](Invoke-PublishGit $target.Root @('config','user.email','publication@example.invalid'))
         Write-Fixture (Join-Path $target.Root '.gitignore') "tmp/`ngithub_push.local.psd1`n"
         Write-Fixture (Join-Path $target.Root 'README.md') "initial`n"
+        foreach($relative in @($target.RequiredFiles | Where-Object {$_})) {
+            Write-Fixture (Join-Path $target.Root $relative) 'synthetic EXE; never executed'
+        }
+        if($target.ToolScope) {
+            Write-Fixture (Join-Path $target.Root 'FirmwareUpgradeTool.vcxproj') '<Project><ItemGroup><ClCompile Include="src/main.cpp" /></ItemGroup></Project>'
+            Write-Fixture (Join-Path $target.Root 'src/main.cpp') '// synthetic PC build input'
+        }
         if($target.DeferredPattern) {
             Write-Fixture (Join-Path $target.Root 'docs\RH850_tracked.md') "initial RH850`n"
             Write-Fixture (Join-Path $target.Root ('firmware\'+$pendingProjects[0]+'\README.md')) "initial pending MCU`n"
@@ -75,6 +84,7 @@ function New-TestCase([string]$Name) {
 }
 function Pass([string]$Name) { $script:passed++; Write-Host "PASS: $Name" }
 
+try {
 $case=New-TestCase 'normal'
 [void](Invoke-PublishGit $case.Targets[0].Root @('tag','-a','local-only-tag','-m','do not publish'))
 [void](Invoke-PublishGit $case.Targets[0].Root @('config','push.followTags','true'))
@@ -92,9 +102,9 @@ foreach($target in $plan) {
 }
 Pass 'twelve delivery files, tracked output removal, tmp exclusion, backup, quoted arguments and verified ten-repo push'
 $tool=$plan[-1]
-Assert-Test ((Invoke-PublishGit $tool.Root @('show','HEAD:docs/RH850_tracked.md')).Text -ceq 'local changed RH850') 'eligible tracked Tool guide was not published'
+Assert-Test ((Invoke-PublishGit $tool.Root @('show','HEAD:docs/RH850_tracked.md')).Text -ceq 'initial RH850') 'withheld tracked Tool guide changed remotely'
 foreach($path in @('docs/RH850_NEW.md','scripts/build_rh850.ps1','tests/rh850_mock/r_port.h','firmware/common/isp_rh850/isp_rh850.h')) {
-    Assert-Test ([bool](Invoke-PublishGit $tool.Root @('ls-tree','--name-only','HEAD','--',$path)).Text) 'eligible Tool support file was not published'
+    Assert-Test (!(Invoke-PublishGit $tool.Root @('ls-tree','--name-only','HEAD','--',$path)).Text) 'withheld Tool support file was published'
     Assert-Test (Test-Path -LiteralPath (Join-Path $tool.Root $path)) 'Tool support file was removed'
 }
 foreach($project in $pendingProjects) {
@@ -107,7 +117,7 @@ foreach($project in $pendingProjects) {
 Assert-Test ((Invoke-PublishGit $tool.Root @('show',('HEAD:firmware/'+$pendingProjects[0]+'/README.md'))).Text -ceq 'initial pending MCU') 'tracked pending MCU change was published'
 Assert-Test ([IO.File]::ReadAllText((Join-Path $tool.Root ('firmware\'+$pendingProjects[0]+'\README.md'))) -ceq "local pending MCU`n") 'pending tracked draft changed'
 Assert-Test (@($plan | Where-Object {$_.Name -match $tool.DeferredPattern}).Count -eq 0) 'hardware-pending MCU repository entered catalog'
-Pass 'Tool RH850 support publishes; six pending MCU families stay local with tracked/untracked contents preserved'
+Pass 'Tool EXE publishes; dedicated unvalidated support and MCU sources stay local with tracked/untracked contents preserved'
 
 $guardCase=New-TestCase 'pending-index'
 $guardPlan=New-PublishPlan $guardCase.Targets
@@ -116,7 +126,7 @@ $guardTool=$guardPlan[-1]
 Expect-Stop { Assert-PublishIndex $guardTool } 'Deferred development file entered the index'
 Pass 'hardware-pending MCU staged source is rejected by existing index guard'
 if($PublicationBoundaryOnly) {
-    Write-Host "$passed scoped publication-boundary checks PASS. Unchanged unrelated refusal/idempotence cases not rerun. Evidence retained: $testRoot"
+    Write-Host "$passed scoped publication-boundary checks PASS. Owned fixture will be retired."
     return
 }
 $heads=@($plan | ForEach-Object {$_.Head})
@@ -188,9 +198,12 @@ $case=New-TestCase 'junction'
 $outside=Join-Path $case.Root 'outside'
 Write-Fixture (Join-Path $outside 'sentinel.txt') 'preserve'
 [void](New-Item -ItemType Junction -Path (Join-Path $case.Targets[0].Root 'DefaultBuild\escape') -Target $outside)
+$ownedJunctions.Add((Join-Path $case.Targets[0].Root 'DefaultBuild\escape'))
 Expect-Stop { New-PublishPlan $case.Targets } 'Reparse points'
 Assert-Test ([IO.File]::ReadAllText((Join-Path $outside 'sentinel.txt')) -ceq 'preserve') 'junction target touched'
 Pass 'junction escape rejected without following target'
+# Remove only the owned junction itself before the fixture finalizer.
+[IO.Directory]::Delete((Join-Path $case.Targets[0].Root 'DefaultBuild\escape'))
 
 $case=New-TestCase 'remote-ahead'
 $plan=New-PublishPlan $case.Targets
@@ -276,4 +289,18 @@ $plan=New-PublishPlan $case.Targets
 Expect-Stop { Invoke-GithubPublication $plan $case.Backup 'must not publish' } 'not empty and has no main'
 Assert-Test (Test-Path -LiteralPath (Join-Path $case.Targets[2].Root 'DefaultBuild\diagnostic.map')) 'pruned on ambiguous remote branch'
 Pass 'nonempty origin lacking main refuses before cleanup'
-Write-Host "$passed integration checks PASS. Evidence retained: $testRoot"
+Write-Host "$passed integration checks PASS. Owned fixture will be retired."
+} finally {
+    foreach($link in $ownedJunctions) {
+        if(!$link.StartsWith($scope.Path+'\',[StringComparison]::OrdinalIgnoreCase)) { throw 'Owned junction boundary mismatch.' }
+        if(Test-Path -LiteralPath $link) {
+            if(!((Get-Item -LiteralPath $link -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Owned junction was replaced; retain fixture.' }
+            [IO.Directory]::Delete($link,$false)
+        }
+    }
+    $bytes=(Get-ChildItem -LiteralPath $testRoot -Recurse -Force -File|Measure-Object Length -Sum).Sum
+    Remove-OwnedTestWorkspace $scope
+    $report=Join-Path (Split-Path -Parent $PSScriptRoot) 'tmp\internal\verification\github_publish_result.json'
+    [void][IO.Directory]::CreateDirectory((Split-Path -Parent $report))
+    @{Cases=$passed;FixtureRemoved=!(Test-Path -LiteralPath $testRoot);RetiredBytes=$bytes;GithubPush=$false}|ConvertTo-Json|Set-Content -LiteralPath $report -Encoding UTF8
+}

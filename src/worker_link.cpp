@@ -21,6 +21,32 @@ bool WorkerSession::OpenHostLink(const std::wstring& port, std::uint32_t desired
             // CAN-running hosts can reject this harmless UART-only ABORT.
             std::wstring ignored;uart_client_.Abort(&ignored);
         }
+        if (caps->feature_flags & bridge::kFeatureI2c) {
+            std::wstring ignored;
+            i2c_client_.Abort(&ignored);
+        }
+        if (caps->maximum_can_data_bytes) {
+            // Explicit Open/Probe recovers an uncertain STOP without resetting
+            // the host or repeating any target transaction.
+            std::uint32_t stopped = 0U;
+            PostLog(L"Confirming the verified host CAN controller is stopped before opening this session.");
+            if (!can_client_.Stop(&stopped, error)) {
+                serial_port_.Close();
+                return false;
+            }
+        }
+        // Only explicit Open/Probe may clear an uncertain reservation. Require
+        // ACK after STOP; the early best-effort ABORT can be rejected by CAN.
+        if (((caps->feature_flags & bridge::kFeatureUart) && !uart_client_.Abort(error)) ||
+            ((caps->feature_flags & bridge::kFeatureI2c) && !i2c_client_.Abort(error))) {
+            serial_port_.Close();
+            return false;
+        }
+        if (IsCancelRequested()) {
+            *error = L"Host Link open canceled.";
+            serial_port_.Close();
+            return false;
+        }
         if (!(caps->feature_flags&HL_BAUD_FEATURE)) {
             if (desired!=rate) {
                 bu_info_t boot={};

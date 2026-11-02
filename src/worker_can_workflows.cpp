@@ -106,12 +106,17 @@ bool WorkerSession::ProcessCanTxTest(const Command& command,
 
     if (!PrepareCanPort(command.can_settings, error) ||
         !can_client_.SetConfiguration(configuration, error) ||
-        !can_client_.SetFilter(0U, filter, error) ||
-        !can_client_.Start(&controller_state, error)) {
+        !can_client_.SetFilter(0U, filter, error)) {
         return false;
     }
-
+    // START may have reached the controller even if its acknowledgement is lost.
     state_.can_started = true;
+    if (!can_client_.Start(&controller_state, error)) {
+        state_.can_stop_unconfirmed = true;
+        PostState();
+        return false;
+    }
+    state_.can_stop_unconfirmed = false;
     state_.can_tx_test_active = true;
     state_.can_summary = L"Bridge board self test, Classical CAN " +
         std::wstring(can_host::NominalPresetName(configuration.nominal_bitrate_preset)) +
@@ -258,10 +263,18 @@ bool WorkerSession::ConfigureF13Can(
                              L"extended-data" : L"standard-data") +
             L" RX filter " +
             effective_filter + L".");
-    if (!can_client_.SetFilter(0U, filter, error) ||
-        !can_client_.Start(&controller_state, error)) {
+    if (!can_client_.SetFilter(0U, filter, error)) {
         return false;
     }
+    state_.active_can_settings = settings;
+    state_.active_can_settings_valid = true;
+    state_.can_started = true;
+    if (!can_client_.Start(&controller_state, error)) {
+        state_.can_stop_unconfirmed = true;
+        PostState();
+        return false;
+    }
+    state_.can_stop_unconfirmed = false;
     PostLog(L"CAN controller started, state " +
             Hex32(controller_state) + L".");
     state_.can_started = true;
@@ -555,16 +568,30 @@ bool WorkerSession::ValidateF13BootTarget(std::wstring* error) {
     return true;
 }
 
+bool WorkerSession::ValidateCanUpdateSession(std::wstring* error) const {
+    if (!state_.active_can_settings_valid || state_.can_stop_unconfirmed) {
+        *error = L"CAN session configuration is not confirmed. Close COM and Open + Probe Host, then Discover Target.";
+        return false;
+    }
+    const auto required = can_host::BurstFeatureFor(state_.active_can_settings.mode);
+    if ((state_.host_capabilities.feature_flags & required) == 0U) {
+        *error = L"CAN Upgrade requires matching bridge burst support (Classical bit12 / FD bit13). Update the bridge App in Misc first.";
+        return false;
+    }
+    return true;
+}
+
 bool WorkerSession::ProcessProgramF13Boot(
     const Command& command,
     std::wstring* error) {
     if (!state_.can_started || !state_.target_validated ||
         state_.target_profile != TargetProfile::CanUpgrade ||
-        !state_.f13_bootloader_ready) {
+        !state_.f13_bootloader_ready || state_.can_stop_unconfirmed) {
         *error = L"CAN Upgrade bootloader target is not validated.";
         return false;
     }
 
+    if (!ValidateCanUpdateSession(error)) return false;
     f13_boot::TargetInfo live;
     if(!boot_client_.GetTargetInfo(&live,error) || live.state!=f13_boot::DeviceState::Bootloader) {
         if(error->empty()) *error=L"Device is no longer in Boot; update not started.";
@@ -572,11 +599,6 @@ bool WorkerSession::ProcessProgramF13Boot(
     }
     state_.target_metadata=live;
     firmware_update::ImageInfo metadata;
-    const auto required_burst = can_host::BurstFeatureFor(command.can_settings.mode);
-    if ((state_.host_capabilities.feature_flags & required_burst) == 0U) {
-        *error = L"CAN Upgrade requires matching bridge burst support (Classical bit12 / FD bit13). Update the bridge App in Misc first.";
-        return false;
-    }
     if (!firmware_update::ValidateImage(
             firmware_update::Profile::CanUpgrade, command.image,
             &metadata, error) ||
@@ -704,21 +726,14 @@ bool WorkerSession::ProcessProgramF13Boot(
 bool WorkerSession::StopCanAfterAppConfirmation() {
     const bool old=cleanup_in_progress_;
     cleanup_in_progress_=true;
-    std::uint32_t controller_state=0U;
     std::wstring stop_error;
-    const bool stopped=can_client_.Stop(&controller_state,&stop_error);
+    const bool stopped=StopCanController(&stop_error);
     cleanup_in_progress_=old;
     if (!stopped) {
         update_details_+=L"; host_can_stop_error="+stop_error;
         PostLog(L"App update succeeded, but CAN stop was not confirmed: "+stop_error);
         return false;
     }
-    state_.can_started=false;
-    state_.target_validated=false;
-    state_.f13_bootloader_ready=false;
-    state_.target_profile=TargetProfile::None;
-    state_.target_metadata={};
-    state_.target_summary.clear();
     PostLog(L"App confirmed; Host CAN stopped. Host COM remains open. Check the App; Discover Target again for another update.");
     return true;
 }

@@ -126,6 +126,15 @@ bool WorkerSession::OpenAndProbe(const std::wstring& port_name,
     return Submit(Command{CommandType::OpenAndProbe, port_name, baudrate});
 }
 
+bool WorkerSession::LoadImage(const std::wstring& path, bool restored) {
+    if (path.empty()) return false;
+    Command command;
+    command.type = CommandType::LoadImage;
+    command.port_name = path;
+    command.restored_image = restored;
+    return Submit(std::move(command));
+}
+
 bool WorkerSession::ConnectF13Transfer(const CanSettings& settings) {
     Command command;
     command.type = CommandType::ConnectF13Transfer;
@@ -260,6 +269,7 @@ bool WorkerSession::Submit(Command command) {
 }
 
 void WorkerSession::ThreadMain() {
+    std::uint64_t operation_id = 0U;
     for (;;) {
         Command command;
         bool have_command = false;
@@ -292,6 +302,14 @@ void WorkerSession::ThreadMain() {
         const bool uart_update=command.type==CommandType::UartProgram;
         const bool report_update=uart_update || command.type==CommandType::ProgramF13Boot ||
             command.type==CommandType::BridgeProgram || command.type==CommandType::BridgeRun;
+        ++operation_id;
+        if (report_update) {
+            WorkerEvent started;
+            started.kind = WorkerEventKind::UpdateReport;
+            started.report_operation_id = operation_id;
+            started.report_pending = true;
+            QueueEvent(std::move(started));
+        }
         const auto report_started=std::chrono::steady_clock::now();
         const auto report_port=state_.port_name;
         const auto report_baud=state_.baudrate;
@@ -310,7 +328,26 @@ void WorkerSession::ThreadMain() {
         const std::wstring isp_name=command.isp_contract==2U?L"I2C ISP":command.isp_contract==3U?L"XMODEM-CRC128":L"UART ISP";
 
         try {
-            switch (command.type) {
+            if (state_.SerialCleanupUnconfirmed() &&
+                command.type != CommandType::OpenAndProbe &&
+                command.type != CommandType::Disconnect &&
+                command.type != CommandType::LoadImage) {
+                error = L"Device bus cleanup is not confirmed. Close COM, then Open + Probe Host before another bus operation.";
+            } else switch (command.type) {
+                case CommandType::LoadImage: {
+                    PostActivity(L"Load BIN / inspect image");
+                    auto loaded = std::make_shared<image_analysis::Result>();
+                    success = image_analysis::Load(command.port_name, [this]() { return IsCancelRequested(); }, loaded.get(), &error);
+                    loaded->path = command.port_name;
+                    loaded->restored = command.restored_image;
+                    WorkerEvent result;
+                    result.kind = WorkerEventKind::ImageLoaded;
+                    result.success = success;
+                    result.text = error;
+                    result.image_analysis = std::move(loaded);
+                    QueueEvent(std::move(result));
+                    break;
+                }
                 case CommandType::UartDiscover:
                 case CommandType::UartEnter:
                 case CommandType::UartProgram:
@@ -366,7 +403,6 @@ void WorkerSession::ThreadMain() {
                     success = ProcessBridgeAction(command, &error);
                     break;
                 case CommandType::Disconnect:
-                    cancel_requested_ = false;
                     ProcessDisconnect();
                     success = true;
                     break;
@@ -418,6 +454,7 @@ void WorkerSession::ThreadMain() {
                 L"; max dispatcher call ms="+std::to_wstring(after.process_max_ms):L"unavailable";
             PostLog(L"Host high-water / latency: "+peaks);
             WorkerEvent report; report.kind=WorkerEventKind::UpdateReport;
+            report.report_operation_id = operation_id;
             std::wstring phases=L"{";
             for(const auto& phase:update_timings_) {
                 if(phases.size()>1U) phases+=L",";
@@ -493,6 +530,7 @@ void WorkerSession::ThreadMain() {
                 error = L"Worker operation failed.";
             }
             WorkerEvent completion; completion.kind=WorkerEventKind::OperationComplete;
+            completion.report_operation_id = report_update ? operation_id : 0U;
             completion.success=success; completion.text=success?L"Operation completed.":error;
             completion.update_result=success ? update_result_ : feedback::Result::None;
             if (completion.update_result!=feedback::Result::None)
@@ -507,12 +545,7 @@ void WorkerSession::ThreadMain() {
         }
     }
 
-    cancel_requested_ = false;
-    AbortUartBestEffort();
-    StopCanBestEffort();
-    RestoreLinkBaudBestEffort();
-    serial_port_.Close();
-    ResetSessionState();
+    ProcessDisconnect();
 }
 
 bool WorkerSession::ProcessOpenAndProbe(const Command& command,
@@ -653,7 +686,7 @@ bool WorkerSession::ProcessResetHost(std::wstring* error) {
 
 void WorkerSession::ProcessDisconnect() {
     const bool was_busy = state_.busy;
-    cancel_requested_ = false;
+    ScopedFlag cleanup(cleanup_in_progress_);
     AbortI2cBestEffort();
     AbortUartBestEffort();
     StopCanBestEffort();
@@ -673,6 +706,8 @@ void WorkerSession::ProcessDisconnect() {
 void WorkerSession::StopCanBestEffort() {
     if (!state_.host_validated || !serial_port_.IsOpen()) {
         state_.can_started = false;
+        state_.can_stop_unconfirmed = false;
+        state_.active_can_settings_valid = false;
         state_.target_validated = false;
         state_.f13_bootloader_ready = false;
         state_.target_profile = TargetProfile::None;
@@ -682,13 +717,11 @@ void WorkerSession::StopCanBestEffort() {
     }
 
     if (state_.can_started) {
-        std::uint32_t controller_state = 0U;
         std::wstring error;
-        if (!can_client_.Stop(&controller_state, &error)) {
-            PostLog(L"CAN stop warning: " + error);
-        } else {
-            PostLog(L"CAN stopped, controller state " +
-                    Hex32(controller_state) + L".");
+        if (!StopCanController(&error)) {
+            PostLog(L"CAN stop not confirmed; controller may still be active. Close COM, then explicitly Open + Probe Host before changing buses. " + error);
+            RefreshHostStatsBestEffort();
+            return;
         }
     }
     RefreshHostStatsBestEffort();
@@ -698,6 +731,26 @@ void WorkerSession::StopCanBestEffort() {
     state_.target_profile = TargetProfile::None;
     state_.target_metadata = {};
     state_.target_summary.clear();
+}
+
+bool WorkerSession::StopCanController(std::wstring* error) {
+    std::uint32_t controller_state = 0U;
+    if (!can_client_.Stop(&controller_state, error)) {
+        // A missing/invalid ACK does not establish the hardware controller state.
+        state_.can_started = true;
+        state_.can_stop_unconfirmed = true;
+        return false;
+    }
+    state_.can_started = false;
+    state_.can_stop_unconfirmed = false;
+    state_.active_can_settings_valid = false;
+    state_.target_validated = false;
+    state_.f13_bootloader_ready = false;
+    state_.target_profile = TargetProfile::None;
+    state_.target_metadata = {};
+    state_.target_summary.clear();
+    PostLog(L"CAN stopped, controller state " + Hex32(controller_state) + L".");
+    return true;
 }
 
 void WorkerSession::RefreshHostStatsBestEffort() {
@@ -812,7 +865,7 @@ void WorkerSession::ResetSessionState() {
 }
 
 bool WorkerSession::IsCancelRequested() const {
-    return cancel_requested_.load() && !cleanup_in_progress_;
+    return (cancel_requested_.load() || stopping_.load()) && !cleanup_in_progress_;
 }
 
 void WorkerSession::PostLog(const std::wstring& text) {
@@ -963,6 +1016,7 @@ void WorkerSession::PostActivity(const std::wstring& text) {
 const wchar_t* WorkerSession::CommandName(CommandType type) {
     switch(type) {
     case CommandType::OpenAndProbe: return L"Open + Probe Host";
+    case CommandType::LoadImage: return L"Load BIN";
     case CommandType::ApplyCanSettings: return L"Configure CAN";
     case CommandType::ConnectF13Transfer: return L"Discover transfer target";
     case CommandType::RunF13TransferTest: return L"Custom Transfer";

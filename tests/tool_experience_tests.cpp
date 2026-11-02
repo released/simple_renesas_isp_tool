@@ -39,6 +39,11 @@ int TestToolExperience() {
             "report failure has an explicit error and cannot overwrite the existing JSON");
     }
     check(guidance::Explain(L"Host Link response timeout after retries.").layer==L"PC / Host Link","link timeout guidance");
+    for (const auto status : {L"I2C_NACK", L"I2C_ARBITRATION_LOST", L"I2C_BUS_ERROR", L"TIMEOUT"}) {
+        const auto advice = guidance::Explain(std::wstring(L"Metadata stage: Host returned ") + status + L" for command 0x41.");
+        check(advice.layer == L"Host / I2C device" && advice.next.find(L"7-bit address") != std::wstring::npos,
+            "returned I2C bus status takes priority over Host Link and metadata stage text");
+    }
     check(guidance::Explain(L"CAN transaction timeout.").layer==L"Host / device bus","CAN timeout guidance");
     const auto can_timeout=guidance::Explain(L"Host returned TIMEOUT for command 0x21.");
     check(can_timeout.layer==L"Host / device bus" && can_timeout.next.find(L"not a PC serial-response timeout")!=std::wstring::npos,

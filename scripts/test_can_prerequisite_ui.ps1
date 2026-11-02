@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory=$true)][string]$FdImage,
     [string]$UartImage='',
     [string]$I2cImage='',
-    [string]$XmodemImage=''
+    [string]$XmodemImage='',
+    [switch]$CapturePreview
 )
 $ErrorActionPreference='Stop'
 $tool=Split-Path -Parent $PSScriptRoot
@@ -19,8 +20,9 @@ $objects=Join-Path $tool ('tmp\internal\build\obj\x64\'+$Configuration)
 $inputs=@(Get-ChildItem -LiteralPath $objects -Filter '*.obj' | Where-Object {$_.Name -notin @('app.obj','main.obj')} | ForEach-Object {$_.FullName})
 if($inputs.Count -lt 30){throw 'Build the requested product configuration first.'}
 $resources=@(Get-ChildItem -LiteralPath $objects -Filter '*.res' | ForEach-Object {$_.FullName})
-$output=Join-Path $tool ('tmp\internal\tests\can_prerequisite_'+$Configuration+'_'+[guid]::NewGuid().ToString('N').Substring(0,8))
-New-Item -ItemType Directory -Path $output | Out-Null
+. (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
+$scope=New-OwnedTestWorkspace 'can_prerequisite' -ShortPath
+$output=$scope.Path
 $runtime=if($Configuration -eq 'Debug'){@('/MTd','/D_DEBUG')}else{@('/MT','/DNDEBUG')}
 $linkOptions=if($Configuration -eq 'Debug'){@('/DEBUG','/INCREMENTAL','/OPT:NOICF')}else{@('/LTCG')}
 Push-Location -LiteralPath $output
@@ -33,5 +35,21 @@ try{
     if($LASTEXITCODE -ne 0){throw 'MFC prerequisite fixture build failed.'}
     & .\prerequisite_fixture.exe $ClassicalImage $FdImage $UartImage $I2cImage $XmodemImage
     if($LASTEXITCODE -ne 0){throw 'MFC prerequisite fixture failed.'}
-}finally{Pop-Location}
-Write-Host ('Fixture retained: '+$output)
+}finally{
+    Pop-Location
+    try { if($CapturePreview) {
+        $evidence=Join-Path $tool 'tmp\internal\verification'
+        if((Test-Path -LiteralPath $evidence) -and
+            ((Get-Item -LiteralPath $evidence -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw 'Preview evidence reparse directory refused.'
+        }
+        [void][IO.Directory]::CreateDirectory($evidence)
+        foreach($name in @('loaded_bin_valid.png','loaded_bin_wrong_route.png','serial_provenance_fixture.png')) {
+            $capture=Join-Path $scope.Path $name
+            if(Test-Path -LiteralPath $capture) {
+                Copy-Item -LiteralPath $capture -Destination (Join-Path $evidence ($Configuration+'_'+$name))
+            }
+        }
+    } } finally { Remove-OwnedTestWorkspace $scope }
+}
+Write-Host ('Owned UI fixture retired: '+$output)

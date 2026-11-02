@@ -19,6 +19,11 @@ bool WorkerSession::RefreshBridgePorts(std::wstring* error) {
 bool WorkerSession::PrepareCanPort(const CanSettings& settings,
                                    std::wstring* error) {
     AbortUartBestEffort();
+    AbortI2cBestEffort();
+    if (state_.SerialCleanupUnconfirmed()) {
+        *error = L"Device bus cleanup is not confirmed. Close COM, then Open + Probe Host.";
+        return false;
+    }
     const auto found = std::find_if(state_.can_ports.begin(), state_.can_ports.end(),
         [&settings](const bridge::Port& p) { return p.id == settings.port; });
     if (!bridge::CanPortSupports(state_.host_capabilities,state_.can_ports,settings.port,
@@ -39,17 +44,36 @@ bool WorkerSession::ProbeI2c(const i2c_host::Configuration& configuration,
     command.i2c_address = address;
     return Submit(std::move(command));
 }
+void WorkerSession::RecordBusCleanup(bool uart, bool acknowledged, const std::wstring& error) {
+    if (!acknowledged) {
+        if (uart) {
+            state_.uart_cleanup_unconfirmed = true;
+        } else {
+            state_.i2c_cleanup_unconfirmed = true;
+        }
+        PostLog(std::wstring(uart ? L"Device UART" : L"I2C") +
+            L" cleanup not confirmed; Close COM, then Open + Probe Host. " + error);
+        update_details_ += (update_details_.empty() ? L"" : L"\n") +
+            std::wstring(uart ? L"UART" : L"I2C") + L" cleanup not confirmed: " + error;
+    }
+    // A late cleanup ACK cannot silently unlock an uncertain session.
+    // Only a new explicitly verified Open/Probe creates a clean session.
+    if (uart) {
+        uart_client_.Reset();
+        state_.uart_valid = false;
+    } else {
+        i2c_client_.Reset();
+    }
+}
 void WorkerSession::AbortI2cBestEffort() {
     if(state_.isp_contract==2U)state_.uart_valid=false;
     if (!state_.host_validated || !serial_port_.IsOpen() ||
         (state_.host_capabilities.feature_flags & bridge::kFeatureI2c) == 0U)
         return;
-    const bool was_cleanup = cleanup_in_progress_;
-    cleanup_in_progress_ = true;
+    ScopedFlag cleanup(cleanup_in_progress_);
     std::wstring error;
-    if (!i2c_client_.Abort(&error)) PostLog(L"I2C abort warning: " + error);
-    cleanup_in_progress_ = was_cleanup;
-    i2c_client_.Reset();
+    const bool acknowledged = i2c_client_.Abort(&error);
+    RecordBusCleanup(false, acknowledged, error);
 }
 bool WorkerSession::ProcessProbeI2c(const Command& command, std::wstring* error) {
     AbortUartBestEffort();
@@ -63,6 +87,10 @@ bool WorkerSession::ProcessProbeI2c(const Command& command, std::wstring* error)
         return false;
     }
     AbortI2cBestEffort();
+    if (state_.SerialCleanupUnconfirmed()) {
+        *error = L"Device bus cleanup is not confirmed. Close COM, then Open + Probe Host.";
+        return false;
+    }
     PostLog(L"I2C reference probe: explicitly selected address, no address scan, "
             L"no authentication/erase/write/app jump commands.");
     if (!i2c_client_.Configure(command.i2c_configuration, state_.i2c_ports, error) ||

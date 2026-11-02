@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -40,9 +41,125 @@ void DispatchPending() {
         DispatchMessageW(&message);
     }
 }
+class ReviewedCanTransport : public firmware_upgrade::host_link::Transport {
+public:
+    bool fail_stop = true;
+    bool malformed_stop = false;
+    std::vector<std::uint8_t> reply;
+    bool IsOpen() const override { return true; }
+    bool WriteAll(const std::uint8_t* bytes, std::size_t count, std::uint32_t, std::wstring*) override {
+        using namespace firmware_upgrade::host_link;
+        Frame request, response;
+        if (DecodeFrame(bytes, count, &request) != DecodeResult::Ok) return false;
+        response.type = FrameType::Response; response.sequence = request.sequence;
+        response.command = request.command;
+        if (request.command == static_cast<std::uint8_t>(Command::GetHostInfo)) {
+            response.payload = {1U,1U,1U,7U,0U,2U,2U,0U,1U,0U,0U,0U,2U,0x20U,0U,0U};
+        } else if (request.command == static_cast<std::uint8_t>(Command::GetCapabilities)) {
+            response.payload.assign(24U, 0U);
+            response.payload[0] = 2U; response.payload[1] = 0x20U;
+            response.payload[4] = 128U; response.payload[6] = 64U;
+            response.payload[7] = 1U; response.payload[10] = 1U;
+            response.payload[12] = 0x16U; response.payload[16] = 2U;
+        } else if (request.command == static_cast<std::uint8_t>(Command::CanStop)) {
+            response.status = fail_stop ? Status::Timeout : Status::Ok;
+            if (!fail_stop) response.payload.assign(malformed_stop ? 3U : 4U, 0U);
+        } else return false;
+        return EncodeFrame(response, &reply);
+    }
+    bool ReadSome(std::vector<std::uint8_t>* out, std::size_t, std::uint32_t, std::wstring* error) override {
+        if (reply.empty()) { if (error) *error = L"Read timeout."; return false; }
+        *out = std::move(reply); reply.clear(); return true;
+    }
+};
 }
 
 struct WorkerResponsivenessFixture {
+static void ReviewWorker(const std::function<void(bool,const char*)>& check, CMainFrame* frame) {
+    using namespace firmware_upgrade;
+    ReviewedCanTransport wire;
+    ui::WorkerSession session;
+    session.host_link_client_.SetTransport(&wire);
+    std::wstring error;
+    check(session.host_link_client_.Probe(0U, nullptr, nullptr, &error), "mock host identified without COM");
+    session.state_.can_started = true;
+    session.state_.active_can_settings_valid = true;
+    session.state_.active_can_settings.mode = can_host::Mode::CanFd;
+    check(!session.StopCanController(&error) && session.state_.can_started && session.state_.can_stop_unconfirmed &&
+        session.state_.active_can_settings_valid, "returned failed STOP retains active/unknown state and session settings");
+    frame->session_state_ = session.state_;
+    frame->session_state_.serial_open = true; frame->session_state_.host_validated = true;
+    frame->UpdateUi();
+    CString guidance; frame->firmware_prerequisites_label_.GetWindowTextW(guidance);
+    check(!frame->start_firmware_update_btn_.IsWindowEnabled() && !frame->enter_bootloader_btn_.IsWindowEnabled() &&
+        !frame->bus_tabs_.IsWindowEnabled() && guidance.Find(L"CAN stop is not confirmed") >= 0,
+        "uncertain STOP blocks update/ENTER/bus switching with an actionable UI hint");
+    wire.fail_stop = false;
+    wire.malformed_stop = true;
+    check(!session.StopCanController(&error) && session.state_.can_started && session.state_.can_stop_unconfirmed,
+        "malformed STOP ACK cannot release the controller state");
+    wire.malformed_stop = false;
+    check(session.StopCanController(&error) && !session.state_.can_started && !session.state_.can_stop_unconfirmed &&
+        !session.state_.active_can_settings_valid, "acknowledged STOP releases session state");
+    session.state_.active_can_settings_valid = true;
+    for (const auto mode : {can_host::Mode::Classical, can_host::Mode::CanFd}) {
+        session.state_.active_can_settings.mode = mode;
+        for (unsigned bits = 0; bits < 4U; ++bits) {
+            session.state_.host_capabilities.feature_flags = ((bits & 1U) ? host_link::kCanBurstFeature : 0U) |
+                ((bits & 2U) ? host_link::kCanFdBurstFeature : 0U);
+            const bool expected = (bits & (mode == can_host::Mode::CanFd ? 2U : 1U)) != 0;
+            check(session.ValidateCanUpdateSession(&error) == expected, "actual worker uses active Classical/FD mode for all capability combinations");
+        }
+    }
+    session.state_.can_stop_unconfirmed = true;
+    check(!session.ValidateCanUpdateSession(&error), "unknown CAN state cannot authorize an update");
+    frame->session_state_ = {}; frame->worker_command_pending_ = false;
+    frame->worker_started_ = frame->worker_session_.Start(frame->GetSafeHwnd(), WM_APP + 1U);
+    check(frame->worker_started_, "actual image worker restarted without opening COM");
+    const auto file = std::filesystem::current_path() / L"ui_large.bin";
+    {
+        std::ofstream output(file, std::ios::binary);
+        const std::string block(65536U, static_cast<char>(0xFF));
+        for (unsigned i = 0; i < 256U; ++i) output.write(block.data(), block.size());
+    }
+    heartbeats = paints = 0U; maximum_heartbeat_ms = maximum_paint_ms = last_heartbeat = 0U;
+    SetWindowSubclass(frame->GetSafeHwnd(), ObservePaint, 1U, 0U);
+    SetTimer(frame->GetSafeHwnd(), 80U, 20U, Heartbeat);
+    const auto started = GetTickCount64();
+    check(frame->LoadBinaryFromPath(file.wstring(), false), "UI queues a bounded background image load");
+    const auto queued_ms = GetTickCount64() - started;
+    unsigned repaints = 0U;
+    while (frame->image_loading_ && GetTickCount64() - started < 10000U) {
+        if (GetTickCount64() - started > repaints * 30U) {
+            frame->Invalidate(FALSE); ++repaints;
+        }
+        DispatchPending(); Sleep(1U);
+    }
+    check(!frame->image_loading_ && frame->binary_data_.size() == image_analysis::kMaximumFileBytes &&
+        !frame->binary_image_valid_ && frame->progress_bar_.GetPos() == 100,
+        "exact inspected bytes delivered; invalid image does not grant update permission");
+    check(queued_ms < 500U && heartbeats >= 2U && paints >= 2U && maximum_heartbeat_ms < 500U,
+        "actual UI paints and handles timers during maximum-size background analysis");
+    std::cout << "BIN UI: queue_ms=" << queued_ms << ", elapsed_ms=" << GetTickCount64() - started
+        << ", heartbeats=" << heartbeats << ", paints=" << paints << ", max_heartbeat_ms=" << maximum_heartbeat_ms << '\n';
+    Sleep(10U);
+    std::atomic<bool> canceled{false};
+    std::thread cancel([&] {
+        for (unsigned i=0U; i<100U && !canceled; ++i) {
+            Sleep(5U);
+            canceled = frame->worker_session_.RequestCancel();
+        }
+    });
+    check(frame->LoadBinaryFromPath(file.wstring(), false), "next image operation accepted");
+    cancel.join();
+    const auto cancel_started = GetTickCount64();
+    while (frame->image_loading_ && GetTickCount64() - cancel_started < 5000U) { DispatchPending(); Sleep(1U); }
+    check(canceled && !frame->image_loading_ && frame->binary_data_.empty() && !frame->binary_image_valid_,
+        "cancel discards pending BIN and cannot restore previous update permission");
+    KillTimer(frame->GetSafeHwnd(), 80U);
+    RemoveWindowSubclass(frame->GetSafeHwnd(), ObservePaint, 1U);
+    frame->worker_session_.StopAndJoin();
+}
 static int Run(int argc,wchar_t** argv) {
     using namespace firmware_upgrade::ui;
     int failures=0;
@@ -149,6 +266,7 @@ static int Run(int argc,wchar_t** argv) {
     check(frame->progress_indeterminate_,"restart animation remains active after transfer");
     std::cout<<"UI stress: history_chars="<<history.size()<<", recorded_lines=1200, heartbeats="<<heartbeats
         <<", max_heartbeat_ms="<<maximum_heartbeat_ms<<", paints="<<paints<<", max_paint_ms="<<maximum_paint_ms<<'\n';
+    ReviewWorker(check, frame);
     if(argc>1 && failures==0) {
         const unsigned seconds=static_cast<unsigned>(_wtoi(argv[1]));
         const auto until=GetTickCount64()+static_cast<ULONGLONG>(seconds)*1000U;

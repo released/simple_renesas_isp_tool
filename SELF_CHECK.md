@@ -1,5 +1,298 @@
 # Host Link v2 Self-Check
 
+## CAN16 publication preparation / private version ledger (2026-11-02)
+
+- PASS56 isolated16-repo publication checks:remote SHA/exact keepers,source/
+  dependency/EXE drift,partial RH850 refusal,serial guards,receipt reuse and
+  withheld add/delete history. Only local bare remotes were used.
+- PASS16 first-time initialization checks plus duplicate refusal:read-only
+  plan,missing last delivery/nonempty last remote before first Git write,
+  six empty initial commits/untouched remotes and idempotent repeat.
+- PASS5 guide-reader checks after setting the existing local F13 path;the first
+  harness run lacked it. PASS4-site dry run,531routes,canonical sync/check;
+  actual private browser downloads desktop/narrow/TOC.
+- PASS existing PDF16pages/4diagrams/63links,bounds/contacts/changedpage2 visuals.
+- PASS20 archived/current core-token comparisons,4old/current BIN pairs full
+  CRC/trailer/SHA256/manifest,and actual None->C99 compiler option.
+- User declares15current CAN projects board-validated;historical failed report26
+  stays unchanged. No new raw hardware evidence is inferred from local tests.
+- NOT RUN real GitHub creation/push/project initialization,new MCU/Tool builds,
+  programmer/COM/board action. Fixtures retired;concise evidence lives in
+  tmp/internal/verification/can_scope_20261102_09eef304.
+
+- Final PASS15 protected inputs/20 core source hashes,formal Tool EXE versus
+  prior audit,six real RH850 Git roots unchanged;safe clean0files and fresh
+  clean-script audit10scripts. Test fixture/compiler payloads retired.
+- Cleanup exception:automatic approval review rejects deletion of4reviewed
+  PNGs/1131880B ("blocked by policy");retained exact hashes in retention.json,
+  no retry or compiled test payload retained. Earlier cleanup exception untouched.
+
+## RH850 Classical CAN physical evidence audit (2026-11-02)
+
+- PASS4Logs/5JSON-HTML pairs;CAN1 Transfer22pairs/44CRC8,IDs710/711,seq83..104,
+  all tests/stats,Host0->22RX/TX and recorded errors0.
+- PASS5updates:35768B/64/192/448/960KiB,JSON/HTML/phases/session/23live
+  fields match,END CRC/App/STOP,zero retries/error deltas. Current BIN CRC32
+  and five UART launches/END-vector checks/timer samples22/13/16/16/16 agree.
+- PASS5guide tests:mode-separated conditions,equal-capacity provenance,
+  source hashes,all256metadata bytes and check-only preservation/unselected
+  live report exclusion. Interim source-sync drift corrected before final run.
+- PASS5import checks:cached selected,traversal,missing,unselected-valid dryrun,
+  wrong-MCU owned fixture;explicit five-name read-only sync. Runtime F24 source
+  was absent,so the negative check uses a fixture rather than reconstructing it.
+- PASS853refs,9chapter/75topic parity/531JS routes;actual Chromium timing and
+  trusted report summary,desktop/narrow/TOC/deep-link/peer navigation. New3-page
+  timing PDF,bounds/text/14links/all-page contact and full first-page visual.
+- PASS20protected inputs;concurrent live INI preserved. Old FD summaries,
+  metadata snapshot,RL78 data and existing RH850 PDFs unchanged. Owned scratch
+  removed,no compiled test binary generated;four representative views retained.
+  Agent board/programmer actions,MCU/Tool builds,stress/power-loss tests,push NOT RUN.
+
+## F24 CAN FD physical evidence audit (2026-11-02)
+
+- PASS4Logs/6JSON-HTML pairs;25Transfer pairs/50CRC8 frames,seq45..69,
+  FD+BRS/DLC8 or15;three full59-byte FD64 echoes match all input patterns.
+- PASS7actual IRQ snapshots including periodic receive16;lastentries/queued/
+  dequeued25each,peak1,depth/drop/APIerror/overwrite0,RMIEC1/mask0/pending0.
+  This is normal Transfer IRQ evidence,not queue saturation/stress coverage.
+- PASS6updates:4780B/8/24/56/120/247KiB,23live fields/FDmode/data-mask,
+  END CRC/App confirmation/STOP,zero retries and Host error deltas.
+- PASS6App UART launches/14/16/14/23/13/11consecutive timer samples;
+  six current BIN lengths/trailers/fullCRC32 match reports. Initial auditor
+  mode/snapshot assumptions were corrected from production code/actual logs.
+- PASS six source/Web data rows/rounding;F13/F24Classical sections and cells
+  unchanged;848references/guide parity;actual Chromium desktop/narrow/TOC/
+  timing anchor/peer navigation;30-page PDF/6diagrams,text/bounds/links and
+  affected pages27/29/30 visually reviewed.
+- PASS24protected Log/report/BIN/EXE/INI hashes;owned scratch and eight redundant
+  PNGs retired,three representative views retained. No compiled test binary
+  generated;prior cleanup exception untouched. Evidence:f24_fd_revalidation_20261102.
+  New hardware actions/builds/fault/power-loss/stress tests/publication NOT RUN.
+
+## F24 Classical CAN physical evidence audit (2026-11-02)
+
+- PASS4Logs/6JSON-HTML pairs;22Transfer exchanges/44independent CRC8 checks,
+  seq23..44/IDs710-711/DLC/commands/statistics and Host0->22 RX/TX agree.
+- PASS6updates:4252B/8/24/56/120/247KiB,END CRC/App confirmation/23live
+  metadata fields/STOP all pass;zero retries and Host error deltas.
+- PASS6App UART boot-validated launches and28/10/11/13/12/6consecutive
+  timer samples;current sixBIN lengths/CRC32 trailers agree with reports.
+- Pre-reset HostTXfailure/warning/passive1each;explicit reset clears them
+  before the six measured updates. No originating failure/cause is captured.
+- PASS six source/Web data rows/rounding;F13/FD sections and comparison cells
+  unchanged;848references/guide parity;actual browser desktop/narrow/TOC/
+  timing anchor/peer navigation;30-page PDF/6diagrams,text/bounds/links and
+  affected timing/source pages visually reviewed.
+- PASS23protected Logs/reports/BINs/formal EXE hashes. Live Tool INI changed
+  concurrently and was preserved,not restored or written by agent. Owned
+  scratch and seven redundant PNGs retired;no compiled test binary generated.
+  Evidence:f24_classic_revalidation_20261102. Prior cleanup exception untouched.
+  Agent hardware/programmer actions,builds,fault/power-loss tests,push NOT RUN.
+
+## F13 physical evidence audit (2026-11-02 evening)
+
+- PASS4user Logs/4JSON-HTML pairs:22Transfer pairs/44independently recomputed
+  CRC8 frames;correct710/711,seq/command/DLC and test/statistics results.
+- PASS4updates:original20320B/24/56/119KiB;JSON/HTML/Log agree,23live image
+  fields match each,END CRC/App confirmation/STOP PASS,zero retries and
+  error deltas. Historical HostTXfailure/warning/passive3each did not increase.
+- PASS4App UART clock/CAN OK launches,63/18/18/10consecutive timer samples;
+  current4BIN extents/trailers/fullCRC32 agree with the reports.
+- PASS canonical/Web four rows agree;F24 section hash unchanged.848references,
+  guide parity/layout;actual browser timing deep link,desktop/narrow/TOC/peer
+  navigation;30-page PDF/6diagrams,bounds/text/links and timing/source visuals.
+- PASS18protected Log/report/BIN/EXE/INI hashes;owned scratch removed and
+  redundant task PNGs retired. No native EXE/BIN generated. Prior cleanup
+  exception was not retried. Concise evidence:f13_revalidation_20261102.
+  New hardware actions/builds/fault or power-loss tests/publication NOT RUN;
+  acceptance is limited to the user's supplied single-run physical evidence.
+
+## F13 CAN Transfer filter (2026-11-02)
+
+- PASS actual old map/MOT evidence showed two Boot rules700/720..727;the new
+  guard rejects that stale image. Corrected target rebuild links one710/7FF
+  standard-data RX FIFO0 rule at226E,validated from actual MOT,not console text.
+- PASS target build0errors/2existing W0561017 license warnings;MTPJ pre/post
+  guards execute.9 positive/negative map/MOT/config cases pass. Local HAL/source
+  binding verification passes without a sibling dependency. No PC/host changes.
+- PASS user evidence:20261102_162846.log has22RX/22TX and no CRC failure;user
+  explicitly confirms Standalone works after checking wiring. E2-only failure
+  was investigated but not attributed to a proven clock/rail defect. Startup,
+  clocks,rates and protocol remain unchanged. Agent hardware actions NOT RUN.
+- PASS canonical Transfer Web projection,848 local references/route checks,
+  actual browser desktop/narrow/TOC;16-page MultiBus PDF/4diagrams,bounds/visual.
+- PASS TST-01:owned127257-byte fixture removed;22 actual linked.obj/generated
+  .lib inputs absent after retirement;formal ABS/MOT/map retained. Receipt
+  aggregation error after deletion was recovered with absent-path checks;
+  pre-delete per-file hashes were not saved and no total byte size is claimed.
+  Corrected private cleanup recipe was not rerun over already removed files.
+- PASS164 protected files unchanged;two user-regenerated Boot/App QualityReports
+  and current user-edited Transfer mtud preserved. Prior nine-file cleanup
+  exception unchanged,not retried.
+  Unrelated full suites,stress/power-loss tests and publication NOT RUN.
+
+## Offline BIN progress / COM investigation (2026-11-02 afternoon)
+
+- PASS Debug/Release builds and54 frame/flow assertions each:real worker image
+  restore/manual load/missing-file completion;idle0percent/caption/marquee,
+  retained image results,no COM open,no false update result;UI cancellation
+  terminal and preserved real update100percent. Existing Misc mode checks
+  remain in the same fixture. Physical cancellation is not established.
+- PASS existing serial catalog numeric/name/PnP tests and read-only production
+  enumeration:0 ports in the automation environment. User reports Device
+  Manager has a COM;its number is pending. OS/Tool cause remains unconfirmed.
+  computer-use native pipe unavailable prevents actual desktop verification.
+- PASS9 completion and3 settings source guards;848 Web references,operation
+  projection CheckOnly and browser desktop/narrow/TOC for operation/status.
+  Affected Shared Console PDF:27 pages/4 diagrams,bounds and visual checks.
+- PASS TST-01:latest two native runs retired134777476bytes;PDF/browser scratch
+  removed;final safe clean131 files/225327203bytes.179 original settings/C/H
+  hashes and formal0114 EXE preserved. Reuse unchanged clean/finalizer audit.
+  Prior9-file25889482-byte cleanup rejection is unchanged,not retried.
+- NOT RUN physical COM enumeration/cable/driver verification,new board update,
+  full unrelated suites or publication. Do not infer user USB absence from the
+  automation environment's empty API results.
+
+## Misc Host mode guidance (2026-11-02)
+
+- PASS new Debug/Release builds;42 actual MFC assertions each,using compiled
+  frame/controls and modal Preflight. Live-state fixtures plus real BUR1 image
+  inspection cover first-install Boot/no App,no BIN,existing App in Boot,
+  running App,confirmed write awaiting RUN,busy,invalid/stale mode,mismatch
+  and FLASH_READY. No COM/Flash calls. Actual normal/125-percent note text fits.
+- PASS9 existing completion tests. No unrelated full-suite rerun.
+- PASS expected invalid-argument fixture failure:runner rejects the result,
+  retires its private test/product outputs and leaves the formal EXE alone.
+  Physical user cancellation/power-loss tests NOT RUN.
+- PASS three canonical operation blocks/16 unchanged screenshots CheckOnly;
+ 848 local resource references,public-content/route/chapter checks;actual
+  Chromium Host page has2 diagrams/5 tables,no console errors,broken anchors,
+  duplicate IDs or narrow page overflow. Public screenshots remain historical
+  APP-to-BOOT illustrations,not new UI/hardware evidence.
+- PASS affected27-page Shared Console Bridge PDF:4 rendered diagrams,mode/next
+  action table,nonblank pages,text bounds and contact-sheet visual review.
+- PASS TST-01 latest three native runs:136607156 disposable bytes retired;
+  private PDF/browser workspaces removed. Final safe clean:131 compiler files,
+ 221881789bytes removed. Formal0.1.0.0113 EXE/settings/firmware preserved;
+ 192 original files match initial hashes. Git index stat cache refreshed on
+  status;current staged diff empty,no staging/commit/publication command.
+- Existing9-file25889482-byte cleanup rejection is unchanged,not retried.
+  Reuse prior clean-helper audit because the clean implementation is unchanged.
+- NOT RUN physical Host first-install/daily-update/new UI acceptance. User's
+  pasted Tool0112 Log is prior successful write/RUN evidence;named Nov2 local
+  report files are absent. No new board acceptance is inferred from UI models.
+
+## Review follow-up N1-N7 (2026-11-01)
+
+- PASS52 actual compiled worker/MFC checks in each Debug/Release configuration:
+  real PreCreate/OnCreate failure deletion, scoped cleanup/exception/shutdown,
+  deterministic queued-cancel and unknown-reservation dispatch gates, actual
+  Host Link UART/I2C ABORT status/length parsing, four-tab UI recovery gates,
+  current/previous report state and deferred activation/owned-popup preservation.
+- PASS2912 native image/report checks against eight current independent App BINs:
+  RL78 F13/F24 Classical,F24 FD,RH850 Classical/FD and representative UART/I2C/
+  Xmodem;CRC-correct invalid vectors,out-of-range destinations,capacity padding,
+  unknown CAN ABI policy and actual RunUpdate rejecting before any client call.
+  Existing CAN profile/image/client/update fault tests also pass selectively.
+- PASS19 private-process startup assertions:simultaneous owners,renamed copies,
+  bounded readiness and abandoned-mutex recovery. Actual product Debug/Release
+  copied launches preserve/restore the owner,exit secondaries without INI,and
+  close gracefully. Cross-elevation/session and physical keyboard focus NOT RUN.
+- PASS existing Release MFC prerequisite/frame/font states with five real images;
+  restarted progress and saved report preservation use the new report model.
+- PASS three migrated runner success paths:restart8368checks;Bridge UART plus
+  its bundled I2C/catalog/G16/backend regressions;F13 UART and F24 I2C actual
+  C-engine/client models. Six injected failure/cancellation-exception paths
+  remove owned synthetic BINs. These are not physical Ctrl+C/board tests.
+- PASS17 selected completion/settings/reader tests;Web projection CheckOnly,
+  848 local references,27 chapter/530 route and paired-topic checks. Actual
+  Chromium report page desktop/narrow/anchor/TOC:2 diagrams,28tables.
+- PASS regenerated UPDATE_VALIDATION PDF20pages:bounds/glyph/private-path checks,
+  Poppler all-page contacts and full pages7/15 visually reviewed.
+- PASS Debug/Release x64 builds;formal Tool0.1.0.0112. No MCU rebuild,wire/Flash
+  contract changes,COM/programmer action or real Git commit/push.
+- Reused unchanged report-store/serial Win32 API model and UI stress evidence
+  from20261031;not rerun or claimed as physical acceptance here.
+- Earlier fixture failures:stale build inputs,missing mock capability field,
+  legacy hal path/private field and test-state setup were corrected. Concurrent
+  foreground/modal fixtures were retired by exact owned PID/path;activation is
+  now deferred and desktop checks run serially. Final checks are separate.
+- Evidence:tmp/internal/verification/review_followup_20261101 and the focused
+  review_followup/native_runner_retention receipts. Final cleanup follows.
+
+- Final safe-clean PASS:fixture/idempotence/junction rejection and actual clean;
+  132 allowlisted intermediates retired,233 protected build hashes unchanged.
+  All209 pre-task firmware/settings/reports/log/index hashes remain unchanged.
+- Retirement exception:automatic approval review rejected the separate9-file
+  EXE/startup-fixture retirement command with only "blocked by policy". It did
+  not execute and was not retried. Retain25889482bytes at the exact paths in
+  review_followup_20261101/retirement_manifest.json;the formal EXE is excluded.
+  Other fresh native/UI/browser/PDF runner payloads were removed in finally.
+  This exception remains pending;do not claim all rebuildable outputs removed.
+- Formal delivery SHA/size,source recovery and concise receipts are in
+  review_followup_20261101/preservation_and_retention.json. No active owned
+  native/UI/product test process remains. Keep current source recovery and
+  representative rendering evidence until this change is accepted.
+- Size receipt:2795963663 ordinary-file bytes including hidden/Git data;
+  15 existing reparse directories were excluded from traversal. The existing
+  integrated-project retention profile remains;no unrelated data was purged.
+
+## TST-01 test binary retirement (2026-10-31)
+
+- PASS read-only producer/PE/COFF review and complete exact-path/hash/reparse/
+  active-process preflight before removing436 generated test outputs.
+- PASS89 EXEs/345 OBJ/two A-B IRQ test BINs removed:181239919bytes;zero reviewed
+  outputs remain. Both canonical test configurations and isolated GUI copies
+  were checked. No recursive directory deletion or user-process termination.
+- PASS825 protected hashes:formal Tool EXE,source,actual firmware,INI,logs,
+  screenshots and real Git index unchanged. Existing recovery/dependency/user
+  files are retained;normal clean preserves EXEs as before and is not expanded.
+- Scope/receipts:tmp/internal/verification/test_binary_retirement_20261031.
+  The historical prerequisite manifest had0/122 files present before this task;
+  no retry of its earlier rejected Apply occurred.
+- NOT RUN builds,application tests,COM/board or publication:cleanup/docs only.
+  Previous application acceptance and safe-clean audit evidence are reused.
+
+## Tool reliability review (2026-10-31)
+
+- PASS R1/R2/R3/R7/R8 native core:73 cases;UTF-8/invalid UTF-16,exclusive names,
+  short write/flush/close failures,missing/empty/oversize/canceled input,
+  16MiB boundary,shared-contract mutation matrix,cached/fresh CRC separation.
+  Real SerialPort Win32 API model passed4806 exchanges with adverse inherited
+  DCB flags. No serial port/device was opened.
+- PASS R5/R6 actual compiled worker:returned and malformed STOP failures retain
+  unknown active state;valid ACK releases it. All8 Classical/FD feature-mask
+  combinations use active settings. Actual UI blocks unsafe operations.
+- PASS actual MFC long-history event pump,all1200 accepted file log lines,
+  follow/pause/selection,color and cancellation. Queue15ms/16MiB,total828ms,
+  21 heartbeats/24 paints,max heartbeat203ms;trace max79ms/paint16ms.
+  Restart scheduling8368 cases passed. Earlier failing runs drove the bounded
+  layout/footer/INI corrections;the final acceptance run is separate evidence.
+- PASS Release/Debug x64 builds and actual prerequisite/font-state fixtures
+  with five real image contracts;fresh portable INI startup and graceful close
+  in owned copies. Delivery EXE is0.1.0.0111. Product startup checks do not
+  establish adapter latency or physical update success.
+- PASS17 focused source/document tests;canonical UPDATE_EVIDENCE CheckOnly,
+  27 web chapters/530 legacy routes/51 public sources,actual Chromium desktop/
+  narrow/TOC/anchors/tables/two Mermaid diagrams. Existing PDF20 pages rendered,
+  bounds/glyph/private-path checks and all contact sheets visually reviewed.
+- PASS39 default ten-repository publication checks,20 CAN-only gate checks and
+  3 lower-level boundary checks against owned local bare remotes only. Tests
+  cover changed/missing withheld dependencies,snapshot binding,source/EXE/docs,
+  acceptance drift,keeper pruning,idempotent repeat and withheld add/delete
+  history refusal. Real-worktree plan-only passed without commit/push/index
+  changes. Earlier120/300-second fixture bounds expired under concurrent builds;
+  the final600-second per-child harness passed. Device timeouts did not change.
+- PASS final safe-clean fixture/idempotence/junction rejection and actual clean:
+  132 allowlisted intermediates removed;242 protected build files unchanged.
+  Original INI/reports/logs and Git index hashes remain unchanged;only the
+  delivery EXE intentionally changed. Fresh owned fixture trees were retired.
+  Reviewed PNG copies retired2775267bytes;retained concise evidence/recovery
+  bytes and the existing whole-project folder-budget exception are recorded in
+  review_20261031/retention.json. No user data was deleted to meet that budget.
+- NOT RUN real Git publication,MCU rebuilds,COM/hardware/programmer checks:
+  this turn changes the PC Tool,publication checks and associated documentation.
+
 ## Guide consistency and reader flow (2026-10-29)
 
 - PASS26 focused document/source/CRC/provenance/parity tests;local commands tied
@@ -2432,4 +2725,19 @@ CAN trace. The full ordered checklist is `DEVELOPMENT_CHECKLIST.md`.
       Driver input/RAM read-back diagnostics are implemented; hardware evidence
       disproved the earlier packed-header explanation and identified invalid
       CAN clock configuration. Physical confirmation remains open.
+
+# Tool/Host and CAN publication scope (2026-10-29)
+
+- PASS36 isolated production-entry checks for ten local Git repositories:
+  Tool EXE/docs/Host source/images,exact keepers,scope/hash drift,receipt reuse,
+  idempotence,withheld local data and outgoing add/delete-history rejection.
+- PASS20 CAN-only gates and3 scoped lower-level publication checks;five focused
+  guide tests,canonical sync,848 references and530 route checks pass.
+- PASS actual worktree plan-only;Tool EXE and Git index hashes unchanged.
+- PASS safe clean audit:17 fixture deliveries/source and242 actual build files
+  preserved;idempotence and junction refusal passed. All owned scopes removed.
+- PASS downloads desktop/narrow browser and16-page MultiBus PDF render/visual
+  review. No native/firmware build,hardware test or real GitHub publication run.
+- Receipts:tmp/internal/verification/isp_publish_20261029,
+  isp_publication_result.json,can_publication_result.json,github_publish_result.json.
 

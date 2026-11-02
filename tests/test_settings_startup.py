@@ -11,7 +11,7 @@ class SettingsStartup(unittest.TestCase):
         header = (ROOT/'src/main_frame.h').read_text()
         self.assertIn('bool loading_ui_settings_ = true;', header)
         bus = (ROOT/'src/main_frame_bus.cpp').read_text()
-        self.assertIn('i2c_address_edit_.SetWindowTextW(L"0x09")', bus)
+        self.assertIn('i2c_address_edit_.SetWindowTextW(L"0x20")', bus)
         self.assertRegex(bus, r'void CMainFrame::OnI2cSettingsChanged\(\) \{\s*if \(loading_ui_settings_')
         frame = (ROOT/'src/main_frame.cpp').read_text()
         self.assertLess(frame.index('InitializeBusUi()'), frame.index('InitializeSettingsFile();'))
@@ -30,7 +30,9 @@ class SettingsStartup(unittest.TestCase):
         source = (ROOT/'src/main_frame_settings.cpp').read_text()
         load = source.split('void CMainFrame::LoadUiSettings()')[1].split('void CMainFrame::SaveUiSettings()')[0]
         self.assertLess(load.index('loading_ui_settings_ = true;'), load.index('ReadIniValue('))
-        self.assertLess(load.index('LoadBinaryFromPath('), load.index('loading_ui_settings_ = false;'))
+        self.assertNotIn('LoadBinaryFromPath(', load)
+        frame = (ROOT/'src/main_frame.cpp').read_text()
+        self.assertLess(frame.index('worker_session_.Start('), frame.index('LoadBinaryFromPath(binary_path_, true)'))
 
 
 if __name__ == '__main__':

@@ -141,7 +141,7 @@
       },
       "app-development": {
         "title": "App Metadata、IRQ 與更新耗時",
-        "description": "C header 編輯、512-entry IRQ table、建置產物及 CAN FD 實測時間。"
+        "description": "C header 編輯、512-entry IRQ table、建置產物及 CAN／CAN FD 實測時間。"
       },
       "serial-device": {
         "title": "串列 ISP 共用工程與協定契約",

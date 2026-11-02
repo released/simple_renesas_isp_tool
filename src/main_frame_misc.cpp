@@ -46,31 +46,56 @@ void CMainFrame::UpdateMiscUi() {
     const bool info=session_state_.host_validated && session_state_.bridge_info_valid;
     const auto& bridge=session_state_.bridge_info;
     const bool boot=info && bridge.mode==BU_MODE_BOOT;
+    const bool app=info && bridge.mode==BU_MODE_APP;
+    const bool valid_app=info && (bridge.flags&BU_FLAG_VALID_APP)!=0U;
     const bool compatible=info && binary_bridge_inspection_.valid &&
         Bu_MatchesDevice(&binary_bridge_inspection_.metadata,&bridge);
     bus_tabs_.EnableWindow(!busy && !session_state_.can_started);
     app_start_edit_.EnableWindow(FALSE);
-    connect_target_btn_.SetWindowTextW(L"Read Bridge Update Info");
-    enter_bootloader_btn_.SetWindowTextW(L"Enter Bridge Boot (UART)");
-    transfer_test_btn_.SetWindowTextW(L"Run Validated Bridge App");
-    start_firmware_update_btn_.SetWindowTextW(L"Update HOST APP");
+    SetControlText(connect_target_btn_, L"Read Bridge Update Info");
+    SetControlText(enter_bootloader_btn_, boot ? L"Bridge Boot active" : L"Enter Bridge Boot (UART)");
+    SetControlText(transfer_test_btn_, L"Run Validated Bridge App");
+    SetControlText(start_firmware_update_btn_, L"Update HOST APP");
     connect_target_btn_.EnableWindow(!busy && info);
-    enter_bootloader_btn_.EnableWindow(!busy && info && !boot);
+    enter_bootloader_btn_.EnableWindow(!busy && app);
     transfer_test_btn_.EnableWindow(!busy && boot && (bridge.flags&BU_FLAG_VALID_APP));
     start_firmware_update_btn_.EnableWindow(!busy && boot && compatible && (bridge.flags&BU_FLAG_FLASH_READY));
     disconnect_btn_.EnableWindow(session_state_.serial_open || busy);
     std::wstring reason;
     if (!session_state_.host_validated) reason=L"Open + Probe Host first.";
     else if (!info) reason=L"This bridge firmware does not advertise safe self-update. Install its split boot/app with a debugger first.";
-    else if (!boot) reason=L"Enter Bridge Boot first; CAN/I2C target programming is not used here.";
-    else if (!binary_bridge_inspection_.valid) reason=binary_data_.empty() ? L"Load a HOST APP _bridge_update.bin." :
+    else if (app) reason=L"Host APP is running. Next: Enter Bridge Boot (UART) for a Host App update.";
+    else if (!boot) reason=L"Read Bridge Update Info to confirm the Host mode.";
+    else if (!binary_bridge_inspection_.valid) reason=binary_data_.empty() ? L"Host BOOT is active. Next: Load a HOST APP _bridge_update.bin." :
         (binary_inspection_.metadata_available?binary_image_validation_error_:binary_bridge_inspection_.error);
     else if (!compatible) reason=L"HOST/image identity, flash geometry or minimum boot version mismatch.";
     else if (!(bridge.flags&BU_FLAG_FLASH_READY)) reason=L"Boot flash backend is not ready. Programming blocked.";
-    else reason=L"Ready: HOST APP only, UART, CRC32 commit. Boot protected. No automatic RUN.";
+    else reason=L"Ready: Host BOOT is active. Update HOST APP directly; Boot protected. RUN remains explicit.";
     Text(firmware_prerequisites_label_,reason,reason.rfind(L"Ready:",0)==0 ? Tone::Ready :
         (!binary_data_.empty() && !compatible?Tone::Error:Tone::Pending));
-    Text(i2c_notes_,L"MISC: HOST BRIDGE\nPC -> bridge UART\nNo external device\n\n1. Probe host\n2. Enter bridge boot\n3. Load HOST APP BIN\n4. Update HOST APP\n5. Run app explicitly\n\nBoot / option bytes / reserved flash protected. CRC is integrity, not authentication.",Tone::Working);
+    // A loaded Host BIN describes the desired image, not the board's live mode.
+    // During a transition only the last verified descriptor is available.
+    std::wstring notes=L"MISC: HOST BRIDGE / UART\n";
+    if (busy) {
+        notes+=L"Host operation in progress.\n";
+        notes+=boot ? L"Last verified mode: BOOT\n" : app ? L"Last verified mode: APP\n" : L"Host mode not verified.\n";
+        notes+=L"\nWait for the operation result, or Cancel.\n";
+    } else if (!boot && !app) {
+        notes+=L"Host mode not verified.\n\n1. Open + Probe Host\n2. Read Bridge Update Info\n\nNext steps follow the verified Host mode.\n";
+    } else if (app) {
+        notes+=L"LIVE: HOST APP running\n\nFor the next Host App update:\n1. Enter Bridge Boot (UART)\n2. Load HOST APP BIN\n3. Update HOST APP\n4. Run Validated Bridge App\n";
+    } else if (valid_app && last_update_result_==firmware_upgrade::feedback::Result::HostAppWritten) {
+        notes+=L"LIVE: HOST BOOT\nHost App written and verified.\n\nNext: Run Validated Bridge App\n";
+    } else {
+        notes+=L"LIVE: HOST BOOT\n";
+        notes+=valid_app ? L"Valid Host App installed.\n" : L"No valid Host App installed.\n";
+        notes+=L"\n1. Load HOST APP BIN\n2. Update HOST APP\n3. Run Validated Bridge App\n";
+        if (valid_app) {
+            notes+=L"To start the installed App, use Run.\n";
+        }
+    }
+    notes+=L"\nBoot / option / reserved flash protected.\nCRC is integrity, not authentication.";
+    Text(i2c_notes_,notes,Tone::Working);
     target_metadata_label_.SetWindowTextW(info ?
         (L"HOST BRIDGE geometry: app "+Hex(bridge.app_start)+L", capacity "+std::to_wstring(bridge.capacity)+
          L" B; boot "+std::to_wstring(bridge.boot_size)+L" B; UART "+std::to_wstring(bridge.uart_baud)+L". External device metadata is not used.").c_str() :
@@ -79,7 +104,9 @@ void CMainFrame::UpdateMiscUi() {
         (!last_operation_error_.empty() ? L"[ERROR] "+last_operation_error_ : L"MISC: update HOST BRIDGE APP, not external CAN / I2C device"),
         busy ? Tone::Working : !last_operation_error_.empty() ? Tone::Error : Tone::Pending);
     UpdateOverviewUi(false);
-    CRect client; GetClientRect(&client); LayoutControls(client.Width(),client.Height());
+    if (active_tab_ != bus_tabs_.GetCurSel()) {
+        CRect client; GetClientRect(&client); LayoutControls(client.Width(), client.Height());
+    }
 }
 void CMainFrame::OnBridgeAction(unsigned action) {
     if (!IsMiscTab() || worker_command_pending_ || session_state_.busy || !session_state_.bridge_info_valid) return;
