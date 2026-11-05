@@ -242,10 +242,24 @@ Flash erase／write 單位依 [Flash hardware interface](https://www.renesas.com
 | Flash erase | Boot block0..7各8 KiB；App block8..37各32 KiB | FCL 初始化核對38 blocks、block7 end及最後 block end |
 | Flash program | 256-byte aligned page | `flash_geometry.c`、`Device_FlashWritePage()` |
 | 一般 RAM／stack | `0xFEDF0000` 起，使用範圍限制於 `0xFEDF4800` 前 | post-build map guard |
-| E2 monitor 預留 | `0xFEDF4800..0xFEDF6DFF` | CS+ Work RAM 使用 global alias `0xFEBF4800`、9728 bytes |
+| CS+ Work RAM 預留 | `0xFEDF4800..0xFEDF6DFF` | 本工程設定使用 global alias `0xFEBF4800`、9728 bytes |
 | RAM reader | `0xFEDF7000..0xFEDF7FFF`，4 KiB | copied `RAM_READ.text`；解析可能空白的 Flash 資料 |
 | FCL copy 預留 | `0xFEDF8000..0xFEDFEFFF`，28 KiB | `FCL_RAM_ADDRESS`；post-build 檢查區段次序與 copy extent |
 | RAM handoff | `0xFEDFFFF0..0xFEDFFFFF`，16 bytes | signature／request／反碼／owner；`boot_app_handoff.h` |
+
+最後一個 Code Flash erase block 為 `0x000F8000..0x000FFFFF`，32 KiB。
+App 最大960 KiB正好使用30個32 KiB blocks；Flash以256-byte page寫入，最後一頁為
+`0x000FFF00..0x000FFFFF`。Boot64 KiB與App960 KiB涵蓋完整1 MiB Code Flash；
+App容量已包含entry、Metadata、IRQ、填充與末端CRC，沒有另留一個Flash block。
+
+原廠 [E2／E2 Lite／E1／E20 RH850/F1KM連接補充手冊 §4.3.21](https://www.renesas.com/en/document/mat/e1e20-emulator-e2-emulator-additional-document-users-manual-notes-connection-rh850f1kh-and-rh850f1km)
+說明，debugger執行Flash下載、Memory修改或software breakpoint等操作時，使用內部RAM作為工作區。
+這與App尾端的Code Flash位址是不同區域；目前沒有將最後32 KiB另列為monitor保留區的依據。
+Work RAM大小與位址依debug工具／工程設定核對，表中9728 bytes為本工程配置。
+
+Debugger連線可能初始化RAM、影響ECC觀察及啟動狀態；連線下的執行與拔除後完整上電要分別驗證。
+使用Boot自身的FCL更新時，另外依CS+手冊核對self-programming、software break與Flash cache設定；
+不將debugger畫面顯示的內容直接當成獨立運行或Flash readback的證據。
 
 Cold reset 初始化 handoff RAM 的 ECC；Boot→App 與 software reset 保留已初始化的 cookie。
 EVM startup 的 LRAM ECC 初始化從 `0xFEDE0000` 開始，涵蓋96 KiB LRAM；上表為本工程目前實際配置的子區域。

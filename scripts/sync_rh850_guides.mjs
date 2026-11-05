@@ -52,12 +52,21 @@ assert.ok(layout,'RH850 chapter layout required');
 const reports=[],cachedReports=new Map();
 const cacheRoot=join(tool,'docs/data/rh850_update_timing');
 try{for(const filename of (await readdir(cacheRoot)).filter(n=>n.endsWith('.json'))){cachedReports.set(filename,JSON.parse(await utf8(join(cacheRoot,filename))));}}catch(e){if(e.code!=='ENOENT')throw e;}
-let sourceReports=[];try{sourceReports=await readdir(join(tool,'build/reports'));}catch(e){if(e.code!=='ENOENT')throw e;}
-for(const filename of sourceReports.filter(n=>n.endsWith('.json')).sort()){
-  const bytes=await readFile(join(tool,'build/reports',filename));
+// Import only explicitly selected new reports. A concurrently running Tool may
+// create other reports; normal synchronization must not publish them implicitly.
+const requested=new Set(process.argv.filter(s=>s.startsWith('--report=')).map(s=>s.slice(9)));
+for(const filename of requested)assert.match(filename,/^[A-Za-z0-9_.-]+\.json$/,'report basename');
+const sourceReports=new Set([...cachedReports.keys(),...requested]);
+for(const filename of [...sourceReports].sort()){
+  let bytes;
+  try{bytes=await readFile(join(tool,'build/reports',filename));}
+  catch(e){if(e.code==='ENOENT'&&!requested.has(filename))continue;throw e;}
   const report=JSON.parse(bytes.toString('utf8').replace(/^\uFEFF/,'')),u=report.update;
-  if(!u||!String(u.target_before).includes('RH850')||!String(u.can).startsWith('CAN FD ')||
-     !['PASS','PASS_WITH_WARNINGS'].includes(u.result)||!String(u.details).includes('app_confirmation=PASS'))continue;
+  if(!u||!String(u.target_before).includes('RH850')||!/^(Classical CAN|CAN FD) /.test(String(u.can))||
+     !['PASS','PASS_WITH_WARNINGS'].includes(u.result)||!String(u.details).includes('app_confirmation=PASS')){
+    assert.ok(!requested.has(filename),'Selected report must confirm a completed RH850 CAN update: '+filename);
+    continue;
+  }
   assert.ok(Number.isInteger(u.input_bytes)&&u.input_bytes>0&&u.input_bytes<=0xF0000);
   assert.ok(Number.isInteger(u.elapsed_ms)&&u.elapsed_ms>0);
   const phases=u.phases_ms;for(const key of ['metadata','start','transfer','end_crc','app_confirmation'])assert.ok(Number.isInteger(phases[key])&&phases[key]>=0,key);
@@ -75,6 +84,7 @@ for(const filename of sourceReports.filter(n=>n.endsWith('.json')).sort()){
 for(const [filename,summary] of [...cachedReports].sort(([a],[b])=>a.localeCompare(b))){
   assert.ok(/^[A-Za-z0-9_.-]+\.json$/.test(filename));
   assert.equal(summary.source_report,filename);assert.ok(/^[0-9A-F]{64}$/.test(summary.source_sha256));
+  assert.match(summary.can,/^(Classical CAN|CAN FD) /,'supported measured CAN mode');
   assert.ok(Number.isInteger(summary.input_bytes)&&summary.input_bytes>0);
   const file=filename.replace(/\.json$/,'');
   await output(join(root,'data',filename),JSON.stringify(summary,null,2)+'\n');
@@ -82,21 +92,41 @@ for(const [filename,summary] of [...cachedReports].sort(([a],[b])=>a.localeCompa
   await output(join(root,'data',file+'.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RH850 更新量測報告摘要</title><style>body{font:16px system-ui;margin:2rem;max-width:70rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:.6rem;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}th{width:15rem;background:#eee}@media(max-width:600px){body{margin:1rem}table,tbody,tr,th,td{display:block;width:auto}tr{margin:.8rem 0}th{border-bottom:0}td pre{font-size:14px}}</style><h1>RH850 更新量測報告摘要</h1><p><a href="../app-development.html#rh850-update-timing">更新時間表</a> · <a href="${file}.json">JSON 摘要</a></p><p>欄位取自來源 report。映像大小使用本次 input_bytes；診斷與更新完成結果分別保留。來源 report 以檔名與 SHA256 識別。</p><table>${cells}</table></html>\n`);
   reports.push({filename,summary,file});
 }
-assert.ok(reports.length,'At least one completed RH850 CAN FD report is required');
+assert.ok(reports.length,'At least one completed RH850 CAN report is required');
 const byImage=new Map();
 for(const report of reports){const u=report.summary;const key=[u.input_bytes,u.image_crc32,u.host_baud,u.can].join('|');if(!byImage.has(key))byImage.set(key,report);}
 const measured=[...byImage.values()];
-assert.equal(new Set(measured.map(r=>r.summary.host_baud+'|'+r.summary.can)).size,1,'Separate differing timing conditions before comparing');
-const timingRows=['| App BIN | bytes | 寫入相關階段 | App 確認 | 總耗時 | 報告 |','| --- | --- | --- | --- | --- | --- |'];
-for(const {summary:u,file} of measured){
-  const programming=u.phases_ms.metadata+u.phases_ms.start+u.phases_ms.transfer+u.phases_ms.end_crc;
-  timingRows.push(`| ${(u.input_bytes/1024).toFixed(2)} KiB | ${u.input_bytes.toLocaleString('en-US')} | ${(programming/1000).toFixed(1)} s | ${(u.phases_ms.app_confirmation/1000).toFixed(1)} s | ${(u.elapsed_ms/1000).toFixed(1)} s | [量測摘要](https://released.github.io/${site}/data/${file}.html) |`);
+// Keep each measured Host/bus configuration separate. Equal image sizes across
+// Classical CAN and FD must retain their own elapsed time and source report.
+const conditions=new Map();
+for(const report of measured){
+  const u=report.summary,key=u.host_baud+'|'+u.can;
+  if(!conditions.has(key))conditions.set(key,[]);
+  conditions.get(key).push(report);
 }
-const last=reports.at(-1).summary;
-timingRows.push('',`Host Baud：${last.host_baud} bit/s；報告記錄的 bus 條件：${html(last.can)}。`,
-  '寫入相關階段為 Metadata＋START＋transfer＋END CRC；總耗時另外包含 App 確認及未單獨分階段的 Tool 開銷。',
-  '', '### 分階段原始數值', '', '| 來源報告 | Metadata | START | transfer | END CRC | App 確認 | elapsed_ms |', '| --- | --- | --- | --- | --- | --- | --- |');
-for(const {filename,summary:u} of measured)timingRows.push(`| ${filename.replace(/^update_|\.json$/g,'')} | ${u.phases_ms.metadata} ms | ${u.phases_ms.start} ms | ${u.phases_ms.transfer} ms | ${u.phases_ms.end_crc} ms | ${u.phases_ms.app_confirmation} ms | ${u.elapsed_ms} ms |`);
+const groups=[...conditions.values()].sort((a,b)=>{
+  const mode=u=>u.can.startsWith('Classical CAN ')?0:1;
+  return mode(a[0].summary)-mode(b[0].summary)||
+    (a[0].summary.host_baud+'|'+a[0].summary.can).localeCompare(b[0].summary.host_baud+'|'+b[0].summary.can);
+});
+const timingRows=[];
+for(const group of groups){
+  const first=group[0].summary;
+  const label=(first.can.startsWith('Classical CAN ')?'Classical CAN':'CAN FD')+'／Host '+first.host_baud+' baud';
+  const dates=[...new Set(group.map(r=>r.summary.recorded_at_utc.slice(0,10)))].join('、');
+  const versions=[...new Set(group.map(r=>r.summary.tool))].join('、');
+  timingRows.push('#### '+label,'',`量測日期：${dates}；Tool：${versions}。`,
+    `Host Baud：${first.host_baud} bit/s；報告記錄的 bus 條件：${html(first.can)}。`,'',
+    '| App BIN | bytes | 寫入相關階段 | App 確認 | 總耗時 | 報告 |','| --- | --- | --- | --- | --- | --- |');
+  for(const {summary:u,file} of group){
+    const programming=u.phases_ms.metadata+u.phases_ms.start+u.phases_ms.transfer+u.phases_ms.end_crc;
+    timingRows.push(`| ${(u.input_bytes/1024).toFixed(2)} KiB | ${u.input_bytes.toLocaleString('en-US')} | ${(programming/1000).toFixed(1)} s | ${(u.phases_ms.app_confirmation/1000).toFixed(1)} s | ${(u.elapsed_ms/1000).toFixed(1)} s | [量測摘要](https://released.github.io/${site}/data/${file}.html) |`);
+  }
+  timingRows.push('','##### '+label+'：分階段原始數值','',
+    '| 來源報告 | Metadata | START | transfer | END CRC | App 確認 | elapsed_ms |', '| --- | --- | --- | --- | --- | --- | --- |');
+  for(const {filename,summary:u,file} of group)timingRows.push(`| [${filename.slice(7,22)}](https://released.github.io/${site}/data/${file}.html) | ${u.phases_ms.metadata} ms | ${u.phases_ms.start} ms | ${u.phases_ms.transfer} ms | ${u.phases_ms.end_crc} ms | ${u.phases_ms.app_confirmation} ms | ${u.elapsed_ms} ms |`);
+  timingRows.push('');
+}
 const timingPath=join(tool,'docs/RH850_UPDATE_TIMING_zh-TW.md');
 const timing=replaceBlock(await utf8(timingPath),'RH850_TIMING_DATA',timingRows.join('\n'));
 await output(timingPath,timing);

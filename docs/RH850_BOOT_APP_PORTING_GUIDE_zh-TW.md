@@ -50,7 +50,7 @@ App 功能修改從該 App 的 `custom_func.c`、`app_image_config.h` 及 `app_i
 | Boot安裝檔 | `boot0000_FFFF.hex`，範圍0..FFFF；先核對目標MCU與燒錄範圍 |
 | App完整容量 | 960KiB，起點10000h、上限FFFFFh；長度含Metadata、IRQ、填充與CRC |
 | 滿容量CRC位置 | FFFFCh..FFFFFh；由實際image_size決定，不是另一段獨立保留資料 |
-| E2 monitor | 預留在RAM FEDF4800h..FEDF6DFFh；CS+設定的global alias為FEBF4800h、9728bytes |
+| CS+ Work RAM | 本工程預留RAM FEDF4800h..FEDF6DFFh；global alias為FEBF4800h、9728bytes |
 | CS+下載後 | 核對實際Boot映像、clock與Work RAM設定；離開debug後依獨立運行條件測試 |
 | 燒錄器安裝後 | 以工具readback／compare核對Boot範圍；再用同一份App BIN驗證啟動 |
 

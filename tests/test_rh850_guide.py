@@ -41,9 +41,22 @@ class Rh850GuideTests(unittest.TestCase):
         self.assertEqual(len(rows), len(chosen))
         for report in chosen.values():
             size = report['input_bytes']
-            matching = next(row for row in rows if f'| {size:,} |' in row)
+            # Both transports contain the same capacity tiers. Match provenance
+            # first so a Classical row cannot satisfy an FD measurement check.
+            report_html = report['source_report'].replace('.json', '.html')
+            matching = next(row for row in rows if report_html in row)
+            self.assertIn(f'| {size:,} |', matching)
             self.assertIn(f'| {report["elapsed_ms"] / 1000:.1f} s |', matching)
-            self.assertIn(report['source_report'].replace('.json', '.html'), matching)
+        groups = re.split(r'(?m)^#### ', body)[1:]
+        self.assertGreaterEqual(len(groups), 2)
+        for report in chosen.values():
+            report_html = report['source_report'].replace('.json', '.html')
+            matching = [group for group in groups if report_html in group]
+            self.assertEqual(len(matching), 1)
+            mode = 'Classical CAN' if report['can'].startswith('Classical CAN ') else 'CAN FD'
+            self.assertTrue(matching[0].startswith(mode))
+            self.assertIn(f'Host {report["host_baud"]} baud', matching[0].splitlines()[0])
+            self.assertIn(report['can'], matching[0])
         self.assertIn('nominal 500', page)
         self.assertIn('data 2', page)
 
@@ -70,6 +83,15 @@ class Rh850GuideTests(unittest.TestCase):
         result = subprocess.run(['node', str(ROOT / 'scripts/sync_rh850_guides.mjs'), str(WEB), '--check'], capture_output=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(before, {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in paths})
+
+    def test_unselected_live_reports_do_not_become_public_summaries(self):
+        cached = {p.name for p in (ROOT / 'docs/data/rh850_update_timing').glob('*.json')}
+        unselected = [p.name for p in (ROOT / 'build/reports').glob('*.json') if p.name not in cached]
+        result = subprocess.run(['node', str(ROOT / 'scripts/sync_rh850_guides.mjs'), str(WEB), '--check'], capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for name in unselected:
+            self.assertFalse((SITE / 'data' / name).exists(), name)
+            self.assertFalse((SITE / 'data' / name.replace('.json', '.html')).exists(), name)
 
 
 if __name__ == '__main__':

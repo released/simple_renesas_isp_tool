@@ -251,6 +251,7 @@
 
   <ItemGroup>
     <Image Include="res\app_icon.ico" />
+    <Image Include="res\app_icon.svg" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

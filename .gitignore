@@ -41,6 +41,12 @@ build/*.log
 build/reports/
 build/logs/
 
+# Local recovery evidence and raw device captures are not delivery inputs.
+/build/rh850_reset_vector/
+/build/upload.bin
+/build/teraterm_custom_transfer.txt
+/build/tool_log_custom_transfer.txt
+
 # Original operation captures stay private; publish reviewed docs/images copies.
 /MCU_F24_Device_app_log.jpg
 /firmware_update_report.jpg

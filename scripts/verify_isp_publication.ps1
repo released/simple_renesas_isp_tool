@@ -103,6 +103,21 @@ function Get-GithubPublishTargets {
         Write-TestFile (Join-Path $target.Root 'tmp\private.log') 'preserve'
     }
     $tool=$targets[-1]
+    $quality='QualityReport(Synthetic,DefaultBuild).txt'
+    $qualityRoot=$targets[0].Root
+    Write-TestFile (Join-Path $qualityRoot $quality) 'private compiler paths; retain locally'
+    [void](Invoke-PublishGit $qualityRoot @('add','--',$quality))
+    [void](Invoke-PublishGit $qualityRoot @('commit','-m','synthetic tracked build log'))
+    try { Assert-PublishLocalOnlyData $targets[0]; throw 'Expected tracked build log refusal.' }
+    catch { Check ($_.Exception.Message -match 'Local-only data is tracked') 'tracked CS+ QualityReport refuses publication' }
+    [void](Invoke-PublishGit $qualityRoot @('rm','--cached','--',$quality))
+    try { Assert-PublishLocalOnlyData $targets[0]; throw 'Expected unignored build log refusal.' }
+    catch { Check ($_.Exception.Message -match 'Local-only data is not ignored') 'unignored CS+ QualityReport refuses publication' }
+    Add-Content -LiteralPath (Join-Path $qualityRoot '.gitignore') -Value '/QualityReport(*).txt' -Encoding UTF8
+    Assert-PublishLocalOnlyData $targets[0]
+    Assert-PublishStagedChanges $qualityRoot
+    Check (Test-Path -LiteralPath (Join-Path $qualityRoot $quality)) 'explicit build log untracking preserves local bytes'
+    Check (!(Test-PublishLocalOnlyPath 'docs/QualityReport(Synthetic).txt') -and !(Test-PublishLocalOnlyPath 'QualityReportSource.txt')) 'QualityReport rule is limited to generated root report names'
     Write-TestFile (Join-Path $fixtureTool 'src\main.cpp') '#include "../firmware/common/isp_device/isp_protocol.h"'
     Write-TestFile (Join-Path $fixtureTool 'docs\FIELD_GUIDE.md') 'reviewed Tool guide'
     Write-TestFile (Join-Path $fixtureTool 'build\FirmwareUpgradeTool.exe') 'reviewed synthetic EXE; never executed'
@@ -137,6 +152,7 @@ function Get-GithubPublishTargets {
         Check (!(Test-ToolPublicationPath 'firmware/common/isp_rh850/isp_rh850_uart.c')) 'serial runtime remains withheld'
     }
     $selected=@($snapshot.Projects[-1].Files.Path)
+    Check ($quality -cnotin $snapshot.Projects[0].Files.Path) 'private build log excluded from exact snapshot'
     Check (@($snapshot.Projects[-1].Dependencies | Where-Object { !$_.Selected -and $_.BaselineBlob }).Count -eq 1) 'snapshot binds unchanged withheld wire dependency without staging it'
 
     Check ('build/FirmwareUpgradeTool.exe' -cin $selected -and 'docs/FIELD_GUIDE.md' -cin $selected -and 'src/main.cpp' -cin $selected) 'Tool EXE, new document and PC source selected'
@@ -173,6 +189,8 @@ function Get-GithubPublishTargets {
     Check (([IO.File]::ReadAllText((Join-Path $fixtureTool 'firmware\common\isp_device\isp_device.c'))) -ceq 'withheld local change') 'withheld tracked source preserved locally'
     Check (!(Invoke-PublishGit $fixtureTool @('ls-tree','--name-only','HEAD','--','firmware/UnlistedFutureMcu/source.c')).Text) 'unlisted MCU source never staged'
     Check (([IO.File]::ReadAllText((Join-Path $fixtureTool 'build\runtime.ini'))) -ceq 'preserve settings') 'runtime INI preserved'
+    Check (!(Invoke-PublishGit $qualityRoot @('ls-tree','--name-only','HEAD','--',$quality)).Text -and
+        [IO.File]::ReadAllText((Join-Path $qualityRoot $quality)) -ceq 'private compiler paths; retain locally') 'published tree excludes build log while local file survives'
     $heads=@($targets|ForEach-Object{(Invoke-PublishGit $_.Root @('rev-parse','HEAD')).Text})
     Run-Entry @('-Execute') 0 "All $expectedCount remote main branches verified" 'PUSH'
     Check (@(Compare-Object $heads @($targets|ForEach-Object{(Invoke-PublishGit $_.Root @('rev-parse','HEAD')).Text})).Count -eq 0) 'matching receipt reuse and idempotent selected-repository repeat'

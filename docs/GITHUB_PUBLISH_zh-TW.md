@@ -61,6 +61,7 @@ Tool firmware 只選取 F24 Bridge Boot／App、`f24_board`、`f24_bridge_common
 另納入 RH850 CAN 共用 driver mirror、CAN 專用文件與明列的 CAN 建置／同步入口。
 其餘韌體目錄、串列 MCU 文件／腳本／測試保留在本機，不以 RH850 名稱整批放行。
 檔名分類只用於界定候選範圍，實際發布仍需對應版本的實板依據及完整檔案清單確認。
+混有待驗證 Recovery／串列工程內容的 `HANDOFF.md`、`SELF_CHECK.md`、`DEVELOPMENT_CHECKLIST.md` 及 `docs/ARCHITECTURE_V2.md`，其本機修改暫不納入；既有遠端版本保留。
 這個入口不重新編譯、不調整版號，也不納入 web repository。
 
 ## 路徑與執行
@@ -199,6 +200,7 @@ flowchart TD
 ## 本機資料排除與重試
 
 `.gitignore` 會排除尚未追蹤的檔案；已在 Git index 中的檔案，仍需另外取消追蹤。
+CS+ 根目錄的 `QualityReport(...).txt` 是含本機路徑的建置紀錄，也適用此規則；保留本機檔案，確認後只移除 Git 追蹤。
 出現 `Local-only data is tracked` 時，在訊息指出的 repository 中核對檔案，再以 `--cached` 保留本機內容：
 
 ```powershell

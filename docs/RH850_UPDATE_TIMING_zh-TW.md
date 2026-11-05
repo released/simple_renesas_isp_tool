@@ -12,11 +12,22 @@
 同大小及相同映像／通訊條件採首次完成 CRC／App 確認的紀錄；其餘測次保留在來源摘要。
 App BIN 包含 entry、Metadata、IRQ table、程式、填充與 CRC；64 KiB Boot 不在更新 BIN 內，此 EVM 的 App 容量為960 KiB。
 Classical CAN 與 CAN FD 依 Host Baud／bus 條件分組，各自保留量測日期、Tool 與來源報告。
+分階段表以報告日期／時間作為連結標籤；完整來源檔名與 SHA256 保留於量測摘要。
 
 Classical CAN 量測條件為 R7F701684 EVM、X1 16 MHz／CPU 120 MHz／CAN 40 MHz、500 kbit/s，Host Link 115200 baud。
 Host firmware 1.8.1／build 20261023；Device Boot 1.0.0／build 20261022、App 1.0.0／build 20261021。
 原始 App 為35,768 bytes；填充測試 BIN 為64／192／448／960 KiB。
 五次均通過 END CRC、App 啟動／映像比對及 CAN_STOP；UART timer 持續遞增，重試與已記錄的 Host 錯誤差值均為 0。
+
+CAN FD的完成紀錄另包含35,768 bytes原始App、64／192／448 KiB與944／956／959／960 KiB填充映像。
+944／956／959／960 KiB的報告依序確認前一個已安裝映像及更新後live INFO；四次均完成END CRC、
+App啟動確認及CAN_STOP，記錄的Host錯誤差值與重試為0。這些結果涵蓋最後32 KiB Flash block，
+其中960 KiB包含完整尾端；不代表每種電源、debugger連線或故障條件皆已驗證。
+
+相同960 KiB映像亦曾發生END CRC通過、App未確認的結果；失敗紀錄與成功測次分別保留，
+原因尚未確定。960 KiB映像另經使用者實板操作確認，冷啟動可正常動作；
+這項人工觀察結果與下表報告中的更新後App確認分別記錄，未另附冷啟動UART紀錄。Flash／Work RAM範圍見
+[Boot安裝與尾端配置](https://released.github.io/slide_boot_loader_for_RH850/porting.html#guide-porting-4)。
 
 <!-- RH850_TIMING_DATA_BEGIN -->
 #### Classical CAN／Host 115200 baud
@@ -36,15 +47,15 @@ Host Baud：115200 bit/s；報告記錄的 bus 條件：Classical CAN 500K, stan
 
 | 來源報告 | Metadata | START | transfer | END CRC | App 確認 | elapsed_ms |
 | --- | --- | --- | --- | --- | --- | --- |
-| 20261102_104340_302_63508_432104234_17 | 1056 ms | 15 ms | 18168 ms | 48 ms | 1489 ms | 21291 ms |
-| 20261102_104440_865_63508_432164796_18 | 1055 ms | 48 ms | 33046 ms | 63 ms | 1506 ms | 36234 ms |
-| 20261102_104640_859_63508_432284781_19 | 1063 ms | 63 ms | 99187 ms | 160 ms | 2515 ms | 103513 ms |
-| 20261102_105059_529_63508_432543421_20 | 1060 ms | 159 ms | 231390 ms | 336 ms | 4565 ms | 238036 ms |
-| 20261102_105946_691_63508_433070515_21 | 1062 ms | 336 ms | 496944 ms | 688 ms | 6488 ms | 506058 ms |
+| [20261102_104340](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261102_104340_302_63508_432104234_17.html) | 1056 ms | 15 ms | 18168 ms | 48 ms | 1489 ms | 21291 ms |
+| [20261102_104440](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261102_104440_865_63508_432164796_18.html) | 1055 ms | 48 ms | 33046 ms | 63 ms | 1506 ms | 36234 ms |
+| [20261102_104640](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261102_104640_859_63508_432284781_19.html) | 1063 ms | 63 ms | 99187 ms | 160 ms | 2515 ms | 103513 ms |
+| [20261102_105059](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261102_105059_529_63508_432543421_20.html) | 1060 ms | 159 ms | 231390 ms | 336 ms | 4565 ms | 238036 ms |
+| [20261102_105946](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261102_105946_691_63508_433070515_21.html) | 1062 ms | 336 ms | 496944 ms | 688 ms | 6488 ms | 506058 ms |
 
 #### CAN FD／Host 115200 baud
 
-量測日期：2026-10-27；Tool：0.1.0.0109。
+量測日期：2026-10-27、2026-11-05；Tool：0.1.0.0109、0.1.0.0115。
 Host Baud：115200 bit/s；報告記錄的 bus 條件：CAN FD 500K/2M, standard data RX filter 0x00000701 / 0x000007FF。
 
 | App BIN | bytes | 寫入相關階段 | App 確認 | 總耗時 | 報告 |
@@ -54,16 +65,32 @@ Host Baud：115200 bit/s；報告記錄的 bus 條件：CAN FD 500K/2M, standard
 | 192.00 KiB | 196,608 | 100.4 s | 10.4 s | 111.4 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261027_070952_777_31112_4889406_3.html) |
 | 448.00 KiB | 458,752 | 233.9 s | 10.3 s | 244.7 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261027_071505_750_31112_5202390_4.html) |
 | 960.00 KiB | 983,040 | 499.5 s | 11.8 s | 511.8 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261027_072426_940_31112_5763562_5.html) |
+| 34.93 KiB | 35,768 | 19.2 s | 1.5 s | 21.2 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_023439_091_16348_73046265_1.html) |
+| 64.00 KiB | 65,536 | 34.2 s | 1.5 s | 36.2 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_023543_273_16348_73110453_2.html) |
+| 192.00 KiB | 196,608 | 101.3 s | 2.6 s | 104.5 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_023742_825_16348_73230000_3.html) |
+| 448.00 KiB | 458,752 | 234.3 s | 4.6 s | 239.4 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_024204_512_16348_73491671_4.html) |
+| 944.00 KiB | 966,656 | 490.0 s | 6.5 s | 497.0 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_110744_756_15320_103831187_1.html) |
+| 956.00 KiB | 978,944 | 495.9 s | 6.5 s | 503.0 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_112021_170_15320_104587578_2.html) |
+| 959.00 KiB | 982,016 | 497.5 s | 6.5 s | 504.5 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_112941_593_15320_105148000_3.html) |
+| 960.00 KiB | 983,040 | 498.7 s | 6.5 s | 505.7 s | [量測摘要](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_114227_919_15320_105914296_4.html) |
 
 ##### CAN FD／Host 115200 baud：分階段原始數值
 
 | 來源報告 | Metadata | START | transfer | END CRC | App 確認 | elapsed_ms |
 | --- | --- | --- | --- | --- | --- | --- |
-| 20261027_070530_320_31112_4626953_1 | 1055 ms | 15 ms | 15077 ms | 32 ms | 10099 ms | 26795 ms |
-| 20261027_070726_000_31112_4742640_2 | 1055 ms | 32 ms | 33151 ms | 64 ms | 9761 ms | 44578 ms |
-| 20261027_070952_777_31112_4889406_3 | 1067 ms | 64 ms | 99113 ms | 160 ms | 10441 ms | 111366 ms |
-| 20261027_071505_750_31112_5202390_4 | 1059 ms | 160 ms | 232331 ms | 336 ms | 10305 ms | 244718 ms |
-| 20261027_072426_940_31112_5763562_5 | 1086 ms | 336 ms | 497394 ms | 689 ms | 11751 ms | 511840 ms |
+| [20261027_070530](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261027_070530_320_31112_4626953_1.html) | 1055 ms | 15 ms | 15077 ms | 32 ms | 10099 ms | 26795 ms |
+| [20261027_070726](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261027_070726_000_31112_4742640_2.html) | 1055 ms | 32 ms | 33151 ms | 64 ms | 9761 ms | 44578 ms |
+| [20261027_070952](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261027_070952_777_31112_4889406_3.html) | 1067 ms | 64 ms | 99113 ms | 160 ms | 10441 ms | 111366 ms |
+| [20261027_071505](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261027_071505_750_31112_5202390_4.html) | 1059 ms | 160 ms | 232331 ms | 336 ms | 10305 ms | 244718 ms |
+| [20261027_072426](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261027_072426_940_31112_5763562_5.html) | 1086 ms | 336 ms | 497394 ms | 689 ms | 11751 ms | 511840 ms |
+| [20261105_023439](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_023439_091_16348_73046265_1.html) | 1054 ms | 16 ms | 18118 ms | 47 ms | 1473 ms | 21226 ms |
+| [20261105_023543](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_023543_273_16348_73110453_2.html) | 1055 ms | 48 ms | 32998 ms | 64 ms | 1489 ms | 36169 ms |
+| [20261105_023742](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_023742_825_16348_73230000_3.html) | 1067 ms | 64 ms | 100053 ms | 160 ms | 2643 ms | 104513 ms |
+| [20261105_024204](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_024204_512_16348_73491671_4.html) | 1073 ms | 160 ms | 232770 ms | 336 ms | 4565 ms | 239435 ms |
+| [20261105_110744](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_110744_756_15320_103831187_1.html) | 1060 ms | 703 ms | 487526 ms | 688 ms | 6472 ms | 496995 ms |
+| [20261105_112021](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_112021_170_15320_104587578_2.html) | 1077 ms | 688 ms | 493488 ms | 689 ms | 6472 ms | 502954 ms |
+| [20261105_112941](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_112941_593_15320_105148000_3.html) | 1072 ms | 700 ms | 495009 ms | 688 ms | 6488 ms | 504505 ms |
+| [20261105_114227](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261105_114227_919_15320_105914296_4.html) | 1075 ms | 701 ms | 496234 ms | 689 ms | 6471 ms | 505715 ms |
 
 <!-- RH850_TIMING_DATA_END -->
 

@@ -42,7 +42,7 @@ function Assert-PublishRemote([string]$Value, [string]$Expected) {
 }
 
 function Test-PublishLocalOnlyPath([string]$Path) {
-    return $Path -match '^(tmp/|github_push\.local\.psd1$|build/(?:reports/|logs/|.*\.(?:ini|log)$))'
+    return $Path -match '^(tmp/|github_push\.local\.psd1$|QualityReport\([^/]+\)\.txt$|build/(?:reports/|logs/|.*\.(?:ini|log)$))'
 }
 
 function Get-PublishDeferredPaths($Target) {

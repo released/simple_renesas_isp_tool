@@ -1,10 +1,15 @@
-param([string]$WebRoot='',[switch]$CheckOnly)
+param([string]$WebRoot='',[switch]$CheckOnly,[string[]]$ReportName=@())
 $ErrorActionPreference='Stop';$repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'workspace_paths.ps1')
 . (Join-Path $PSScriptRoot 'web_guide_projection.ps1')
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
-if($CheckOnly){& node (Join-Path $PSScriptRoot 'sync_rh850_guides.mjs') $WebRoot --check}
-else{& node (Join-Path $PSScriptRoot 'sync_rh850_guides.mjs') $WebRoot}
+$arguments=@((Join-Path $PSScriptRoot 'sync_rh850_guides.mjs'),$WebRoot)
+if($CheckOnly){$arguments+='--check'}
+foreach($name in $ReportName){
+    if($name -notmatch '^[A-Za-z0-9_.-]+\.json$'){throw 'ReportName must be a JSON basename.'}
+    $arguments+=('--report='+$name)
+}
+& node @arguments
 if($LASTEXITCODE -ne 0){throw 'RH850 chapter/report projection failed.'}
 $source=[IO.File]::ReadAllText((Join-Path $repo 'docs\RH850_CAN_DEVICE_GUIDE_zh-TW.md'))
 $pattern='(?s)<!-- RH850_DEVICE_BEGIN -->.*?<!-- RH850_DEVICE_END -->'
