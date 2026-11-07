@@ -23,12 +23,12 @@ class CustomTransferMedia(unittest.TestCase):
 
     def test_four_public_images_and_single_owner(self):
         block = self.block()
-        page = (WEB / 'slide_simple_renesas_isp_tool/index.md').read_text(encoding='utf-8-sig')
+        page = (WEB / 'slide_simple_renesas_isp_tool/custom-transfer.md').read_text(encoding='utf-8-sig')
         other = (WEB / 'slide_boot_loader_for_RL78/index.md').read_text(encoding='utf-8-sig')
         self.assertEqual(re.findall(PATTERN, page, re.S), [block])
         self.assertNotIn('CUSTOM_TRANSFER_MEDIA_BEGIN', other)
         self.assertLess(page.index('id="custom-transfer"'), page.index(block))
-        self.assertLess(page.index(block), page.index('id="mcu-can-device"'))
+        self.assertLess(page.index(block), page.index('id="can-fd-custom-transfer"'))
         images = re.findall(r'!\[[^\]]*\]\((images/custom_transfer/[^)]+)\)', block)
         self.assertEqual(len(images), 4)
         self.assertEqual(len(set(images)), 4)
@@ -52,7 +52,7 @@ class CustomTransferMedia(unittest.TestCase):
 
     def test_sync_is_read_only_on_failure_and_checks_asset_hashes(self):
         with tempfile.TemporaryDirectory(prefix='custom_transfer_media_') as folder:
-            page = Path(folder) / 'slide_simple_renesas_isp_tool/index.md'
+            page = Path(folder) / 'slide_simple_renesas_isp_tool/custom-transfer.md'
             page.parent.mkdir()
             stale = '<!-- CUSTOM_TRANSFER_MEDIA_BEGIN -->stale<!-- CUSTOM_TRANSFER_MEDIA_END -->'
             page.write_text(stale, encoding='utf-8')

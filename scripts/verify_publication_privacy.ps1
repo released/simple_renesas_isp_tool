@@ -10,12 +10,30 @@ try {
         if(!(Test-PublishLocalOnlyPath $path) -or (Test-ToolPublicationPath $path)) { throw "Private publication path allowed: $path" }
         $checks++
     }
-    foreach($path in @('README.md','docs/HOST_LINK_PROTOCOL_V2.md','src/main_frame.cpp','tests/can_client_tests.cpp')) {
+    foreach($path in @(
+        'README.md',
+        'docs/HOST_LINK_PROTOCOL_V2.md',
+        'src/main_frame.cpp',
+        'tests/can_client_tests.cpp',
+        'docs/RH850_RESET_VECTOR_RECOVERY_zh-TW.md',
+        'firmware/diagnostics/rh850_reset_vector/entry.asm',
+        'firmware/diagnostics/rh850_reset_vector/fcl_cfg.h',
+        'firmware/diagnostics/rh850_reset_vector/platform.c',
+        'firmware/diagnostics/rh850_reset_vector/recovery.c',
+        'firmware/diagnostics/rh850_reset_vector/recovery.h',
+        'scripts/build_rh850_reset_vector_recovery.ps1',
+        'scripts/test_rh850_reset_vector_recovery.ps1',
+        'tests/rh850_reset_vector_recovery_tests.c'
+    )) {
         if((Test-PublishLocalOnlyPath $path) -or !(Test-ToolPublicationPath $path)) { throw "Public source refused: $path" }
         $checks++
     }
-    foreach($path in @('firmware/diagnostics/recovery.c','docs/RH850_RESET_VECTOR_RECOVERY_zh-TW.md','scripts/build_rh850_reset_vector_recovery.ps1')) {
-        if(Test-ToolPublicationPath $path) { throw "Hardware-pending path allowed: $path" }
+    foreach($path in @(
+        'firmware/diagnostics/unverified_helper.c',
+        'docs/RH850_UNVERIFIED_DIAGNOSTIC_zh-TW.md',
+        'scripts/test_rh850_unverified_diagnostic.ps1'
+    )) {
+        if(Test-ToolPublicationPath $path) { throw "Unreviewed diagnostic path allowed: $path" }
         $checks++
     }
     $repo=Join-Path $scope.Path 'repo'

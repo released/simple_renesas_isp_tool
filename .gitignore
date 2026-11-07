@@ -66,6 +66,7 @@ firmware/**/DefaultBuild/*
 /CODEX_HANDOFF.md
 /SELF_CHECK.md
 /MANUAL_CLEANUP.md
+/DEVELOPMENT_CHECKLIST.md
 /PROJECT_README_TEMPLATE.md
 /.codex/
 /.claude/

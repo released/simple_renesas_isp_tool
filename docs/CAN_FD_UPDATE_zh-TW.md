@@ -185,13 +185,14 @@ CRC／診斷欄位見 [Custom Transfer診斷](https://released.github.io/slide_s
 
 ## CAN FD App 更新操作
 
-此設定使用 nominal 500 kbit/s、data 2 Mbit/s、BRS，以及 64-byte FD 資料幀。
-Tool 與 MCU CAN host 負責傳輸，MCU CAN device Boot 負責映像驗證與 Flash 寫入。
-F24 CAN FD device 的一般 App 寫入、END CRC、APP_READY 與 UART counter 已有實板紀錄。
-RH850使用相同Tool操作；EVM接線、256-byte Flash page與實測耗時見 [RH850工程](https://released.github.io/slide_boot_loader_for_RH850/can-device.html#guide-can-device-5)／[更新耗時](https://released.github.io/slide_boot_loader_for_RH850/app-development.html#rh850-update-timing)。
-驗證包含初次 Boot 更新，以及 App → Enter Boot → 更新 → App 確認；
-重啟等待後的更新紀錄中，七項 Host 錯誤計數差值均為零。
-長時間連續更新、queue 壓力與故障／斷電恢復仍各自保留驗證範圍。
+設定與責任範圍：
+
+- Bus：nominal 500 kbit/s、data 2 Mbit/s、BRS、64-byte FD 資料幀。
+- Tool／MCU CAN host：負責傳輸。
+- MCU CAN device Boot：負責映像驗證與 Flash 寫入。
+- F24 證據範圍：一般 App 寫入、END CRC、APP_READY、UART counter、初次 Boot 更新，以及 App → Enter Boot → 更新 → App 確認；重啟後七項 Host 錯誤計數差值均為零。
+- RH850：沿用相同 Tool 操作；EVM 接線、256-byte Flash page 與實測耗時見 [RH850工程](https://released.github.io/slide_boot_loader_for_RH850/can-device.html#guide-can-device-5)／[更新耗時](https://released.github.io/slide_boot_loader_for_RH850/app-development.html#rh850-update-timing)。
+- 未涵蓋範圍：長時間連續更新、queue 壓力與故障／斷電恢復。
 
 ### 準備與設定
 

@@ -165,7 +165,7 @@ for(const [site,config] of Object.entries(layout)){
   const modeMarker=site.includes('isp_tool')?'ISP_MODE_NAV':'DEVICE_MODE_NAV';
   const modeBlock=original.match(new RegExp('<!-- '+modeMarker+'_BEGIN -->[^]*?<!-- '+modeMarker+'_END -->'))[0];
   const intro=site.includes('isp_tool')?
-    'Simple Renesas ISP Tool 是個人開發與分享的 MCU 韌體更新及通訊測試工具。\n透過 MCU bridge 連接 device，依需求選擇下載、操作、更新或通訊驗證。\nDevice Boot／App 開發見 [Bootloader 指南](../slide_boot_loader_for_RL78/)。':
+    'Simple Renesas ISP Tool 提供 MCU 韌體更新與通訊測試功能。\n透過 MCU bridge 連接 device，依需求選擇下載、操作、更新或通訊驗證。\nDevice Boot／App 開發見 [Bootloader 指南](../slide_boot_loader_for_RL78/)。':
     '依閱讀目的選擇 MCU device 工程、App 設定、移植或格式參考。\n日常更新與通訊驗證見 [ISP Tool 指南](../slide_simple_renesas_isp_tool/)。';
   let overview=`<!-- GUIDE_OVERVIEW -->\n[知識庫首頁](https://released.github.io/)\n\n<a id="article_top"></a>\n\n# ${config.pages.index.title}\n\n${intro}\n\n## 主題指南\n\n| 主題 | 內容 |\n| --- | --- |\n`;
   for(const page of pages)overview+=`| [${config.pages[page].title}](${page}.html) | ${config.pages[page].description} |\n`;

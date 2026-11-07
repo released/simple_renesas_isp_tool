@@ -598,12 +598,13 @@ Full 的 `%#x` 會產生 `0x` 前綴；整數 precision 為 0 且數值為 0 時
 整數指定 precision 時忽略 `0` 補零旗標，靠左時也忽略 `0`。
 `%p` 採 `0x` 加十六進位，空指標為 `0x0`；這是本格式器的指標表示方式。
 
-C99 定義格式行為，CC-RH library 則是編譯器提供的實作；兩者的涵蓋範圍並不完全相同。
-Full 以 C99 格式為基準，不委派給 CC-RH 原生 `printf`。
-此 MCU 版本固定使用 C locale 與 nearest／ties-to-even，不提供動態 locale 或浮點捨入環境切換。
-`%lc`／`%ls` 遇到無法以 ASCII 表示的字元會回傳負值；`%s` 仍可逐 byte 輸出既有編碼字串。
-CC-RH 專案的 `double`／`long double` 由 `-Xdbl_size` 決定；增加輸出小數位不會增加原始浮點有效位數。
-Full 的格式定義參考 [C11 草案 §7.21.6](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)；CC-RH 的格式與 `%p` 定義見 [原廠 sprintf 說明](https://tool-support.renesas.com/autoupdate/support/onlinehelp/csp/V8.14.00/CS%2B.chm/Compiler-CCRH.chm/Output/ccrh07c0407y1300.html)。
+格式行為與範圍：
+
+- 基準：Full 依 C99 格式行為實作，不委派給 CC-RH 原生 `printf`；兩者的涵蓋範圍不完全相同。
+- Locale／捨入：固定使用 C locale 與 nearest／ties-to-even，不提供動態 locale 或浮點捨入環境切換。
+- Wide 字元：`%lc`／`%ls` 遇到無法以 ASCII 表示的字元時回傳負值；`%s` 仍可逐 byte 輸出既有編碼字串。
+- 浮點型別：CC-RH 專案的 `double`／`long double` 由 `-Xdbl_size` 決定；增加輸出小數位不會增加原始浮點有效位數。
+- 依據：Full 的格式定義參考 [C11 草案 §7.21.6](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)；CC-RH 的格式與 `%p` 定義見 [原廠 sprintf 說明](https://tool-support.renesas.com/autoupdate/support/onlinehelp/csp/V8.14.00/CS%2B.chm/Compiler-CCRH.chm/Output/ccrh07c0407y1300.html)。
 
 `retarget.c` 使用 C99，CS+ 專案已包含對應編譯設定；其餘手寫模組維持 C90 的編寫方式。
 `SendChar()` 保留既有 UART 等待上限，成功寫入資料暫存器時回傳 byte，timeout 時回傳 `-1`。

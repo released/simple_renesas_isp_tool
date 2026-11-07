@@ -33,20 +33,23 @@ class F24DeviceAcceptanceMedia(unittest.TestCase):
                 self.assertFalse(image.info)
             ignored = subprocess.run(['git', 'check-ignore', '--', name + '.jpg'], cwd=ROOT, capture_output=True)
             self.assertEqual(ignored.returncode, 0)
-        other = (WEB / 'slide_boot_loader_for_RL78/index.md').read_text(encoding='utf-8-sig')
+        other = (WEB / 'slide_boot_loader_for_RL78/app-development.md').read_text(encoding='utf-8-sig')
         self.assertNotIn('<a id="f24-device-update-example"></a>', other)
         self.assertIn('#f24-device-update-example', other)
 
-    def test_current_status_matrix_and_all_public_pdfs(self):
+    def test_current_public_evidence_scope_and_all_public_pdfs(self):
         design = (ROOT / 'docs/F24_CAN_DEVICE_DESIGN_zh-TW.md').read_text(encoding='utf-8-sig')
         self.assertIn('正常 CAN App 更新已完成實板驗證', design)
         self.assertIn('UART timer counter 已確認', design)
-        matrix = (ROOT / 'docs/UPDATE_VALIDATION_zh-TW.md').read_text(encoding='utf-8-sig')
-        row = next(line for line in matrix.splitlines() if line.startswith('| 正常 CAN device App 更新 |'))
-        self.assertIn('F13／F24', row)
-        self.assertTrue(row.endswith('| PASS |'))
-        for topic in ('| 拔線／重連 |', '| CAN 故障 |', '| Device 斷電 |'):
-            self.assertIn('NOT RUN', next(line for line in matrix.splitlines() if line.startswith(topic)))
+        evidence = (ROOT / 'docs/UPDATE_VALIDATION_zh-TW.md').read_text(encoding='utf-8-sig')
+        for phrase in ('### 實板驗證範圍', 'F13 與 F24 device 的正常 CAN App 更新已完成實板驗證',
+                       '目前公開證據涵蓋', 'Host Link 115200 baud',
+                       '下列情境不在目前實板證據範圍內', 'Host Link 460800／921600 baud',
+                       'Metadata、Transfer、END／確認', 'CAN bus-off／復原',
+                       'A／B App 的實際 IRQ 行為'):
+            self.assertIn(phrase, evidence)
+        self.assertNotIn('| PASS |', evidence)
+        self.assertNotIn('| NOT RUN |', evidence)
         texts = {}
         for path in sorted((ROOT / 'docs').glob('*.pdf')):
             texts[path.name] = '\n'.join(page.extract_text() or '' for page in PdfReader(path).pages)
@@ -64,18 +67,23 @@ class F24DeviceAcceptanceMedia(unittest.TestCase):
     def test_png_hash_mismatch_fails_without_writes(self):
         with tempfile.TemporaryDirectory(prefix='f24_device_media_') as temporary:
             folder = Path(temporary)
-            page = folder / 'slide_simple_renesas_isp_tool/index.md'
-            page.parent.mkdir()
-            page.write_text('\n'.join('<!-- ' + name + '_BEGIN -->stale<!-- ' + name + '_END -->' for name in
-                            ('TOOL_CONNECT_MEDIA', 'TOOL_DEVICE_MEDIA', 'TOOL_BRIDGE_MEDIA')), encoding='utf-8')
+            site = folder / 'slide_simple_renesas_isp_tool'
+            site.mkdir()
+            pages = {
+                'TOOL_CONNECT_MEDIA': site / 'operation.md',
+                'TOOL_DEVICE_MEDIA': site / 'can-update.md',
+                'TOOL_BRIDGE_MEDIA': site / 'host-firmware.md',
+            }
+            for name, page in pages.items():
+                page.write_text('<!-- ' + name + '_BEGIN -->stale<!-- ' + name + '_END -->', encoding='utf-8')
             args = ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
                     str(ROOT / 'scripts/sync_tool_operation_media.ps1'), '-WebRoot', str(folder)]
             self.assertEqual(subprocess.run(args, capture_output=True).returncode, 0)
-            image = page.parent / 'images/tool_operation/firmware_update_report.png'
+            image = site / 'images/tool_operation/firmware_update_report.png'
             image.write_bytes(image.read_bytes() + b'test mismatch')
-            before = {str(p): hashlib.sha256(p.read_bytes()).digest() for p in page.parent.rglob('*') if p.is_file()}
+            before = {str(p): hashlib.sha256(p.read_bytes()).digest() for p in site.rglob('*') if p.is_file()}
             self.assertNotEqual(subprocess.run(args + ['-CheckOnly'], capture_output=True).returncode, 0)
-            after = {str(p): hashlib.sha256(p.read_bytes()).digest() for p in page.parent.rglob('*') if p.is_file()}
+            after = {str(p): hashlib.sha256(p.read_bytes()).digest() for p in site.rglob('*') if p.is_file()}
             self.assertEqual(before, after)
 
     def test_refreshed_pdf_text_stays_within_page_bounds(self):

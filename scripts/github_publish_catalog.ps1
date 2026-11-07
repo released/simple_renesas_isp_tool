@@ -1,20 +1,25 @@
 # Tool firmware is opt-in by ownership; unclassified firmware stays local.
 function Test-ToolPublicationPath([string]$Path) {
     $path=$Path.Replace('\','/')
-    # Local engineering records are never publication inputs. Mixed architecture
-    # edits retain their separate hardware-pending status.
+    # Local engineering records are never publication inputs. Architecture notes
+    # retain their separate engineering-record status.
     if($path -match '^(?:(?:AGENTS(?:_for_Codex)?|CLAUDE|WORKSPACE_RULES|HANDOFF|CODEX_HANDOFF|SELF_CHECK|MANUAL_CLEANUP|DEVELOPMENT_CHECKLIST)\.md|docs/(?:verification|development|internal)/|docs/FIRST_DELIVERY_20261015_zh-TW\.md$|docs/ARCHITECTURE_V2\.md$)') { return $false }
     if($path -match '^firmware/') {
+        if($path -match '^firmware/diagnostics/rh850_reset_vector/(?:entry\.asm|fcl_cfg\.h|platform\.c|recovery\.[ch])$') { return $true }
         if($path -match '^firmware/(?:RL78_F24_Bridge_(?:boot|app)|f24_board|f24_bridge_common)/') { return $true }
         if($path -match '^firmware/common/rh850_can_v4/[^/]+\.[ch]$') { return $true }
         return $path -match '^firmware/common/(?:bridge_[A-Za-z0-9_]+\.[ch]|can_burst\.(?:h|inc)|device_uart_rates\.h|diagnostic_clock\.h|host_link_(?:baud|limits)\.h|image_policy\.h)$'
     }
     # Only the CAN-owned RH850 material is released. Serial runtime, preparation
     # and mixed serial tests retain their existing withheld status.
-    if($path -match '^docs/RH850_(?:CAN_DEVICE_GUIDE|BOOT_APP_PORTING_GUIDE|IMAGE_REFERENCE|UPDATE_TIMING)_zh-TW\.(?:md|pdf)$' -or
+    if($path -ceq 'docs/RH850_RESET_VECTOR_RECOVERY_zh-TW.md' -or
+       $path -match '^docs/RH850_(?:CAN_DEVICE_GUIDE|BOOT_APP_PORTING_GUIDE|IMAGE_REFERENCE|UPDATE_TIMING)_zh-TW\.(?:md|pdf)$' -or
        $path -match '^docs/data/rh850_(?:image_example\.json|update_timing/[^/]+\.json)$' -or
+       $path -match '^scripts/(?:build|test)_rh850_reset_vector_recovery\.ps1$' -or
        $path -match '^scripts/(?:build_rh850_can_device|build_rh850_can_transfer|sync_rh850_can_v4|sync_rh850_device)\.ps1$' -or
-       $path -ceq 'scripts/sync_rh850_guides.mjs' -or $path -ceq 'tests/test_rh850_guide.py') { return $true }
+       $path -ceq 'scripts/sync_rh850_guides.mjs' -or
+       $path -ceq 'tests/rh850_reset_vector_recovery_tests.c' -or
+       $path -ceq 'tests/test_rh850_guide.py') { return $true }
     # These dedicated MCU support assets share the same withheld status as
     # their firmware. The displayed, hash-bound inventory is still reviewed;
     # this guard does not establish hardware acceptance from a file name.
