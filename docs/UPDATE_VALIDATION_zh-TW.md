@@ -363,7 +363,12 @@ Misc 更新與明確 RUN 的操作見 [Host App 更新](https://released.github.
 
 完整更新判定與資料傳遞見 [CAN 更新逐層導讀](https://released.github.io/slide_simple_renesas_isp_tool/#can-update-walkthrough)。
 通訊與裝置回覆錯誤的分類見 [錯誤資訊](#tool-error-guidance)。
-畫面欄位對應實作：[CAN 映像顯示](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_image.cpp)、[狀態色彩](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_status.cpp)、[Misc](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_misc.cpp)、[I2C](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_i2c_image.cpp)。
+畫面欄位對應實作：
+
+- [CAN 映像顯示](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_image.cpp)
+- [狀態色彩](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_status.cpp)
+- [Misc](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_misc.cpp)
+- [I2C](https://github.com/released/simple_renesas_isp_tool/blob/main/src/main_frame_i2c_image.cpp)
 
 ### 差異表與分階段進度
 
@@ -604,35 +609,21 @@ F13 device 支援唯讀 VERIFY；App 健康頁適用於 F13／F24 device 各自�
 | `0E VERSION_DOWNGRADE` | 有效已安裝 App 啟用版控，目標 App 版本較舊；一般 START 拒絕，尚未擦寫 |
 | `09 BAD_IMAGE` | 其餘映像／完整性前置條件不符 |
 
-### App A／B 工程驗證
-
-`scripts/verify_device_app_ab.ps1` 在 Tool 的暫存目錄建立兩個獨立 App fixture。
-A／B 使用不同 IRQ mapping 與 ISR 名稱，各自執行 CS+ clean compile、產表、link 檢查與 BIN 封裝，
-最後比對原始 Boot HEX 的 SHA-256 未改變。
-這是工程建置驗證；實際 IRQ 執行仍由板上測試確認。
-
-```powershell
-.\scripts\verify_device_app_ab.ps1 -Device F13 -BootProject <F13 Boot project> -AppProject <F13 App project>
-.\scripts\verify_device_app_ab.ps1 -Device F24 -BootProject <F24 Boot project> -AppProject <F24 App project>
-```
-
-### 實板驗證紀錄
+### 實板驗證範圍
 
 F13 與 F24 device 的正常 CAN App 更新已完成實板驗證。
 F24 的更新報告、reset 後 App 確認與 UART counter 集中於 [F24 device 更新結果](https://released.github.io/slide_simple_renesas_isp_tool/#f24-device-update-example)。
-各測試保留自己的證據範圍；尚無對應紀錄的壓力與故障項目維持 NOT RUN。
-CAN 波形、電氣特性與斷電復原仍需對應量測或故障測試，不由正常更新報告推定。
 
-| 項目 | 測試方式 | 驗收證據 | 狀態 |
-| --- | --- | --- | --- |
-| 正常 CAN device App 更新 | Host Link 115200／Classical CAN 500K；配對 Boot／App | 寫入／END CRC／reset 後 APP_READY／live INFO；F24 UART counter | PASS |
-| Host Link 三種速度 | 115200／460800／921600 各連續更新 50 次；CAN 依 BIN | END／APP_READY／live identity／報告；overflow／lost／bus-off 無增加 | NOT RUN |
-| Misc 速度邊界 | 高速 Host App → ENTER → Boot 115200 → 更新 → RUN／確認 | 同 COM／board／metadata；App 啟動 | NOT RUN |
-| 獨立取消 | Metadata、Transfer、END／確認等階段取消 | ABORT／cleanup 記錄，COM 不由 UI 直接關閉，可重新操作 | NOT RUN |
-| 拔線／重連 | 代表性傳輸點拔除 Host Link，重新接回同一板子 | 不自動續寫；重新 Probe／Discover，安全重做更新 | NOT RUN |
-| CAN 故障 | 代表性區塊期間斷 CAN／bus-off，再恢復 | 錯誤／counter／有限重試，恢復後重新驗證 | NOT RUN |
-| Device 斷電 | START 前／首 erase／write 中段／END／reset 交接時斷電 | Boot 的映像／metadata／CRC 檢查通過才進 App，否則停 Boot | NOT RUN |
-| Host 斷電／SW1 | BEGIN、write、END marker、RUN 前後斷電；按 SW1 | Boot 原始碼／雜湊不變，停留原因及再次更新恢復 | NOT RUN |
-| A／B App IRQ | 分別更新 A、B，觸發各自使用的中斷 | ISR 行為與 mapping 相符，Boot 不重燒 | NOT RUN |
+目前公開證據涵蓋：
+
+- Host Link 115200 baud、Classical CAN 500 kbit/s 與配對的 Boot／App。
+- 寫入、END CRC、reset 後 APP_READY、live INFO，以及 F24 UART counter。
+
+下列情境不在目前實板證據範圍內，不由正常更新報告推定：
+
+- Host Link 460800／921600 baud 的連續更新與 Misc 速度切換邊界。
+- Metadata、Transfer、END／確認等階段的獨立取消，以及拔線／重連。
+- CAN bus-off／復原、Device 或 Host 斷電、SW1 重置與 Flash 中斷恢復。
+- A／B App 的實際 IRQ 行為、CAN 波形與電氣特性。
 
 <!-- UPDATE_EVIDENCE_END -->

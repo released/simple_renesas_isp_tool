@@ -14,7 +14,6 @@ Tool、MCU CAN host／device 下載與操作／流程圖入口集中於
 | F13／F24 device Metadata 編輯／產生、App 新增 IRQ／獨立產表與驗證 | [修改前後實作教學](DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.md)／[PDF](DEVICE_METADATA_VECTOR_WORKSHOP_zh-TW.pdf) |
 | 從 Tool 操作理解 BIN 驗證、host 橋接與 device decode／Flash | [逐層導讀與對照表](CAN_UPDATE_WALKTHROUGH_zh-TW.md)／[PDF](CAN_UPDATE_WALKTHROUGH_zh-TW.pdf) |
 | Flash mapping、metadata每byte address／範例程式、CAN逐byte格式 | [完整對照指南](FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.md)／[PDF](FLASH_METADATA_CAN_FRAME_GUIDE_zh-TW.pdf) |
-| 第一版上傳檔案、配套版本、實測與SHA-256 | [2026-10-15交付說明](FIRST_DELIVERY_20261015_zh-TW.md) |
 | 把自己的 RL78 專案整合成 Boot/App | [移植指南](RL78_BOOT_APP_PORTING_GUIDE_zh-TW.md)／[PDF](RL78_BOOT_APP_PORTING_GUIDE_zh-TW.pdf) |
 | F13 Boot→App 條件與 CAN 更新 | [流程指南](F13_BOOT_UPDATE_FLOW_zh-TW.md)／[PDF](F13_CAN_Bootloader_Update_Guide_zh-TW.pdf) |
 | 共用畫面、F24 分區、Misc 更新 Host App | [Bridge 指南](SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md)／[PDF](FirmwareUpgradeTool_Shared_Console_Bridge_Guide_zh-TW.pdf) |

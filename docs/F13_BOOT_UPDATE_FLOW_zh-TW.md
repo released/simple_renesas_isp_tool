@@ -5,7 +5,7 @@ Tool／host 的操作方式見 [ISP Tool 操作](https://released.github.io/slid
 F24 (MCU CAN device) 的工程配置見 [F24 CAN device](https://released.github.io/slide_boot_loader_for_RL78/#f24-can-device)。
 
 映像與傳輸規格採 App image format6、CAN protocol5、256-byte metadata。
-版本、雜湊與量測紀錄另收於 [交付紀錄](FIRST_DELIVERY_20261015_zh-TW.md)。
+映像資訊與結果判讀見 [更新結果與報告](UPDATE_VALIDATION_zh-TW.md)。
 
 ## 1. 系統角色與資料邊界
 
@@ -527,8 +527,6 @@ flowchart TD
 - [Host Link Protocol v2](./HOST_LINK_PROTOCOL_V2.md)
 - [F24 Bring-up](./F24_BRINGUP.md)
 - [Diagnostics and Logging](./DIAGNOSTICS.md)
-- [Development Checklist](../DEVELOPMENT_CHECKLIST.md)
-- [Self Check](../SELF_CHECK.md)
 
 <!-- COMMON_IMAGE_POLICY_BEGIN -->
 <a id="image-update-policy"></a>

@@ -17,18 +17,19 @@ F13 初次需重燒 matching Boot/App，之後相容 App 可正常更新。F24 B
 | image format／metadata／App start | 6／256 bytes／0x2000 | 不變 |
 | IRQ ABI／Boot 分區 | F1V1／8 KiB | 不變 |
 
-使用者171150 log：0080／Host115200／CAN500K，19224B、CRC1DE10DCD，
+2026-10-15 的 v4 範例量測（171150 log）：0080／Host115200／CAN500K，19224B、CRC1DE10DCD，
 DATA約77秒、完整更新約79秒；先前0079約142／145秒。這是舊 v4 的實板證據，
 不是新版 v5 的速度。171150 trace行數少於4806，UI佇列可能遺失log，不能用行數
 推算實際收發量。0082會顯示佇列溢位警告；不完整log不可當完整封包紀錄。
 
 301是交易數，不是預測加速16倍。UART、USB driver、Flash及UI仍影響實際耗時。
 
-第一版實測：使用者182253 log，0082／F24 App1.5.0／F13 Boot1.5.0，COM6／
+2026-10-15 的 v5 範例量測（182253 log）：0082／F24 App1.5.0／F13 Boot1.5.0，COM6／
 Host115200／CAN500K；19244B、CRC CA0DF55C，301個連續COMMIT ACK，完整10963ms／
 1755B/s，END CRC相符。無UART timeout/retry、UI overflow警告或CAN lost/error。
 較舊v4約79秒快約7.2倍，但映像19224／19244B不同，且只有單次結果，不是嚴格A/B。
-reset後新版App執行仍待UART／重新INFO確認；[交付清單與限制](FIRST_DELIVERY_20261015_zh-TW.md)。
+該筆紀錄未涵蓋reset後App執行；App身分由UART／重新INFO確認。
+[更新結果與限制](UPDATE_VALIDATION_zh-TW.md)。
 
 ## 2. 泛用 Bridge 指令
 

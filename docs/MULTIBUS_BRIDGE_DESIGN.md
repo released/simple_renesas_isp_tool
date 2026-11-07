@@ -120,21 +120,3 @@ will be modified or reflashed by this task.
 The UI must distinguish BIN fields from live target fields: raw G16 BIN has
 no MCU/version/address manifest; those offline values are N/A. A checksum
 match does not authenticate the BIN or prove target flash compatibility.
-
-
-- [x] Active tool/F24 project moved; product references renamed; existing INI
-  copied unchanged. Old directory retains only the locked original schematic.
-- [x] Release/Debug x64 builds and full tests PASS, zero warnings/errors.
-- [ ] Startup/DPI/CAN-I2C tab visual checks NOT RUN, native desktop pipe absent.
-- [x] Port catalog old-host fallback, I2C-only host and multi-port mock checks.
-- [x] Real engine I2C512-byte bounds,262-byte continuity and timeout/abort;
-  PC cancellation/byte-identical EXEC retry/errors; real backend register/ISR mocks.
-  Actual F24 Host Link dispatcher replay/sequence behavior remains source-reviewed
-  and compile-checked, not directly executed in a dispatcher harness or hardware.
-- [x] F24 clean build43, Error0/Warning2 (existing license); generated edits
-  only in preserved Config_IICA0_user include/IRQ sections.
-- [x] Workspace clean-script audit:24 scripts PASS.
-- [x] Four new Mermaid flows and eight-page Traditional Chinese PDF rendered
-  and visually reviewed; F13 guide16 flows/22 pages regenerated after rename.
-- [ ] Physical F24 I2C waveform/reference discovery and CAN regression.
-- [ ] I2C target programming, power-loss/recovery and release evidence.

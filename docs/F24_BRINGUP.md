@@ -165,24 +165,18 @@ must still be checked on the physical host board.
    preserves compiler/linker/build hooks and App JSON, and reconciles only SC
    source registrations/projections. It no longer depends on a third project.
 
-The shared configuration/source move is clean-build and byte-equivalence
-verified. Opening/regenerating SC at the new location remains a manual GUI gate;
-inspect preserved callbacks and rerun preparation before compiling regenerated code.
-See [shared board source ownership](../firmware/f24_board/README.md).
+After Smart Configurator regeneration, inspect preserved callbacks and rerun
+preparation before compiling. See [shared board source ownership](../firmware/f24_board/README.md).
 
-The final clock/routing correction build is recorded in HANDOFF.md with
-Error 0 / Warning 2. Both warnings are expired CC-RL license warnings. CS+ also
-prints a device-change/I/O-header notice due to historical FPJ5 records in
-project metadata even though the active device and generated code are FLJ3;
-resolve that IDE notice before release if CS+ continues to request generation.
+If CS+ reports a device-change/I/O-header notice, compare the active device,
+project metadata and generated headers before generating or rebuilding.
+Compiler diagnostics remain visible in the build output.
 
 ## Host probe startup troubleshooting
 
 If CS+ remains running before reaching `main` and `Open + Probe Host` times
-out, first inspect the reset-to-main clock path. The previous configuration
-started X1 at 4 MHz and contained unbounded generated waits for X1 stabilization
-and PLL lock before `main`; the same-board SelfTest reaches `main` using HOCO.
-The active reset-to-main configuration therefore uses HOCO 40 MHz. The runtime
+out, first inspect the reset-to-main clock path. The reset-to-main
+configuration uses HOCO 40 MHz. The runtime
 X1/PLL waits execute after `main` and have fixed polling limits. Do not add UART
 text prints because P15/P16 carry the binary protocol. Confirm the newly
 flashed image reports the recorded 20-MHz build. First confirm CMC's X1 mode

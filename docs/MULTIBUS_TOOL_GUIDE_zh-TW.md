@@ -52,10 +52,6 @@ F24 App 原始 `.mot` 與 F13 原始專案 `.hex` 是編譯／封裝輸入。
 正式安裝使用已加入 metadata／CRC 的 `_flash.mot`、`flash_app_variable_CRC.hex` 或配套合併 HEX；日常更新使用對應的更新 BIN。
 以燒錄器重燒 Boot／App 前，核對實際 MCU、檔案位址及 erase 設定；分區映像不代表燒錄器一定採分區擦除。
 
-原始碼維護用的 `github_push.bat` 同步十五個 F13／F24／RH850 Classical CAN／CAN FD device repository，以及 Tool 的來源、EXE、文件與選定的 F24 host Boot／App，共十六個 repository。
-未驗證韌體及其專用資料保留在本機；網站由 `/web` 的 `push-all.cmd` 發佈。編譯與文件同步完成後，先執行 `github_push.bat`，再執行 `push-all.cmd`。
-保留檔清單、本機 `tmp` 排除、確認與恢復方式見 [GitHub 原始碼與交付檔同步](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/GITHUB_PUBLISH_zh-TW.md)。
-
 ### 操作與工程入口
 
 | 想了解的動作 | 網站操作／流程圖 | Tool docs中的詳細說明 |
@@ -73,12 +69,12 @@ F24 App 原始 `.mot` 與 F13 原始專案 `.hex` 是編譯／封裝輸入。
 
 <a id="tool-bridge-flow"></a>
 
-先用[CAN 更新逐層導讀](https://released.github.io/slide_simple_renesas_isp_tool/#can-update-walkthrough)
-對照 Tool 操作／BIN 驗證、MCU CAN host 轉送、MCU CAN device metadata／receive／Flash 的表格與流程圖；
-[MD](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md)／[PDF](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.pdf)可離線閱讀。
+[CAN 更新逐層導讀](https://released.github.io/slide_simple_renesas_isp_tool/#can-update-walkthrough)
+對照 Tool 操作／BIN 驗證、MCU CAN host 轉送、MCU CAN device metadata／receive／Flash；
+[MD](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.md)／[PDF](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/CAN_UPDATE_WALKTHROUGH_zh-TW.pdf)提供相同內容的離線版本。
 
 Flash mapping、metadata全部256個byte的address／範例值、產生與解析程式，以及CAN逐byte格式，
-請讀[Flash／Metadata／CAN移植對照](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
+集中於[Flash／Metadata／CAN移植對照](https://released.github.io/slide_boot_loader_for_RL78/#flash-metadata-can-reference)。
 
 <!-- PUBLIC_RESOURCES_END -->
 
@@ -186,12 +182,14 @@ F13 由 error ISR 擷取；F24 由主迴圈輪詢並清除已觀察旗標，不�
 硬體旗標可能合併多次事件，計數表示軟體擷取次數；counter 飽和於 `0xFFFF`。
 `CLEAR_STATS` 會重設統計，因此零次紀錄不等於已量測到沒有實體錯誤。
 
-比對封包時開啟 Tool 的 `Detailed trace (slower)` 與 Log，另存 device UART 與 analyzer trace。
-F13 Transfer 的接收規則是單筆 standard data `0x710／0x7FF`，送入 RX FIFO0；Boot 的 `0x700` 與 raw-block IDs 不適用於 Transfer。
-專案的 `tools/verify_transfer_filter.ps1 -CheckImage` 會讀取 map／MOT 核對實際連結的規則表，CS+ 建置也會自動執行。
-`F13 Custom Transfer: UART0 ready; starting CAN` 出現在 CAN 初始化前；若連這行也沒有，仍需核對 startup／clock／UART，不能以 `TX_END` 推定 Device 主程式已正常執行。
-量測速度時將 device 的 `CAN_TRANSFER_UART_TRACE_ENABLE` 設為 `0U` 後重建，並關閉 Tool detailed trace；
-錯誤擷取與 GET_STATS 仍運作。
+封包比對與量測條件：
+
+- 封包比對：開啟 Tool 的 `Detailed trace (slower)` 與 Log，另存 device UART 與 analyzer trace。
+- F13 接收規則：單筆 standard data `0x710／0x7FF` 送入 RX FIFO0；Boot 的 `0x700` 與 raw-block IDs 不適用於 Transfer。
+- 連結檢查：`tools/verify_transfer_filter.ps1 -CheckImage` 讀取 map／MOT 核對實際連結的規則表，CS+ 建置也會自動執行。
+- 啟動訊息：`F13 Custom Transfer: UART0 ready; starting CAN` 出現在 CAN 初始化前；沒有此訊息時，核對 startup／clock／UART，不能以 `TX_END` 推定 Device 主程式已正常執行。
+- 速度量測：將 device 的 `CAN_TRANSFER_UART_TRACE_ENABLE` 設為 `0U` 後重建，並關閉 Tool detailed trace；錯誤擷取與 GET_STATS 仍運作。
+
 完整 byte／command／counter 定義見 [通訊測試協定](https://github.com/released/simple_renesas_isp_tool/blob/main/docs/F13_TRANSFER_PROTOCOL.md)。
 <!-- TRANSFER_DIAGNOSTICS_END -->
 
@@ -344,13 +342,11 @@ F24 IRQ 只移動有限 bytes／記錄 state，不 printf、不解析 target com
 timeout、取消與 Close COM 都走 bounded cleanup；ABORT 釋放 open-drain，不強推 SDA/SCL HIGH。
 若 slave 實際拉低 SDA，software ABORT 不保證可以復原；需由 analyzer／供電狀態確認。
 
-## 8. 驗證項目
+## 8. 操作結果與硬體條件
 
-軟體測試涵蓋 port catalog、staging 邊界、相同序號重送、NACK／arbitration／timeout／abort、signature／geometry／CRC16 與 backend register／ISR 模型。
-實板檢查另記錄 bus speed、rise time、pull-up、clock stretching、repeated-start 至最後 STOP，以及取消／timeout 復原。
-
-更新與測試時可保留 Tool log、CAN／I2C analyzer trace 與 reset 後 App 的觀察結果。
-版本與量測數據收於 [交付紀錄](FIRST_DELIVERY_20261015_zh-TW.md)。
+- 更新結果依映像 CRC、裝置回覆與 reset 後 App 身分判讀，見[更新結果與報告](UPDATE_VALIDATION_zh-TW.md)。
+- I2C bus speed、rise time、pull-up、clock stretching 與 repeated-start／STOP 時序依實際主從板配置確認。
+- 取消與 timeout 的軟體清理不等同供電／線路故障復原；Tool log 與 analyzer trace 用於區分這些情況。
 
 <!-- COMMON_IMAGE_POLICY_BEGIN -->
 <a id="image-update-policy"></a>

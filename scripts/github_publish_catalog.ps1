@@ -1,9 +1,9 @@
 # Tool firmware is opt-in by ownership; unclassified firmware stays local.
 function Test-ToolPublicationPath([string]$Path) {
     $path=$Path.Replace('\','/')
-    # Mixed engineering records include hardware-pending recovery/serial work.
-    # Retain local edits while leaving the published baseline untouched.
-    if($path -match '^(?:(?:HANDOFF|SELF_CHECK|DEVELOPMENT_CHECKLIST)\.md|docs/ARCHITECTURE_V2\.md)$') { return $false }
+    # Local engineering records are never publication inputs. Mixed architecture
+    # edits retain their separate hardware-pending status.
+    if($path -match '^(?:(?:AGENTS(?:_for_Codex)?|CLAUDE|WORKSPACE_RULES|HANDOFF|CODEX_HANDOFF|SELF_CHECK|MANUAL_CLEANUP|DEVELOPMENT_CHECKLIST)\.md|docs/(?:verification|development|internal)/|docs/FIRST_DELIVERY_20261015_zh-TW\.md$|docs/ARCHITECTURE_V2\.md$)') { return $false }
     if($path -match '^firmware/') {
         if($path -match '^firmware/(?:RL78_F24_Bridge_(?:boot|app)|f24_board|f24_bridge_common)/') { return $true }
         if($path -match '^firmware/common/rh850_can_v4/[^/]+\.[ch]$') { return $true }

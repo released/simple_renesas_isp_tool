@@ -470,11 +470,11 @@ CAN analyzer self test 的資料為 standard ID 0x123、DLC8、`11 22 33 44 55 6
 
 接線時依各板 transceiver 的規格核對供電及 standby，並確認 CAN H/L 終端、共地與 analyzer bitrate。
 
-## 6. 驗證紀錄
+## 6. 操作結果與硬體條件
 
-軟體檢查涵蓋 map／向量／RAM／封裝、parser 與更新狀態機。
-實板檢查涵蓋 UART 傳輸、Flash 擦寫、reset 後 App、IRQ、取消與斷電復原。
-版本與量測結果收於 [交付紀錄](FIRST_DELIVERY_20261015_zh-TW.md)。
+- 更新完成後，核對報告的映像資訊、CRC 與 reset 後 App 身分，見[更新結果與報告](UPDATE_VALIDATION_zh-TW.md)。
+- CAN／UART 的線路、transceiver 與時序依實際板件配置確認。
+- 正常更新結果不代表取消、斷線、IRQ 或斷電故障情境具有相同覆蓋範圍；相關限制依裝置契約與部署條件判讀。
 
 <!-- COMMON_IMAGE_POLICY_BEGIN -->
 <a id="image-update-policy"></a>

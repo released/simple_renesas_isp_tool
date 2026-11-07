@@ -42,6 +42,7 @@ function Assert-PublishRemote([string]$Value, [string]$Expected) {
 }
 
 function Test-PublishLocalOnlyPath([string]$Path) {
+    if($Path -match '^(?:(?:AGENTS(?:_for_Codex)?|CLAUDE|WORKSPACE_RULES|HANDOFF|CODEX_HANDOFF|SELF_CHECK|MANUAL_CLEANUP|DEVELOPMENT_CHECKLIST)\.md|docs/(?:verification|development|internal)/)') { return $true }
     return $Path -match '^(tmp/|github_push\.local\.psd1$|QualityReport\([^/]+\)\.txt$|build/(?:reports/|logs/|.*\.(?:ini|log)$))'
 }
 

@@ -56,3 +56,24 @@ firmware/**/DefaultBuild/*
 !firmware/RL78_F24_Bridge_boot/DefaultBuild/RL78_F24_Bridge_boot.mot
 !firmware/RL78_F24_Bridge_app/DefaultBuild/RL78_F24_Bridge_app_bridge_update.bin
 !firmware/RL78_F24_Bridge_app/DefaultBuild/RL78_F24_Bridge_app_flash.mot
+
+# Local engineering records and private state (not publication inputs)
+/AGENTS.md
+/AGENTS_for_Codex.md
+/CLAUDE.md
+/WORKSPACE_RULES.md
+/HANDOFF.md
+/CODEX_HANDOFF.md
+/SELF_CHECK.md
+/MANUAL_CLEANUP.md
+/PROJECT_README_TEMPLATE.md
+/.codex/
+/.claude/
+/docs/internal/
+/docs/development/
+/artifacts/audits/
+/artifacts/tests/
+/.verify/
+/.env*
+!/.env.example
+/docs/FIRST_DELIVERY_20261015_zh-TW.md
