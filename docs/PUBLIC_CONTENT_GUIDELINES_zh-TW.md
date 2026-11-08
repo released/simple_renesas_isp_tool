@@ -1,18 +1,19 @@
-<!-- Generated from /web/PUBLIC_CONTENT_GUIDELINES_zh-TW.md. Edit the common root source, not this copy. -->
+<!-- Generated from decision-center rules/PUBLIC_CONTENT_GUIDELINES_zh-TW.md through /web. Edit the center source, not this copy. -->
 # 公開文件編寫與驗收準則
 
 ## 適用範圍與來源
 
-本檔是 `/web` 公用根目錄的編寫準則，適用於目前及未來的各類 slide、網站、
+本檔是共用決策中心的公開文件編寫準則，適用於目前及未來的各類 slide、網站、
 Markdown、PDF 與 GitHub README，不依賴特定產品、MCU、專案或資料夾。
 各專案的技術契約、角色名稱、工程基準與操作命令由專案自己的維護規則補充。
 
 公開內容分享目前的功能、設定、操作及驗證結果，語氣平等、中性。
 開發決策與歷次修改保留於工程紀錄，不作為讀者操作說明的一部分。
 
-根目錄 `AGENTS.md` 是共用入口。
-獨立 repository 如需攜帶規範副本，使用 `scripts/sync_public_content_guidelines.ps1` 同步；
-副本不另行編輯。新專案可沿用本規範，不必複製既有專案的技術設定。
+決策中心的 `AGENTS.md` 是共用入口，本檔是唯一編輯來源。
+`/web/PUBLIC_CONTENT_GUIDELINES_zh-TW.md` 與獨立 repository 內的版本是受管理副本，
+透過 `/web/scripts/sync_public_content_guidelines.ps1` 及消費端的同步入口更新；副本不另行編輯。
+新專案可沿用本規範，不必複製既有專案的技術設定。
 
 ## 1. 語氣與標題
 
