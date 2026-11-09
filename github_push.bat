@@ -9,7 +9,6 @@ if /I "%~1"=="new" (
     if not "%~2"=="" (
         echo Usage: github_push.bat new
         echo Use push_github.ps1 for first-time setup with additional options.
-        pause
         exit /b 2
     )
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\push_github.ps1" -IncludeRh850 -InitializeMissing -CreateRemote -Execute
@@ -18,5 +17,5 @@ if /I "%~1"=="new" (
 )
 set "publish_exit=%errorlevel%"
 if not "%publish_exit%"=="0" echo GitHub publication stopped. Review the error and local backup before retrying.
-pause
+if not "%publish_exit%"=="0" if "%~1"=="" pause
 exit /b %publish_exit%
