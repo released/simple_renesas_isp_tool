@@ -78,3 +78,7 @@ firmware/**/DefaultBuild/*
 /.env*
 !/.env.example
 /docs/FIRST_DELIVERY_20261015_zh-TW.md
+/workspace_paths.local.psd1
+
+# Prepared build identity.
+/src/tool_build_identity.h

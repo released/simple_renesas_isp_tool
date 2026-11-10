@@ -45,7 +45,19 @@ void CMainFrame::LayoutControls(int width, int height) {
     CFont* previous = dc.SelectObject(&ui_font_);
     TEXTMETRIC metric = {}; dc.GetTextMetrics(&metric);
     if (previous) dc.SelectObject(previous);
-    const auto layout = firmware_upgrade::console::Calculate(width, height, metric.tmHeight);
+    build_identity_.SetFont(reinterpret_cast<HFONT>(ui_font_.GetSafeHandle()));
+    build_identity_.Place(width - 8, 8, (std::max)(0, width - 16));
+    const int header_height = build_identity_.Height() + 16;
+    auto layout = firmware_upgrade::console::Calculate(width, (std::max)(0, height - header_height), metric.tmHeight);
+    // Translate the existing console as one body; keep its internal geometry.
+    Rect* regions[] = {&layout.connection_group, &layout.analysis_group, &layout.interface_group,
+        &layout.image_group, &layout.log_group, &layout.connection, &layout.identities,
+        &layout.firmware, &layout.loaded_bin, &layout.bin_details, &layout.device_details,
+        &layout.status, &layout.tabs, &layout.interface_heading, &layout.image_heading,
+        &layout.log_heading, &layout.interface_pane, &layout.image_pane, &layout.log_pane, &layout.footer};
+    for (auto* region : regions) region->y += header_height;
+    for (auto& region : layout.metadata_groups) region.y += header_height;
+    for (auto& region : layout.metadata_panes) region.y += header_height;
     console_layout_=layout;
     const int row = layout.field_row_height, gap = 5;
     int x = layout.connection.x;
@@ -151,6 +163,7 @@ void CMainFrame::LayoutControls(int width, int height) {
     Move(progress_bar_, footer.progress_bar);
     Move(operation_timer_label_, footer.elapsed);
     Move(build_info_label_, footer.build);
+    build_info_label_.ShowWindow(SW_HIDE);
     layout_in_progress_ = false;
     RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_FRAME);
 }
@@ -163,7 +176,7 @@ void CMainFrame::OnGetMinMaxInfo(MINMAXINFO* info) {
         TEXTMETRIC metric={}; dc.GetTextMetrics(&metric); dc.SelectObject(previous);
         CRect window,client; GetWindowRect(&window); GetClientRect(&client);
         info->ptMinTrackSize.y=(std::max)(700,
-            firmware_upgrade::console::MinimumClientHeight(metric.tmHeight)+window.Height()-client.Height());
+            firmware_upgrade::console::MinimumClientHeight(metric.tmHeight)+build_identity_.Height()+16+window.Height()-client.Height());
     }
 }
 
@@ -194,6 +207,7 @@ void CMainFrame::SetProgress(int value, const std::wstring& label, bool indeterm
         Move(progress_bar_, footer.progress_bar);
         Move(operation_timer_label_, footer.elapsed);
         Move(build_info_label_, footer.build);
+    build_info_label_.ShowWindow(SW_HIDE);
         const auto& area = console_layout_.footer;
         CRect band(area.x, area.y, area.x + area.width, area.y + area.height);
         RedrawWindow(&band, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);

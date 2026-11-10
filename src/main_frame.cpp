@@ -11,6 +11,7 @@
 #include <string>
 
 #include "build_info.generated.h"
+#include "tool_build_identity.h"
 #include "resource.h"
 #include "core/operation_guidance.h"
 #include "ui/log_view.h"
@@ -172,6 +173,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
     if (CFrameWnd::OnCreate(create_struct) == -1) {
         return -1;
     }
+    if (!build_identity_.Create(m_hWnd, TOOL_BUILD_VERSION_W, TOOL_BUILD_DISPLAY_TIME_W,
+                                TOOL_BUILD_TIMESTAMP_ISO_W)) return -1;
 
     HICON icon = AfxGetApp()->LoadIcon(IDI_APP_ICON);
     SetIcon(icon, TRUE);

@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$Configuration = "Release",
     [string]$Platform = "x64",
     [bool]$CloseRunningTool = $true
@@ -35,12 +35,7 @@ if (-not (Test-Path $msbuild)) {
     $msbuild = "msbuild"
 }
 
-if ($Configuration -eq "Release" -and (Test-Path $bumpScript)) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $bumpScript
-    if ($LASTEXITCODE -ne 0) {
-        throw "Version bump failed."
-    }
-}
+# MSBuild PreBuild owns the single version allocation.
 
 Write-Host "Building $sln ($Configuration|$Platform)"
 & $msbuild $sln /t:Build /p:Configuration=$Configuration /p:Platform=$Platform /m

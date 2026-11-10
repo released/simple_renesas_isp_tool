@@ -29,17 +29,21 @@ $patch = [int]$m.Groups[3].Value
 $build = [int]$m.Groups[4].Value
 
 $build++
-$newVersion = "{0}.{1}.{2}.{3:D4}" -f $major, $minor, $patch, $build
-$buildTime = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+if ($build -gt 999) { $build=1; $patch++ }
+if ($patch -gt 9) { $patch=0; $minor++ }
+if ($minor -gt 9) { $minor=0; $major++ }
+if ($major -gt 9) { throw 'Version overflow; the previous counter is preserved.' }
+$newVersion = "{0}.{1}.{2}.{3:D3}" -f $major, $minor, $patch, $build
 
 [System.IO.File]::WriteAllText($VersionFile, $newVersion + [Environment]::NewLine, [System.Text.Encoding]::ASCII)
 
+& (Join-Path $PSScriptRoot 'prepare_tool_build_identity.ps1') -Version $newVersion -OutputHeader (Join-Path (Split-Path -Parent $HeaderFile) 'tool_build_identity.h')
 $header = @"
 #pragma once
-
-#define FIRMWARE_UPGRADE_TOOL_VERSION L"$newVersion"
-#define FIRMWARE_UPGRADE_TOOL_BUILD_TIME L"$buildTime"
+#include "tool_build_identity.h"
+#define FIRMWARE_UPGRADE_TOOL_VERSION TOOL_BUILD_VERSION_W
+#define FIRMWARE_UPGRADE_TOOL_BUILD_TIME TOOL_BUILD_DISPLAY_TIME_W
 "@
 [System.IO.File]::WriteAllText($HeaderFile, $header, [System.Text.Encoding]::ASCII)
 
-Write-Host "[OK] Version bumped: $newVersion ($buildTime)"
+Write-Host "[OK] Version bumped: $newVersion"

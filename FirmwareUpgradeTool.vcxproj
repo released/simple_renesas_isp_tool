@@ -254,6 +254,7 @@
     <Image Include="res\app_icon.svg" />
   </ItemGroup>
 
+  <ItemDefinitionGroup><PreBuildEvent><Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)scripts\bump_version.ps1"</Command></PreBuildEvent></ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

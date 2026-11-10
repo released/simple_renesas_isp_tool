@@ -2,6 +2,7 @@
 
 #include <afxcmn.h>
 #include <afxwin.h>
+#include "tool_build_display.h"
 
 #include <array>
 #include <cstddef>
@@ -20,6 +21,7 @@
 #include "ui/report_status.h"
 
 class CMainFrame : public CFrameWnd {
+    native_tool_ui::BuildIdentityLabel build_identity_;
     friend struct CanPrerequisiteUiFixture;
     friend struct WorkerResponsivenessFixture;
 public:

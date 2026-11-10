@@ -1,0 +1,33 @@
+﻿{
+    "repository":  "released/simple_renesas_isp_tool",
+    "delivery_files":  [
+                           "build/FirmwareUpgradeTool.exe"
+                       ],
+    "identity_files":  [
+                           "README.md",
+                           "FirmwareUpgradeTool.vcxproj"
+                       ],
+    "branch":  "main",
+    "visibility":  "PUBLIC",
+    "readme_title":  "Simple Renesas ISP Tool",
+    "publication_enabled":  true,
+    "allowed_paths":  [
+                          ".gitignore",
+                          "build/FirmwareUpgradeTool.exe",
+                          "FirmwareUpgradeTool.rc",
+                          "FirmwareUpgradeTool.vcxproj",
+                          "github_push.bat",
+                          "scripts/build_mfc.ps1",
+                          "scripts/bump_version.ps1",
+                          "scripts/github_publish.ps1",
+                          "scripts/github_publish_core.ps1",
+                          "scripts/github_repository.json",
+                          "scripts/prepare_tool_build_identity.ps1",
+                          "src/build_info.generated.h",
+                          "src/build_version.txt",
+                          "src/main_frame.cpp",
+                          "src/main_frame.h",
+                          "src/main_frame_layout.cpp",
+                          "src/tool_build_display.h"
+                      ]
+}

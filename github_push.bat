@@ -1,5 +1,6 @@
 @echo off
 setlocal
+if /I "%~1"=="tool" goto tool_only
 echo Publish scope: fifteen CAN device repositories plus Simple Renesas ISP Tool, sixteen repositories total.
 echo Includes Tool source, EXE, docs and the selected F24 Host Boot/App sources and images.
 echo Includes F13/F24 Classical CAN, F24 CAN FD, RH850 Classical CAN and RH850 CAN FD.
@@ -19,3 +20,8 @@ set "publish_exit=%errorlevel%"
 if not "%publish_exit%"=="0" echo GitHub publication stopped. Review the error and local backup before retrying.
 if not "%publish_exit%"=="0" if "%~1"=="" pause
 exit /b %publish_exit%
+
+:tool_only
+rem PC UI maintenance only; coupled MCU publication keeps its original gates.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\github_publish.ps1" %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
