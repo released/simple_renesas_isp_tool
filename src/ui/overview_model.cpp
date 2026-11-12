@@ -50,7 +50,7 @@ void ApplyImagePolicy(const Input& in, Card* bin) {
         } else bin->detail=in.bridge_image.error;
     }
     if (!known) return;
-    bin->heading=L"LOADED APP BIN | OFFLINE";
+    bin->heading=L"UPDATE BIN | OFFLINE";
     bin->signal=valid?Signal::Offline:Signal::Invalid;
     if (!valid) { bin->heading+=L" | INVALID"; return; }
     const auto route=static_cast<std::uint8_t>(in.misc?IP_UART:in.uart?in.uart_target.transport:(in.i2c?IP_I2C:IP_CAN));
@@ -63,14 +63,14 @@ void ApplyImagePolicy(const Input& in, Card* bin) {
 }
 std::array<Card, 5> Build(const Input& in) {
     std::array<Card, 5> out = {{
-        {L"HOST BRIDGE | REQUIRED", L"N/A - not verified", L"Open + Probe Host; COM description is not identity."},
-        {L"DEVICE TARGET | REQUIRED", L"N/A - not discovered", L"Discover the selected target; BIN identity is offline only."},
-        {L"DEVICE BOOT | LIVE INFO", L"N/A", L"Version / build / boot reserve require device discovery."},
-        {L"DEVICE APP | LIVE INFO", L"N/A", L"Version / build / installed size require device discovery."},
-        {L"LOADED APP BIN | OFFLINE", L"N/A", L"Load Update Image; no file is loaded."}
+        {L"HOST | LIVE", L"Not verified", L""},
+        {L"DEVICE | LIVE", L"Not discovered", L""},
+        {L"DEVICE BOOT | LIVE", L"N/A", L""},
+        {L"INSTALLED APP | LIVE", L"N/A", L""},
+        {L"UPDATE BIN | OFFLINE", L"N/A", L"No file loaded."}
     }};
     if (in.host_current) {
-        out[0] = {L"HOST BRIDGE | VERIFIED LINK", Board(in.host.board_id) + L" | " + in.port,
+        out[0] = {L"HOST | LIVE", Board(in.host.board_id) + L" | " + in.port,
             L"FW " + Pair(in.host.firmware_major, in.host.firmware_minor) + L"." +
             std::to_wstring(in.host.firmware_patch) + L" / build " + std::to_wstring(in.host.firmware_build) +
             L" / board " + Hex(in.host.board_id) + L" / Host Link v2", Signal::Verified};
@@ -81,13 +81,13 @@ std::array<Card, 5> Build(const Input& in) {
     }
     if (in.misc) {
         out[1]={L"UPDATE DESTINATION | HOST BRIDGE",L"PC -> bridge via UART",
-            L"Not the external CAN / I2C device. Boot flash is never updated here.",Signal::Reported};
-        out[2]={L"HOST BOOT | LIVE INFO",L"N/A",L"Probe a self-update capable bridge."};
-        out[3]={L"HOST APP | LIVE INFO",L"N/A",L"No bridge app descriptor available."};
+            L"Host App self-update; Boot protected.",Signal::Reported};
+        out[2]={L"HOST BOOT | LIVE",L"N/A",L"Probe a self-update capable bridge."};
+        out[3]={L"INSTALLED HOST APP | LIVE",L"N/A",L"No bridge app descriptor available."};
         if (in.host_current && in.bridge_current) {
             const auto& b=in.bridge;
             out[1].value=b.mode==BU_MODE_BOOT ? L"HOST BRIDGE - BOOT mode" : L"HOST BRIDGE - APP mode";
-            out[2]={L"HOST BOOT | LIVE INFO",L"v"+Version(b.boot_version),
+            out[2]={L"HOST BOOT | LIVE",L"v"+Version(b.boot_version),
                 L"Build "+Number(b.boot_build)+L" / reserve "+Number(b.boot_size)+L" B",Signal::Verified};
             out[3]={L"HOST APP | LIVE CRC CHECK",(b.flags&BU_FLAG_VALID_APP) ? L"v"+Version(b.app_version) : L"N/A - invalid / absent",
                 L"Build "+Number(b.app_build)+L" / installed "+Number(b.installed_size)+L" B / start "+Hex(b.app_start),
@@ -114,20 +114,20 @@ std::array<Card, 5> Build(const Input& in) {
             out[1] = {boot ? L"DEVICE TARGET | BOOTLOADER MODE" : L"DEVICE TARGET | APPLICATION MODE",
                 t.mcu_family + L" / " + t.mcu_part,
                 L"Target " + Hex(t.target_id) + L" / protocol " + std::to_wstring(t.protocol_version) +
-                L" / live INFO (not authenticated)", Signal::Verified};
-            out[2] = {L"DEVICE BOOT | LIVE INFO", L"v" + Version(t.boot_version),
+                L" / reported INFO", Signal::Verified};
+            out[2] = {L"DEVICE BOOT | LIVE", L"v" + Version(t.boot_version),
                 L"Build " + Number(t.boot_build) + L" / reserve " + Number(t.boot_reserved_size) +
                 L" B\nApp start " + Hex(t.application_start), Signal::Verified};
             const bool installed = t.app_version != 0xFFFFFFFFU && t.installed_app_size != 0xFFFFFFFFU;
-            out[3] = {L"DEVICE APP | LIVE INFO", installed ? L"v" + Version(t.app_version) : L"N/A - not installed",
+            out[3] = {L"INSTALLED APP | LIVE", installed ? L"v" + Version(t.app_version) : L"N/A - not installed",
                 L"Build " + Number(t.app_build) + L" / installed " + Number(t.installed_app_size) +
                 L" B\nCapacity " + Number(t.application_capacity) + L" B; not read-back CRC",
                 installed ? Signal::Verified : Signal::Reported};
         } else if (in.kind == TargetKind::Transfer) {
             out[1] = {L"DEVICE TARGET | CUSTOM TRANSFER", std::wstring(in.transfer.part_number.begin(), in.transfer.part_number.end()),
                 L"Target " + Hex(in.transfer.target_id) + L" / protocol " + Pair(in.transfer.protocol_major, in.transfer.protocol_minor) +
-                L" / non-destructive benchmark", Signal::Verified};
-            out[2].detail = out[3].detail = L"N/A - Custom Transfer does not report boot/app metadata.";
+                L"", Signal::Verified};
+            out[2].detail = out[3].detail = L"Not applicable to Custom Transfer.";
         } else if (in.kind == TargetKind::G16Reference) {
             out[1] = {L"DEVICE TARGET | REFERENCE ONLY", in.g16.label,
                 L"Reported sample label; not authenticated. Programming BLOCKED.", Signal::Reported};
@@ -154,24 +154,24 @@ std::array<Card, 5> Build(const Input& in) {
                 const auto& m = in.image.metadata;
                 bin.value = L"v" + Version(m.version) + L" | " + std::to_wstring(in.bin_size) + L" B";
                 bin.detail = m.mcu_family + L" / " + m.mcu_part + L" / build " + std::to_wstring(m.build) +
-                    L"\nStart " + Hex(m.application_start) + L"; see validation fields below.";
-            } else bin.detail = L"MCU / app version N/A - valid manifest required.\nSee CRC and metadata validation below.";
+                    L"\nStart " + Hex(m.application_start) + L"";
+            } else bin.detail = L"MCU / app version N/A - valid manifest required.\nSee BIN Details.";
         }
     }
     ApplyImagePolicy(in,&out[4]);
     if(in.uart) {
-        out[1]={L"ISP DEVICE | REQUIRED",L"N/A - not discovered",L"Discover the selected ISP device. Offline BIN is not live identity."};
-        out[2]={L"DEVICE BOOT | LIVE INFO",L"N/A",L"Discover device Boot/App."};
-        out[3]={L"DEVICE APP | LIVE INFO",L"N/A",L"Discover device Boot/App."};
+        out[1]={L"DEVICE | LIVE",L"Not discovered",L""};
+        out[2]={L"DEVICE BOOT | LIVE",L"N/A",L""};
+        out[3]={L"INSTALLED APP | LIVE",L"N/A",L""};
         if(in.host_current&&in.target_current) {
             const auto& t=in.uart_target;const bool transfer=t.mode==ISP_MODE_TRANSFER;
             out[1]={transfer?L"ISP DEVICE | CUSTOM TRANSFER":t.mode==ISP_MODE_BOOT?L"ISP DEVICE | BOOT":L"ISP DEVICE | APP",
                 t.family+L" / "+t.part,L"Target "+Hex(t.target)+L" / "+
                 isp::BusText(t.contract,{0U,t.baud,t.address})+(t.contract==3U?L" / XMODEM-CRC128":L"")+L" / live INFO",Signal::Verified};
-            if(transfer)out[2].detail=out[3].detail=L"Custom Transfer does not report Boot/App metadata.";
+            if(transfer)out[2].detail=out[3].detail=L"Not applicable to Custom Transfer.";
             else {
-                out[2]={L"DEVICE BOOT | LIVE INFO",L"v"+Version(t.boot_version),L"Build "+Number(t.boot_build)+L" / reserve "+Number(t.boot)+L" B",Signal::Verified};
-                out[3]={L"DEVICE APP | LIVE INFO",t.valid?L"v"+Version(t.version):L"N/A - not installed",
+                out[2]={L"DEVICE BOOT | LIVE",L"v"+Version(t.boot_version),L"Build "+Number(t.boot_build)+L" / reserve "+Number(t.boot)+L" B",Signal::Verified};
+                out[3]={L"INSTALLED APP | LIVE",t.valid?L"v"+Version(t.version):L"N/A - not installed",
                     L"Build "+Number(t.build)+L" / bytes "+Number(t.size)+(t.ready?L" / APP_READY":L""),t.valid?Signal::Verified:Signal::Reported};
             }
         }

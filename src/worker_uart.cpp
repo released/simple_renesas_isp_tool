@@ -1,6 +1,7 @@
 #include "worker_session.h"
 #include "core/app_confirmation_timing.h"
 #include "core/update_evidence.h"
+#include "core/isp_program_evidence.h"
 #include <algorithm>
 #include <chrono>
 
@@ -47,6 +48,16 @@ bool WorkerSession::ReadUartTarget(std::wstring* error) {
     state_.target_summary=state_.uart_summary;
     return true;
 }
+bool WorkerSession::ProcessIspTransferTest(std::uint8_t contract,std::wstring* error) {
+    if(!isp_client_.TransferTest(error))return false;
+    const std::wstring protocol=isp::ProtocolName(contract);
+    PostLog(protocol+L" PING/ECHO/counters passed"+
+        (contract==3U?std::wstring(L"; CRC128 streaming passed"):std::wstring())+L". No Flash commands.");
+    const bool refreshed=ReadUartTarget(error);
+    PostLog(refreshed?protocol+L" final live INFO refresh passed.":
+        protocol+L" final live INFO refresh failed after the data checks passed: "+*error);
+    return refreshed;
+}
 bool WorkerSession::ProcessUart(const Command& command,std::wstring* error) {
     const bool discover=command.type==CommandType::UartDiscover;
     const bool program=command.type==CommandType::UartProgram;
@@ -86,25 +97,25 @@ bool WorkerSession::ProcessUart(const Command& command,std::wstring* error) {
         std::wstring ignored;
         if(!uart_client_.ReadStats(&counters_before,&ignored))PostLog(L"UART1 before counters unavailable: "+ignored);
     }
-    bool success=false,end_attempted=false;
+    bool success=false;
+    const std::wstring protocol=isp::ProtocolName(command.isp_contract);
     const auto operation=std::chrono::steady_clock::now();
     if(discover) {
         success=ReadUartTarget(error);
         if(success && command.uart_transfer!=(state_.uart_target.mode==ISP_MODE_TRANSFER)) {
-            *error=L"Device mode differs from selected UART workflow. Select UART ISP or the standalone Custom Transfer project.";
+            *error=L"Device mode differs from selected "+protocol+L" workflow. Select the matching ISP or standalone Custom Transfer project.";
             success=false;
         }
         if(success)PostLog(L"Live "+state_.uart_summary+L"; installed metadata read only when valid App is reported.");
     } else if(command.type==CommandType::UartTest) {
-        success=isp_client_.TransferTest(error);
-        if(success) {success=ReadUartTarget(error);PostLog(L"ISP PING/ECHO/counters passed; Xmodem also checks CRC128 streaming. No Flash commands.");}
+        success=ProcessIspTransferTest(command.isp_contract,error);
     } else if(command.type==CommandType::UartVerify) {
         std::vector<std::uint8_t> bytes;
         success=ReadUartTarget(error)&&state_.uart_target.mode==ISP_MODE_BOOT&&state_.uart_target.valid&&
             isp_client_.Request(ISP_CMD_VERIFY,{},&bytes,error,5000U);
         if(success) {
             success=bytes.size()==8U&&image_policy::Read32(bytes.data())==state_.uart_target.size;
-            if(success)PostLog(L"Read-only UART VERIFY PASS: bytes="+std::to_wstring(state_.uart_target.size)+
+            if(success)PostLog(L"Read-only "+protocol+L" VERIFY PASS: bytes="+std::to_wstring(state_.uart_target.size)+
                 L", CRC32="+evidence::Hex(image_policy::Read32(bytes.data()+4)));
         }
     } else if(command.type==CommandType::UartEnter) {
@@ -113,28 +124,26 @@ bool WorkerSession::ProcessUart(const Command& command,std::wstring* error) {
             isp_client_.Request(ISP_CMD_ENTER,{},&reply,error)&&reply.empty();
         if(success) {
             const auto quiet=evidence::DeviceRestartQuietMs(state_.uart_target.size,0U,true);
-            PostActivity(L"Enter UART Boot / restart");
+            PostActivity(L"Enter "+protocol+L" Boot / restart");
             const auto start=std::chrono::steady_clock::now();
             while(Elapsed(start)<quiet&&!IsCancelRequested())Sleep(20U);
             success=!IsCancelRequested()&&ReadUartTarget(error)&&state_.uart_target.mode==ISP_MODE_BOOT;
             if(success)PostLog(L"ISP Boot confirmed. Start Device Update before the valid-App inactivity window expires.");
         }
     } else if(program) {
-        firmware_update::ImageInfo image;std::uint64_t end_ms=0U;
+        firmware_update::ImageInfo image;
         std::wstring phase;auto phase_started=operation;unsigned last_percent=101U;
         success=firmware_update::ValidateImage(profile,command.image,&image,error);
         if(success)success=isp_client_.Program(command.image,command.force_old_version,command.approved_installed_version,
             [&](unsigned percent,const wchar_t* name) {
                 if(phase!=name) {
                     if(!phase.empty())update_timings_.push_back({phase,Elapsed(phase_started)});
-                    if(phase==L"4/5 END CRC")end_ms=Elapsed(phase_started);
                     phase=name;phase_started=std::chrono::steady_clock::now();
                 }
-                if(percent>=92U)end_attempted=true;
                 if(percent!=last_percent) {PostProgress(static_cast<int>(percent),name);last_percent=percent;}
-            },error);
+            },error,&isp_program_state_);
         if(success) {
-            evidence::AppConfirmationTiming timing(evidence::DeviceRestartQuietMs(image.image_size,end_ms));
+            evidence::AppConfirmationTiming timing(evidence::DeviceRestartQuietMs(image.image_size,isp_program_state_.end_elapsed_ms));
             const auto start=std::chrono::steady_clock::now();bool confirmed=false;
             PostLog(L"ISP END CRC acknowledged; waiting for APP_READY and installed identity. No automatic rewrite.");
             PostActivity(L"5/5 App restart");
@@ -158,15 +167,19 @@ bool WorkerSession::ProcessUart(const Command& command,std::wstring* error) {
             }
             success=confirmed;
             if(!confirmed)*error=IsCancelRequested()?L"ISP App confirmation canceled; END CRC already succeeded.":
-                L"END CRC succeeded, but UART APP_READY/installed identity was not confirmed within the bounded window. No automatic rewrite.";
+                L"END CRC succeeded, but "+protocol+L" APP_READY/installed identity was not confirmed within the bounded window. No automatic rewrite.";
             else {
+                isp_program_state_.last_confirmed=isp::ProgramStage::App;
                 update_result_=feedback::Result::UartAppConfirmed;
                 update_details_=std::wstring(firmware_update::DisplayName(profile))+L"; input="+std::to_wstring(image.image_size)+L"; CRC32="+
                     evidence::Hex(image.stored_crc32)+L"; END acknowledged; APP_READY and all256 installed metadata bytes match.";
-                PostLog(update_details_);PostProgress(100,L"UART device update complete");
+                PostLog(update_details_);PostProgress(100,protocol+L" device update complete");
             }
         }
         if(!phase.empty())update_timings_.push_back({phase,Elapsed(phase_started)});
+        const auto program_evidence=isp::ProgramEvidenceText(isp_program_state_);
+        PostLog(protocol+L" program state: "+program_evidence);
+        update_details_+=(update_details_.empty()?L"":L"\n")+program_evidence;
     }
     if(success&&state_.uart_valid&&(state_.uart_target.capabilities&ISP_CAP_DIAGNOSTICS)) {
         isp::UartDiagnostics d;std::wstring reason,details;
@@ -178,7 +191,7 @@ bool WorkerSession::ProcessUart(const Command& command,std::wstring* error) {
         PostLog(L"Device UART observations: "+details);
         if(program)update_details_+=(update_details_.empty()?L"":L"\n")+std::wstring(L"Device UART observations: ")+details;
     }
-    if(!success&&!end_attempted&&program) {
+    if(!success&&isp_program_state_.MayAbortDevice()&&program) {
         const bool old=cleanup_in_progress_;cleanup_in_progress_=true;
         std::wstring ignored;
         if(i2c)i2c_client_.Abort(&ignored);else uart_client_.Abort(&ignored);

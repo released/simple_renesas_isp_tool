@@ -55,6 +55,7 @@ protected:
     afx_msg void OnCompareMetadata();
     afx_msg void OnPreflight();
     afx_msg void OnBinDetails();
+    afx_msg void OnConnectionDetails();
     afx_msg void OnOpenLatestReport();
     afx_msg void OnErrorDetails();
     afx_msg BOOL OnDeviceChange(UINT event_type, DWORD_PTR data);
@@ -76,6 +77,7 @@ protected:
     afx_msg void OnI2cProbe();
     afx_msg void OnI2cSettingsChanged();
     afx_msg void OnUartSettingsChanged();
+    afx_msg void OnUartBaudFocusLost();
     afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnClose();
     afx_msg LRESULT OnWorkerEvent(WPARAM wParam, LPARAM lParam);
@@ -146,6 +148,8 @@ private:
     bool SelectedI2cSettings(firmware_upgrade::i2c_host::Configuration* configuration,
                             std::uint8_t* address) const;
     void UpdateI2cImageFields(bool target_current);
+    void FitWorkflowHint();
+    int InterfaceRowHeight(int text_height) const;
     void LayoutInterfaceControls(int x, int y, int width, int height, int row);
     void QueueCanConfiguration();
     void RefreshNominalChoices();
@@ -268,6 +272,7 @@ private:
     CEdit i2c_address_edit_;
     CButton i2c_probe_btn_;
     CStatusCard i2c_notes_;
+    CButton connection_details_btn_;
     std::vector<firmware_upgrade::bridge::Port> displayed_ports_;
     int displayed_bus_ = -1;
     int active_tab_ = 0;

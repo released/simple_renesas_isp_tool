@@ -22,6 +22,7 @@ CWinApp test_app;
 namespace {
 bool details_dialog_checked=false,details_dialog_readonly=false,details_dialog_captured=false;
 unsigned details_waits=0U;
+int expected_detail_rows=22;
 void CALLBACK CheckDetailsDialog(HWND,UINT,UINT_PTR timer,DWORD) {
     const auto parent=test_app.m_pMainWnd->GetSafeHwnd();
     const auto dialog=GetLastActivePopup(parent);
@@ -30,7 +31,7 @@ void CALLBACK CheckDetailsDialog(HWND,UINT,UINT_PTR timer,DWORD) {
     if(!list&&++details_waits<50U)return;
     KillTimer(nullptr,timer);
     if(list) {
-        details_dialog_checked=ListView_GetItemCount(list)==22&&Header_GetItemCount(ListView_GetHeader(list))==2;
+        details_dialog_checked=ListView_GetItemCount(list)==expected_detail_rows&&Header_GetItemCount(ListView_GetHeader(list))==2;
         details_dialog_readonly=(GetWindowLongPtrW(list,GWL_STYLE)&LVS_EDITLABELS)==0;
         ::ShowWindow(dialog,SW_SHOWNOACTIVATE);
         ::RedrawWindow(dialog,nullptr,nullptr,RDW_INVALIDATE|RDW_UPDATENOW|RDW_ALLCHILDREN|RDW_ERASE);
@@ -54,6 +55,9 @@ static int Run(int argc, wchar_t** argv) {
     auto* frame=new CMainFrame();
     if (!frame->Create(nullptr,L"Offline prerequisite fixture",WS_OVERLAPPEDWINDOW,CRect(0,0,1366,768))) return 3;
     test_app.m_pMainWnd=frame;
+    frame->worker_session_.StopAndJoin();
+    while(frame->worker_session_.HasPendingEvents()) frame->worker_session_.DrainEvents();
+    frame->worker_command_pending_=false;frame->worker_started_=false;
     auto& state=frame->session_state_;
     const auto load_offline = [&](const std::wstring& path, bool restored) {
         auto loaded = std::make_shared<firmware_upgrade::image_analysis::Result>();
@@ -184,8 +188,8 @@ static int Run(int argc, wchar_t** argv) {
     if(dialog_timer){frame->OnBinDetails();::KillTimer(nullptr,dialog_timer);}
     check(details_dialog_checked&&details_dialog_readonly,"actual BIN details modal shows22 rows/two readonly columns");
     check(details_dialog_captured,"actual visible details client capture contains painted pixels");
-    check(text().find(L"[BLOCKED] Selected CAN mode")==0,"mode mismatch takes priority");
-    check(text().find(L"Check BIN supported CAN mode")!=std::wstring::npos,"action names BIN supported mode");
+    check(text().find(L"[BLOCKED] BIN does not support the selected CAN mode")==0,"mode mismatch takes priority");
+    check(text().find(L"Match Interface / Rate")!=std::wstring::npos,"action names BIN supported mode");
     check(text().find(L"Discover")==std::wstring::npos,"no contradictory discovery hint");
     check(frame->firmware_prerequisites_label_.emphasized_,"mismatch uses emphasized paint");
     check(frame->firmware_prerequisites_label_.tone_==firmware_upgrade::visual::Tone::Error,"mismatch remains error toned");
@@ -213,11 +217,11 @@ static int Run(int argc, wchar_t** argv) {
     check(GetGuiResources(GetCurrentProcess(),GR_GDIOBJECTS)==gdi_before,"emphasized font paint restores/deletes temporary GDI objects");
     state.busy=true;frame->UpdateUi();
     check(!frame->bin_details_btn_.IsWindowEnabled(),"details cannot interrupt active work");
-    check(text().find(L"Working:")==0 && !frame->firmware_prerequisites_label_.emphasized_,"active work retains working guidance");
+    check(text().find(L"Keep device power")==0 && !frame->firmware_prerequisites_label_.emphasized_,"active work retains working guidance");
     state.busy=false;
     frame->profile_combo_.SetCurSel(frame->profile_combo_.FindStringExact(-1,L"Custom Transfer"));
     frame->UpdateUi();
-    check(text().find(L"Custom Transfer")==0 && !frame->firmware_prerequisites_label_.emphasized_,"Custom Transfer clears emphasis and ignores BIN mode");
+    check(text()==L"Next: Discover Test Target." && !frame->firmware_prerequisites_label_.emphasized_,"Custom Transfer clears emphasis and ignores BIN mode");
     check(frame->connect_target_btn_.IsWindowEnabled(),"Custom Transfer discovery remains available");
     frame->profile_combo_.SetCurSel(frame->profile_combo_.FindStringExact(-1,L"CAN Upgrade"));
     check(load_offline(argv[1],true),"actual Classical BIN loads");
@@ -231,7 +235,7 @@ static int Run(int argc, wchar_t** argv) {
     frame->can_mode_combo_.SetCurSel(frame->can_mode_combo_.FindStringExact(-1,L"CAN FD"));
     frame->can_data_combo_.SetCurSel(frame->can_data_combo_.FindStringExact(-1,L"2M"));
     frame->UpdateUi();
-    check(text().find(L"[BLOCKED] Selected CAN mode")==0,"reverse mismatch prioritizes mode over data-rate mismatch");
+    check(text().find(L"[BLOCKED] BIN does not support the selected CAN mode")==0,"reverse mismatch prioritizes mode over data-rate mismatch");
     check(load_offline(argv[2],true),"FD BIN reloads");
     frame->UpdateUi();
     check(text().find(L"Next: Discover Target")==0 && !frame->firmware_prerequisites_label_.emphasized_,"FD match clears previous mode/rate error");
@@ -341,7 +345,7 @@ static int Run(int argc, wchar_t** argv) {
         check(!frame->connect_target_btn_.IsWindowEnabled()&&!frame->start_firmware_update_btn_.IsWindowEnabled()&&frame->cancel_btn_.IsWindowEnabled(),"UART independent cancel while busy");
         state.busy=false;t.version=m.version;state.uart_valid=false;
         frame->last_update_result_=firmware_upgrade::feedback::Result::UartAppConfirmed;frame->UpdateUi();
-        check(text().find(L"App confirmed;")==0&&text().find(L"CAN")==std::wstring::npos,"UART completion avoids CAN hints after target released");
+        check(text().find(L"Check App operation")==0&&text().find(L"CAN")==std::wstring::npos,"UART completion avoids CAN hints after target released");
         frame->last_update_result_=firmware_upgrade::feedback::Result::None;
         load_offline(argv[1],true);frame->UpdateUi();
         check(!frame->binary_image_valid_&&text().find(L"[BLOCKED] Check BIN update interface")==0,"CAN BIN cannot enter UART update");
@@ -448,6 +452,28 @@ static int Run(int argc, wchar_t** argv) {
         L"Invalid metadata: a long diagnostic remains readable in the complete detail snapshot.\r\n"
         L"Check the selected image and its metadata.\r\nAdditional diagnostic context is retained.");
     verify_bin_card(L"loaded_bin_invalid.png");
+    frame->bus_tabs_.SetCurSel(1);frame->i2c_workflow_combo_.SetCurSel(1);
+    state={};frame->worker_command_pending_=false;frame->last_operation_error_.clear();
+    frame->last_update_result_=firmware_upgrade::feedback::Result::None;
+    frame->UpdateUi();CRect final_client;frame->GetClientRect(&final_client);
+    frame->LayoutControls(final_client.Width(),final_client.Height());
+    check((frame->start_firmware_update_btn_.GetStyle()&WS_VISIBLE)==0 &&
+        !frame->start_firmware_update_btn_.IsWindowEnabled(),"Transfer hides write action without authorizing writes");
+    check(text()==L"Next: Open + Probe Host.",
+        "unverified serial Host shows its next action");
+    check(frame->connection_details_btn_.IsWindowEnabled(),"offline connection details require no discovery or BIN");
+    details_dialog_checked=false;details_dialog_readonly=false;details_waits=0U;expected_detail_rows=9;
+    const auto wiring_timer=::SetTimer(nullptr,0,50,CheckDetailsDialog);
+    check(wiring_timer!=0,"connection details inspection timer");
+    if(wiring_timer){frame->SendMessage(WM_COMMAND,ID_CONNECTION_DETAILS);::KillTimer(nullptr,wiring_timer);}
+    check(details_dialog_checked&&details_dialog_readonly,"actual Connection Details command opens nine readonly rows");
+    state.busy=true;frame->UpdateUi();
+    check(!frame->connection_details_btn_.IsWindowEnabled(),"connection details cannot interrupt worker");
+    state.busy=false;frame->bus_tabs_.SetCurSel(0);frame->profile_combo_.SetCurSel(frame->profile_combo_.FindStringExact(-1,L"CAN Upgrade"));
+    frame->binary_data_.clear();frame->binary_inspection_={};frame->UpdateUi();
+    check(text()==L"Next: Open + Probe Host." && text().find(L"Missing:")==std::wstring::npos,
+        "CAN missing prerequisites display only first actionable step");
+    compact_layout();
     frame->worker_session_.StopAndJoin();
     frame->DestroyWindow();test_app.m_pMainWnd=nullptr;
     std::cout<<"Actual MFC prerequisite/frame/font-state tests: "<<(failures?"FAIL":"PASS")<<'\n';

@@ -333,8 +333,8 @@ void CMainFrame::UpdateFirmwareImageInfoText() {
 
 void CMainFrame::UpdateTargetMetadataText() {
     if(IsIspTab()) {
-        target_metadata_label_.SetWindowTextW(IsUartSelectionCurrent()?session_state_.uart_summary.c_str():
-            L"ISP device: Discover Target; UART0 is diagnostic Log. Select the matching I2C/UART/Xmodem workflow.");return;
+        target_metadata_label_.SetWindowTextW(UartTransferSelected() ? L"Custom Transfer: no BIN required. Flash is not modified." : IsUartSelectionCurrent()?session_state_.uart_summary.c_str():
+            L"Load an App update BIN for the selected device interface.");return;
     }
     if (IsI2cTab() || IsMiscTab()) return;
     if (target_metadata_label_.GetSafeHwnd() == nullptr) {
@@ -345,17 +345,14 @@ void CMainFrame::UpdateTargetMetadataText() {
             firmware_upgrade::ui::TargetProfile::None) {
         target_metadata_label_.SetWindowTextW(
             SelectedProfile() == L"Custom Transfer" ?
-                L"Custom Transfer: no firmware BIN is used. Discover a test "
-                L"target that implements the Custom Transfer v1 contract." :
+                L"Custom Transfer: no BIN required. Flash is not modified." :
                 L"Device metadata: not available (Discover Target required)");
         return;
     }
     if (session_state_.target_profile ==
         firmware_upgrade::ui::TargetProfile::F13Transfer) {
         target_metadata_label_.SetWindowTextW(
-            (L"Custom Transfer target: " + session_state_.target_summary +
-             L"\r\nDiagnostic workflow only; firmware and flash-layout "
-             L"metadata are not part of this contract.").c_str());
+            L"Custom Transfer: no BIN required. Flash is not modified.");
         return;
     }
 

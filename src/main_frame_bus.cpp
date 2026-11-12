@@ -32,6 +32,7 @@ bool CMainFrame::InitializeBusUi() {
         !i2c_workflow_label_.Create(L"Workflow",label,CRect(),this,ID_I2C_WORKFLOW_LABEL) ||
         !i2c_workflow_combo_.Create(combo,CRect(),this,ID_I2C_WORKFLOW_COMBO) ||
         !i2c_notes_.Create(L"", label, CRect(), this, ID_I2C_NOTES) ||
+        !connection_details_btn_.Create(L"Connection Details...", label | WS_TABSTOP | BS_PUSHBUTTON, CRect(), this, ID_CONNECTION_DETAILS) ||
         !operation_status_card_.Create(L"", label, CRect(), this, ID_OPERATION_STATUS) ||
         !InitializeOverviewUi())
         return false;
@@ -52,7 +53,7 @@ bool CMainFrame::InitializeBusUi() {
     i2c_address_edit_.SetWindowTextW(L"0x20");
     CWnd* controls[] = {&bus_tabs_, &bus_port_label_, &bus_port_combo_,
         &i2c_speed_label_, &i2c_speed_combo_, &i2c_address_label_,
-        &i2c_address_edit_, &i2c_probe_btn_, &i2c_notes_, &operation_status_card_,
+        &i2c_address_edit_, &i2c_probe_btn_, &i2c_notes_, &connection_details_btn_, &operation_status_card_,
         &uart_baud_label_,&uart_baud_combo_,&uart_workflow_label_,&uart_workflow_combo_,&i2c_workflow_label_,&i2c_workflow_combo_};
     for (CWnd* control : controls) control->SetFont(&ui_font_);
     InitializeThemeBrushes();
@@ -134,13 +135,14 @@ void CMainFrame::UpdateBusUi() {
     const bool host = session_state_.host_validated;
     const bool i2c_current = IsI2cSelectionCurrent();
     if (busy)
-        CardText(operation_status_card_, L"[WORKING] Cancel stops safely; Close COM also disconnects", Tone::Working);
+        CardText(operation_status_card_, L"[WORKING] CAN operation", Tone::Working);
     else if (!last_operation_error_.empty())
         CardText(operation_status_card_, L"[ERROR] " + last_operation_error_, Tone::Error);
     else if(!com_device_notice_.empty())
         CardText(operation_status_card_,com_device_notice_,Tone::Pending);
     else
-        CardText(operation_status_card_, L"Status: green = ready/complete | amber = waiting/policy | red = blocked/error | OFFLINE = loaded file, LIVE = connected board", Tone::Neutral);
+        CardText(operation_status_card_, host ? (session_state_.target_validated ? L"Device discovered" : L"Host ready; device not discovered") :
+            (session_state_.serial_open ? L"Host not verified" : L"Host disconnected"), Tone::Neutral);
     if (i2c) {
         can_mode_combo_.EnableWindow(FALSE); can_bitrate_combo_.EnableWindow(FALSE);
         can_data_combo_.EnableWindow(FALSE); can_tx_test_btn_.EnableWindow(FALSE);
@@ -242,6 +244,20 @@ void CMainFrame::OnI2cSettingsChanged() {
     if(IsI2cIsp()){OnUartSettingsChanged();return;}
     SaveUiSettings(); UpdateUi();
 }
+int CMainFrame::InterfaceRowHeight(int text_height) const {
+    int height = (std::max)(24, text_height + 8);
+    const CComboBox* fields[] = {&bus_port_combo_, &i2c_speed_combo_, &i2c_workflow_combo_,
+        &uart_baud_combo_, &uart_workflow_combo_, &can_mode_combo_, &can_bitrate_combo_,
+        &can_data_combo_, &can_filter_combo_, &profile_combo_};
+    for (const auto* field : fields) {
+        if (!field->GetSafeHwnd()) continue;
+        CRect bounds;
+        field->GetWindowRect(&bounds);
+        // GetWindowRect measures the closed selection field, not its popup list.
+        height = (std::max)(height, bounds.Height());
+    }
+    return height;
+}
 void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, int row) {
     const bool i2c = IsI2cTab();
     const bool misc = IsMiscTab();
@@ -265,17 +281,21 @@ void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, in
     transfer_test_btn_.ShowWindow(i2c&&!IsI2cIsp() ? SW_HIDE : SW_SHOW);
     i2c_probe_btn_.ShowWindow(i2c&&!IsI2cIsp()?SW_SHOW:SW_HIDE);
     i2c_notes_.ShowWindow(i2c || misc || uart ? SW_SHOW : SW_HIDE);
-    const int step = row + 2;
+    connection_details_btn_.ShowWindow(i2c || uart ? SW_SHOW : SW_HIDE);
+    connection_details_btn_.EnableWindow(!worker_command_pending_ && !session_state_.busy);
+    const int step = row + firmware_upgrade::console::InterfaceRowGap;
     const auto move = [&](CWnd& c, int left, int top, int w, int h) {
         MoveControl(c,{left,top,w,h});
     };
     const auto pair_at = [&](CWnd& label, CWnd& value, int top,int left,int span) {
         CClientDC dc(&label); CFont* old=dc.SelectObject(&ui_font_);
         CString text; label.GetWindowTextW(text);
-        const int lw=dc.GetTextExtent(text).cx+10; dc.SelectObject(old);
-        move(label,left,top+3,lw,row-2);
-        const bool combo=(value.GetStyle() & CBS_DROPDOWNLIST)==CBS_DROPDOWNLIST;
+        const int lw=dc.GetTextExtent(text).cx+10;
+        TEXTMETRIC metric={};dc.GetTextMetrics(&metric);dc.SelectObject(old);
+        const bool combo=value.IsKindOf(RUNTIME_CLASS(CComboBox))!=FALSE;
         move(value,left+lw+3,top,span-lw-3,combo ? 220 : row-2);
+        CRect field;value.GetWindowRect(&field);
+        move(label,left,top+(std::max)(0,(field.Height()-static_cast<int>(metric.tmHeight))/2),lw,metric.tmHeight);
     };
     const auto pair=[&](CWnd& label,CWnd& value,int top) {pair_at(label,value,top,x,width);};
     if(uart) {
@@ -287,7 +307,8 @@ void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, in
         move(enter_bootloader_btn_,x,y+step*4,half,row);
         move(transfer_test_btn_,x+half+4,y+step*4,width-half-4,row);
         move(disconnect_btn_,x,y+step*5,width,row);
-        move(i2c_notes_,x,y+step*6,width,(std::max)(row,height-step*6));
+        move(connection_details_btn_,x,y+step*6,width,row);
+        move(i2c_notes_,x,y+step*7,width,(std::max)(row,height-step*7));
     } else if (misc) {
         move(connect_target_btn_,x,y,width,row);
         move(enter_bootloader_btn_,x,y+step,width,row);
@@ -303,10 +324,13 @@ void CMainFrame::LayoutInterfaceControls(int x, int y, int width, int height, in
             move(connect_target_btn_,x,y+step*4,width,row);
             const int half=(width-4)/2;
             move(enter_bootloader_btn_,x,y+step*5,half,row);move(transfer_test_btn_,x+half+4,y+step*5,width-half-4,row);
-            move(disconnect_btn_,x,y+step*6,width,row);move(i2c_notes_,x,y+step*7,width,(std::max)(row,height-step*7));
+            move(disconnect_btn_,x,y+step*6,width,row);
+            move(connection_details_btn_,x,y+step*7,width,row);
+            move(i2c_notes_,x,y+step*8,width,(std::max)(row,height-step*8));
         }else{
             move(i2c_probe_btn_,x,y+step*4,width,row);move(disconnect_btn_,x,y+step*5,width,row);
-            move(i2c_notes_,x,y+step*6,width,(std::max)(row,height-step*6));
+            move(connection_details_btn_,x,y+step*6,width,row);
+            move(i2c_notes_,x,y+step*7,width,(std::max)(row,height-step*7));
         }
     } else {
         pair(bus_port_label_,bus_port_combo_,y);

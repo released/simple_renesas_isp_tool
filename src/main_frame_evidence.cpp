@@ -151,6 +151,26 @@ void CMainFrame::OnBinDetails() {
     MetadataDialog dialog(rows,this,L"BIN Details - offline file / Device LIVE policy labeled",true);
     dialog.DoModal();
 }
+void CMainFrame::OnConnectionDetails() {
+    if (worker_command_pending_ || session_state_.busy || (!IsI2cTab() && !IsUartTab())) return;
+    using firmware_upgrade::evidence::Difference;
+    const bool i2c = IsI2cTab();
+    const std::vector<Difference> rows = {
+        {L"Bridge data port", i2c ? L"IICA0: SCL P62 / SDA P63" : L"UART1: TX P74 / RX P75", L"", L""},
+        {L"Connection", i2c ? L"SCL to SCL; SDA to SDA; shared GND; voltage-compatible pull-ups." :
+            L"Bridge TX to device RX; bridge RX to device TX; shared GND; compatible voltage.", L"", L""},
+        {L"Device settings", i2c ? L"Unshifted 7-bit address 0x08..0x77; match firmware address and I2C speed." :
+            L"Match device firmware baud (300..2000000). Host Baud is independent.", L"", L""},
+        {L"F13 / F24 device", i2c ? L"SCL P62 / SDA P63" : L"TX P74 / RX P75", L"", L""},
+        {L"G16 device", i2c ? L"SCL P60 / SDA P61" : L"TX P11 / RX P10", L"", L""},
+        {L"G22 device", i2c ? L"SCL P60 / SDA P61" : L"TX P00 / RX P01", L"", L""},
+        {L"RH850 device", i2c ? L"RIIC1: SCL P8_1 / SDA P8_0" : L"RLIN31: TX P0_5 / RX P0_4", L"", L""},
+        {L"Device diagnostic UART", L"UART0 is text Log and z/Z reset; separate from binary device data.", L"", L""},
+        {L"Pin reference", L"Example project assignments; verify the selected project's current pin configuration.", L"", L""}
+    };
+    MetadataDialog dialog(rows, this, i2c ? L"I2C Connection Details" : L"UART / Xmodem Connection Details", true);
+    dialog.DoModal();
+}
 void CMainFrame::SaveUpdateReport(const firmware_upgrade::ui::WorkerEvent& event) {
     if (event.report_pending) {
         report_status_.Begin(event.report_operation_id);

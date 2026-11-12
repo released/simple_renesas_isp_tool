@@ -306,6 +306,7 @@ void CMainFrame::UpdateUi() {
     RefreshNominalChoices();
 
     const bool busy = worker_command_pending_ || session_state_.busy;
+    if (connection_details_btn_.GetSafeHwnd()) connection_details_btn_.EnableWindow(!busy);
     firmware_prerequisites_label_.SetEmphasized(false);
     const bool port_open = session_state_.serial_open;
     const bool host_ready = session_state_.host_validated;
@@ -366,15 +367,16 @@ void CMainFrame::UpdateUi() {
     baud_combo_.EnableWindow(!busy && !port_open);
     cancel_btn_.EnableWindow(busy);
     preflight_btn_.EnableWindow(!busy);
+    start_firmware_update_btn_.ShowWindow(!IsMiscTab() && (IsIspTab() ? UartTransferSelected() : transfer_profile) ? SW_HIDE : SW_SHOW);
     bin_details_btn_.EnableWindow(!busy && !binary_data_.empty());
     SetControlText(open_report_btn_, report_status_.Button());
     open_report_btn_.EnableWindow(!busy && !report_status_.Path().empty());
     error_details_btn_.EnableWindow(!busy && !last_operation_error_.empty());
     compare_metadata_btn_.EnableWindow(!busy && !binary_data_.empty() &&
         (IsMiscTab()?session_state_.bridge_info_valid:!IsI2cTab() && target_ready));
-    force_old_firmware_btn_.ShowWindow(!IsMiscTab() && !IsI2cTab() ? SW_SHOW : SW_HIDE);
+    force_old_firmware_btn_.ShowWindow(!IsMiscTab() && !IsI2cTab() && !transfer_profile ? SW_SHOW : SW_HIDE);
     force_old_firmware_btn_.EnableWindow(FALSE);
-    if(IsIspTab()) {UpdateUartUi();ApplyBusRecoveryUi();return;}
+    if(IsIspTab()) {UpdateUartUi();ApplyBusRecoveryUi();FitWorkflowHint();return;}
     if (IsMiscTab()) {
         load_binary_btn_.EnableWindow(!busy);
         start_log_btn_.EnableWindow(!log_recording_);
@@ -382,6 +384,7 @@ void CMainFrame::UpdateUi() {
         export_summary_btn_.EnableWindow(!busy);
         UpdateBridgeImageFields(); UpdateMiscUi();
         if (!ApplyBusRecoveryUi()) UpdateCompletionFeedback();
+        FitWorkflowHint();
         return;
     }
 
@@ -428,7 +431,7 @@ void CMainFrame::UpdateUi() {
         }
         const auto required_burst = firmware_upgrade::can_host::BurstFeatureFor(selected_can_settings.mode);
         if (host_ready && (session_state_.host_capabilities.feature_flags & required_burst) == 0U) {
-            missing.push_back(L"update bridge App: matching CAN burst capability required (Classical bit12 / FD bit13)");
+            missing.push_back(L"Update bridge App: selected CAN update mode is unsupported");
         }
         if (!selected_mode_supported) {
             missing.push_back(
@@ -467,31 +470,29 @@ void CMainFrame::UpdateUi() {
         force_old_firmware_btn_.EnableWindow(missing.empty() && version_blocked);
         if(version_blocked) missing.push_back(L"older version blocked; use force upgrade old version firmware for this update only");
         start_firmware_update_btn_.EnableWindow(missing.empty());
-        if (!busy && !image_blocker.empty()) {
-            firmware_prerequisites_label_.SetWindowTextW(image_blocker.c_str());
-            firmware_prerequisites_label_.SetEmphasized(true);
+        std::wstring hint;
+        if (busy) {
+            hint = L"Keep device power and CAN connected. Use Cancel to stop.";
+        } else if (!image_blocker.empty()) {
+            hint = image_blocker;
         } else if (missing.empty()) {
-            firmware_prerequisites_label_.SetWindowTextW(
-                L"Ready: Boot mode detected; Enter Boot is not needed. "
-                L"Image, target, address and CRC32 are compatible. Next: Start Device Update.");
+            hint = L"Ready: Start Device Update.";
+        } else if (!host_ready || (update_target_ready &&
+                   !session_state_.f13_bootloader_ready && missing.front() == L"App is running: select Enter Boot") ||
+                   missing.front() == L"Discover Target with CAN Upgrade") {
+            hint = firmware_upgrade::feedback::CanNextStep(host_ready, update_target_ready, session_state_.f13_bootloader_ready);
         } else {
-            std::wstring text = busy ? L"Working: wait, or use Cancel.\r\nMissing: " :
-                firmware_upgrade::feedback::CanNextStep(host_ready,update_target_ready,session_state_.f13_bootloader_ready)+L"\r\nMissing: ";
-            for (std::size_t index = 0U; index < missing.size(); ++index) {
-                if (index != 0U) {
-                    text += L"; ";
-                }
-                text += missing[index];
-            }
-            firmware_prerequisites_label_.SetWindowTextW(text.c_str());
-            firmware_prerequisites_label_.SetEmphasized(
-                !busy && enter_bootloader_btn_.IsWindowEnabled());
+            hint = L"[BLOCKED] " + missing.front() + L". See Preflight.";
         }
+        firmware_prerequisites_label_.SetWindowTextW(hint.c_str());
+        firmware_prerequisites_label_.SetEmphasized(!busy && (!image_blocker.empty() || enter_bootloader_btn_.IsWindowEnabled()));
     } else {
         start_firmware_update_btn_.EnableWindow(FALSE);
-        firmware_prerequisites_label_.SetWindowTextW(
-            L"Custom Transfer is a non-destructive protocol test and does "
-            L"not use a firmware BIN. Select CAN Upgrade to program an app.");
+        const bool discovered = target_ready && session_state_.target_profile == firmware_upgrade::ui::TargetProfile::F13Transfer;
+        const std::wstring hint = busy ? L"Keep device power and CAN connected. Use Cancel to stop." :
+            !host_ready ? L"Next: Open + Probe Host." : discovered ? L"Ready: Transfer Test." : L"Next: Discover Test Target.";
+        firmware_prerequisites_label_.SetWindowTextW(hint.c_str());
+        firmware_prerequisites_label_.SetEmphasized(!busy && discovered);
     }
     disconnect_btn_.EnableWindow(port_open || busy);
     load_binary_btn_.EnableWindow(!busy);
@@ -502,7 +503,7 @@ void CMainFrame::UpdateUi() {
     UpdateFirmwareImageInfoText();
     UpdateTargetMetadataText();
     UpdateBusUi();
-    if (ApplyBusRecoveryUi()) return;
+    if (ApplyBusRecoveryUi()) {FitWorkflowHint();return;}
     if (session_state_.can_stop_unconfirmed) {
         connect_target_btn_.EnableWindow(FALSE);
         enter_bootloader_btn_.EnableWindow(FALSE);
@@ -513,9 +514,11 @@ void CMainFrame::UpdateUi() {
             L"[BLOCKED] CAN stop is not confirmed; the controller may still be active. Next: Close COM, then Open + Probe Host and Discover Target.");
         firmware_prerequisites_label_.SetEmphasized(true);
         firmware_prerequisites_label_.SetTone(firmware_upgrade::visual::Tone::Pending);
+        FitWorkflowHint();
         return;
     }
     if (!boot_profile || image_blocker.empty()) UpdateCompletionFeedback();
+    FitWorkflowHint();
 }
 
 void CMainFrame::OnBnClickedConnectTarget() {

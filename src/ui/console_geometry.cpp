@@ -13,11 +13,11 @@ LogLayout CalculateLog(const Rect& bounds,int row) {
     out.history={bounds.x,history_y,bounds.width,(std::max)(0,bounds.y+bounds.height-history_y)};
     return out;
 }
-Layout Calculate(int width, int height, int text_height) {
+Layout Calculate(int width, int height, int text_height, int native_field_height) {
     const int margin = 6, gap = 5, padding = 6;
     const int row = (std::max)(24, text_height + 8);
     const int field_row=(std::max)(20,text_height+4);
-    const int compact_row=(std::max)(22,text_height+4);
+    const int compact_row=(std::max)({24,text_height+8,native_field_height});
     const int title=text_height+8, card=text_height*3+10;
     const int content_width = (std::max)(0, width - margin * 2);
     int y = margin;
@@ -74,17 +74,20 @@ Layout Calculate(int width, int height, int text_height) {
     out.metadata_row_height=field_row;
     out.interface_row_height=compact_row;
     out.fits = image_width >= 400 && metadata_width>=285 &&
-        out.interface_pane.height >= (compact_row+2)*9+compact_row &&
+        out.interface_pane.height >= (compact_row+InterfaceRowGap)*9+compact_row &&
         content_height>=row*7;
     return out;
 }
-int MinimumClientHeight(int text_height) {
-    const int row=(std::max)(24,text_height+8), compact=(std::max)(22,text_height+4);
+int MinimumClientHeight(int text_height, int native_field_height, int required_interface_height) {
+    const int row=(std::max)(24,text_height+8);
+    const int compact=(std::max)({24,text_height+8,native_field_height});
     const int title=text_height+8, field=(std::max)(20,text_height+4);
     const int connection=title+row+6;
     const int analysis=title+(text_height*3+10)+5+(title+field*4+6)+6;
     const int top=6+connection+5+analysis+5+(text_height+8)+5;
-    const int body=(std::max)({(compact+3)+5+(compact+2)*9+compact+title+6,
+    const int left_height=(std::max)({(compact+InterfaceRowGap)*9+compact,
+        (compact+InterfaceRowGap)*8+text_height*3+8,required_interface_height});
+    const int body=(std::max)({(compact+3)+5+left_height+title+6,
         (row+2)*3+row*2+2+80+title+6,row*7+title+6});
     return top+body+row+5+6;
 }

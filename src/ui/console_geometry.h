@@ -1,6 +1,8 @@
 #pragma once
 
 namespace firmware_upgrade::console {
+constexpr const wchar_t* HostConnectionTitle = L"1. Host Connection";
+constexpr int InterfaceRowGap = 4;
 struct Rect { int x, y, width, height; };
 struct Layout {
     Rect connection_group, analysis_group, interface_group, image_group, log_group;
@@ -19,8 +21,8 @@ struct LogLayout { Rect buttons[6], trace, auto_scroll, history; };
 LogLayout CalculateLog(const Rect& bounds,int row);
 // All page bodies share these rectangles. Only log history scrolls; there is
 // no document-sized parent surface. Metrics are actual device pixels.
-Layout Calculate(int width, int height, int text_height);
-int MinimumClientHeight(int text_height);
+Layout Calculate(int width, int height, int text_height, int native_field_height = 0);
+int MinimumClientHeight(int text_height, int native_field_height = 0, int required_interface_height = 0);
 // Text widths include font-aware padding. Keep all children inside the band.
 FooterLayout CalculateFooter(const Rect& bounds, int progress_width,
                              int elapsed_width, int build_width);

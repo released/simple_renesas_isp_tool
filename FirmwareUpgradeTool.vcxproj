@@ -239,6 +239,8 @@
     <ClInclude Include="src\core\uart_host_client.h" />
     <ClInclude Include="src\core\isp_device_client.h" />
     <ClInclude Include="src\core\isp_bus_settings.h" />
+    <ClInclude Include="src\core\isp_program_state.h" />
+    <ClInclude Include="src\core\isp_program_evidence.h" />
     <ClInclude Include="src\core\g16_i2c_reference.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\worker_session.h" />

@@ -10,6 +10,7 @@
 #include "core/update_evidence.h"
 #include "core/host_counter_evidence.h"
 #include "core/isp_i2c_exchange.h"
+#include "core/isp_program_evidence.h"
 
 #include <algorithm>
 #include <array>
@@ -319,6 +320,7 @@ void WorkerSession::ThreadMain() {
         const auto stats_before=state_.f24_stats;
         const auto client_before=host_link_client_.Stats();
         update_details_.clear();
+        isp_program_state_={};
         update_result_=feedback::Result::None;
         current_phase_.clear();
         update_timings_.clear();
@@ -419,13 +421,17 @@ void WorkerSession::ThreadMain() {
 
         if(!success && IsCancelRequested()) error=L"Operation canceled. "+error;
         if(!success && error.empty()) error=L"Worker operation failed.";
-        const auto error_context=std::wstring(CommandName(command.type))+L" | "+
+        const auto error_context=CommandName(command.type,command.isp_contract)+L" | "+
             (report_port.empty()?command.port_name:report_port)+L" | Host Baud "+
             std::to_wstring(report_baud?report_baud:command.baudrate)+
             (current_phase_.empty()?L"":L" | Phase: "+current_phase_);
         auto result_message=success && update_result_!=feedback::Result::None ?
             feedback::Describe(update_result_).status : error;
-        const auto help=success?std::wstring():guidance::Format(error,error_context);
+        const bool isp_operation=command.type==CommandType::UartDiscover||command.type==CommandType::UartEnter||
+            command.type==CommandType::UartProgram||command.type==CommandType::UartTest||command.type==CommandType::UartVerify;
+        const auto advice=success?guidance::Advice{}:guidance::Explain(error,isp_operation?
+            guidance::IspTransport(command.isp_contract):guidance::Transport::Unspecified);
+        const auto help=success?std::wstring():guidance::Format(error,error_context,advice);
         state_.busy = false;
         if(report_update) {
             const bool old_cleanup=cleanup_in_progress_; cleanup_in_progress_=true;
@@ -474,6 +480,7 @@ void WorkerSession::ThreadMain() {
                 L",\n  \"device_uart\": "+evidence::JsonString(uart_update&&command.isp_contract!=2U?report_can:L"")+
                 L",\n  \"device_i2c\": "+evidence::JsonString(uart_update&&command.isp_contract==2U?report_can:L"")+
                 L",\n  \"device_protocol\": "+evidence::JsonString(uart_update?isp_name:L"")+
+                L",\n  \"device_program\": "+(uart_update?isp::ProgramEvidenceJson(isp_program_state_):L"null")+
                 L",\n  \"elapsed_ms\": "+std::to_wstring(elapsed)+
                 L",\n  \"input_bytes\": "+std::to_wstring(command.image.size())+
                 L",\n  \"phases_ms\": "+phases+
@@ -502,6 +509,7 @@ void WorkerSession::ThreadMain() {
                     {L"Input bytes",std::to_wstring(command.image.size())},{L"Elapsed ms",std::to_wstring(elapsed)},
                     {L"Operation evidence",update_details_},{L"Host counter deltas",counters},
                     {L"Host counter assessment",observations.Status()+L". "+observations.Note()},{L"Host peaks / scope",peaks}};
+                if(uart_update)view.fields.push_back({L"Device program state",isp::ProgramEvidenceText(isp_program_state_)});
                 if(command.type!=CommandType::BridgeRun && !command.image.empty()) {
                     if(command.type==CommandType::ProgramF13Boot || uart_update) {
                         const auto input=firmware_update::InspectImage(command.image);
@@ -535,7 +543,7 @@ void WorkerSession::ThreadMain() {
             completion.update_result=success ? update_result_ : feedback::Result::None;
             if (completion.update_result!=feedback::Result::None)
                 completion.text=feedback::Describe(completion.update_result).status;
-            completion.guidance=help; QueueEvent(std::move(completion));
+            completion.guidance=help; completion.advice=advice; QueueEvent(std::move(completion));
         }
 
         {
@@ -1013,7 +1021,7 @@ void WorkerSession::PostActivity(const std::wstring& text) {
     QueueEvent(std::move(event));
 }
 
-const wchar_t* WorkerSession::CommandName(CommandType type) {
+std::wstring WorkerSession::CommandName(CommandType type,std::uint8_t contract) {
     switch(type) {
     case CommandType::OpenAndProbe: return L"Open + Probe Host";
     case CommandType::LoadImage: return L"Load BIN";
@@ -1027,11 +1035,11 @@ const wchar_t* WorkerSession::CommandName(CommandType type) {
     case CommandType::CanTxTest: return L"Bridge self test";
     case CommandType::ResetHost: return L"Reset host";
     case CommandType::ProbeI2c: return L"I2C reference discovery";
-    case CommandType::UartDiscover: return L"UART device discovery";
-    case CommandType::UartEnter: return L"Enter UART device Boot";
-    case CommandType::UartProgram: return L"UART device update";
-    case CommandType::UartTest: return L"UART Custom Transfer";
-    case CommandType::UartVerify: return L"UART read-only VERIFY";
+    case CommandType::UartDiscover: return isp::OperationName(isp::Operation::Discover,contract);
+    case CommandType::UartEnter: return isp::OperationName(isp::Operation::Enter,contract);
+    case CommandType::UartProgram: return isp::OperationName(isp::Operation::Program,contract);
+    case CommandType::UartTest: return isp::OperationName(isp::Operation::TransferTest,contract);
+    case CommandType::UartVerify: return isp::OperationName(isp::Operation::Verify,contract);
     case CommandType::BridgeInfo: return L"Read host update info";
     case CommandType::BridgeEnter: return L"Enter host Boot";
     case CommandType::BridgeProgram: return L"Host App update";

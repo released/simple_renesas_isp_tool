@@ -1,6 +1,7 @@
 #pragma once
 #include "firmware_update_profile.h"
 #include "isp_bus_settings.h"
+#include "isp_program_state.h"
 #include <functional>
 #include "../../firmware/common/isp_device/isp_protocol.h"
 
@@ -31,16 +32,18 @@ public:
     void SetBusConfiguration(std::uint8_t contract,const BusConfiguration& configuration);
     void Reset();
     bool Request(std::uint8_t command,const std::vector<std::uint8_t>& payload,
-        std::vector<std::uint8_t>* reply,std::wstring* error,std::uint32_t timeout=1000U);
+        std::vector<std::uint8_t>* reply,std::wstring* error,std::uint32_t timeout=1000U,
+        RequestOutcome* outcome=nullptr);
     bool Discover(TargetInfo* target,std::wstring* error);
     bool ReadMetadata(std::vector<std::uint8_t>* bytes,std::wstring* error);
     bool TransferTest(std::wstring* error);
     bool ReadDiagnostics(const TargetInfo& target,UartDiagnostics* out,std::wstring* error);
     bool Program(const std::vector<std::uint8_t>& image,bool force,
         std::uint32_t approved_version,std::function<void(unsigned,const wchar_t*)> progress,
-        std::wstring* error);
+        std::wstring* error,ProgramState* state=nullptr);
 private:
-    bool Stream(const std::vector<std::uint8_t>& bytes,std::function<void(unsigned,const wchar_t*)> progress,std::wstring* error);
+    bool Stream(const std::vector<std::uint8_t>& bytes,std::function<void(unsigned,const wchar_t*)> progress,
+        std::wstring* error,ProgramState* state=nullptr);
     Exchange exchange_;
     Exchange stream_exchange_;
     std::function<bool()> canceled_;

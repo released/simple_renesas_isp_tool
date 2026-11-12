@@ -28,6 +28,7 @@
 #include "ui/worker_event_queue.h"
 #include "core/image_analysis.h"
 #include "core/scoped_flag.h"
+#include "core/operation_guidance.h"
 
 struct WorkerResponsivenessFixture;
 
@@ -132,6 +133,7 @@ struct WorkerEvent {
     feedback::Result update_result = feedback::Result::None;
     std::wstring text;
     std::wstring guidance;
+    firmware_upgrade::guidance::Advice advice;
     std::uint64_t report_operation_id = 0U;
     bool report_pending = false;
     std::wstring report_json_path;
@@ -252,6 +254,7 @@ private:
     void AbortUartBestEffort();
     bool ProcessUart(const Command& command,std::wstring* error);
     bool ReadUartTarget(std::wstring* error);
+    bool ProcessIspTransferTest(std::uint8_t contract,std::wstring* error);
     bool ConfigureF13Can(std::uint32_t response_id,
                          std::uint32_t response_mask,
                          const std::wstring& filter_description,
@@ -274,7 +277,7 @@ private:
     void PostState();
     void PostProgress(int progress, const std::wstring& text);
     void PostActivity(const std::wstring& text);
-    static const wchar_t* CommandName(CommandType type);
+    static std::wstring CommandName(CommandType type,std::uint8_t contract=1U);
     void QueueEvent(WorkerEvent event);
 
     HWND notify_window_ = nullptr;
@@ -298,6 +301,7 @@ private:
 
     SessionState state_;
     std::wstring update_details_;
+    isp::ProgramState isp_program_state_;
     std::vector<std::pair<std::wstring,std::uint64_t>> update_timings_;
     host_link::SerialPort serial_port_;
     host_link::Client host_link_client_;

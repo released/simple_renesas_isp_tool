@@ -5,6 +5,20 @@
 #include <string>
 
 namespace firmware_upgrade::isp {
+inline const wchar_t* ProtocolName(std::uint8_t contract) {
+    return contract==2U?L"I2C":contract==3U?L"Xmodem":L"UART";
+}
+enum class Operation { Discover, Enter, Program, TransferTest, Verify };
+inline std::wstring OperationName(Operation operation,std::uint8_t contract) {
+    const std::wstring name=ProtocolName(contract);
+    switch(operation) {
+    case Operation::Discover: return name+L" device discovery";
+    case Operation::Enter: return L"Enter "+name+L" device Boot";
+    case Operation::Program: return name+L" device update";
+    case Operation::TransferTest: return name+L" Custom Transfer";
+    default: return name+L" read-only VERIFY";
+    }
+}
 struct BusConfiguration {
     std::uint8_t port=0U;
     std::uint32_t baud=115200U;

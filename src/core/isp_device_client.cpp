@@ -1,6 +1,7 @@
 #include "isp_device_client.h"
 #include <algorithm>
 #include <cstring>
+#include <chrono>
 
 namespace firmware_upgrade::isp {
 namespace {
@@ -33,7 +34,8 @@ void Client::SetBusConfiguration(std::uint8_t contract,const BusConfiguration& c
 }
 void Client::Reset() {sequence_=0U;}
 bool Client::Request(std::uint8_t command,const std::vector<std::uint8_t>& payload,
-    std::vector<std::uint8_t>* reply,std::wstring* error,std::uint32_t timeout) {
+    std::vector<std::uint8_t>* reply,std::wstring* error,std::uint32_t timeout,RequestOutcome* outcome) {
+    if(outcome)*outcome=RequestOutcome::NotAttempted;
     if(reply)reply->clear();
     if(!exchange_||!reply||payload.size()>ISP_PAYLOAD_MAX||!timeout||timeout>30000U)
         return Fail(error,L"Invalid ISP exchange, payload or timeout.");
@@ -46,14 +48,19 @@ bool Client::Request(std::uint8_t command,const std::vector<std::uint8_t>& paylo
     std::vector<std::uint8_t> received;
     // Only Host Link's identical EXEC can replay. A lost device reply is not
     // permission to repeat ENTER/START/WRITE/END with a fresh device sequence.
+    if(outcome)*outcome=RequestOutcome::Unconfirmed;
     if(!exchange_({encoded,encoded+count},timeout,&received,error))return false;
     IspStream stream={};IspPacket response={};unsigned complete=0U;
     for(const auto byte:received)complete+=IspStreamFeed(&stream,byte,&response);
     if(complete!=1U||stream.count||received.size()!=response.length+14U||stream.crc_errors||stream.framing_errors||
         !response.response||response.sequence!=request.sequence||response.command!=command||response.status>ISP_CRC_ERROR)
         return Fail(error,L"ISP response framing/CRC/sequence/command mismatch. Device command was not repeated.");
-    if(response.status)return Fail(error,L"Device ISP command "+std::to_wstring(command)+L" returned "+Status(response.status)+L".");
+    if(response.status) {
+        if(outcome)*outcome=RequestOutcome::Rejected;
+        return Fail(error,L"Device ISP command "+std::to_wstring(command)+L" returned "+Status(response.status)+L".");
+    }
     reply->assign(response.data,response.data+response.length);
+    if(outcome)*outcome=RequestOutcome::Acknowledged;
     return true;
 }
 bool ParseInfo(const std::vector<std::uint8_t>& bytes,TargetInfo* target,std::wstring* error) {
@@ -147,7 +154,7 @@ bool ValidateInstalledMetadata(const std::vector<std::uint8_t>& bytes,const Targ
         policy.transports!=t.transport||policy.device_uart_baud!=(t.contract==2U?0U:t.baud)||policy.irq_abi!=t.irq_abi||
         policy.minimum_boot_version>t.boot_version||policy.version_control!=static_cast<unsigned>(t.version_control)||
         !std::all_of(bytes.begin()+128,bytes.end(),[](std::uint8_t b){return b==0xFFU;}))
-        return Fail(error,L"Installed App metadata readback differs from live INFO or UART image contract.");
+        return Fail(error,L"Installed App metadata readback differs from live INFO or selected ISP image contract.");
     return true;
 }
 bool Client::TransferTest(std::wstring* error) {
@@ -157,7 +164,7 @@ bool Client::TransferTest(std::wstring* error) {
         std::vector<std::uint8_t> data(command==ISP_CMD_ECHO?96U:3U),reply;
         for(std::size_t i=0;i<data.size();++i)data[i]=static_cast<std::uint8_t>(i^0xA5U);
         if(!Request(static_cast<std::uint8_t>(command),data,&reply,error))return false;
-        if(reply!=data)return Fail(error,L"UART Transfer echo content mismatch.");
+        if(reply!=data)return Fail(error,std::wstring(ProtocolName(t.contract))+L" device Transfer echo content mismatch.");
     }
     std::vector<std::uint8_t> reply;
     if(t.contract==3U) {
@@ -166,12 +173,16 @@ bool Client::TransferTest(std::wstring* error) {
         Put32(start,static_cast<std::uint32_t>(data.size()));Put32(start,firmware_update::Crc32(data.data(),data.size()));
         if(!Request(ISP_CMD_STREAM_TEST,start,&reply,error)||!reply.empty()||!Stream(data,{},error))return false;
     }
-    return Request(ISP_CMD_STATS,{},&reply,error)&&(reply.size()==16U||Fail(error,L"UART diagnostic counters must contain 16 bytes."));
+    return Request(ISP_CMD_STATS,{},&reply,error)&&(reply.size()==16U||Fail(error,std::wstring(ProtocolName(t.contract))+L" device counters must contain 16 bytes."));
 }
 bool Client::Program(const std::vector<std::uint8_t>& image,bool force,std::uint32_t approved_version,
-    std::function<void(unsigned,const wchar_t*)> progress,std::wstring* error) {
+    std::function<void(unsigned,const wchar_t*)> progress,std::wstring* error,ProgramState* state) {
+    ProgramState local;
+    if(!state)state=&local;
+    *state={};
     firmware_update::ImageInfo m;TargetInfo t;std::vector<std::uint8_t> reply;
     if(!Discover(&t,error))return false;
+    state->last_confirmed=ProgramStage::Discovery;
     const auto profile=t.contract==2U?firmware_update::Profile::I2cUpgrade:t.contract==3U?firmware_update::Profile::XmodemUpgrade:firmware_update::Profile::UartUpgrade;
     if(!firmware_update::ValidateImage(profile,image,&m,error)||!Matches(m,t,error))return false;
     if(t.mode!=ISP_MODE_BOOT||t.active)return Fail(error,L"Discover App then Enter Boot before Start Device Update.");
@@ -184,11 +195,17 @@ bool Client::Program(const std::vector<std::uint8_t>& image,bool force,std::uint
         page.insert(page.end(),image.begin()+256U+at,image.begin()+320U+at);
         if(!Request(ISP_CMD_METADATA,page,&reply,error)||!reply.empty())return Fail(error,error&& !error->empty()?*error:L"Unexpected metadata ACK payload.");
     }
+    state->last_confirmed=ProgramStage::Metadata;
     std::vector<std::uint8_t> start;Put32(start,m.image_size);Put32(start,m.stored_crc32);
     if(progress)progress(1U,L"2/5 Start");
-    if(!Request(force?ISP_CMD_FORCE_START:ISP_CMD_START,start,&reply,error)||!reply.empty())return false;
+    if(!Request(force?ISP_CMD_FORCE_START:ISP_CMD_START,start,&reply,error,1000U,&state->start))return false;
+    if(!reply.empty()) {
+        state->start=RequestOutcome::Unconfirmed;
+        return Fail(error,L"Unexpected START acknowledgment payload; device state is unconfirmed.");
+    }
+    state->last_confirmed=ProgramStage::Start;
     if(t.contract==3U) {
-        if(!Stream(image,progress,error))return false;
+        if(!Stream(image,progress,error,state))return false;
         if(progress)progress(96U,L"5/5 Confirm App");return true;
     }
     for(std::size_t at=0U;at<image.size();) {
@@ -197,15 +214,26 @@ bool Client::Program(const std::vector<std::uint8_t>& image,bool force,std::uint
         block.insert(block.end(),image.begin()+at,image.begin()+at+count);
         if(!Request(ISP_CMD_WRITE,block,&reply,error,3000U)||!reply.empty())return false;
         at+=count;
+        state->accepted_bytes=at;
+        state->last_confirmed=ProgramStage::Write;
         if(progress)progress(2U+static_cast<unsigned>(at*88U/image.size()),L"3/5 Write");
     }
     if(progress)progress(92U,L"4/5 END CRC");
-    if(!Request(ISP_CMD_END,{},&reply,error,5000U)||!reply.empty())return false;
+    const auto end_started=std::chrono::steady_clock::now();
+    const bool ended=Request(ISP_CMD_END,{},&reply,error,5000U,&state->end);
+    state->end_elapsed_ms=static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now()-end_started).count());
+    if(!ended)return false;
+    if(!reply.empty()) {
+        state->end=RequestOutcome::Unconfirmed;
+        return Fail(error,L"Unexpected END acknowledgment payload; installed result is unconfirmed.");
+    }
+    state->last_confirmed=ProgramStage::End;
     if(progress)progress(96U,L"5/5 Confirm App");
     return true;
 }
 bool Client::Stream(const std::vector<std::uint8_t>& bytes,
-    std::function<void(unsigned,const wchar_t*)> progress,std::wstring* error) {
+    std::function<void(unsigned,const wchar_t*)> progress,std::wstring* error,ProgramState* state) {
     if(!stream_exchange_)return Fail(error,L"XMODEM raw UART exchange is not configured.");
     std::vector<std::uint8_t> reply;
     if(!stream_exchange_({},2000U,&reply,error)||reply!=std::vector<std::uint8_t>{'C'})
@@ -234,13 +262,27 @@ bool Client::Stream(const std::vector<std::uint8_t>& bytes,
         }
         if(!ack)return Fail(error,L"XMODEM block ACK was not confirmed after three identical attempts.");
         at+=count;++number;
+        if(state) {
+            state->accepted_bytes=at;
+            state->last_confirmed=ProgramStage::Write;
+        }
         if(progress)progress(2U+static_cast<unsigned>(at*88U/bytes.size()),L"3/5 Write");
     }
     if(progress)progress(92U,L"4/5 END CRC");
     // Exactly one EOT. A lost final ACK cannot authorize another END/erase.
     reply.clear();
-    if(!stream_exchange_({4U},5000U,&reply,error)||reply!=std::vector<std::uint8_t>{6U})
+    if(canceled_&&canceled_())return Fail(error,L"XMODEM operation canceled before EOT.");
+    if(state)state->end=RequestOutcome::Unconfirmed;
+    const auto end_started=std::chrono::steady_clock::now();
+    const bool ended=stream_exchange_({4U},5000U,&reply,error);
+    if(state)state->end_elapsed_ms=static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now()-end_started).count());
+    if(!ended||reply!=std::vector<std::uint8_t>{6U})
         return Fail(error,L"XMODEM EOT/CRC result is not confirmed. EOT was sent once; preserve the report and read live INFO.");
+    if(state) {
+        state->end=RequestOutcome::Acknowledged;
+        state->last_confirmed=ProgramStage::End;
+    }
     return true;
 }
 } // namespace firmware_upgrade::isp

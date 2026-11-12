@@ -53,6 +53,8 @@ static int Run(const wchar_t* image_path) {
     if (!frame->Create(nullptr, L"Owned Misc Host mode fixture", WS_OVERLAPPEDWINDOW, CRect(0,0,1366,768))) return 3;
     test_app.m_pMainWnd = frame;
     frame->worker_session_.StopAndJoin();
+    while(frame->worker_session_.HasPendingEvents()) frame->worker_session_.DrainEvents();
+    frame->worker_command_pending_ = false;
     frame->worker_started_ = false;
     frame->bus_tabs_.SetCurSel(3);
     frame->UpdateUi();
@@ -69,7 +71,7 @@ static int Run(const wchar_t* image_path) {
     frame->ApplyLoadedImage(event);
     Check(frame->binary_bridge_inspection_.valid, "actual Host BIN passes metadata and CRC");
     frame->UpdateUi();
-    Check(Text(frame->i2c_notes_).find(L"not verified") != std::wstring::npos && no_enter() &&
+    Check(Text(frame->firmware_prerequisites_label_).find(L"Open + Probe Host") != std::wstring::npos && no_enter() &&
         !frame->enter_bootloader_btn_.IsWindowEnabled(), "offline BIN cannot establish a live Host mode");
 
     const auto& m = frame->binary_bridge_inspection_.metadata;
@@ -124,12 +126,12 @@ static int Run(const wchar_t* image_path) {
     frame->binary_data_ = std::move(bytes);
     frame->binary_bridge_inspection_ = inspected;
     frame->UpdateUi();
-    Check(no_enter() && Text(frame->i2c_notes_).find(L"No valid Host App") != std::wstring::npos &&
+    Check(no_enter() && Text(frame->firmware_overview_cards_[1]).find(L"invalid / absent") != std::wstring::npos &&
         Text(frame->enter_bootloader_btn_) == L"Bridge Boot active" && !frame->enter_bootloader_btn_.IsWindowEnabled(),
         "first installation in Boot explicitly skips ENTER");
     Check(frame->start_firmware_update_btn_.IsWindowEnabled() && !frame->transfer_test_btn_.IsWindowEnabled(),
         "Boot without App permits matching update but forbids RUN");
-    Check(Text(frame->firmware_prerequisites_label_).find(L"Update HOST APP directly") != std::wstring::npos,
+    Check(Text(frame->firmware_prerequisites_label_).find(L"Ready: Update HOST APP.") != std::wstring::npos,
         "ready prerequisite identifies already-active Boot");
     fits(); capture(L"misc_boot_no_app.png");
     for (bool boot : {true, false}) {
@@ -141,8 +143,8 @@ static int Run(const wchar_t* image_path) {
             !!frame->transfer_test_btn_.IsWindowEnabled() == boot &&
             !!frame->start_firmware_update_btn_.IsWindowEnabled() == boot,
             "App vs Boot preserves explicit ENTER/update/RUN gates");
-        Check(boot ? no_enter() && Text(frame->i2c_notes_).find(L"Valid Host App installed") != std::wstring::npos :
-            Text(frame->i2c_notes_).find(L"1. Enter Bridge Boot (UART)") != std::wstring::npos,
+        Check(boot ? no_enter() && Text(frame->firmware_prerequisites_label_).find(L"Ready:") == 0 :
+            Text(frame->firmware_prerequisites_label_).find(L"Enter Bridge Boot (UART)") != std::wstring::npos,
             "only live App mode lists ENTER as the next update step");
         fits();
         preflight_checked = false; expected_boot = boot; modal_waits = 0U;
@@ -155,15 +157,14 @@ static int Run(const wchar_t* image_path) {
     descriptor.mode = BU_MODE_BOOT;
     frame->last_update_result_ = feedback::Result::HostAppWritten;
     frame->UpdateUi();
-    Check(no_enter() && Text(frame->i2c_notes_).find(L"Next: Run Validated Bridge App") != std::wstring::npos &&
+    Check(no_enter() && Text(frame->firmware_prerequisites_label_).find(L"Next: Run Validated Bridge App") != std::wstring::npos &&
         Text(frame->i2c_notes_).find(L"Load HOST") == std::wstring::npos &&
-        Text(frame->firmware_prerequisites_label_).find(L"still in Boot") != std::wstring::npos,
+        Text(frame->operation_status_card_).find(L"still in Boot") != std::wstring::npos,
         "completed write guides explicit RUN without repeating write/ENTER steps");
     fits();
     frame->last_update_result_ = feedback::Result::None;
     state.busy = true; frame->UpdateUi();
-    Check(no_enter() && Text(frame->i2c_notes_).find(L"Last verified mode: BOOT") != std::wstring::npos &&
-        Text(frame->i2c_notes_).find(L"Wait") != std::wstring::npos &&
+    Check(no_enter() && Text(frame->operation_status_card_).find(L"last verified BOOT") != std::wstring::npos &&
         !frame->start_firmware_update_btn_.IsWindowEnabled() && !frame->transfer_test_btn_.IsWindowEnabled(),
         "busy operation labels last observed mode and cannot authorize another action");
     state.busy = false;
@@ -176,7 +177,7 @@ static int Run(const wchar_t* image_path) {
     Check(no_enter() && !frame->enter_bootloader_btn_.IsWindowEnabled() &&
         !frame->start_firmware_update_btn_.IsWindowEnabled(), "unknown descriptor mode enables no write or ENTER");
     descriptor.mode = BU_MODE_BOOT; state.bridge_info_valid = false; frame->UpdateUi();
-    Check(Text(frame->i2c_notes_).find(L"not verified") != std::wstring::npos &&
+    Check(Text(frame->target_metadata_label_).find(L"self-update: N/A") != std::wstring::npos &&
         !frame->transfer_test_btn_.IsWindowEnabled(), "stale Boot descriptor is never treated as live");
     state = {};
     frame->worker_command_pending_ = false;

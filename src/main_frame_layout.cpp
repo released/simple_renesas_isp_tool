@@ -32,6 +32,10 @@ int CaptionWidth(CWnd& control, int minimum = 0, const wchar_t* caption = nullpt
     if (old) dc.SelectObject(old);
     return (std::max)(minimum, measured);
 }
+int HeaderInset(int width, int title_width, int build_width, int build_height, int text_height) {
+    if (title_width + build_width + 40 > width) return build_height + 12;
+    return (std::max)(0, build_height - text_height - 12);
+}
 }
 void CMainFrame::MoveControl(CWnd& control, const firmware_upgrade::console::Rect& rectangle) {
     Move(control, rectangle);
@@ -45,10 +49,17 @@ void CMainFrame::LayoutControls(int width, int height) {
     CFont* previous = dc.SelectObject(&ui_font_);
     TEXTMETRIC metric = {}; dc.GetTextMetrics(&metric);
     if (previous) dc.SelectObject(previous);
+    previous = dc.SelectObject(section_font_.GetSafeHandle() ? &section_font_ : &ui_font_);
+    const int title_width = dc.GetTextExtent(firmware_upgrade::console::HostConnectionTitle).cx;
+    dc.SelectObject(previous);
     build_identity_.SetFont(reinterpret_cast<HFONT>(ui_font_.GetSafeHandle()));
-    build_identity_.Place(width - 8, 8, (std::max)(0, width - 16));
-    const int header_height = build_identity_.Height() + 16;
-    auto layout = firmware_upgrade::console::Calculate(width, (std::max)(0, height - header_height), metric.tmHeight);
+    const int build_height = build_identity_.Height();
+    const int header_height = HeaderInset(width, title_width, build_identity_.PreferredWidth(), build_height, metric.tmHeight);
+    const bool separate_header = header_height >= build_height;
+    const int build_top = separate_header ? 6 : (std::max)(0, 6 - (build_height - static_cast<int>(metric.tmHeight)) / 2);
+    build_identity_.Place(width - 12, build_top, (std::max)(0, width - 24 - (separate_header ? 0 : title_width + 16)));
+    auto layout = firmware_upgrade::console::Calculate(width, (std::max)(0, height - header_height), metric.tmHeight,
+        InterfaceRowHeight(metric.tmHeight));
     // Translate the existing console as one body; keep its internal geometry.
     Rect* regions[] = {&layout.connection_group, &layout.analysis_group, &layout.interface_group,
         &layout.image_group, &layout.log_group, &layout.connection, &layout.identities,
@@ -136,14 +147,17 @@ void CMainFrame::LayoutControls(int width, int height) {
     const int start_width = CaptionWidth(start_firmware_update_btn_) + 16;
     Move(start_firmware_update_btn_, {image.x, action_y, start_width, row + 5});
     const int force_width=CaptionWidth(force_old_firmware_btn_)+16;
-    const bool show_force=!IsMiscTab() && (!IsI2cTab()||IsI2cIsp());
+    const bool show_force=(force_old_firmware_btn_.GetStyle() & WS_VISIBLE)!=0;
+    const bool show_update=(start_firmware_update_btn_.GetStyle() & WS_VISIBLE)!=0;
     const bool force_inline=start_width+gap+force_width<=image.width;
     const int force_y=force_inline?action_y:action_y+row+gap+5;
     Move(force_old_firmware_btn_,{force_inline?image.x+start_width+gap:image.x,force_y,
         (std::min)(force_width,image.width),row+5});
-    const int notice_y=(show_force?force_y:action_y)+row+gap+5;
+    const int notice_y=show_update ? (show_force?force_y:action_y)+row+gap+5 : action_y;
     Move(firmware_prerequisites_label_, {image.x,notice_y,image.width,
         (std::max)(0,image.y+image.height-notice_y)});
+
+    FitWorkflowHint();
 
     const Rect log = layout.log_pane;
     const auto log_tools=firmware_upgrade::console::CalculateLog(log,row);
@@ -167,6 +181,31 @@ void CMainFrame::LayoutControls(int width, int height) {
     layout_in_progress_ = false;
     RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_FRAME);
 }
+void CMainFrame::FitWorkflowHint() {
+    if (!firmware_prerequisites_label_.GetSafeHwnd() || !ui_font_.GetSafeHandle()) return;
+    CRect bounds;
+    firmware_prerequisites_label_.GetWindowRect(&bounds);
+    ScreenToClient(&bounds);
+    if (bounds.Width() <= 16) return;
+    CClientDC dc(&firmware_prerequisites_label_);
+    auto* previous = dc.SelectObject(section_font_.GetSafeHandle() ? &section_font_ : &ui_font_);
+    TEXTMETRIC metric = {};
+    dc.GetTextMetrics(&metric);
+    CString text;
+    firmware_prerequisites_label_.GetWindowTextW(text);
+    CRect content(0, 0, bounds.Width()-16, 0);
+    dc.DrawTextW(text, content, DT_LEFT | DT_WORDBREAK | DT_NOPREFIX | DT_CALCRECT);
+    dc.SelectObject(previous);
+    const int available = (std::max)(0, console_layout_.image_pane.y+console_layout_.image_pane.height-static_cast<int>(bounds.top));
+    const int wanted = (std::min)(available, (std::max)(static_cast<int>(metric.tmHeight)*3+8, content.Height()+8));
+    if (bounds.Height() == wanted) return;
+    const CRect exposed = bounds;
+    bounds.bottom = bounds.top+wanted;
+    firmware_prerequisites_label_.MoveWindow(bounds, FALSE);
+    InvalidateRect(exposed, TRUE);
+    firmware_prerequisites_label_.Invalidate(FALSE);
+}
+
 void CMainFrame::OnGetMinMaxInfo(MINMAXINFO* info) {
     CFrameWnd::OnGetMinMaxInfo(info);
     info->ptMinTrackSize.x = 1260;
@@ -174,9 +213,29 @@ void CMainFrame::OnGetMinMaxInfo(MINMAXINFO* info) {
     if (GetSafeHwnd() && ui_font_.GetSafeHandle()) {
         CClientDC dc(this); auto* previous=dc.SelectObject(&ui_font_);
         TEXTMETRIC metric={}; dc.GetTextMetrics(&metric); dc.SelectObject(previous);
+        previous=dc.SelectObject(section_font_.GetSafeHandle() ? &section_font_ : &ui_font_);
+        const int title_width=dc.GetTextExtent(firmware_upgrade::console::HostConnectionTitle).cx;
+        dc.SelectObject(previous);
         CRect window,client; GetWindowRect(&window); GetClientRect(&client);
+        const int header_height=HeaderInset(info->ptMinTrackSize.x-window.Width()+client.Width(),
+            title_width,build_identity_.PreferredWidth(),build_identity_.Height(),metric.tmHeight);
+        const int native_row=InterfaceRowHeight(metric.tmHeight);
+        int required_interface_height=0;
+        if(i2c_notes_.GetSafeHwnd() && (IsI2cTab() || IsUartTab() || IsMiscTab())) {
+            const auto minimum_layout=firmware_upgrade::console::Calculate(
+                info->ptMinTrackSize.x-window.Width()+client.Width(),
+                firmware_upgrade::console::MinimumClientHeight(metric.tmHeight,native_row),metric.tmHeight,native_row);
+            CString reminder;i2c_notes_.GetWindowTextW(reminder);
+            CRect measured(0,0,(std::max)(1,minimum_layout.interface_pane.width-16),0);
+            previous=dc.SelectObject(&ui_font_);
+            dc.DrawTextW(reminder,measured,DT_LEFT|DT_WORDBREAK|DT_NOPREFIX|DT_CALCRECT);
+            dc.SelectObject(previous);
+            const int note_row=IsMiscTab()?4:IsI2cIsp()?8:7;
+            required_interface_height=note_row*(native_row+firmware_upgrade::console::InterfaceRowGap)+measured.Height()+6;
+        }
         info->ptMinTrackSize.y=(std::max)(700,
-            firmware_upgrade::console::MinimumClientHeight(metric.tmHeight)+build_identity_.Height()+16+window.Height()-client.Height());
+            firmware_upgrade::console::MinimumClientHeight(metric.tmHeight,native_row,required_interface_height)+
+            header_height+window.Height()-client.Height());
     }
 }
 

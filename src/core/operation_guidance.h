@@ -4,12 +4,16 @@
 #include <string>
 
 namespace firmware_upgrade::guidance {
+enum class Transport { Unspecified, Uart, I2c, Xmodem };
+inline Transport IspTransport(unsigned contract) {
+    return contract==2U?Transport::I2c:contract==3U?Transport::Xmodem:Transport::Uart;
+}
 struct Advice {
     std::wstring layer;
     std::wstring next;
 };
 // These are inspection suggestions, not a diagnosis of the physical bus.
-inline Advice Explain(const std::wstring& message) {
+inline Advice Explain(const std::wstring& message,Transport transport=Transport::Unspecified) {
     std::wstring s=message;
     std::transform(s.begin(),s.end(),s.begin(),[](wchar_t c){return static_cast<wchar_t>(std::towlower(c));});
     const auto has=[&](const wchar_t* text){return s.find(text)!=std::wstring::npos;};
@@ -24,6 +28,10 @@ inline Advice Explain(const std::wstring& message) {
         return {L"Host / I2C device", L"The host returned an I2C transaction result. Check the selected port, 7-bit address, SCL rate, pull-ups and device power. Save the exact status and device Log. Repeat only supported read-only discovery; do not repeat erase/END to diagnose this result."};
     if(has(L"device bus rate")||has(L"selected port/rate/address"))
         return {L"Device bus settings",L"Match the selected Device baud or I2C rate/7-bit address to Boot/App initialization, live INFO and BIN metadata; check the bridge port capability and Discover again."};
+    if(transport==Transport::I2c && has(L"isp response"))
+        return {L"Host / I2C device",L"Check selected I2C port, 7-bit address, SCL rate, pull-ups and device UART0 Log. Preserve the framing/CRC/sequence error and compare the request/reply. Do not repeat erase/END or increase timeouts as a diagnosis."};
+    if(transport==Transport::Xmodem && (has(L"xmodem")||has(L"isp response")))
+        return {L"Bridge / Xmodem device",L"Check selected UART1 port, TX/RX, common ground and Device baud/8-N-1. Compare XMODEM-CRC128 handshake/block/control bytes with device UART0 Log. An unconfirmed EOT is not permission to resend EOT or rewrite Flash."};
     if(has(L"uart device")||has(L"device uart")||has(L"isp response")||has(L"command 0x61."))
         return {L"Bridge / UART device",L"Check selected UART1 port, crossed TX/RX, common ground, voltage and selected Device baud/8-N-1 (Boot/App and BIN must agree). Device UART0 is diagnostic Log only. Save the exact response and device Log; do not repeat erase/END or increase timeouts as a diagnosis."};
     if(has(L"downgrade") || (has(L"version") && has(L"older")))
@@ -40,9 +48,11 @@ inline Advice Explain(const std::wstring& message) {
         return {L"Host / device bus",L"Check the selected bridge port, device power, CAN H/L, termination, transceiver supply, bitrate and request/response IDs. Compare Tool log with analyzer evidence; then discover the target again."};
     return {L"Operation / state",L"Save the exact error and session summary. Check Preflight, refresh live identity and verify the current operation stage before retrying."};
 }
-inline std::wstring Format(const std::wstring& message,const std::wstring& context=L"") {
-    const auto advice=Explain(message);
+inline std::wstring Format(const std::wstring& message,const std::wstring& context,const Advice& advice) {
     return L"Layer: "+advice.layer+(context.empty()?L"":L"\nContext: "+context)+
         L"\n\nExact error:\n"+message+L"\n\nSuggested checks:\n"+advice.next;
+}
+inline std::wstring Format(const std::wstring& message,const std::wstring& context=L"") {
+    return Format(message,context,Explain(message));
 }
 } // namespace firmware_upgrade::guidance

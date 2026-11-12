@@ -16,8 +16,8 @@ BIN、檔案路徑、metadata與Log由各TAB共用。
 CAN、I2C與UART / Xmodem TAB提供port、speed、ID／mask或slave address等介面參數及適用的image contract。
 最後一個 TAB 是 Misc，更新目的地為 host bridge。
 
-CAN／I2C／UART / Xmodem／Misc TAB只位於左下PERIPHERAL / TARGET群組。
-上方 BIN 資訊、中下 LOAD / UPDATE IMAGE 與右下 MESSAGE LOG 固定獨立，切換 TAB 保留共用資料。
+CAN／I2C／UART / Xmodem／Misc TAB只位於左下Interface & Target群組。
+上方 BIN 資訊、中下 Image & Update 與右下 Logs & Reports 固定獨立，切換 TAB 保留共用資料。
 完整[群組與欄位對照](https://released.github.io/slide_simple_renesas_isp_tool/#tool-console-layout)及
 [Auto scroll down／INI 設定](https://released.github.io/slide_simple_renesas_isp_tool/#tool-log-auto-scroll)集中於 Tool operation。
 
@@ -124,7 +124,7 @@ START 已接受後失聯不會沿用步驟 3 的自動返回原 App 行為；取
 只有 END／CRC 通過、APP_READY 與 live INFO 核對完成後，才顯示 `[COMPLETE]` 與 Device App update complete。
 正常完成會停止 Host CAN、保留 COM（Host UART），讓使用者檢查 App 與板上功能；因此 DEVICE TARGET 回到 N/A 並要求再次 Discover 是完成清理後的狀態。
 App 未確認或 CAN STOP 未確認時，依[完成提示與下一步](https://released.github.io/slide_simple_renesas_isp_tool/#update-completion)處理，不自動重寫。
-Tool 自動保存 Firmware update report；右下 `MESSAGE LOG` 的 `Open Last Report` 可開啟報告，操作見[更新報告](https://released.github.io/slide_simple_renesas_isp_tool/#update-html-report)。
+Tool 自動保存 Firmware update report；右下 `Logs & Reports` 的 `Open Last Report` 可開啟報告，操作見[更新報告](https://released.github.io/slide_simple_renesas_isp_tool/#update-html-report)。
 
 [![Device 更新完成並確認 App 後停止 CAN 保留 COM](images/tool_operation/tool_CAN_update6_after_update.jpg)](images/tool_operation/tool_CAN_update6_after_update.jpg)
 

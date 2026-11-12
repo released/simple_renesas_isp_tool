@@ -58,8 +58,14 @@ void CMainFrame::OnUartSettingsChanged() {
     ValidateLoadedFirmwareImage(false);SaveUiSettings();UpdateUi();
     CRect client; GetClientRect(&client); LayoutControls(client.Width(), client.Height());
 }
+void CMainFrame::OnUartBaudFocusLost() {
+    if (uart_baud_combo_.GetSafeHwnd()) {
+        uart_baud_combo_.SetEditSel(-1, 0);
+    }
+}
 void CMainFrame::UpdateUartUi() {
     using firmware_upgrade::visual::Tone;
+    const std::wstring protocol=firmware_upgrade::isp::ProtocolName(SelectedIspContract());
     const bool busy=worker_command_pending_||session_state_.busy;
     RefreshBusPorts();
     firmware_upgrade::isp::BusConfiguration selected;
@@ -79,6 +85,11 @@ void CMainFrame::UpdateUartUi() {
     const bool older=match&&t.valid&&t.version_control&&binary_inspection_.metadata.version<t.version;
     bus_tabs_.EnableWindow(!busy&&!session_state_.can_started);
     bus_port_combo_.EnableWindow(host&&!busy);uart_baud_combo_.EnableWindow(host&&!busy);
+    const HWND focus = ::GetFocus();
+    if (!host || busy || (focus != uart_baud_combo_.GetSafeHwnd() &&
+        !::IsChild(uart_baud_combo_.GetSafeHwnd(), focus) && !uart_baud_combo_.GetDroppedState())) {
+        OnUartBaudFocusLost();
+    }
     uart_workflow_combo_.EnableWindow(!busy);app_start_edit_.EnableWindow(!busy&&!transfer);
     i2c_workflow_combo_.EnableWindow(!busy);i2c_speed_combo_.EnableWindow(host&&!busy);
     i2c_address_edit_.EnableWindow(host&&!busy);
@@ -101,27 +112,31 @@ void CMainFrame::UpdateUartUi() {
     export_summary_btn_.EnableWindow(!busy);
     std::wstring next;
     Tone tone=Tone::Pending;
-    if(busy)next=L"Working: wait, or use Cancel. Device UART1 is binary-only; UART0 remains the diagnostic Log.";
-    else if(!host)next=L"[BLOCKED] Open + Probe a bridge App with the selected I2C/UART capability, select its bus port and keep CAN stopped.";
+    if(busy)next=L"Use Cancel to stop. Keep device power and the "+protocol+L" connection.";
+    else if(!session_state_.host_validated)next=L"Next: Open + Probe Host.";
+    else if(session_state_.can_started) {next=L"[BLOCKED] Disconnect CAN before using the device serial interface.";tone=Tone::Error;}
+    else if(!host) {next=L"[BLOCKED] Host lacks "+protocol+L" support. Use a compatible bridge App.";tone=Tone::Error;}
     else if(!port) {next=IsI2cIsp()?L"[BLOCKED] Select an advertised I2C speed and a7-bit address from0x08 to0x77 (not shifted).":
         L"[BLOCKED] Check Device baud (300..2000000) and the bridge port capability. Match the device Boot/App baud; Host Baud is independent.";tone=Tone::Error;}
-    else if(transfer) {next=current?L"Ready: Transfer Test checks PING, ECHO and counters; Xmodem also checks CRC128 streaming. No BIN or Flash write.":L"Next: Discover Test Target with the matching standalone Transfer firmware.";tone=current?Tone::Ready:Tone::Pending;}
+    else if(transfer) {next=current?L"Ready: Transfer Test.":L"Next: Discover Test Target.";tone=current?Tone::Ready:Tone::Pending;}
     else if(!binary_data_.empty()&&!image) {next=L"[BLOCKED] Check BIN update interface / protocol. Load the matching ISP _update.bin.\r\n"+binary_image_validation_error_;tone=Tone::Error;}
-    else if(!current)next=L"Next: Discover Target (Boot or App mode). A loaded BIN is offline information only.";
+    else if(!current)next=L"Next: Discover Target.";
     else if(t.active) {next=L"[BLOCKED] Device reports an active update. Preserve the Log; check Cancel cleanup or device reset, then Discover Target.";tone=Tone::Error;}
     else if(t.mode==ISP_MODE_APP)next=L"Next: Enter Boot. Then Start Device Update before the valid-App inactivity window expires.";
     else if(!image)next=L"Next: Load the matching ISP App _update.bin, then Start Device Update.";
     else if(!match) {next=L"[BLOCKED] "+mismatch+L"\r\nCheck Compare Metadata.";tone=Tone::Error;}
     else if(!address) {next=L"[BLOCKED] App Start Override must be Auto or the exact BIN address.";tone=Tone::Error;}
     else if(older) {next=L"[BLOCKED] Installed App requires same/newer version. For this downgrade, use force upgrade old version firmware.";tone=Tone::Error;}
-    else {next=L"Ready: Start Device Update. Boot mode detected; Enter Boot is not needed.";tone=Tone::Ready;}
+    else {next=L"Ready: Start Device Update.";tone=Tone::Ready;}
     firmware_prerequisites_label_.SetWindowTextW(next.c_str());firmware_prerequisites_label_.SetTone(tone);
     firmware_prerequisites_label_.SetEmphasized(!busy);
-    operation_status_card_.SetWindowTextW(busy?L"[WORKING] UART device operation; Cancel is independent.":
-        !last_operation_error_.empty()?last_operation_error_.c_str():L"Device bus and PC Host Link settings are independent. Device UART0 is diagnostic Log, not the ISP data channel.");
+    const auto operation_text=busy?L"[WORKING] "+protocol+L" device operation":
+        !last_operation_error_.empty()?last_operation_error_:std::wstring(!session_state_.host_validated ? (session_state_.serial_open ? L"Host not verified" : L"Host disconnected") :
+            !current ? L"Host ready; device not discovered" : transfer ? L"Custom Transfer target ready" : t.mode==ISP_MODE_APP ? L"Device App running" : L"Device Boot active");
+    operation_status_card_.SetWindowTextW(operation_text.c_str());
     operation_status_card_.SetTone(busy?Tone::Working:!last_operation_error_.empty()?Tone::Error:Tone::Neutral);
-    if(IsI2cIsp())i2c_notes_.SetWindowTextW(L"Bridge IICA0 P62/P63 > device SCL/SDA; match the selected7-bit address and speed to Boot/App metadata. Shared ground and voltage-compatible pull-ups.\r\nDevice examples SCL/SDA: F13/F24 P62/P63; G16/G22 P60/P61; RH850 RIIC1 P8_1/P8_0. Diagnostic UART is independent.");
-    else i2c_notes_.SetWindowTextW(L"Bridge UART1 TX P74/RX P75 > device RX/TX; share ground and verify voltage.\r\nDevice examples TX/RX: F13/F24 P74/P75; G16 P11/P10; G22 P00/P01; RH850 RLIN31 P0_5/P0_4. Diagnostic UART is independent.");
+    if(IsI2cIsp())i2c_notes_.SetWindowTextW(L"IICA0: P62 SCL / P63 SDA.\r\nShared GND; voltage-compatible pull-ups.\r\nUART0: diagnostic Log only.");
+    else i2c_notes_.SetWindowTextW(L"UART1: P74 TX > device RX; P75 RX < device TX.\r\nShared GND; compatible voltage.\r\nUART0: diagnostic Log only.");
     UpdateFirmwareImageInfoText();UpdateTargetMetadataText();UpdateOverviewUi(false);UpdateCompletionFeedback();
     if (active_tab_ != bus_tabs_.GetCurSel()) {
         CRect client; GetClientRect(&client); LayoutControls(client.Width(), client.Height());
@@ -132,7 +147,8 @@ void CMainFrame::QueueUartAction(unsigned action,bool force) {
     firmware_upgrade::isp::BusConfiguration configuration;
     if(!session_state_.host_validated||!SelectedUartSettings(&configuration))return;
     const bool transfer=UartTransferSelected();
-    if(action&& !IsUartSelectionCurrent()) {AppendLog(L"UART operation blocked: discover the selected device first.");return;}
+    const std::wstring protocol=firmware_upgrade::isp::ProtocolName(SelectedIspContract());
+    if(action&& !IsUartSelectionCurrent()) {AppendLog(protocol+L" operation blocked: discover the selected device first.");return;}
     if(action==2U) {
         firmware_upgrade::firmware_update::ImageInfo image;std::wstring error;
         std::uint32_t start=0U;
@@ -140,22 +156,23 @@ void CMainFrame::QueueUartAction(unsigned action,bool force) {
             !firmware_upgrade::firmware_update::ValidateInspection(SelectedIspProfile(),binary_inspection_,&image,&error)||
             !firmware_upgrade::isp::Matches(image,session_state_.uart_target,&error)||
             !SelectedApplicationStart(&start,&error)||start!=image.application_start) {
-            AppendLog(L"UART update blocked: "+(error.empty()?L"Enter Boot and check App start.":error));return;
+            AppendLog(protocol+L" update blocked: "+(error.empty()?L"Enter Boot and check App start.":error));return;
         }
         const auto& t=session_state_.uart_target;
         const bool blocked=t.valid&&t.version_control&&image.version<t.version;
-        if(blocked&&!force) {AppendLog(L"UART update blocked: installed version policy requires same/newer.");return;}
+        if(blocked&&!force) {AppendLog(protocol+L" update blocked: installed version policy requires same/newer.");return;}
         if(force&&(!blocked||!ConfirmForceOldFirmware()))return;
-        const auto text=L"Program UART device App?\n\n"+image.mcu_family+L" / "+image.mcu_part+
+        const auto text=L"Program "+protocol+L" device App?\n\n"+image.mcu_family+L" / "+image.mcu_part+
             L"\nBytes: "+std::to_wstring(image.image_size)+L"\nFile: "+binary_path_+
-            L"\n\nApplication Flash will be overwritten. Keep device power and UART1 connected until completion. UART0 Log remains separate.";
-        if(MessageBoxW(text.c_str(),force?L"force upgrade old version firmware":L"Confirm UART Device Update",
+            L"\n\nApplication Flash will be overwritten. Keep device power and the "+protocol+L" connection until completion. UART0 Log remains separate.";
+        const auto title=force?std::wstring(L"force upgrade old version firmware"):L"Confirm "+protocol+L" Device Update";
+        if(MessageBoxW(text.c_str(),title.c_str(),
             MB_YESNO|MB_ICONWARNING|MB_DEFBUTTON2)!=IDYES)return;
     }
     if(worker_session_.UartAction(action,configuration,transfer,action==2U?binary_data_:std::vector<std::uint8_t>{},
         force,session_state_.uart_target.version,SelectedIspContract())) {
         worker_command_pending_=true;last_operation_error_.clear();
         last_update_result_=firmware_upgrade::feedback::Result::None;
-        SetProgress(0,L"UART device operation");StartOperationElapsedTimer();SaveUiSettings();UpdateUi();
+        SetProgress(0,std::wstring(firmware_upgrade::isp::ProtocolName(SelectedIspContract()))+L" device operation");StartOperationElapsedTimer();SaveUiSettings();UpdateUi();
     }
 }

@@ -84,6 +84,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_CBN_SELCHANGE(ID_I2C_WORKFLOW_COMBO, &CMainFrame::OnUartSettingsChanged)
     ON_CBN_SELCHANGE(ID_UART_BAUD_COMBO, &CMainFrame::OnUartSettingsChanged)
     ON_CBN_EDITCHANGE(ID_UART_BAUD_COMBO, &CMainFrame::OnUartSettingsChanged)
+    ON_CBN_KILLFOCUS(ID_UART_BAUD_COMBO, &CMainFrame::OnUartBaudFocusLost)
     ON_EN_CHANGE(ID_I2C_ADDRESS_EDIT, &CMainFrame::OnI2cSettingsChanged)
     ON_BN_CLICKED(ID_TOP_REFRESH_COM_BTN, &CMainFrame::OnBnClickedRefreshCom)
     ON_BN_CLICKED(ID_TOP_OPEN_COM_BTN, &CMainFrame::OnBnClickedOpenCom)
@@ -93,6 +94,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_BN_CLICKED(ID_COMPARE_METADATA, &CMainFrame::OnCompareMetadata)
     ON_BN_CLICKED(ID_PREFLIGHT, &CMainFrame::OnPreflight)
     ON_BN_CLICKED(ID_BIN_DETAILS, &CMainFrame::OnBinDetails)
+    ON_BN_CLICKED(ID_CONNECTION_DETAILS, &CMainFrame::OnConnectionDetails)
     ON_BN_CLICKED(ID_LOG_OPEN_REPORT_BTN, &CMainFrame::OnOpenLatestReport)
     ON_BN_CLICKED(ID_ERROR_DETAILS_BTN, &CMainFrame::OnErrorDetails)
     ON_BN_CLICKED(ID_FORCE_OLD_FIRMWARE, &CMainFrame::OnForceOldFirmware)
@@ -373,7 +375,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT create_struct) {
         L"App Version", L"Build", L"Target", L"Protocol / Format",
         L"App Range", L"Image / Capacity", L"Flash / Boot",
         L"Minimum / Erase", L"Interface / Rate", L"Routing / IDs",
-        L"Update Policy", L"Boot / IRQ ABI", L"BIN Version Policy", L"Device LIVE policy"
+        L"Allowed Updates", L"Min Boot / IRQ ABI", L"New App Rule", L"Installed Rule (LIVE)"
     };
     for (std::size_t index = 0U; index < kFirmwareFieldCount; ++index) {
         if (!create_or_fail(firmware_field_labels_[index].Create(
@@ -875,7 +877,7 @@ void CMainFrame::ApplyWorkerEvent(
                 AppendLog(L"Operation completed successfully: " + event.text);
             } else {
                 AppendLog(L"Operation failed: " + event.text);
-                const auto advice=firmware_upgrade::guidance::Explain(event.text);
+                const auto advice=event.advice.layer.empty()?firmware_upgrade::guidance::Explain(event.text):event.advice;
                 AppendLog(L"Suggested checks ["+advice.layer+L"]: "+advice.next);
                 if (!closing_ && !ContainsCanceled(event.text)) {
                     MessageBoxW(

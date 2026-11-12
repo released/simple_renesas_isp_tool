@@ -33,12 +33,12 @@ void CMainFrame::OnPaint() {
     CPaintDC dc(this); dc.SetBkMode(TRANSPARENT); dc.SetTextColor(GetSysColor(COLOR_BTNTEXT));
     auto* previous=section_font_.GetSafeHandle() ? dc.SelectObject(&section_font_) : nullptr;
     const auto& layout=console_layout_;
-    Group(dc,layout.connection_group,L"1. HOST CONNECTION");
-    Group(dc,layout.analysis_group,L"2. INFORMATION - HOST LIVE / DEVICE LIVE / APP BIN OFFLINE");
-    Group(dc,layout.interface_group,L"3. PERIPHERAL / TARGET");
-    Group(dc,layout.image_group,L"4. LOAD / UPDATE IMAGE");
-    Group(dc,layout.log_group,L"5. MESSAGE LOG");
-    const wchar_t* titles[]={L"BIN check / layout",L"BIN interface / policy",L"BIN compatibility / LIVE policy"};
+    Group(dc,layout.connection_group,firmware_upgrade::console::HostConnectionTitle);
+    Group(dc,layout.analysis_group,L"2. Live Status & Update BIN");
+    Group(dc,layout.interface_group,L"3. Interface & Target");
+    Group(dc,layout.image_group,L"4. Image & Update");
+    Group(dc,layout.log_group,L"5. Logs & Reports");
+    const wchar_t* titles[]={L"BIN validation / layout",L"BIN update contract",L"Compatibility / version rules"};
     const auto file_border=firmware_upgrade::visual::SourceColors(firmware_upgrade::visual::Provenance::ImageFile).border;
     for (int i=0;i<3;++i) Group(dc,layout.metadata_groups[i],titles[i],file_border);
     if (previous) dc.SelectObject(previous);
