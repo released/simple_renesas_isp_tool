@@ -63,6 +63,15 @@ void CMainFrame::OnUartBaudFocusLost() {
         uart_baud_combo_.SetEditSel(-1, 0);
     }
 }
+void CMainFrame::ClearInactiveUartBaudSelection() {
+    if (!uart_baud_combo_.GetSafeHwnd()) return;
+    const HWND focus = ::GetFocus();
+    if (!uart_baud_combo_.IsWindowEnabled() ||
+        (focus != uart_baud_combo_.GetSafeHwnd() &&
+         !::IsChild(uart_baud_combo_.GetSafeHwnd(), focus) && !uart_baud_combo_.GetDroppedState())) {
+        OnUartBaudFocusLost();
+    }
+}
 void CMainFrame::UpdateUartUi() {
     using firmware_upgrade::visual::Tone;
     const std::wstring protocol=firmware_upgrade::isp::ProtocolName(SelectedIspContract());
@@ -85,11 +94,7 @@ void CMainFrame::UpdateUartUi() {
     const bool older=match&&t.valid&&t.version_control&&binary_inspection_.metadata.version<t.version;
     bus_tabs_.EnableWindow(!busy&&!session_state_.can_started);
     bus_port_combo_.EnableWindow(host&&!busy);uart_baud_combo_.EnableWindow(host&&!busy);
-    const HWND focus = ::GetFocus();
-    if (!host || busy || (focus != uart_baud_combo_.GetSafeHwnd() &&
-        !::IsChild(uart_baud_combo_.GetSafeHwnd(), focus) && !uart_baud_combo_.GetDroppedState())) {
-        OnUartBaudFocusLost();
-    }
+    ClearInactiveUartBaudSelection();
     uart_workflow_combo_.EnableWindow(!busy);app_start_edit_.EnableWindow(!busy&&!transfer);
     i2c_workflow_combo_.EnableWindow(!busy);i2c_speed_combo_.EnableWindow(host&&!busy);
     i2c_address_edit_.EnableWindow(host&&!busy);

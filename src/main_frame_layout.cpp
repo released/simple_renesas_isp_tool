@@ -178,6 +178,9 @@ void CMainFrame::LayoutControls(int width, int height) {
     Move(operation_timer_label_, footer.elapsed);
     Move(build_info_label_, footer.build);
     build_info_label_.ShowWindow(SW_HIDE);
+    // Native combo sizing can select its current list item after UpdateUi.
+    // Settle inactive edit selection after the final first-show/resize layout.
+    ClearInactiveUartBaudSelection();
     layout_in_progress_ = false;
     RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_FRAME);
 }

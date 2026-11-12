@@ -133,6 +133,7 @@ private:
     bool IsUartSelectionCurrent() const;
     bool SelectedUartSettings(firmware_upgrade::isp::BusConfiguration* configuration) const;
     void UpdateUartUi();
+    void ClearInactiveUartBaudSelection();
     void QueueUartAction(unsigned action,bool force=false);
     std::wstring BuildUartSummary() const;
     bool IsMiscTab() const;
@@ -275,6 +276,7 @@ private:
     CButton connection_details_btn_;
     std::vector<firmware_upgrade::bridge::Port> displayed_ports_;
     int displayed_bus_ = -1;
+    bool displayed_host_validated_ = false;
     int active_tab_ = 0;
     std::uint8_t preferred_can_port_ = 0U;
     std::uint8_t preferred_i2c_port_ = 0U;

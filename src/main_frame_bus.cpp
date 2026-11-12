@@ -76,8 +76,10 @@ void CMainFrame::RefreshI2cRates() {
     const int selected = bus_port_combo_.GetCurSel();
     const std::uint8_t id = selected >= 0 ?
         static_cast<std::uint8_t>(bus_port_combo_.GetItemData(selected)) : 0xFFU;
-    std::uint32_t rates = 0U;
-    for (const auto& port : displayed_ports_) if (port.id == id) rates = port.rates;
+    std::uint32_t rates = session_state_.host_validated ? 0U : 3U;
+    if (session_state_.host_validated) {
+        for (const auto& port : displayed_ports_) if (port.id == id) rates = port.rates;
+    }
     i2c_speed_combo_.ResetContent();
     const wchar_t* names[] = {L"100 kHz", L"400 kHz"};
     int preferred = 0;
@@ -92,7 +94,8 @@ void CMainFrame::RefreshBusPorts() {
     const bool i2c = IsI2cTab();
     const bool uart=IsUartTab();const int bus=uart?2:i2c?1:0;
     const auto& ports = uart?session_state_.uart_ports:i2c ? session_state_.i2c_ports : session_state_.can_ports;
-    bool changed = displayed_bus_ != bus || displayed_ports_.size() != ports.size();
+    bool changed = displayed_bus_ != bus || displayed_ports_.size() != ports.size() ||
+        displayed_host_validated_ != session_state_.host_validated;
     if (!changed) for (std::size_t i = 0U; i < ports.size(); ++i)
         if (displayed_ports_[i].id != ports[i].id ||
             displayed_ports_[i].label != ports[i].label ||
@@ -100,6 +103,7 @@ void CMainFrame::RefreshBusPorts() {
             displayed_ports_[i].rates != ports[i].rates) changed = true;
     if (!changed && bus_port_combo_.GetCount() > 0) return;
     displayed_bus_ = bus; displayed_ports_ = ports;
+    displayed_host_validated_ = session_state_.host_validated;
     bus_port_combo_.ResetContent();
     int selected = -1;
     const auto preferred = uart?preferred_uart_port_:i2c ? preferred_i2c_port_ : preferred_can_port_;
@@ -127,7 +131,7 @@ void CMainFrame::UpdateBusUi() {
     const bool mutable_bus = !busy && !session_state_.can_started;
     bus_tabs_.EnableWindow(mutable_bus);
     bus_port_combo_.EnableWindow(mutable_bus && session_state_.host_validated && !displayed_ports_.empty());
-    i2c_speed_combo_.EnableWindow(mutable_bus && i2c && i2c_speed_combo_.GetCount() > 0);
+    i2c_speed_combo_.EnableWindow(mutable_bus && i2c && session_state_.host_validated && i2c_speed_combo_.GetCount() > 0);
     i2c_address_edit_.EnableWindow(mutable_bus);
     i2c_probe_btn_.EnableWindow(mutable_bus && session_state_.host_validated &&
         (session_state_.host_capabilities.feature_flags & firmware_upgrade::bridge::kFeatureI2c) != 0U &&

@@ -15,6 +15,71 @@ struct CanPrerequisiteUiFixture {
         const auto check=[&](bool okay,const char* reason) {
             if (!okay) {++failures;std::cerr<<"FAIL "<<reason<<'\n';}
         };
+        // Restore the selected tab before Create, then follow the production
+        // first-show/maximize path without a compensating UpdateUi or tab switch.
+        wchar_t module[MAX_PATH]={};
+        if(!GetModuleFileNameW(nullptr,module,MAX_PATH))return 6;
+        std::wstring ini=module;ini.resize(ini.find_last_of(L"\\/")+1U);ini+=L"FirmwareUpgradeTool.ini";
+        const HHOOK guard=SetWindowsHookExW(WH_CBT,[](int code,WPARAM w,LPARAM l)->LRESULT {
+            return code==HCBT_ACTIVATE?1:CallNextHookEx(nullptr,code,w,l);
+        },nullptr,GetCurrentThreadId());
+        if(!guard)return 7;
+        for(int initial=0;initial<4;++initial) {
+            const bool uart=initial<2;
+            check(WritePrivateProfileStringW(L"ui",L"bus_tab",uart?L"UART":L"I2C",ini.c_str())!=FALSE,"seed private startup tab");
+            check(WritePrivateProfileStringW(L"ui",L"device_uart_baud",initial==1?L"123457":L"115200",ini.c_str())!=FALSE,"seed private UART baud");
+            check(WritePrivateProfileStringW(L"ui",L"i2c_speed",initial==3?L"1":nullptr,ini.c_str())!=FALSE,"seed default/saved I2C speed");
+            auto* frame=new CMainFrame();
+            if(!frame->Create(nullptr,L"Initial console display - no COM",WS_OVERLAPPEDWINDOW,CRect(0,0,1366,728)))return 8;
+            test_app.m_pMainWnd=frame;
+            frame->ShowWindow(SW_SHOWMAXIMIZED);frame->UpdateWindow();
+            CString value;
+            auto& field=uart?frame->uart_baud_combo_:frame->i2c_speed_combo_;
+            field.GetWindowTextW(value);
+            check(frame->bus_tabs_.GetCurSel()==(uart?2:1),"startup restores the selected tab");
+            check(!field.IsWindowEnabled(),"offline default field stays disabled");
+            if(uart) {
+                const DWORD selection=field.GetEditSel();
+                check(LOWORD(selection)==HIWORD(selection),"first UART show has no selected text before any refresh");
+                check(value==(initial==1?L"123457":L"115200"),"first UART show preserves default/custom baud");
+                std::cout<<"STARTUP UART "<<initial<<" selection="<<LOWORD(selection)<<":"<<HIWORD(selection)<<"\n";
+            } else {
+                check(value==(initial==3?L"400 kHz":L"100 kHz"),"first offline I2C show displays default/saved speed");
+                check(!frame->i2c_probe_btn_.IsWindowEnabled()&&!frame->connect_target_btn_.IsWindowEnabled(),"offline I2C display grants no discovery/probe permission");
+                std::wcout<<L"STARTUP I2C "<<initial<<L" value="<<value.GetString()<<L"\n";
+            }
+            check(::GetForegroundWindow()!=frame->GetSafeHwnd(),"startup fixture does not activate a user-desktop window");
+            CRect client;frame->GetClientRect(&client);
+            CImage image;image.Create(client.Width(),client.Height(),32);
+            const auto dc=image.GetDC();frame->PrintWindow(CDC::FromHandle(dc),PW_CLIENTONLY);image.ReleaseDC();
+            const wchar_t* capture=initial==0?L"startup_uart_default.png":initial==1?L"startup_uart_custom.png":
+                initial==2?L"startup_i2c_default.png":L"startup_i2c_saved.png";
+            check(SUCCEEDED(image.Save(capture)),"capture first restored-tab display");
+            if(!uart) {
+                auto& state=frame->session_state_;
+                state.host_validated=true;frame->UpdateUi();
+                check(frame->i2c_speed_combo_.GetCount()==0,"verified host without I2C ports does not inherit offline speeds");
+                firmware_upgrade::bridge::Port live;
+                live.id=0U;live.flags=1U;live.rates=1U;live.bus=firmware_upgrade::bridge::Bus::I2c;
+                live.maximum_rx=live.maximum_tx=512U;live.label=L"IICA0";
+                state.host_capabilities.feature_flags=firmware_upgrade::bridge::kFeatureI2c;
+                state.i2c_ports={live};frame->UpdateUi();
+                frame->i2c_speed_combo_.GetWindowTextW(value);
+                check(frame->i2c_speed_combo_.GetCount()==1&&value==L"100 kHz","live100k-only capability replaces offline choices");
+                state.i2c_ports[0].rates=2U;frame->UpdateUi();
+                frame->i2c_speed_combo_.GetWindowTextW(value);
+                check(frame->i2c_speed_combo_.GetCount()==1&&value==L"400 kHz","live400k-only capability remains authoritative");
+                state.host_validated=false;state.i2c_ports.clear();frame->UpdateUi();
+                frame->i2c_speed_combo_.GetWindowTextW(value);
+                check(!frame->i2c_speed_combo_.IsWindowEnabled()&&frame->i2c_speed_combo_.GetCount()==2&&
+                    value==(initial==3?L"400 kHz":L"100 kHz"),"disconnect restores disabled configured preview");
+            }
+            frame->worker_session_.StopAndJoin();frame->DestroyWindow();test_app.m_pMainWnd=nullptr;
+        }
+        UnhookWindowsHookEx(guard);
+        check(WritePrivateProfileStringW(L"ui",L"bus_tab",L"CAN",ini.c_str())!=FALSE,"restore fixture CAN baseline");
+        check(WritePrivateProfileStringW(L"ui",L"device_uart_baud",L"115200",ini.c_str())!=FALSE,"restore fixture baud baseline");
+        check(WritePrivateProfileStringW(L"ui",L"i2c_speed",L"0",ini.c_str())!=FALSE,"restore fixture speed baseline");
         for (int scale : {100,125,150}) {
             auto* frame=new CMainFrame();
             if (!frame->Create(nullptr,L"Interface geometry - offline fixture",WS_OVERLAPPEDWINDOW,CRect(0,0,1366,900))) return 3;
