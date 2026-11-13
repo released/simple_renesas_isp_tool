@@ -2,9 +2,12 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
+import {deviceUpgradeContent} from './device_upgrade_content.mjs';
 // A fresh Windows checkout may use CRLF; chapter separators are parsed as LF.
 const read=p=>readFile(p,'utf8').then(s=>s.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n'));
 export async function bootloaderNavigation(tool,web,output,rhBodies,rlBodies={}){
+  const upgrades = await deviceUpgradeContent(tool);
+  await upgrades.measuredAssets(web, output);
   const contract=JSON.parse(await read(join(tool,'scripts/bootloader_guide_contract.json')));
   const layouts=JSON.parse(await read(join(tool,'scripts/web_guide_layout.json')));
   const catalog=JSON.parse(await read(join(tool,'scripts/web_guide_sections.json')));
@@ -46,7 +49,7 @@ export async function bootloaderNavigation(tool,web,output,rhBodies,rlBodies={})
     text+=rh?'[工程基準與選擇](porting.html#guide-porting-1)說明簡易Boot導入ISP格式時的映像、IRQ、CRC與Flash核對條件。\n':'[Basic UART／I2C 範例](basic_uart_i2c/)提供獨立範例的分區、startup、向量與CRC操作。\n';
     if(rh)text+='\n## 其他 MCU 指南\n\n[RL78 Bootloader](../slide_boot_loader_for_RL78/)使用相同章節順序，提供RL78各工程的設定與規格。\n';
     else {const marker=old.match(/<!-- RH850_DEVICE_BEGIN -->[^]*?<!-- RH850_DEVICE_END -->/);assert.ok(marker);text+='\n'+marker[0]+'\n';}
-    return text;
+    return text.replace('## 依閱讀目的查閱', upgrades.index(platform) + '\n\n## 依閱讀目的查閱');
   }
   for(const [index,site] of sites.entries()){
     const config=layouts[site],platform=index?'RH850':'RL78',peer=sites[1-index];
@@ -74,6 +77,9 @@ export async function bootloaderNavigation(tool,web,output,rhBodies,rlBodies={})
         }
         if(page==='tool-guides'&&!body.includes('<a id="tool-links">'))body='<a id="tool-links"></a>\n\n'+body;
       }
+      body = body.replace(/<!-- DEVICE_UPGRADE_PATHS_BEGIN -->[^]*?<!-- DEVICE_UPGRADE_PATHS_END -->\s*/g, '');
+      const upgradeBody = upgrades.chapter(platform, page);
+      if (upgradeBody) body = upgradeBody + '\n\n' + body;
       const previous=pages[i-1],next=pages[i+1];
       const footer=[previous?`[上一主題：${contract[previous].title}](${previous}.html)`:null,'[指南入口](index.html)',next?`[下一主題：${contract[next].title}](${next}.html)`:null].filter(Boolean).join(' · ');
       const md=`[知識庫首頁](https://released.github.io/) · [${platform} Bootloader](index.html)\n\n<a id="article_top"></a>\n\n# ${contract[page].title}\n\n${config.pages[page].description}\n\n${topics(page,index,peer)}\n\n${body.trim()}\n\n---\n\n${footer}\n`;

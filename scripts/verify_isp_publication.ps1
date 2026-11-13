@@ -1,5 +1,5 @@
 # Exercise the selected production entry against owned local bare remotes.
-param([switch]$IncludeRh850,[switch]$IncludeF24I2c)
+param([switch]$IncludeRh850,[switch]$IncludeF24I2c,[switch]$IncludeF13I2c)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
 . (Join-Path $PSScriptRoot 'github_publish_git.ps1')
@@ -27,6 +27,7 @@ function Run-Entry([string[]]$Arguments,[int]$Exit,[string]$Pattern,[string]$Inp
     $entryOptions=@()
     if($IncludeRh850) { $entryOptions+='-IncludeRh850' }
     if($IncludeF24I2c) { $entryOptions+='-IncludeF24I2c' }
+    if($IncludeF13I2c) { $entryOptions+='-IncludeF13I2c' }
     $start.Arguments=($mode+@('-ExecutionPolicy','Bypass','-File',(Join-Path $fixtureTool 'scripts\push_github.ps1'))+$entryOptions+$Arguments | ForEach-Object {ConvertTo-PublishArgument $_}) -join ' '
     $start.UseShellExecute=$false; $start.CreateNoWindow=$true
     $start.RedirectStandardOutput=$true; $start.RedirectStandardError=$true
@@ -69,12 +70,15 @@ function Get-GithubPublishTargets {
 }
 '@
     Write-TestFile (Join-Path $fixtureTool 'scripts\github_publish_catalog.ps1') $catalog
-    $targets=@(Get-GithubPublishTargets $fixtureTool -IncludeRh850:$IncludeRh850 -IncludeF24I2c:$IncludeF24I2c)
+    $targets=@(Get-GithubPublishTargets $fixtureTool -IncludeRh850:$IncludeRh850 -IncludeF24I2c:$IncludeF24I2c -IncludeF13I2c:$IncludeF13I2c)
     $expectedCount=10; $expectedScope='renesas-isp-tool-host-can-10'
     if($IncludeRh850) { $expectedCount=16; $expectedScope='renesas-isp-tool-host-can-16' }
     if($IncludeF24I2c) {
         $expectedCount=13;$expectedScope='renesas-tool-host-rl78-can-f24-i2c-13'
         if($IncludeRh850) {$expectedCount=19;$expectedScope='renesas-isp-tool-host-can-f24-i2c-19'}
+    }
+    if($IncludeF13I2c) {
+        $expectedCount+=3; $expectedScope='renesas-isp-tool-host-can-'+$(if($IncludeF24I2c){'f24-i2c-'}else{''})+'f13-i2c-'+$expectedCount
     }
     foreach($target in $targets) {
         $target.Root=Join-Path $scope.Path $target.Name
@@ -148,10 +152,10 @@ function Get-GithubPublishTargets {
     $snapshot=Get-CanPublishSnapshot $plan -IncludeTool
     Check ($snapshot.Projects.Count -eq $expectedCount -and $snapshot.Scope -ceq $expectedScope) 'explicit repository inventory and schema'
     if($IncludeF24I2c) {
-        Check ($snapshot.Schema -eq 4) 'F24 I2C release owns a distinct schema4 receipt'
+        Check ($snapshot.Schema -eq $(if($IncludeF13I2c){5}else{4})) 'selected I2C release owns its distinct receipt schema'
         $partial=@($plan | Where-Object Name -ne 'RL78_F24_ISP_Boot_loader_I2C_app')
         try {Assert-CanPublishScope $partial -IncludeTool;throw 'Missing I2C triplet refusal.'}
-        catch {Check ($_.Exception.Message -match 'Partial or serial') 'partial F24 I2C triplet refused'}
+        catch {Check ($_.Exception.Message -match 'Partial triplets') 'partial F24 I2C triplet refused'}
         $old=$snapshot|ConvertTo-Json -Depth 10|ConvertFrom-Json
         $old.Schema=3;$old.BoardValidated=$true;$old.Evidence='synthetic fixture only'
         try {Assert-CanReleaseAcceptance $old $snapshot;throw 'Missing old schema refusal.'}
@@ -161,7 +165,7 @@ function Get-GithubPublishTargets {
     if($IncludeRh850) {
         $partial=@($plan | Where-Object Name -ne 'Sample_Project_RH850_S1_CAN_Transfer')
         try { Assert-CanPublishScope $partial -IncludeTool; throw 'Missing partial scope refusal.' }
-        catch { Check ($_.Exception.Message -match 'Partial or serial') 'partial RH850 triplet refused' }
+        catch { Check ($_.Exception.Message -match 'Partial triplets') 'partial RH850 triplet refused' }
         Check (Test-ToolPublicationPath 'docs/RH850_CAN_DEVICE_GUIDE_zh-TW.md') 'CAN-owned RH850 guide selected'
         Check (!(Test-ToolPublicationPath 'docs/RH850_ISP_DEVICE_DESIGN_zh-TW.md')) 'RH850 serial guide withheld'
         Check (Test-ToolPublicationPath 'firmware/common/rh850_can_v4/rh850_can_ports.c') 'CAN-owned driver mirror selected'
@@ -207,6 +211,14 @@ function Get-GithubPublishTargets {
     Check (([IO.File]::ReadAllText((Join-Path $fixtureTool 'build\runtime.ini'))) -ceq 'preserve settings') 'runtime INI preserved'
     Check (!(Invoke-PublishGit $qualityRoot @('ls-tree','--name-only','HEAD','--',$quality)).Text -and
         [IO.File]::ReadAllText((Join-Path $qualityRoot $quality)) -ceq 'private compiler paths; retain locally') 'published tree excludes build log while local file survives'
+    if($IncludeF13I2c) {
+        $partial=@($targets|Where-Object Name -ne 'RL78_F13_ISP_Boot_loader_I2C_app')
+        try { Assert-CanPublishScope $partial -IncludeTool; throw 'Expected partial F13 refusal.' }
+        catch { Check ($_.Exception.Message -match 'Partial triplets') 'partial F13 I2C triplet is refused' }
+        $legacy=($acceptance|ConvertTo-Json -Depth 10|ConvertFrom-Json);$legacy.Schema=4
+        try { Assert-CanReleaseAcceptance $legacy $snapshot; throw 'Expected schema4 refusal.' }
+        catch { Check ($_.Exception.Message -match 'matching acceptance') 'legacy schema4 cannot authorize expanded F13 scope' }
+    }
     $heads=@($targets|ForEach-Object{(Invoke-PublishGit $_.Root @('rev-parse','HEAD')).Text})
     Run-Entry @('-Execute') 0 "All $expectedCount remote main branches verified" 'PUSH'
     Check (@(Compare-Object $heads @($targets|ForEach-Object{(Invoke-PublishGit $_.Root @('rev-parse','HEAD')).Text})).Count -eq 0) 'matching receipt reuse and idempotent selected-repository repeat'

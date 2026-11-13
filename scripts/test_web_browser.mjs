@@ -43,7 +43,7 @@ const base='http://127.0.0.1:'+server.address().port;
 const chrome=['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(existsSync);
 assert.ok(chrome,'installed browser required');
 const profile=join(out,'profile');await mkdir(profile);
-const child=spawn(chrome,['--headless=new','--disable-gpu','--no-first-run','--disable-extensions','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
+const child=spawn(chrome,['--headless=new','--disable-default-apps','--disable-background-networking','--disable-gpu','--no-first-run','--disable-extensions','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 async function wait(test,label,timeout=45000){const end=Date.now()+timeout;while(Date.now()<end){if(await test())return;await pause(100);}throw Error('Timeout: '+label);}
 let socket;let next=0;const pending=new Map();const errors=[];const results=[];const navigation=[];
@@ -82,10 +82,10 @@ try{
       const title=/<title>([^]*?)<\/title>/.exec(html)?.[1];
       if(title)await wait(()=>evaluate('document.title==='+JSON.stringify(title)),'new document commit '+path);
     }
-    if(/\/data\/(?:update_[A-Za-z0-9_]+|f24_i2c_\d+b)\.html$/.test(path)){
+    if(/\/data\/(?:update_[A-Za-z0-9_]+|f(?:13|24)_i2c_\d+b)\.html$/.test(path)){
       await wait(()=>evaluate("!!document.querySelector('h1') && !!document.querySelector('table')"),'report summary '+path);
       const report=await evaluate("({title:document.title,pathname:location.pathname,width:innerWidth,scroll:document.documentElement.scrollWidth,rows:document.querySelectorAll('tr').length,text:document.body.innerText})");
-      const i2c=/\/f24_i2c_\d+b\.html$/.test(path);
+      const i2c=/\/f(?:13|24)_i2c_\d+b\.html$/.test(path);
       assert.ok(report.rows>10&&report.text.includes(i2c?'accepted_bytes':'input_bytes')&&
         report.text.includes(i2c?'source_report_sha256':'source_sha256'),'portable report fields');
       assert.ok(!/(?<![A-Za-z])[A-Za-z]:[\\/]|_Avery|SourceCode/.test(report.text),'no private report paths');
@@ -100,6 +100,8 @@ try{
     await wait(()=>evaluate("!!document.querySelector('#content h1') && !document.querySelector('.loading,.render-error')"),'render '+path);
     await wait(()=>evaluate("!document.querySelector('.render-warning') && [...document.querySelectorAll('.mermaid')].every(n=>!!n.querySelector('svg'))"),'all Mermaid '+path);
     await evaluate('document.fonts.ready.then(()=>true)');
+    // Asset verification also covers offscreen images without waiting on lazy loading.
+    await evaluate("document.querySelectorAll('#content img').forEach(i=>i.loading='eager')");
     await wait(()=>evaluate("[...document.querySelectorAll('#content img')].every(i=>i.complete)"),'all images '+path);
     // Short overviews finish before the existing200ms sidebar width transition.
     // Flush layout and await real CSS animations instead of sampling mid-transition.

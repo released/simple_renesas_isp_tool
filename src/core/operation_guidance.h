@@ -26,6 +26,8 @@ inline Advice Explain(const std::wstring& message,Transport transport=Transport:
     if (has(L"host returned i2c_nack") || has(L"host returned i2c_arbitration_lost") ||
         has(L"host returned i2c_bus_error") || has(L"host returned timeout for command 0x41."))
         return {L"Host / I2C device", L"The host returned an I2C transaction result. Check the selected port, 7-bit address, SCL rate, pull-ups and device power. Save the exact status and device Log. Repeat only supported read-only discovery; do not repeat erase/END to diagnose this result."};
+    if(has(L"i2c reply deadline expired."))
+        return {L"Host / I2C device",L"The request was sent once, but its reply was not confirmed. Preserve Boot recovery, the report and last confirmed stage. Check device activity, power and the I2C mailbox/trace. A reply timeout does not provide a Flash error status. Do not repeat write/erase/END or increase timeouts as a diagnosis; use supported read-only discovery."};
     if(has(L"device bus rate")||has(L"selected port/rate/address"))
         return {L"Device bus settings",L"Match the selected Device baud or I2C rate/7-bit address to Boot/App initialization, live INFO and BIN metadata; check the bridge port capability and Discover again."};
     if(transport==Transport::I2c && has(L"isp response"))

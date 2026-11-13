@@ -3,6 +3,7 @@ function Get-CompanionPath {
     param(
         [ValidateSet('F13Transfer','F13Boot','F13App','F24Transfer','F24Boot','F24App',
                      'F24FdTransfer','F24FdBoot','F24FdApp','F24I2cTransfer','F24I2cBoot','F24I2cApp',
+                     'F13I2cTransfer','F13I2cBoot','F13I2cApp',
                      'Rh850Transfer','Rh850Boot','Rh850App','Rh850FdTransfer','Rh850FdBoot','Rh850FdApp','Web')][string]$Kind,
         [string]$ExplicitPath,
         [string]$ToolRoot = (Split-Path -Parent $PSScriptRoot)
@@ -37,6 +38,9 @@ function Get-CompanionPath {
         'F24FdTransfer' { 'FIRMWARE_F24_DEVICE_FD_TRANSFER_PROJECT' }
         'F24FdBoot' { 'FIRMWARE_F24_DEVICE_FD_BOOT_PROJECT' }
         'F24FdApp' { 'FIRMWARE_F24_DEVICE_FD_APP_PROJECT' }
+        'F13I2cTransfer' { 'FIRMWARE_F13_DEVICE_I2C_TRANSFER_PROJECT' }
+        'F13I2cBoot' { 'FIRMWARE_F13_DEVICE_I2C_BOOT_PROJECT' }
+        'F13I2cApp' { 'FIRMWARE_F13_DEVICE_I2C_APP_PROJECT' }
         'F24I2cTransfer' { 'FIRMWARE_F24_DEVICE_I2C_TRANSFER_PROJECT' }
         'F24I2cBoot' { 'FIRMWARE_F24_DEVICE_I2C_BOOT_PROJECT' }
         'F24I2cApp' { 'FIRMWARE_F24_DEVICE_I2C_APP_PROJECT' }
@@ -64,6 +68,9 @@ function Get-CompanionPath {
         'F24FdTransfer' { 'RL78_F24_CAN_FD_Transfer' }
         'F24FdBoot' { 'RL78_F24_Boot_loader_CAN_FD' }
         'F24FdApp' { 'RL78_F24_Boot_loader_CAN_FD_app' }
+        'F13I2cTransfer' { 'RL78_F13_I2C_Slave_Transfer' }
+        'F13I2cBoot' { 'RL78_F13_ISP_Boot_loader_I2C' }
+        'F13I2cApp' { 'RL78_F13_ISP_Boot_loader_I2C_app' }
         'F24I2cTransfer' { 'RL78_F24_I2C_Slave_Transfer' }
         'F24I2cBoot' { 'RL78_F24_ISP_Boot_loader_I2C' }
         'F24I2cApp' { 'RL78_F24_ISP_Boot_loader_I2C_app' }

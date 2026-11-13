@@ -56,7 +56,7 @@ Tool 的 `build/FirmwareUpgradeTool.exe` 另列為必要交付檔；缺少或空
 F13 App 根目錄的 `boot_app.hex` 供燒錄器初裝；`boot_app.bin` 是相同內容的 raw binary，起點為 `0x0000`，不是 Tool 的 CAN 更新映像。
 各操作應選用的檔案與下載連結集中於[下載與操作總覽](https://released.github.io/slide_simple_renesas_isp_tool/#downloads)。
 F24 device App 根目錄的 `boot_app.hex` 保留作 Boot／App 合併初裝，與 F13 的分工相同。
-二十一個 DefaultBuild 韌體交付檔及 Tool EXE 取自 `scripts/github_publish_catalog.ps1`；入口依選取項目核對固定範圍；F24 I2C 擴充見下節。
+二十四個 DefaultBuild 韌體交付檔及 Tool EXE 取自 `scripts/github_publish_catalog.ps1`；入口依選取項目核對固定範圍；F13／F24 I2C 擴充見下節。
 Tool firmware 只選取 F24 Bridge Boot／App、`f24_board`、`f24_bridge_common` 及列出的 Host 共用檔。
 另納入 RH850 CAN 共用 driver mirror、CAN 專用文件與明列的 CAN 建置／同步入口。
 其餘韌體目錄、串列 MCU 文件／腳本／測試保留在本機，不以 RH850 名稱整批放行。
@@ -103,7 +103,7 @@ Tool firmware 只選取 F24 Bridge Boot／App、`f24_board`、`f24_bridge_common
 
 1. 完成受影響的 Tool／MCU 建置、封裝與驗證。
 2. 完成 MD、web 章節及 PDF 的來源同步與連結檢查。
-3. 執行 Tool 根目錄的 `github_push.bat`，核對本次清單後發布十九個 repository。
+3. 執行 Tool 根目錄的 `github_push.bat`，核對本次清單後發布二十二個 repository。
 4. 執行 `/web/push-all.cmd` 發布網站，再確認 GitHub Pages 已部署。
 
 Batch 負責提交與推送，不會代替編譯、產生 PDF、修改內文或修正原始碼網址。
@@ -263,21 +263,24 @@ SC 重新生成後依 README 執行準備／建置入口；`-CheckOnly` 會檢�
 
 這項檢查不取代乾淨建置、目前映像的實板驗證或發佈確認。
 
-## F24 I2C publication scope
+## F13 / F24 I2C publication scope
 
-The default batch includes the F24 I2C Custom Transfer, ISP Boot and ISP App
-triplet in addition to the fifteen CAN device projects and Tool/F24 Host: nineteen
+The default batch includes both F13 and F24 I2C Custom Transfer, ISP Boot and ISP App
+triplets in addition to the fifteen CAN device projects and Tool/F24 Host: twenty-two
 repositories. Other UART/I2C/Xmodem families and roles stay outside this scope.
 
 | Project | DefaultBuild delivery | Local path key |
 | --- | --- | --- |
+| RL78_F13_I2C_Slave_Transfer | RL78_F13_I2C_Slave_Transfer.hex | F13I2cTransferProject |
+| RL78_F13_ISP_Boot_loader_I2C | boot0000_1FFF.hex | F13I2cBootProject |
+| RL78_F13_ISP_Boot_loader_I2C_app | RL78_F13_ISP_Boot_loader_I2C_app_update.bin | F13I2cAppProject |
 | RL78_F24_I2C_Slave_Transfer | RL78_F24_I2C_Slave_Transfer.hex | F24I2cTransferProject |
 | RL78_F24_ISP_Boot_loader_I2C | boot0000_1FFF.hex | F24I2cBootProject |
 | RL78_F24_ISP_Boot_loader_I2C_app | RL78_F24_ISP_Boot_loader_I2C_app_update.bin | F24I2cAppProject |
 
-Schema 4 acceptance binds the exact selected source/image inventory. Earlier
-10/16-repository receipts cannot authorize the expanded scope. The I2C triplet is
-selected together with `-IncludeF24I2c`; an incomplete triplet is rejected.
+Schema 5 acceptance binds the exact selected source/image inventory. Earlier
+10/16/19-repository receipts cannot authorize the expanded scope. The I2C triplet is
+selected with `-IncludeF13I2c` / `-IncludeF24I2c`; an incomplete triplet is rejected.
 `-IncludeRh850 -CanOnly` without that switch retains the established fifteen-CAN
 scope. `-Yes` still requires an exact matching acceptance file.
 

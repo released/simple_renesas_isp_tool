@@ -11,6 +11,10 @@ int main() {
     const auto check=[](bool okay,const char* text) {if(!okay)throw std::runtime_error(text);};
     try {
         const std::wstring error=L"ISP response framing/CRC/sequence/command mismatch. Device command was not repeated.";
+        const std::wstring pending_i2c=L"I2C reply deadline expired. Request was sent once; no Flash command was repeated.";
+        check(guidance::Explain(pending_i2c,guidance::Transport::I2c).layer==L"Host / I2C device","I2C reply deadline is not a returned Flash error");
+        check(guidance::Explain(pending_i2c).layer==L"Host / I2C device","I2C deadline classification remains correct without transport hint");
+        check(guidance::Explain(L"Device Flash programming failed.",guidance::Transport::I2c).layer==L"Device Flash","actual Flash errors retain their own layer");
         check(guidance::Explain(error,guidance::Transport::I2c).layer==L"Host / I2C device","I2C frame failure has I2C advice");
         check(guidance::Explain(error,guidance::Transport::Uart).layer==L"Bridge / UART device","UART frame failure has UART advice");
         check(guidance::Explain(error,guidance::Transport::Xmodem).layer==L"Bridge / Xmodem device","Xmodem frame failure has Xmodem advice");

@@ -1,6 +1,33 @@
 # Tool firmware is opt-in by ownership; unclassified firmware stays local.
 function Test-ToolPublicationPath([string]$Path) {
     $path=$Path.Replace('\','/')
+    # These pending checks depend on the withheld multi-family serial runtime.
+    # A validated I2C example does not release their whole dependency closure.
+    if($path -cin @('scripts/sync_isp_console.ps1','scripts/test_isp_console_guides.ps1',
+                    'scripts/test_isp_console_runtime.ps1','scripts/test_i2c_boot_api.ps1',
+                    'scripts/test_operation_outcomes.ps1','scripts/test_ui_copy.ps1',
+                    'tests/isp_client_tests.cpp','tests/isp_xmodem_client_tests.cpp',
+                    'tests/test_tool_ui_field_guide.py','tests/isp_console_runtime_mock.inc',
+                    'tests/uart0_console_tests.c')) { return $false }
+    # The combined model guide also contains hardware-pending serial roles.
+    # F13 I2C acceptance does not release this complete aggregate or its inputs.
+    if($path -cin @('docs/DEVICE_APP_UPGRADE_PATHS_zh-TW.md',
+                    'docs/Device_App_Upgrade_Guide_zh-TW.pdf',
+                    'docs/data/device_upgrade_paths.json',
+                    'scripts/device_upgrade_content.mjs',
+                    'scripts/verify_device_upgrade_paths.mjs',
+                    'docs/ISP_SERIAL_TRANSPORT_GUIDE_zh-TW.md',
+                    'docs/ISP_UART_DEVICE_DESIGN_zh-TW.md',
+                    'docs/ISP_UART_DEVICE_DESIGN_zh-TW.pdf')) {
+        $profilePath=Join-Path (Split-Path -Parent $PSScriptRoot) 'docs/data/device_upgrade_paths.json'
+        if(!(Test-Path -LiteralPath $profilePath -PathType Leaf)){return $false}
+        try {
+            $profiles=@(Get-Content -LiteralPath $profilePath -Raw -Encoding UTF8|ConvertFrom-Json)
+            $accepted=@('f13-can','f13-i2c','f24-can','f24-can-fd','f24-i2c','rh850-can','rh850-can-fd')
+            return ($profiles.Count -eq $accepted.Count -and
+                @(Compare-Object @($profiles.key|Sort-Object) @($accepted|Sort-Object)).Count -eq 0)
+        } catch {return $false}
+    }
     # Local engineering records are never publication inputs. Architecture notes
     # retain their separate engineering-record status.
     if($path -match '^(?:(?:AGENTS(?:_for_Codex)?|CLAUDE|WORKSPACE_RULES|HANDOFF|CODEX_HANDOFF|SELF_CHECK|MANUAL_CLEANUP|DEVELOPMENT_CHECKLIST)\.md|docs/(?:verification|development|internal)/|docs/FIRST_DELIVERY_20261015_zh-TW\.md$|docs/ARCHITECTURE_V2\.md$)') { return $false }
@@ -43,7 +70,9 @@ function Get-GithubPublishTargets {
           [string]$Rh850TransferProject,[string]$Rh850BootProject,[string]$Rh850AppProject,
           [string]$Rh850FdTransferProject,[string]$Rh850FdBootProject,[string]$Rh850FdAppProject,
           [switch]$IncludeF24I2c,
-          [string]$F24I2cTransferProject,[string]$F24I2cBootProject,[string]$F24I2cAppProject)
+          [string]$F24I2cTransferProject,[string]$F24I2cBootProject,[string]$F24I2cAppProject,
+          [switch]$IncludeF13I2c,
+          [string]$F13I2cTransferProject,[string]$F13I2cBootProject,[string]$F13I2cAppProject)
     # Hardware-pending MCU project trees are distinct from Tool-side RH850 support.
     $pendingMcu='(?i)(?:^|[\\/])(?:Sample_Project_RH850_S1_(?:ISP_)?Boot_loader_|RL78_(?:G16|G22|F13|F24)_ISP_Boot_loader_)[^\\/]*(?:[\\/]|$)'
     $targets=@(
@@ -95,6 +124,16 @@ function Get-GithubPublishTargets {
               Groups=@(@{Relative='DefaultBuild';Archive='f24_i2c_boot';Keep=@('boot0000_1FFF.hex')})},
             @{Name='RL78_F24_ISP_Boot_loader_I2C_app';Root=$F24I2cAppProject;Remote='released/RL78_F24_ISP_Boot_loader_I2C_app'
               Groups=@(@{Relative='DefaultBuild';Archive='f24_i2c_app';Keep=@('RL78_F24_ISP_Boot_loader_I2C_app_update.bin')})}
+        )+@($targets | Where-Object Name -eq 'simple_renesas_isp_tool')
+    }
+    if($IncludeF13I2c) {
+        $targets=@($targets | Where-Object Name -ne 'simple_renesas_isp_tool')+@(
+            @{Name='RL78_F13_I2C_Slave_Transfer';Root=$F13I2cTransferProject;Remote='released/RL78_F13_I2C_Slave_Transfer'
+              Groups=@(@{Relative='DefaultBuild';Archive='f13_i2c_transfer';Keep=@('RL78_F13_I2C_Slave_Transfer.hex')})},
+            @{Name='RL78_F13_ISP_Boot_loader_I2C';Root=$F13I2cBootProject;Remote='released/RL78_F13_ISP_Boot_loader_I2C'
+              Groups=@(@{Relative='DefaultBuild';Archive='f13_i2c_boot';Keep=@('boot0000_1FFF.hex')})},
+            @{Name='RL78_F13_ISP_Boot_loader_I2C_app';Root=$F13I2cAppProject;Remote='released/RL78_F13_ISP_Boot_loader_I2C_app'
+              Groups=@(@{Relative='DefaultBuild';Archive='f13_i2c_app';Keep=@('RL78_F13_ISP_Boot_loader_I2C_app_update.bin')})}
         )+@($targets | Where-Object Name -eq 'simple_renesas_isp_tool')
     }
     return $targets

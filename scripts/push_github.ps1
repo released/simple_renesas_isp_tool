@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$Execute,[switch]$Yes,[switch]$CanOnly,[switch]$IncludeRh850,[switch]$IncludeF24I2c,
+param([switch]$Execute,[switch]$Yes,[switch]$CanOnly,[switch]$IncludeRh850,[switch]$IncludeF24I2c,[switch]$IncludeF13I2c,
       [switch]$InitializeMissing,[switch]$CreateRemote,
       [string]$Message='Sync ISP tool, F24 host and CAN device examples',
       [string]$AcceptanceFile='',
@@ -8,7 +8,8 @@ param([switch]$Execute,[switch]$Yes,[switch]$CanOnly,[switch]$IncludeRh850,[swit
       [string]$F24FdTransferProject='', [string]$F24FdBootProject='', [string]$F24FdAppProject='',
       [string]$Rh850TransferProject='', [string]$Rh850BootProject='', [string]$Rh850AppProject='',
       [string]$Rh850FdTransferProject='', [string]$Rh850FdBootProject='', [string]$Rh850FdAppProject='',
-      [string]$F24I2cTransferProject='', [string]$F24I2cBootProject='', [string]$F24I2cAppProject='')
+      [string]$F24I2cTransferProject='', [string]$F24I2cBootProject='', [string]$F24I2cAppProject='',
+      [string]$F13I2cTransferProject='', [string]$F13I2cBootProject='', [string]$F13I2cAppProject='')
 $ErrorActionPreference='Stop'
 # Noninteractive confirmation cannot stand in for current-version board acceptance.
 if($Execute -and $Yes -and !$AcceptanceFile) {
@@ -33,7 +34,7 @@ if(Test-Path -LiteralPath $local) {
     if(!$F24FdTransferProject) { $F24FdTransferProject=$paths.F24FdTransferProject }
     if(!$F24FdBootProject) { $F24FdBootProject=$paths.F24FdBootProject }
     if(!$F24FdAppProject) { $F24FdAppProject=$paths.F24FdAppProject }
-    foreach($kind in @('Rh850Transfer','Rh850Boot','Rh850App','Rh850FdTransfer','Rh850FdBoot','Rh850FdApp','F24I2cTransfer','F24I2cBoot','F24I2cApp')) {
+    foreach($kind in @('Rh850Transfer','Rh850Boot','Rh850App','Rh850FdTransfer','Rh850FdBoot','Rh850FdApp','F24I2cTransfer','F24I2cBoot','F24I2cApp','F13I2cTransfer','F13I2cBoot','F13I2cApp')) {
         $key=$kind+'Project'
         if(!(Get-Variable -Name $key -ValueOnly) -and $paths.ContainsKey($key)) { Set-Variable -Name $key -Value $paths[$key] }
     }
@@ -62,9 +63,16 @@ if($IncludeF24I2c) {
         $i2cPaths[$key]=Get-CompanionPath -Kind $kind -ExplicitPath (Get-Variable -Name $key -ValueOnly)
     }
 }
+$f13I2cPaths=@{}
+if($IncludeF13I2c) {
+    foreach($kind in @('F13I2cTransfer','F13I2cBoot','F13I2cApp')) {
+        $key=$kind+'Project'
+        $f13I2cPaths[$key]=Get-CompanionPath -Kind $kind -ExplicitPath (Get-Variable -Name $key -ValueOnly)
+    }
+}
 $targets=@(Get-GithubPublishTargets $toolRoot $F13BootProject $F13AppProject `
     $F24TransferProject $F24BootProject $F24AppProject `
-    $F24FdTransferProject $F24FdBootProject $F24FdAppProject $F13TransferProject -IncludeRh850:$IncludeRh850 @rh850Paths -IncludeF24I2c:$IncludeF24I2c @i2cPaths |
+    $F24FdTransferProject $F24FdBootProject $F24FdAppProject $F13TransferProject -IncludeRh850:$IncludeRh850 @rh850Paths -IncludeF24I2c:$IncludeF24I2c @i2cPaths -IncludeF13I2c:$IncludeF13I2c @f13I2cPaths |
     Where-Object { $includeTool -or $_.Name -ne 'simple_renesas_isp_tool' })
 $transcript=$false
 $publicationStarted=$false
@@ -125,6 +133,7 @@ try {
         $receiptName='last_can_i2c12_acceptance.json'; if($includeTool) { $receiptName='last_isp_i2c13_acceptance.json' }
         if($IncludeRh850) { $receiptName='last_can_i2c18_acceptance.json'; if($includeTool) { $receiptName='last_isp_i2c19_acceptance.json' } }
     }
+    if($IncludeF13I2c) { $receiptName='last_can_f13_i2c_acceptance.json'; if($includeTool) { $receiptName='last_isp_f13_i2c_acceptance.json' } }
     $cachedAcceptance=Join-Path $toolRoot ('tmp\internal\github_publish\'+$receiptName)
     $selectedAcceptance=$AcceptanceFile
     if(!$selectedAcceptance -and (Test-Path -LiteralPath $cachedAcceptance)) {

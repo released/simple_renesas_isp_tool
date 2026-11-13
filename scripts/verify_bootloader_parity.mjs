@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {verifyDeviceUpgradePaths} from './verify_device_upgrade_paths.mjs';
 const tool=resolve(fileURLToPath(new URL('../',import.meta.url)));
 const read=p=>readFile(p,'utf8').then(s=>s.replace(/^\uFEFF/,'').replaceAll('\r\n','\n'));
 const escape=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 export async function verifyBootloaderParity(web){
+  await verifyDeviceUpgradePaths(web);
   const contract=JSON.parse(await read(join(tool,'scripts/bootloader_guide_contract.json')));
   const layout=JSON.parse(await read(join(tool,'scripts/web_guide_layout.json')));
   const sites=['slide_boot_loader_for_RL78','slide_boot_loader_for_RH850'];
@@ -37,6 +39,7 @@ export async function verifyBootloaderParity(web){
   for(const page of Object.keys(contract)){
     const documents=await Promise.all(sites.map(s=>read(join(web,s,page+'.md'))));
     const headings=text=>[...text.replace(/<!-- BOOTLOADER_TOPICS_BEGIN -->[^]*?<!-- BOOTLOADER_TOPICS_END -->/,'')
+      .replace(/<!-- DEVICE_UPGRADE_PATHS_BEGIN -->[^]*?<!-- DEVICE_UPGRADE_PATHS_END -->/, '')
       .replace(/^(`{3,}|~{3,})[^\n]*\n[^]*?^\1\s*$/gm,'').matchAll(/^#{2,3} (.+)$/gm)].map(m=>m[1]);
     const [rl,rh]=documents.map(headings);
     for(const heading of rl.filter(h=>!/(?:F13|F24|RL78)/.test(h))){

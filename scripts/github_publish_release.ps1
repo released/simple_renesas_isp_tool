@@ -12,9 +12,12 @@ function Assert-CanPublishScope($Targets,[switch]$IncludeTool) {
     if(@($Targets | Where-Object { $_.Name -in @('RL78_F24_I2C_Slave_Transfer','RL78_F24_ISP_Boot_loader_I2C','RL78_F24_ISP_Boot_loader_I2C_app') }).Count) {
         $expected+=@('RL78_F24_I2C_Slave_Transfer','RL78_F24_ISP_Boot_loader_I2C','RL78_F24_ISP_Boot_loader_I2C_app')
     }
+    if(@($Targets | Where-Object { $_.Name -in @('RL78_F13_I2C_Slave_Transfer','RL78_F13_ISP_Boot_loader_I2C','RL78_F13_ISP_Boot_loader_I2C_app') }).Count) {
+        $expected+=@('RL78_F13_I2C_Slave_Transfer','RL78_F13_ISP_Boot_loader_I2C','RL78_F13_ISP_Boot_loader_I2C_app')
+    }
     if($Targets.Count -ne $expected.Count -or
        @(Compare-Object ($Targets.Name | Sort-Object) ($expected | Sort-Object)).Count) {
-        throw 'Release scope requires nine RL78 CAN projects, optional complete RH850 CAN and F24 I2C triplets, and optional Tool. Partial or serial firmware outside the selected F24 I2C triplet is not accepted.'
+        throw 'Release scope requires nine RL78 CAN projects, optional complete RH850 CAN and F13/F24 I2C triplets, and optional Tool. Partial triplets or other serial firmware are not accepted.'
     }
 }
 
@@ -68,6 +71,14 @@ function Get-CanPublishSnapshot($Targets,[switch]$IncludeTool) {
             $scope='renesas-can-f24-i2c-18'
             if($IncludeTool) { $scope='renesas-isp-tool-host-can-f24-i2c-19' }
         }
+    }
+    if(@($Targets | Where-Object { $_.Name -eq 'RL78_F13_I2C_Slave_Transfer' }).Count) {
+        $schema=5
+        $scope='renesas-'
+        if($IncludeTool){$scope+='isp-tool-host-'}
+        $scope+='can-'
+        if(@($Targets | Where-Object { $_.Name -eq 'RL78_F24_I2C_Slave_Transfer' }).Count){$scope+='f24-i2c-'}
+        $scope+=('f13-i2c-'+$Targets.Count)
     }
     [pscustomobject][ordered]@{Schema=$schema;Scope=$scope;SnapshotId=$id
         CreatedUtc=[DateTime]::UtcNow.ToString('o');BoardValidated=$false
