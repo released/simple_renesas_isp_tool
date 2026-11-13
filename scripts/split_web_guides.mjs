@@ -152,7 +152,7 @@ for(const [site,config] of Object.entries(layout)){
     await writeFile(join(root,page+'.md'),markdown);
     let html=template.replace(/<title>[^]*?<\/title>/,`<title>${escapeHtml(info.title)}｜${escapeHtml(config.pages.index.title)}</title>`)
       .replace(/<meta name="description" content="[^"]*">/,`<meta name="description" content="${escapeHtml(info.description)}">`)
-      .replace('<body for="html-export">',`<body for="html-export" data-markdown="${page}.md">`)
+      .replace('<body for="html-export"',`<body for="html-export" data-markdown="${page}.md"`)
       .replace(/  <script src="\/notices_can\/assets\/app.js"><\/script>/,
         '  <script src="guide-routes.js"></script>\n  <script src="/notices_can/assets/app.js"></script>')
       .replace(/href="index.md"/g,`href="${page}.md"`)

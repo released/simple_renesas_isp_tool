@@ -92,7 +92,7 @@ assert.ok(app.includes('getAttribute("data-markdown") || "index.md"'),'default r
 assert.ok(app.includes('"guide:ready"'),'navigation ready event');
 const homeUrls=[];
 for(const file of ['README.md','README.html']){
-  const source=await readFile(join(web,'released.github.io',file),'utf8');
+  const source=await readFile(join(web,file),'utf8');
   const urls=[...source.matchAll(/https:\/\/released\.github\.io\/(slide_(?:boot_loader_for_(?:RL78|RH850)|simple_renesas_isp_tool))\/[^\s)"<>]*/g)];
   homeUrls.push(urls.map(m=>m[0]).sort());
   for(const match of urls){

@@ -2,11 +2,28 @@
 function Get-CompanionPath {
     param(
         [ValidateSet('F13Transfer','F13Boot','F13App','F24Transfer','F24Boot','F24App',
-                     'F24FdTransfer','F24FdBoot','F24FdApp',
+                     'F24FdTransfer','F24FdBoot','F24FdApp','F24I2cTransfer','F24I2cBoot','F24I2cApp',
                      'Rh850Transfer','Rh850Boot','Rh850App','Rh850FdTransfer','Rh850FdBoot','Rh850FdApp','Web')][string]$Kind,
         [string]$ExplicitPath,
         [string]$ToolRoot = (Split-Path -Parent $PSScriptRoot)
     )
+    if($Kind -eq 'Web') {
+        $web=$ExplicitPath
+        if([string]::IsNullOrWhiteSpace($web)) { $web=$env:FIRMWARE_WEB_ROOT }
+        if([string]::IsNullOrWhiteSpace($web)) {
+            $local=Join-Path $ToolRoot 'workspace_paths.local.psd1'
+            if(Test-Path -LiteralPath $local) {
+                $settings=Import-PowerShellDataFile -LiteralPath $local
+                if($settings.ContainsKey('WebRoot')) { $web=$settings.WebRoot }
+            }
+        }
+        if([string]::IsNullOrWhiteSpace($web)) { throw 'Set -WebRoot, FIRMWARE_WEB_ROOT or workspace_paths.local.psd1 WebRoot to the released.github.io checkout.' }
+        $web=[IO.Path]::GetFullPath($web)
+        # Accept the former workspace argument without recreating sibling sites.
+        $child=Join-Path $web 'released.github.io'
+        if(Test-Path -LiteralPath (Join-Path $child 'web-site.json')) { return $child }
+        return $web
+    }
     if (-not [string]::IsNullOrWhiteSpace($ExplicitPath)) {
         return [IO.Path]::GetFullPath($ExplicitPath)
     }
@@ -20,6 +37,9 @@ function Get-CompanionPath {
         'F24FdTransfer' { 'FIRMWARE_F24_DEVICE_FD_TRANSFER_PROJECT' }
         'F24FdBoot' { 'FIRMWARE_F24_DEVICE_FD_BOOT_PROJECT' }
         'F24FdApp' { 'FIRMWARE_F24_DEVICE_FD_APP_PROJECT' }
+        'F24I2cTransfer' { 'FIRMWARE_F24_DEVICE_I2C_TRANSFER_PROJECT' }
+        'F24I2cBoot' { 'FIRMWARE_F24_DEVICE_I2C_BOOT_PROJECT' }
+        'F24I2cApp' { 'FIRMWARE_F24_DEVICE_I2C_APP_PROJECT' }
         'Rh850Transfer' { 'FIRMWARE_RH850_DEVICE_TRANSFER_PROJECT' }
         'Rh850Boot' { 'FIRMWARE_RH850_BOOT_PROJECT' }
         'Rh850App' { 'FIRMWARE_RH850_APP_PROJECT' }
@@ -44,6 +64,9 @@ function Get-CompanionPath {
         'F24FdTransfer' { 'RL78_F24_CAN_FD_Transfer' }
         'F24FdBoot' { 'RL78_F24_Boot_loader_CAN_FD' }
         'F24FdApp' { 'RL78_F24_Boot_loader_CAN_FD_app' }
+        'F24I2cTransfer' { 'RL78_F24_I2C_Slave_Transfer' }
+        'F24I2cBoot' { 'RL78_F24_ISP_Boot_loader_I2C' }
+        'F24I2cApp' { 'RL78_F24_ISP_Boot_loader_I2C_app' }
         'Rh850Transfer' { 'Sample_Project_RH850_S1_CAN_Transfer' }
         'Rh850Boot' { 'Sample_Project_RH850_S1_Boot_loader_CAN' }
         'Rh850App' { 'Sample_Project_RH850_S1_Boot_loader_CAN_app' }

@@ -10,6 +10,10 @@ function Test-ToolPublicationPath([string]$Path) {
         if($path -match '^firmware/common/rh850_can_v4/[^/]+\.[ch]$') { return $true }
         return $path -match '^firmware/common/(?:bridge_[A-Za-z0-9_]+\.[ch]|can_burst\.(?:h|inc)|device_uart_rates\.h|diagnostic_clock\.h|host_link_(?:baud|limits)\.h|image_policy\.h)$'
     }
+    # Publication metadata and the reviewed F24 I2C operation projection are
+    # candidates only; the exact snapshot and board-acceptance gates still apply.
+    if($path -cin @('scripts/verify_isp_publication.ps1','docs/ISP_UART_TOOL_GUIDE_zh-TW.md',
+                    'docs/ISP_UART_Tool_Operation_zh-TW.pdf','scripts/sync_isp_uart_guide.ps1')) { return $true }
     # Only the CAN-owned RH850 material is released. Serial runtime, preparation
     # and mixed serial tests retain their existing withheld status.
     if($path -ceq 'docs/RH850_RESET_VECTOR_RECOVERY_zh-TW.md' -or
@@ -37,7 +41,9 @@ function Get-GithubPublishTargets {
           [string]$F13TransferProject,
           [switch]$IncludeRh850,
           [string]$Rh850TransferProject,[string]$Rh850BootProject,[string]$Rh850AppProject,
-          [string]$Rh850FdTransferProject,[string]$Rh850FdBootProject,[string]$Rh850FdAppProject)
+          [string]$Rh850FdTransferProject,[string]$Rh850FdBootProject,[string]$Rh850FdAppProject,
+          [switch]$IncludeF24I2c,
+          [string]$F24I2cTransferProject,[string]$F24I2cBootProject,[string]$F24I2cAppProject)
     # Hardware-pending MCU project trees are distinct from Tool-side RH850 support.
     $pendingMcu='(?i)(?:^|[\\/])(?:Sample_Project_RH850_S1_(?:ISP_)?Boot_loader_|RL78_(?:G16|G22|F13|F24)_ISP_Boot_loader_)[^\\/]*(?:[\\/]|$)'
     $targets=@(
@@ -79,6 +85,16 @@ function Get-GithubPublishTargets {
               Groups=@(@{Relative='DefaultBuild';Archive='rh850_fd_boot';Keep=@('boot0000_FFFF.hex')})},
             @{Name='Sample_Project_RH850_S1_Boot_loader_CAN_FD_app';Root=$Rh850FdAppProject;Remote='released/Sample_Project_RH850_S1_Boot_loader_CAN_FD_app'
               Groups=@(@{Relative='DefaultBuild';Archive='rh850_fd_app';Keep=@('Sample_Project_RH850_S1_Boot_loader_CAN_FD_app_update.bin')})}
+        )+@($targets | Where-Object Name -eq 'simple_renesas_isp_tool')
+    }
+    if($IncludeF24I2c) {
+        $targets=@($targets | Where-Object Name -ne 'simple_renesas_isp_tool')+@(
+            @{Name='RL78_F24_I2C_Slave_Transfer';Root=$F24I2cTransferProject;Remote='released/RL78_F24_I2C_Slave_Transfer'
+              Groups=@(@{Relative='DefaultBuild';Archive='f24_i2c_transfer';Keep=@('RL78_F24_I2C_Slave_Transfer.hex')})},
+            @{Name='RL78_F24_ISP_Boot_loader_I2C';Root=$F24I2cBootProject;Remote='released/RL78_F24_ISP_Boot_loader_I2C'
+              Groups=@(@{Relative='DefaultBuild';Archive='f24_i2c_boot';Keep=@('boot0000_1FFF.hex')})},
+            @{Name='RL78_F24_ISP_Boot_loader_I2C_app';Root=$F24I2cAppProject;Remote='released/RL78_F24_ISP_Boot_loader_I2C_app'
+              Groups=@(@{Relative='DefaultBuild';Archive='f24_i2c_app';Keep=@('RL78_F24_ISP_Boot_loader_I2C_app_update.bin')})}
         )+@($targets | Where-Object Name -eq 'simple_renesas_isp_tool')
     }
     return $targets

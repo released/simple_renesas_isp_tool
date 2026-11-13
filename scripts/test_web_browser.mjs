@@ -7,9 +7,12 @@ import {mkdir,readFile,writeFile,stat} from 'node:fs/promises';
 import {resolve,join,sep,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const tool=resolve(fileURLToPath(new URL('../',import.meta.url)));
-const web=resolve(process.argv[2]||'');
+const candidate=resolve(process.argv[2]||'');
+const web=existsSync(join(candidate,'released.github.io/web-site.json'))?join(candidate,'released.github.io'):candidate;
 assert.ok(process.argv[2],'supply explicit local web root');
-const out=join(tool,'tmp/internal/tests/web_browser_'+Date.now());
+const out=process.env.FIRMWARE_BROWSER_WORK
+  ?join(resolve(process.env.FIRMWARE_BROWSER_WORK),'browser')
+  :join(tool,'tmp/internal/tests/web_browser_'+Date.now());
 await mkdir(out,{recursive:true});
 const mime={'.html':'text/html','.md':'text/plain','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg'};
 const server=createServer(async(req,res)=>{try{
@@ -28,8 +31,7 @@ const server=createServer(async(req,res)=>{try{
     assert.ok(!doc.includes('/')&&!doc.includes('\\')&&/\.(md|pdf)$/.test(doc),'only named document preview');
     res.writeHead(200,{'Content-Type':doc.endsWith('.pdf')?'application/pdf':'text/plain; charset=utf-8'}).end(await readFile(join(tool,'docs',doc)));return;
   }
-  if(path==='/'||path==='/index.html')path='/released.github.io/index.html';
-  else if(path==='/README.md'||path.startsWith('/assets/'))path='/released.github.io'+path;
+  if(path==='/')path='/index.html';
   if(path.endsWith('/'))path+='index.html';
   const target=resolve(web,'.'+path);
   assert.ok(target.startsWith(web+sep),'path outside preview root');
@@ -74,22 +76,25 @@ try{
     await call('Page.navigate',{url:base+path});
     await wait(()=>evaluate('location.pathname==='+JSON.stringify(expected.pathname)),'destination route '+path);
     if(!expected.pathname.startsWith('/__')){
-      let htmlPath=expected.pathname==='/'?'/released.github.io/index.html':expected.pathname;
+      let htmlPath=expected.pathname==='/'?'/index.html':expected.pathname;
       if(htmlPath.endsWith('/'))htmlPath+='index.html';
       const html=await readFile(join(web,htmlPath.slice(1)),'utf8');
       const title=/<title>([^]*?)<\/title>/.exec(html)?.[1];
       if(title)await wait(()=>evaluate('document.title==='+JSON.stringify(title)),'new document commit '+path);
     }
-    if(/\/data\/update_[A-Za-z0-9_]+\.html$/.test(path)){
+    if(/\/data\/(?:update_[A-Za-z0-9_]+|f24_i2c_\d+b)\.html$/.test(path)){
       await wait(()=>evaluate("!!document.querySelector('h1') && !!document.querySelector('table')"),'report summary '+path);
       const report=await evaluate("({title:document.title,pathname:location.pathname,width:innerWidth,scroll:document.documentElement.scrollWidth,rows:document.querySelectorAll('tr').length,text:document.body.innerText})");
-      assert.ok(report.rows>10&&report.text.includes('input_bytes')&&report.text.includes('source_sha256'),'portable report fields');
+      const i2c=/\/f24_i2c_\d+b\.html$/.test(path);
+      assert.ok(report.rows>10&&report.text.includes(i2c?'accepted_bytes':'input_bytes')&&
+        report.text.includes(i2c?'source_report_sha256':'source_sha256'),'portable report fields');
       assert.ok(!/(?<![A-Za-z])[A-Za-z]:[\\/]|_Avery|SourceCode/.test(report.text),'no private report paths');
       assert.ok(report.scroll<=report.width+1,'report desktop width');
-      await capture('rh850_report_desktop');
+      const reportName=expected.pathname.split('/').at(-1).replace(/\.html$/,'');
+      await capture(reportName+'_report_desktop');
       await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
       const narrow=await evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth})');
-      assert.ok(narrow.scroll<=narrow.width+1,'report narrow width');await capture('rh850_report_narrow');
+      assert.ok(narrow.scroll<=narrow.width+1,'report narrow width');await capture(reportName+'_report_narrow');
       delete report.text;results.push({path,...report,narrow});console.log('PASS browser report',path);continue;
     }
     await wait(()=>evaluate("!!document.querySelector('#content h1') && !document.querySelector('.loading,.render-error')"),'render '+path);
@@ -133,6 +138,7 @@ try{
     // Resize retains an explicitly opened desktop sidebar; verify the actual toggle.
     if(await evaluate('document.body.hasAttribute("html-show-sidebar-toc")'))await evaluate('document.querySelector("#sidebar-toc-btn").click()');
     await pause(250);
+    if(anchor)await evaluate(`document.getElementById(${JSON.stringify(anchor)}).scrollIntoView({block:'start',behavior:'instant'})`);
     const narrow=await evaluate(`({width:innerWidth,scroll:document.documentElement.scrollWidth,containers:[...document.querySelectorAll('table,pre,.mermaid')].filter(n=>n.scrollWidth>n.clientWidth+1).length})`);
     assert.ok(narrow.scroll<=narrow.width+1,'narrow document width '+path);
     await capture(name+'_narrow');

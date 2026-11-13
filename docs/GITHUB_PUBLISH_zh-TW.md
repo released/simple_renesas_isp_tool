@@ -56,7 +56,7 @@ Tool 的 `build/FirmwareUpgradeTool.exe` 另列為必要交付檔；缺少或空
 F13 App 根目錄的 `boot_app.hex` 供燒錄器初裝；`boot_app.bin` 是相同內容的 raw binary，起點為 `0x0000`，不是 Tool 的 CAN 更新映像。
 各操作應選用的檔案與下載連結集中於[下載與操作總覽](https://released.github.io/slide_simple_renesas_isp_tool/#downloads)。
 F24 device App 根目錄的 `boot_app.hex` 保留作 Boot／App 合併初裝，與 F13 的分工相同。
-十八個 DefaultBuild 韌體交付檔及 Tool EXE 取自 `scripts/github_publish_catalog.ps1`；入口核對十六個 repository 的固定範圍。
+二十一個 DefaultBuild 韌體交付檔及 Tool EXE 取自 `scripts/github_publish_catalog.ps1`；入口依選取項目核對固定範圍；F24 I2C 擴充見下節。
 Tool firmware 只選取 F24 Bridge Boot／App、`f24_board`、`f24_bridge_common` 及列出的 Host 共用檔。
 另納入 RH850 CAN 共用 driver mirror、CAN 專用文件與明列的 CAN 建置／同步入口。
 其餘韌體目錄、串列 MCU 文件／腳本／測試保留在本機，不以 RH850 名稱整批放行。
@@ -96,14 +96,14 @@ Tool firmware 只選取 F24 Bridge Boot／App、`f24_board`、`f24_bridge_common
 需要只讀預覽時，直接執行下方不帶 `-Execute` 的 PowerShell 命令。
 批次檔會帶入 `-Execute`，列出範圍、保留檔與快照後，要求本次驗證／發布確認。
 
-入口只接受表列十六個 repository，不以排除名稱的 regex 推定其他韌體可公開。
+入口只接受 catalog 明列且完整選取的 repository，不以名稱 regex 推定其他韌體可公開。
 若僅同步十五個 CAN device repository，使用 `-IncludeRh850 -CanOnly`；其紀錄為 `last_can15_acceptance.json`，不涵蓋 Tool／F24 host。
 
 ### 日常同步順序
 
 1. 完成受影響的 Tool／MCU 建置、封裝與驗證。
 2. 完成 MD、web 章節及 PDF 的來源同步與連結檢查。
-3. 執行 Tool 根目錄的 `github_push.bat`，核對本次清單後發布十六個 repository。
+3. 執行 Tool 根目錄的 `github_push.bat`，核對本次清單後發布十九個 repository。
 4. 執行 `/web/push-all.cmd` 發布網站，再確認 GitHub Pages 已部署。
 
 Batch 負責提交與推送，不會代替編譯、產生 PDF、修改內文或修正原始碼網址。
@@ -111,19 +111,19 @@ Batch 負責提交與推送，不會代替編譯、產生 PDF、修改內文或�
 僅預覽，不連線、不整理、不提交：
 
 ```powershell
-.\scripts\push_github.ps1 -IncludeRh850
+.\scripts\push_github.ps1 -IncludeRh850 -IncludeF24I2c
 ```
 
 互動執行，或直接點擊 `github_push.bat`：
 
 ```powershell
-.\scripts\push_github.ps1 -IncludeRh850 -Execute -Message 'Sync Tool and validated CAN examples'
+.\scripts\push_github.ps1 -IncludeRh850 -IncludeF24I2c -Execute -Message 'Sync Tool and validated CAN examples'
 ```
 
 非互動執行需提供已核對的本機紀錄：
 
 ```powershell
-.\scripts\push_github.ps1 -IncludeRh850 -Execute -Yes -AcceptanceFile '.\tmp\internal\release_acceptance.json'
+.\scripts\push_github.ps1 -IncludeRh850 -IncludeF24I2c -Execute -Yes -AcceptanceFile '.\tmp\internal\release_acceptance.json'
 ```
 
 紀錄包含 `Schema`、`Scope`、`SnapshotId`、逐檔雜湊、`BoardValidated`、`ValidationBasis` 與 `Evidence`。
@@ -262,3 +262,26 @@ SC 重新生成後依 README 執行準備／建置入口；`-CheckOnly` 會檢�
 執行階段也會檢查待推送歷史，避免以本機新增 commit 繞過排除規則。
 
 這項檢查不取代乾淨建置、目前映像的實板驗證或發佈確認。
+
+## F24 I2C publication scope
+
+The default batch includes the F24 I2C Custom Transfer, ISP Boot and ISP App
+triplet in addition to the fifteen CAN device projects and Tool/F24 Host: nineteen
+repositories. Other UART/I2C/Xmodem families and roles stay outside this scope.
+
+| Project | DefaultBuild delivery | Local path key |
+| --- | --- | --- |
+| RL78_F24_I2C_Slave_Transfer | RL78_F24_I2C_Slave_Transfer.hex | F24I2cTransferProject |
+| RL78_F24_ISP_Boot_loader_I2C | boot0000_1FFF.hex | F24I2cBootProject |
+| RL78_F24_ISP_Boot_loader_I2C_app | RL78_F24_ISP_Boot_loader_I2C_app_update.bin | F24I2cAppProject |
+
+Schema 4 acceptance binds the exact selected source/image inventory. Earlier
+10/16-repository receipts cannot authorize the expanded scope. The I2C triplet is
+selected together with `-IncludeF24I2c`; an incomplete triplet is rejected.
+`-IncludeRh850 -CanOnly` without that switch retains the established fifteen-CAN
+scope. `-Yes` still requires an exact matching acceptance file.
+
+Each I2C project also carries a self-contained `github_push.bat` for subsequent
+updates to its own PUBLIC released/project main branch. First-time Git and remote
+creation remain separate from publication; `github_push.bat new` previews and
+requires explicit CREATE confirmation. Normal updates never create remotes.

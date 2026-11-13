@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
-const read=p=>readFile(p,'utf8').then(s=>s.replace(/^\uFEFF/,''));
+// A fresh Windows checkout may use CRLF; chapter separators are parsed as LF.
+const read=p=>readFile(p,'utf8').then(s=>s.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n'));
 export async function bootloaderNavigation(tool,web,output,rhBodies,rlBodies={}){
   const contract=JSON.parse(await read(join(tool,'scripts/bootloader_guide_contract.json')));
   const layouts=JSON.parse(await read(join(tool,'scripts/web_guide_layout.json')));
@@ -82,7 +83,7 @@ export async function bootloaderNavigation(tool,web,output,rhBodies,rlBodies={})
       let html=template.replaceAll('RL78 Bootloader',platform+' Bootloader').replace('>RL78</span>','>'+platform+'</span>');
       html=html.replace(/<title>[^]*?<\/title>/,`<title>${config.pages[page].title}｜${platform} Bootloader</title>`)
         .replace(/<meta name="description" content="[^"]*">/,`<meta name="description" content="${config.pages[page].description}">`);
-      if(page!=='index')html=html.replace('<body for="html-export">',`<body for="html-export" data-markdown="${page}.md">`)
+      if(page!=='index')html=html.replace('<body for="html-export"',`<body for="html-export" data-markdown="${page}.md"`)
         .replaceAll('href="index.md"',`href="${page}.md"`).replaceAll('>index.md</a>',`>${page}.md</a>`);
       await output(join(web,site,page+'.html'),html);
     }

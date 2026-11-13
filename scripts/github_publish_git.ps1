@@ -104,6 +104,7 @@ function Assert-PublishRepository($Target) {
     }
     Assert-PublishStagedChanges $root
     Assert-PublishLocalOnlyData $Target
+    Assert-F24I2cPublicContent $Target
     foreach($relative in @($Target.RequiredFiles | Where-Object {$_})) {
         $path=Join-Path $root $relative
         Assert-PublishTree $root $path
@@ -118,6 +119,20 @@ function Assert-PublishRepository($Target) {
     $Target.Root=$root
     $Target.Head=(Invoke-PublishGit $root @('rev-parse','HEAD')).Text
     $Target.Status=(Invoke-PublishGit $root @('status','--short','--untracked-files=all')).Text
+}
+
+function Assert-F24I2cPublicContent($Target) {
+    if($Target.Name -cnotin @('RL78_F24_I2C_Slave_Transfer','RL78_F24_ISP_Boot_loader_I2C','RL78_F24_ISP_Boot_loader_I2C_app')) { return }
+    $paths=(Invoke-PublishGit $Target.Root @('ls-files','--cached','--others','--exclude-standard','-z')).Text.Split([char]0)
+    foreach($path in $paths) {
+        if(!$path -or $path -notmatch '\.(?:c|h|asm|inc|md|ps1|bat|json|scfg|mtpj)$') { continue }
+        $file=Join-Path $Target.Root $path
+        if(!(Test-Path -LiteralPath $file -PathType Leaf)) { continue }
+        $text=[IO.File]::ReadAllText($file)
+        if($text -match '[A-Za-z]:[\\/](?:SourceCode|Users)[\\/]') {
+            throw "Private workspace path in F24 I2C publication input: $path"
+        }
+    }
 }
 
 function Assert-PublishAncestry($Targets) {

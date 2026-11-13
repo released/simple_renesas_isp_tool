@@ -18,7 +18,7 @@ if(!$TextPath.Count) {
         $TextPath+=Join-Path $WebRoot ($folder+'\README.md')
     }
     foreach($name in @('slide_boot_loader_for_RL78\uart_i2c\index.md',
-            'released.github.io\README.md','released.github.io\README.html')) {
+            'README.md','README.html')) {
         $TextPath+=Join-Path $WebRoot $name
     }
 }
