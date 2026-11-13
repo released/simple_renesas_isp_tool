@@ -82,7 +82,7 @@ function Initialize-PublishTargets($Targets,[switch]$CreateRemote) {
         if($plan.Create) { [void](Invoke-PublishGh $gh @('repo','create',$target.Remote,'--public')) }
         [void](Invoke-PublishGit $target.Root @('init','-b','main'))
         [void](Invoke-PublishGit $target.Root @('remote','add','origin',$plan.Url))
-        [void](Invoke-PublishGit $target.Root @('commit','--allow-empty','-m','Initialize CAN example repository'))
+        [void](Invoke-PublishGit $target.Root @('commit','--allow-empty','-m','Initialize MCU example repository'))
         Write-Host "INITIALIZED $($target.Name); no source files staged or pushed."
     }
 }
