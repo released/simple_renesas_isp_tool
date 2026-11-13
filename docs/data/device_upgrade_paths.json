@@ -1,0 +1,99 @@
+[
+  {
+    "key": "f13-can",
+    "platform": "RL78",
+    "model": "F13",
+    "bus": "CAN",
+    "page": "can-device",
+    "boot": "RL78_F13_Boot_loader_CAN",
+    "app": "RL78_F13_Boot_loader_CAN_app",
+    "part": "R5F10BMG",
+    "target": 61755,
+    "app_start": 8192,
+    "capacity": 121856
+  },
+  {
+    "key": "f13-i2c",
+    "platform": "RL78",
+    "model": "F13",
+    "bus": "I2C",
+    "page": "i2c-device",
+    "boot": "RL78_F13_ISP_Boot_loader_I2C",
+    "app": "RL78_F13_ISP_Boot_loader_I2C_app",
+    "part": "R5F10BMG",
+    "target": 61755,
+    "app_start": 8192,
+    "capacity": 121856,
+    "measurements": [
+      "f13_i2c_12316b.json",
+      "f13_i2c_24576b.json",
+      "f13_i2c_57344b.json",
+      "f13_i2c_121856b.json"
+    ]
+  },
+  {
+    "key": "f24-can",
+    "platform": "RL78",
+    "model": "F24",
+    "bus": "CAN",
+    "page": "can-device",
+    "boot": "RL78_F24_Boot_loader_CAN",
+    "app": "RL78_F24_Boot_loader_CAN_app",
+    "part": "R7F124FPJ5xFB",
+    "target": 62027,
+    "app_start": 8192,
+    "capacity": 252928
+  },
+  {
+    "key": "f24-can-fd",
+    "platform": "RL78",
+    "model": "F24",
+    "bus": "CAN FD",
+    "page": "can-device",
+    "boot": "RL78_F24_Boot_loader_CAN_FD",
+    "app": "RL78_F24_Boot_loader_CAN_FD_app",
+    "part": "R7F124FPJ5xFB",
+    "target": 62027,
+    "app_start": 8192,
+    "capacity": 252928
+  },
+  {
+    "key": "f24-i2c",
+    "platform": "RL78",
+    "model": "F24",
+    "bus": "I2C",
+    "page": "i2c-device",
+    "boot": "RL78_F24_ISP_Boot_loader_I2C",
+    "app": "RL78_F24_ISP_Boot_loader_I2C_app",
+    "part": "R7F124FPJ5xFB",
+    "target": 62027,
+    "app_start": 8192,
+    "capacity": 252928
+  },
+  {
+    "key": "rh850-can",
+    "platform": "RH850",
+    "model": "RH850",
+    "bus": "CAN",
+    "page": "can-device",
+    "boot": "Sample_Project_RH850_S1_Boot_loader_CAN",
+    "app": "Sample_Project_RH850_S1_Boot_loader_CAN_app",
+    "part": "R7F701684",
+    "target": 34049,
+    "app_start": 65536,
+    "capacity": 983040
+  },
+  {
+    "key": "rh850-can-fd",
+    "platform": "RH850",
+    "model": "RH850",
+    "bus": "CAN FD",
+    "page": "can-device",
+    "boot": "Sample_Project_RH850_S1_Boot_loader_CAN_FD",
+    "app": "Sample_Project_RH850_S1_Boot_loader_CAN_FD_app",
+    "part": "R7F701684",
+    "target": 34049,
+    "app_start": 65536,
+    "capacity": 983040
+  }
+]

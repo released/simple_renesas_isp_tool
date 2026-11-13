@@ -1,5 +1,5 @@
 # Exercise the selected production entry against owned local bare remotes.
-param([switch]$IncludeRh850,[switch]$IncludeF24I2c,[switch]$IncludeF13I2c)
+param([switch]$IncludeRh850,[switch]$IncludeF24I2c,[switch]$IncludeF13I2c,[switch]$CatalogOnly)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'test_owned_workspace.ps1')
 . (Join-Path $PSScriptRoot 'github_publish_git.ps1')
@@ -70,6 +70,46 @@ function Get-GithubPublishTargets {
 }
 '@
     Write-TestFile (Join-Path $fixtureTool 'scripts\github_publish_catalog.ps1') $catalog
+    # Run the real catalog in Windows PowerShell, including its positive branch.
+    # ConvertFrom-Json emits an array object in PS5; wrapping the pipeline in @()
+    # would count that one object and silently defer every accepted guide file.
+    $probe=Join-Path $fixtureTool 'scripts\probe_catalog.ps1'
+    Write-TestFile $probe @'
+param([int]$Expected)
+$ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'github_publish_catalog.ps1')
+$paths=@('docs/DEVICE_APP_UPGRADE_PATHS_zh-TW.md','docs/Device_App_Upgrade_Guide_zh-TW.pdf',
+    'docs/data/device_upgrade_paths.json','scripts/device_upgrade_content.mjs',
+    'scripts/verify_device_upgrade_paths.mjs','docs/ISP_SERIAL_TRANSPORT_GUIDE_zh-TW.md',
+    'docs/ISP_UART_DEVICE_DESIGN_zh-TW.md','docs/ISP_UART_DEVICE_DESIGN_zh-TW.pdf')
+foreach($path in $paths) {
+    if([int][bool](Test-ToolPublicationPath $path) -ne $Expected){throw ('Catalog mismatch: '+$path)}
+}
+if(!(Test-ToolPublicationPath 'src/main.cpp')){throw 'PC source unexpectedly withheld'}
+'@
+    $acceptedKeys=@('f13-can','f13-i2c','f24-can','f24-can-fd','f24-i2c','rh850-can','rh850-can-fd')
+    $variants=@(
+        @{Name='accepted seven';Keys=$acceptedKeys;Expected=1},
+        @{Name='reordered seven';Keys=@($acceptedKeys[6..0]);Expected=1},
+        @{Name='engineering twenty';Keys=@($acceptedKeys+@(1..13|ForEach-Object{'pending-'+$_}));Expected=0},
+        @{Name='partial six';Keys=@($acceptedKeys[0..5]);Expected=0},
+        @{Name='duplicate seven';Keys=@($acceptedKeys[0..5]+$acceptedKeys[0]);Expected=0},
+        @{Name='unknown seven';Keys=@($acceptedKeys[0..5]+'pending-uart');Expected=0},
+        @{Name='empty';Keys=@();Expected=0},
+        @{Name='malformed';Raw='{';Expected=0},
+        @{Name='missing';Missing=$true;Expected=0})
+    $profile=Join-Path $fixtureTool 'docs\data\device_upgrade_paths.json'
+    foreach($variant in $variants) {
+        if($variant.Missing){[IO.File]::Delete($profile)}
+        elseif($variant.ContainsKey('Raw')){Write-TestFile $profile $variant.Raw}
+        else {
+            $items=@($variant.Keys|ForEach-Object{@{key=$_}})
+            Write-TestFile $profile (ConvertTo-Json -InputObject $items -Depth 3)
+        }
+        & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $probe $variant.Expected
+        Check ($LASTEXITCODE -eq 0) ('actual PowerShell catalog: '+$variant.Name+' / all eight guide paths')
+    }
+    if($CatalogOnly){Write-Host 'Catalog-only checks complete; no Git initialization or network.';return}
     $targets=@(Get-GithubPublishTargets $fixtureTool -IncludeRh850:$IncludeRh850 -IncludeF24I2c:$IncludeF24I2c -IncludeF13I2c:$IncludeF13I2c)
     $expectedCount=10; $expectedScope='renesas-isp-tool-host-can-10'
     if($IncludeRh850) { $expectedCount=16; $expectedScope='renesas-isp-tool-host-can-16' }

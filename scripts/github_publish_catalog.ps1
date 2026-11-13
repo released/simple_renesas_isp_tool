@@ -22,7 +22,7 @@ function Test-ToolPublicationPath([string]$Path) {
         $profilePath=Join-Path (Split-Path -Parent $PSScriptRoot) 'docs/data/device_upgrade_paths.json'
         if(!(Test-Path -LiteralPath $profilePath -PathType Leaf)){return $false}
         try {
-            $profiles=@(Get-Content -LiteralPath $profilePath -Raw -Encoding UTF8|ConvertFrom-Json)
+            $profiles=Get-Content -LiteralPath $profilePath -Raw -Encoding UTF8|ConvertFrom-Json
             $accepted=@('f13-can','f13-i2c','f24-can','f24-can-fd','f24-i2c','rh850-can','rh850-can-fd')
             return ($profiles.Count -eq $accepted.Count -and
                 @(Compare-Object @($profiles.key|Sort-Object) @($accepted|Sort-Object)).Count -eq 0)
