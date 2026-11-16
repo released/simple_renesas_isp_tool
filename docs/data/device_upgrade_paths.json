@@ -92,6 +92,27 @@
     "capacity": 252928
   },
   {
+    "key": "f24-xmodem",
+    "platform": "RL78",
+    "model": "F24",
+    "bus": "Xmodem",
+    "page": "xmodem-device",
+    "boot": "RL78_F24_ISP_Boot_loader_Xmodem",
+    "app": "RL78_F24_ISP_Boot_loader_Xmodem_app",
+    "part": "R7F124FPJ5xFB",
+    "target": 62027,
+    "app_start": 8192,
+    "capacity": 252928,
+    "measurements": [
+      "f24_xmodem_7856b.json",
+      "f24_xmodem_8192b.json",
+      "f24_xmodem_24576b.json",
+      "f24_xmodem_57344b.json",
+      "f24_xmodem_122880b.json",
+      "f24_xmodem_252928b.json"
+    ]
+  },
+  {
     "key": "rh850-can",
     "platform": "RH850",
     "model": "RH850",

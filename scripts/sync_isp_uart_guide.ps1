@@ -4,6 +4,8 @@ $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'workspace_paths.ps1')
 . (Join-Path $PSScriptRoot 'web_guide_projection.ps1')
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
+& node (Join-Path $PSScriptRoot 'sync_f24_xmodem_evidence.mjs') $WebRoot $(if($CheckOnly){'--check'})
+if($LASTEXITCODE){throw 'F24 Xmodem evidence projection failed.'}
 & node (Join-Path $PSScriptRoot 'sync_f24_uart_evidence.mjs') $WebRoot $(if($CheckOnly){'--check'})
 if($LASTEXITCODE){throw 'F24 UART evidence projection failed.'}
 & node (Join-Path $PSScriptRoot 'sync_f24_i2c_evidence.mjs') $WebRoot $(if($CheckOnly){'--check'})

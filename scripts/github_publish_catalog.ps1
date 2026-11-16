@@ -23,7 +23,7 @@ function Test-ToolPublicationPath([string]$Path) {
         if(!(Test-Path -LiteralPath $profilePath -PathType Leaf)){return $false}
         try {
             $profiles=Get-Content -LiteralPath $profilePath -Raw -Encoding UTF8|ConvertFrom-Json
-            $accepted=@('f13-can','f13-i2c','f24-can','f24-can-fd','f24-uart','f24-i2c','rh850-can','rh850-can-fd')
+            $accepted=@('f13-can','f13-i2c','f24-can','f24-can-fd','f24-uart','f24-i2c','f24-xmodem','rh850-can','rh850-can-fd')
             return ($profiles.Count -eq $accepted.Count -and
                 @(Compare-Object @($profiles.key|Sort-Object) @($accepted|Sort-Object)).Count -eq 0)
         } catch {return $false}
@@ -41,7 +41,7 @@ function Test-ToolPublicationPath([string]$Path) {
     # candidates only; the exact snapshot and board-acceptance gates still apply.
     if($path -cin @('scripts/verify_isp_publication.ps1','docs/ISP_UART_TOOL_GUIDE_zh-TW.md',
                     'docs/ISP_UART_Tool_Operation_zh-TW.pdf','scripts/sync_isp_uart_guide.ps1',
-                    'scripts/sync_f24_uart_evidence.mjs')) { return $true }
+                    'scripts/sync_f24_uart_evidence.mjs','scripts/sync_f24_xmodem_evidence.mjs')) { return $true }
     # Only the CAN-owned RH850 material is released. Serial runtime, preparation
     # and mixed serial tests retain their existing withheld status.
     if($path -ceq 'docs/RH850_RESET_VECTOR_RECOVERY_zh-TW.md' -or
