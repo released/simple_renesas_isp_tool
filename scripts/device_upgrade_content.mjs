@@ -6,7 +6,7 @@ import {join} from 'node:path';
 // Physical acceptance selects this complete public subset; the full local
 // engineering matrix remains independently checked and is never inferred live.
 export const publicUpgradeKeys = Object.freeze([
-  'f13-can', 'f13-i2c', 'f24-can', 'f24-can-fd', 'f24-i2c', 'rh850-can', 'rh850-can-fd'
+  'f13-can', 'f13-i2c', 'f24-can', 'f24-can-fd', 'f24-uart', 'f24-i2c', 'rh850-can', 'rh850-can-fd'
 ]);
 
 export async function deviceUpgradeContent(tool) {

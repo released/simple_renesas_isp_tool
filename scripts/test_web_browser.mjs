@@ -82,12 +82,12 @@ try{
       const title=/<title>([^]*?)<\/title>/.exec(html)?.[1];
       if(title)await wait(()=>evaluate('document.title==='+JSON.stringify(title)),'new document commit '+path);
     }
-    if(/\/data\/(?:update_[A-Za-z0-9_]+|f(?:13|24)_i2c_\d+b)\.html$/.test(path)){
+    if(/\/data\/(?:update_[A-Za-z0-9_]+|f(?:13|24)_(?:i2c|uart)_\d+b)\.html$/.test(path)){
       await wait(()=>evaluate("!!document.querySelector('h1') && !!document.querySelector('table')"),'report summary '+path);
       const report=await evaluate("({title:document.title,pathname:location.pathname,width:innerWidth,scroll:document.documentElement.scrollWidth,rows:document.querySelectorAll('tr').length,text:document.body.innerText})");
-      const i2c=/\/f(?:13|24)_i2c_\d+b\.html$/.test(path);
-      assert.ok(report.rows>10&&report.text.includes(i2c?'accepted_bytes':'input_bytes')&&
-        report.text.includes(i2c?'source_report_sha256':'source_sha256'),'portable report fields');
+      const serialSummary=/\/f(?:13|24)_(?:i2c|uart)_\d+b\.html$/.test(path);
+      assert.ok(report.rows>10&&report.text.includes(serialSummary?'accepted_bytes':'input_bytes')&&
+        report.text.includes(serialSummary?'source_report_sha256':'source_sha256'),'portable report fields');
       assert.ok(!/(?<![A-Za-z])[A-Za-z]:[\\/]|_Avery|SourceCode/.test(report.text),'no private report paths');
       assert.ok(report.scroll<=report.width+1,'report desktop width');
       const reportName=expected.pathname.split('/').at(-1).replace(/\.html$/,'');

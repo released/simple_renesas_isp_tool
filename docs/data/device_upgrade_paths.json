@@ -58,6 +58,27 @@
     "capacity": 252928
   },
   {
+    "key": "f24-uart",
+    "platform": "RL78",
+    "model": "F24",
+    "bus": "UART",
+    "page": "uart-device",
+    "boot": "RL78_F24_ISP_Boot_loader_UART",
+    "app": "RL78_F24_ISP_Boot_loader_UART_app",
+    "part": "R7F124FPJ5xFB",
+    "target": 62027,
+    "app_start": 8192,
+    "capacity": 252928,
+    "measurements": [
+      "f24_uart_6724b.json",
+      "f24_uart_8192b.json",
+      "f24_uart_24576b.json",
+      "f24_uart_57344b.json",
+      "f24_uart_122880b.json",
+      "f24_uart_252928b.json"
+    ]
+  },
+  {
     "key": "f24-i2c",
     "platform": "RL78",
     "model": "F24",

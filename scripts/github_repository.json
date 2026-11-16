@@ -109,6 +109,13 @@
     "tests/interface_layout_tests.cpp",
     "tests/isp_worker_ui_tests.cpp",
     "tests/misc_host_ui_tests.cpp",
-    "tests/operation_outcome_tests.cpp"
+    "tests/operation_outcome_tests.cpp",
+    "scripts/sync_f24_uart_evidence.mjs",
+    "docs/data/f24_uart_update_timing/f24_uart_6724b.json",
+    "docs/data/f24_uart_update_timing/f24_uart_8192b.json",
+    "docs/data/f24_uart_update_timing/f24_uart_24576b.json",
+    "docs/data/f24_uart_update_timing/f24_uart_57344b.json",
+    "docs/data/f24_uart_update_timing/f24_uart_122880b.json",
+    "docs/data/f24_uart_update_timing/f24_uart_252928b.json"
   ]
 }
