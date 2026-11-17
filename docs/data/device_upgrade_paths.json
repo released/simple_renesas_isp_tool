@@ -13,6 +13,25 @@
     "capacity": 121856
   },
   {
+    "key": "f13-uart",
+    "platform": "RL78",
+    "model": "F13",
+    "bus": "UART",
+    "page": "uart-device",
+    "boot": "RL78_F13_ISP_Boot_loader_UART",
+    "app": "RL78_F13_ISP_Boot_loader_UART_app",
+    "part": "R5F10BMG",
+    "target": 61755,
+    "app_start": 8192,
+    "capacity": 121856,
+    "measurements": [
+      "f13_uart_10556b.json",
+      "f13_uart_121856b.json",
+      "f13_uart_24576b.json",
+      "f13_uart_57344b.json"
+    ]
+  },
+  {
     "key": "f13-i2c",
     "platform": "RL78",
     "model": "F13",
@@ -29,6 +48,25 @@
       "f13_i2c_24576b.json",
       "f13_i2c_57344b.json",
       "f13_i2c_121856b.json"
+    ]
+  },
+  {
+    "key": "f13-xmodem",
+    "platform": "RL78",
+    "model": "F13",
+    "bus": "Xmodem",
+    "page": "xmodem-device",
+    "boot": "RL78_F13_ISP_Boot_loader_Xmodem",
+    "app": "RL78_F13_ISP_Boot_loader_Xmodem_app",
+    "part": "R5F10BMG",
+    "target": 61755,
+    "app_start": 8192,
+    "capacity": 121856,
+    "measurements": [
+      "f13_xmodem_121856b.json",
+      "f13_xmodem_12636b.json",
+      "f13_xmodem_24576b.json",
+      "f13_xmodem_57344b.json"
     ]
   },
   {

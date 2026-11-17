@@ -124,6 +124,17 @@
     "docs/data/f24_xmodem_update_timing/f24_xmodem_57344b.json",
     "docs/data/f24_xmodem_update_timing/f24_xmodem_7856b.json",
     "docs/data/f24_xmodem_update_timing/f24_xmodem_8192b.json",
-    "docs/data/f24_xmodem_update_timing/f24_xmodem_transfer.json"
+    "docs/data/f24_xmodem_update_timing/f24_xmodem_transfer.json",
+    "scripts/sync_f13_serial_evidence.mjs",
+    "docs/data/f13_uart_update_timing/f13_uart_10556b.json",
+    "docs/data/f13_uart_update_timing/f13_uart_121856b.json",
+    "docs/data/f13_uart_update_timing/f13_uart_24576b.json",
+    "docs/data/f13_uart_update_timing/f13_uart_57344b.json",
+    "docs/data/f13_uart_update_timing/f13_uart_transfer.json",
+    "docs/data/f13_xmodem_update_timing/f13_xmodem_121856b.json",
+    "docs/data/f13_xmodem_update_timing/f13_xmodem_12636b.json",
+    "docs/data/f13_xmodem_update_timing/f13_xmodem_24576b.json",
+    "docs/data/f13_xmodem_update_timing/f13_xmodem_57344b.json",
+    "docs/data/f13_xmodem_update_timing/f13_xmodem_transfer.json"
   ]
 }
