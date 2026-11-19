@@ -14,10 +14,11 @@ const web=resolve(process.argv[2]);
 const check=process.argv.includes('--check');
 const site='slide_boot_loader_for_RH850',root=join(web,site);
 const pending=new Map();
-const utf8=p=>readFile(p,'utf8').then(s=>s.replace(/^\uFEFF/,''));
+const utf8=p=>readFile(p,'utf8').then(s=>s.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n'));
 const hash=b=>createHash('sha256').update(b).digest('hex').toUpperCase();
 const html=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 async function output(path,text){
+  text=text.replace(/\r\n/g,'\n');
   let old=null;try{old=await utf8(path);}catch(e){if(e.code!=='ENOENT')throw e;}
   if(old!==text){if(check)throw Error('RH850 guide differs: '+path);pending.set(path,text);}
 }

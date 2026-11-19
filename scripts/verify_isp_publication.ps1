@@ -87,14 +87,14 @@ foreach($path in $paths) {
 }
 if(!(Test-ToolPublicationPath 'src/main.cpp')){throw 'PC source unexpectedly withheld'}
 '@
-    $acceptedKeys=@('f13-can','f13-i2c','f13-uart','f13-xmodem','f24-can','f24-can-fd','f24-uart','f24-i2c','f24-xmodem','rh850-can','rh850-can-fd')
+    $acceptedKeys=@('f13-can','f13-i2c','f13-uart','f13-xmodem','f24-can','f24-can-fd','f24-uart','f24-i2c','f24-xmodem','g16-i2c','rh850-can','rh850-can-fd')
     $variants=@(
-        @{Name='accepted eleven';Keys=$acceptedKeys;Expected=1},
-        @{Name='reordered eleven';Keys=@($acceptedKeys[10..0]);Expected=1},
-        @{Name='engineering twenty';Keys=@($acceptedKeys+@(1..9|ForEach-Object{'pending-'+$_}));Expected=0},
-        @{Name='partial ten';Keys=@($acceptedKeys[0..9]);Expected=0},
-        @{Name='duplicate eleven';Keys=@($acceptedKeys[0..9]+$acceptedKeys[0]);Expected=0},
-        @{Name='unknown eleven';Keys=@($acceptedKeys[0..9]+'pending-uart');Expected=0},
+        @{Name='accepted twelve';Keys=$acceptedKeys;Expected=1},
+        @{Name='reordered twelve';Keys=@($acceptedKeys[11..0]);Expected=1},
+        @{Name='engineering twenty';Keys=@($acceptedKeys+@(1..8|ForEach-Object{'pending-'+$_}));Expected=0},
+        @{Name='partial eleven';Keys=@($acceptedKeys[0..10]);Expected=0},
+        @{Name='duplicate twelve';Keys=@($acceptedKeys[0..10]+$acceptedKeys[0]);Expected=0},
+        @{Name='unknown twelve';Keys=@($acceptedKeys[0..10]+'pending-uart');Expected=0},
         @{Name='empty';Keys=@();Expected=0},
         @{Name='malformed';Raw='{';Expected=0},
         @{Name='missing';Missing=$true;Expected=0})

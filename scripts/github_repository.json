@@ -135,6 +135,13 @@
     "docs/data/f13_xmodem_update_timing/f13_xmodem_12636b.json",
     "docs/data/f13_xmodem_update_timing/f13_xmodem_24576b.json",
     "docs/data/f13_xmodem_update_timing/f13_xmodem_57344b.json",
-    "docs/data/f13_xmodem_update_timing/f13_xmodem_transfer.json"
+    "docs/data/f13_xmodem_update_timing/f13_xmodem_transfer.json",
+    "scripts/sync_g16_i2c_evidence.mjs",
+    "scripts/generate_f13_guide_pdf.py",
+    "tests/test_guide_pdf_images.py",
+    "docs/data/g16_i2c_update_timing/g16_i2c_12116b.json",
+    "docs/data/g16_i2c_update_timing/g16_i2c_23552b.json",
+    "docs/data/g16_i2c_update_timing/g16_i2c_transfer.json",
+    "scripts/sync_rh850_guides.mjs"
   ]
 }

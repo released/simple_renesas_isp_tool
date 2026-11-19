@@ -82,10 +82,10 @@ try{
       const title=/<title>([^]*?)<\/title>/.exec(html)?.[1];
       if(title)await wait(()=>evaluate('document.title==='+JSON.stringify(title)),'new document commit '+path);
     }
-    if(/\/data\/(?:update_[A-Za-z0-9_]+|f(?:13|24)_(?:i2c|uart|xmodem)_(?:\d+b|transfer))\.html$/.test(path)){
+    if(/\/data\/(?:update_[A-Za-z0-9_]+|(?:f(?:13|24)|g16)_(?:i2c|uart|xmodem)_(?:\d+b|transfer))\.html$/.test(path)){
       await wait(()=>evaluate("!!document.querySelector('h1') && !!document.querySelector('table')"),'report summary '+path);
       const report=await evaluate("({title:document.title,pathname:location.pathname,width:innerWidth,scroll:document.documentElement.scrollWidth,rows:document.querySelectorAll('tr').length,text:document.body.innerText})");
-      const serialSummary=/\/f(?:13|24)_(?:i2c|uart|xmodem)_(?:\d+b|transfer)\.html$/.test(path);
+      const serialSummary=/\/(?:f(?:13|24)|g16)_(?:i2c|uart|xmodem)_(?:\d+b|transfer)\.html$/.test(path);
       assert.ok(report.rows>10&&report.text.includes(path.includes('_transfer.html')?'trace_rx_tx_pairs':serialSummary?'accepted_bytes':'input_bytes')&&
         report.text.includes(path.includes('_transfer.html')?'source_tool_log_sha256':serialSummary?'source_report_sha256':'source_sha256'),'portable report fields');
       assert.ok(!/(?<![A-Za-z])[A-Za-z]:[\\/]|_Avery|SourceCode/.test(report.text),'no private report paths');
@@ -100,6 +100,16 @@ try{
     await wait(()=>evaluate("!!document.querySelector('#content h1') && !document.querySelector('.loading,.render-error')"),'render '+path);
     await wait(()=>evaluate("!document.querySelector('.render-warning') && [...document.querySelectorAll('.mermaid')].every(n=>!!n.querySelector('svg'))"),'all Mermaid '+path);
     await evaluate('document.fonts.ready.then(()=>true)');
+    if(path.includes('#upgrade-g16-i2c')){
+      const accessible=await evaluate(`Array.from(document.querySelectorAll('.mermaid svg')).filter(svg=>svg.querySelector('title')?.textContent.startsWith('G16 I2C')).map(svg=>({title:svg.querySelector('title')?.textContent,description:svg.querySelector('desc')?.textContent,labelled:!!svg.getAttribute('aria-labelledby')&&svg.getAttribute('aria-labelledby').split(' ').filter(Boolean).every(id=>!!document.getElementById(id)),described:!!svg.getAttribute('aria-describedby')&&svg.getAttribute('aria-describedby').split(' ').every(id=>!!document.getElementById(id))}))`);
+      const ax=await call('Accessibility.getFullAXTree');
+      const diagramNodes=ax.nodes.filter(node=>node.name?.value?.startsWith('G16 I2C')).map(node=>({role:node.role?.value,name:node.name?.value,description:node.description?.value,ignored:node.ignored}));
+      console.log('G16 SVG accessibility tree:',JSON.stringify(diagramNodes));
+      assert.equal(accessible.length,2,'two G16 I2C accessible Boot/App diagrams');
+      const computed=diagramNodes.filter(node=>['graphics-document','image','img'].includes(node.role)&&!node.ignored);
+      assert.equal(computed.length,2,'two exposed G16 I2C diagram accessibility nodes');
+      assert.ok(accessible.every(svg=>svg.description?.length>30&&computed.some(node=>node.name===svg.title&&node.description===svg.description)),'G16 I2C computed accessible names/descriptions: '+JSON.stringify({accessible,computed}));
+    }
     // Asset verification also covers offscreen images without waiting on lazy loading.
     await evaluate("document.querySelectorAll('#content img').forEach(i=>i.loading='eager')");
     await wait(()=>evaluate("[...document.querySelectorAll('#content img')].every(i=>i.complete)"),'all images '+path);

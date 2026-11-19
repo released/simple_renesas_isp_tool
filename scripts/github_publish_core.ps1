@@ -129,6 +129,7 @@ function Assert-PublishRepository($Target) {
 }
 
 function Get-PublishExclusion([string]$Path, [bool]$Tracked, $DeliveryFiles) {
+    if ($Path -ceq 'github_push.bat') { return 'local operator entry; publish reusable helpers instead' }
     if ($Path -match '^(?i:AGENTS(?:_for_Codex)?|CLAUDE|WORKSPACE_RULES|HANDOFF|CODEX_HANDOFF|SELF_CHECK|MANUAL_CLEANUP|DEVELOPMENT_CHECKLIST)\.md$' -or
         $Path -match '^docs/(internal|development|verification|pdf_extracts)/' -or
         $Path -match '^docs/(PMBUS_1_3_1_PARTS_GAP_AUDIT|PMBUS_SPEC_SEMANTIC_GAP_AUDIT|PMBUS_PLACEHOLDER_AUDIT|PMBUS_CORSAIR_PROFILE_REVIEW|SMBALERT_BEHAVIOR_REVIEW)\.md$') {

@@ -151,6 +151,23 @@
     ]
   },
   {
+    "key": "g16-i2c",
+    "platform": "RL78",
+    "model": "G16",
+    "bus": "I2C",
+    "page": "i2c-device",
+    "boot": "RL78_G16_ISP_Boot_loader_I2C",
+    "app": "RL78_G16_ISP_Boot_loader_I2C_app",
+    "part": "R5F121BCAFP",
+    "target": 363,
+    "app_start": 8192,
+    "capacity": 23552,
+    "measurements": [
+      "g16_i2c_12116b.json",
+      "g16_i2c_23552b.json"
+    ]
+  },
+  {
     "key": "rh850-can",
     "platform": "RH850",
     "model": "RH850",

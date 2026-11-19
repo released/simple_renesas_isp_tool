@@ -82,3 +82,5 @@ firmware/**/DefaultBuild/*
 
 # Prepared build identity.
 /src/tool_build_identity.h
+
+/github_push.bat

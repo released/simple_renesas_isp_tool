@@ -1,5 +1,9 @@
 # GitHub 原始碼與交付檔同步
 
+- 根目錄 `github_push.bat` 是忽略於 Git 的本機操作入口；公開 repository 保留 `scripts/` 內的可重用 helper。
+- 原始碼 checkout 可直接執行下列 PowerShell 入口，既有本機 batch 仍可沿用。
+- 已追蹤的 root batch 僅取消追蹤，保留磁碟檔案與既有歷史。
+
 這個入口供維護原始碼與交付檔使用，與 Tool 的 MCU 韌體更新操作分開。
 使用現有 Git for Windows、Windows PowerShell 5.1 及 Git 登入設定；不需 Python。
 首次建立 GitHub 遠端另需已安裝並登入的 GitHub CLI（`gh`）；既有 repository 的日常同步沿用 Git。

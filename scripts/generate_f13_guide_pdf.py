@@ -232,6 +232,22 @@ def diagram_image(path: Path, available_width: float, available_height: float):
     return diagram, float(pixel_width) / float(pixel_height)
 
 
+def markdown_image_path(value: str) -> str | None:
+    """Read a standalone image or linked thumbnail with an optional quoted title."""
+    linked = re.fullmatch(r"\[(!\[[^]]*\]\(.+\))\]\([^)]+\)", value)
+    markup = linked.group(1) if linked else value
+    match = re.fullmatch(
+        r'''!\[[^]]*\]\((<[^>]+>|.+?)(?:[ \t]+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'))?\)''',
+        markup,
+    )
+    if not match:
+        return None
+    destination = match.group(1)
+    if destination.startswith("<") and destination.endswith(">"):
+        destination = destination[1:-1]
+    return destination.replace("\\", "/")
+
+
 def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle], asset_root: Path | None = None):
     lines = markdown_path.read_text(encoding="utf-8").splitlines()
     landscape_width = LANDSCAPE_PAGE[0] - LEFT_MARGIN - RIGHT_MARGIN
@@ -301,13 +317,9 @@ def build_story(markdown_path: Path, styles: dict[str, ParagraphStyle], asset_ro
                 story.append(code_block)
             index += 1
             continue
-        # Markdown thumbnails may link to the same full-size public image.
-        linked_image = re.fullmatch(r"\[(!\[[^]]*\]\([^)]+\))\]\([^)]+\)", stripped)
-        image_markup = linked_image.group(1) if linked_image else stripped
-        image_match = re.fullmatch(r"!\[[^]]*\]\(([^)]+)\)", image_markup)
-        if image_match:
+        relative = markdown_image_path(stripped)
+        if relative is not None:
             flush_paragraph()
-            relative = image_match.group(1).replace("\\", "/")
             image_path = (markdown_path.parent / relative).resolve()
             if not image_path.is_file() and asset_root is not None:
                 image_path = (asset_root / relative).resolve()
