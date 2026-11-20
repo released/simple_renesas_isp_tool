@@ -22,9 +22,9 @@ function outline(source){
   }
   return result;
 }
-function aliasesScript(aliases){
+function aliasesScript(aliases,pages){
   const routes='Object.assign(Object.create(null),'+JSON.stringify(aliases).replaceAll('<','\\u003c')+')';
-  return `// Generated from guide-map.json; routes stay within this guide.\n(function(){\n  "use strict";\n  var routes=${routes};\n  function destination(item){\n    var target=new URL(item.page,location.href);\n    if(target.origin!==location.origin)return null;\n    target.search=location.search;target.hash=item.anchor;return target;\n  }\n  function route(){\n    var hash;try{hash=decodeURIComponent(location.hash.slice(1));}catch(e){return;}\n    if(document.getElementById(hash))return;\n    var item=routes[hash];if(!item)return;\n    var target=destination(item);if(!target)return;\n    if(target.pathname!==location.pathname||target.hash!==location.hash)location.replace(target.href);\n  }\n  addEventListener("guide:ready",function(){\n    document.querySelectorAll('#content a[href^="#"]').forEach(function(link){\n      var id;try{id=decodeURIComponent(link.hash.slice(1));}catch(e){return;}\n      if(document.getElementById(id)||!routes[id])return;\n      var target=destination(routes[id]);if(target)link.href=target.href;\n    });route();\n  });\n  addEventListener("hashchange",route);\n  if(!document.body.hasAttribute("data-markdown"))route();\n}());\n`;
+  return `// Generated from guide-map.json; routes stay within this guide.\n(function(){\n  "use strict";\n  window.webGuideNavigation=${JSON.stringify(pages).replaceAll('<','\\u003c')};\n  var routes=${routes};\n  function destination(item){\n    var target=new URL(item.page,location.href);\n    if(target.origin!==location.origin)return null;\n    target.search=location.search;target.hash=item.anchor;return target;\n  }\n  function route(){\n    var hash;try{hash=decodeURIComponent(location.hash.slice(1));}catch(e){return;}\n    if(document.getElementById(hash))return;\n    var item=routes[hash];if(!item)return;\n    var target=destination(item);if(!target)return;\n    if(target.pathname!==location.pathname||target.hash!==location.hash)location.replace(target.href);\n  }\n  function prepareRoutes(){\n    document.querySelectorAll('#content a[href^="#"]').forEach(function(link){\n      var id;try{id=decodeURIComponent(link.hash.slice(1));}catch(e){return;}\n      if(document.getElementById(id)||!routes[id])return;\n      var target=destination(routes[id]);if(target)link.href=target.href;\n    });route();\n  }\n  addEventListener("guide:content-ready",prepareRoutes);\n  addEventListener("guide:ready",prepareRoutes);\n  addEventListener("hashchange",route);\n  if(!document.body.hasAttribute("data-markdown"))route();\n}());\n`;
 }
 let baseline;
 if(mode==='--migrate'){
@@ -64,8 +64,9 @@ for(const [site,config] of Object.entries(layout)){
         }
       }
     }
+    Object.assign(map.aliases,config.legacyRedirects||{});
     await writeFile(join(root,'guide-map.json'),JSON.stringify(map,null,2)+'\n');
-    await writeFile(join(root,'guide-routes.js'),aliasesScript(map.aliases));
+    await writeFile(join(root,'guide-routes.js'),aliasesScript(map.aliases,map.pages));
     continue;
   }
   let original=await readFile(join(root,'index.md'),'utf8');
@@ -179,7 +180,7 @@ for(const [site,config] of Object.entries(layout)){
   await writeFile(join(root,'index.html'),template.replace(/  <script src="\/notices_can\/assets\/app.js"><\/script>/,
     '  <script src="guide-routes.js"></script>\n  <script src="/notices_can/assets/app.js"></script>'));
   await writeFile(join(root,'guide-map.json'),JSON.stringify(map,null,2)+'\n');
-  await writeFile(join(root,'guide-routes.js'),aliasesScript(map.aliases));
+  await writeFile(join(root,'guide-routes.js'),aliasesScript(map.aliases,map.pages));
   // A migration ledger keeps exact source spans;it is private,not a second
   // public monolithic guide or an authoring input for later synchronization.
   await writeFile(join(snapshot,'migration.json'),JSON.stringify({chunks:chunks.map(c=>({page:c.page,start:c.start,end:c.end})),headings},null,2));

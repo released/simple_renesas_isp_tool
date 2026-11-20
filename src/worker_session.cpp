@@ -77,8 +77,8 @@ WorkerSession::~WorkerSession() {
 }
 
 bool WorkerSession::Start(HWND notify_window, UINT notify_message) {
-    std::lock_guard<std::mutex> lock(command_mutex_);
-    if (started_ || notify_window == nullptr || notify_message < WM_APP) {
+    std::scoped_lock lock(command_mutex_, event_mutex_);
+    if (started_ || events_.Pending() || notify_window == nullptr || notify_message < WM_APP) {
         return false;
     }
 
@@ -87,11 +87,20 @@ bool WorkerSession::Start(HWND notify_window, UINT notify_message) {
     stopping_ = false;
     cancel_requested_ = false;
     started_ = true;
-    worker_ = std::thread(&WorkerSession::ThreadMain, this);
+    thread_finished_ = false;
+    try {
+        worker_ = std::thread(&WorkerSession::ThreadMain, this);
+    } catch (...) {
+        started_ = false;
+        thread_finished_ = true;
+        notify_window_ = nullptr;
+        notify_message_ = 0U;
+        return false;
+    }
     return true;
 }
 
-void WorkerSession::StopAndJoin() {
+void WorkerSession::RequestStop() {
     {
         std::lock_guard<std::mutex> lock(command_mutex_);
         if (!started_) {
@@ -104,6 +113,19 @@ void WorkerSession::StopAndJoin() {
         command_pending_or_busy_ = true;
     }
     command_ready_.notify_one();
+}
+
+bool WorkerSession::IsStopped() const {
+    return thread_finished_.load();
+}
+
+bool WorkerSession::IsOperationPending() {
+    std::lock_guard<std::mutex> lock(command_mutex_);
+    return command_pending_or_busy_ || completion_pending_;
+}
+
+void WorkerSession::StopAndJoin() {
+    RequestStop();
 
     if (worker_.joinable()) {
         worker_.join();
@@ -113,6 +135,7 @@ void WorkerSession::StopAndJoin() {
         std::lock_guard<std::mutex> lock(command_mutex_);
         started_ = false;
         command_pending_or_busy_ = false;
+        completion_pending_ = false;
         commands_.clear();
         notify_window_ = nullptr;
         notify_message_ = 0U;
@@ -246,7 +269,15 @@ std::vector<WorkerEvent> WorkerSession::DrainEvents(std::size_t maximum) {
         drained.push_back(std::move(warning));
     }
     auto batch=events_.Take(maximum-drained.size());
-    for(auto& event:batch) drained.push_back(std::move(event));
+    bool completed = false;
+    for(auto& event:batch) {
+        completed = completed || event.kind == WorkerEventKind::OperationComplete;
+        drained.push_back(std::move(event));
+    }
+    if (completed) {
+        std::lock_guard<std::mutex> command_lock(command_mutex_);
+        completion_pending_ = false;
+    }
     return drained;
 }
 
@@ -258,7 +289,7 @@ bool WorkerSession::HasPendingEvents() {
 bool WorkerSession::Submit(Command command) {
     {
         std::lock_guard<std::mutex> lock(command_mutex_);
-        if (!started_ || stopping_ || command_pending_or_busy_) {
+        if (!started_ || stopping_ || command_pending_or_busy_ || completion_pending_) {
             return false;
         }
         cancel_requested_ = false;
@@ -419,7 +450,8 @@ void WorkerSession::ThreadMain() {
             success = false;
         }
 
-        if(!success && IsCancelRequested()) error=L"Operation canceled. "+error;
+        const auto outcome = operation::Classify(success, IsCancelRequested(), error);
+        if (outcome == operation::Outcome::Canceled && error.empty()) error=L"Operation canceled.";
         if(!success && error.empty()) error=L"Worker operation failed.";
         const auto error_context=CommandName(command.type,command.isp_contract)+L" | "+
             (report_port.empty()?command.port_name:report_port)+L" | Host Baud "+
@@ -430,7 +462,7 @@ void WorkerSession::ThreadMain() {
         const bool isp_operation=command.type==CommandType::UartDiscover||command.type==CommandType::UartEnter||
             command.type==CommandType::UartProgram||command.type==CommandType::UartTest||command.type==CommandType::UartVerify;
         const auto advice=success?guidance::Advice{}:guidance::Explain(error,isp_operation?
-            guidance::IspTransport(command.isp_contract):guidance::Transport::Unspecified);
+            guidance::IspTransport(command.isp_contract):guidance::Transport::Unspecified,outcome);
         const auto help=success?std::wstring():guidance::Format(error,error_context,advice);
         state_.busy = false;
         if(report_update) {
@@ -449,7 +481,7 @@ void WorkerSession::ThreadMain() {
                 update_result_=feedback::WithHostCounterWarning(update_result_,observations.increased);
                 result_message=feedback::Describe(update_result_).status;
             }
-            const auto report_result=feedback::ReportResult(success,IsCancelRequested(),update_result_);
+            const auto report_result=feedback::ReportResult(outcome,update_result_);
             const std::wstring peaks=state_.f24_stats_valid && after.telemetry_available ?
                 L"since host boot/CLEAR_STATS: UART RX bytes="+std::to_wstring(after.uart_rx_high_water)+
                 L"; UART TX bytes="+std::to_wstring(after.uart_tx_high_water)+
@@ -533,27 +565,32 @@ void WorkerSession::ThreadMain() {
             QueueEvent(std::move(report));
         }
         PostState();
-        if (command.type != CommandType::Disconnect) {
+        {
+            // No new command is admitted until this completion is drained by
+            // its UI owner, even if the worker has already become idle.
+            std::lock_guard<std::mutex> lock(command_mutex_);
+            command_pending_or_busy_ = !commands_.empty();
+            completion_pending_ = true;
+            if (commands_.empty()) cancel_requested_ = false;
+        }
+        {
             if (!success && error.empty()) {
                 error = L"Worker operation failed.";
             }
             WorkerEvent completion; completion.kind=WorkerEventKind::OperationComplete;
             completion.report_operation_id = report_update ? operation_id : 0U;
             completion.success=success; completion.text=success?L"Operation completed.":error;
+            completion.outcome=outcome;
             completion.update_result=success ? update_result_ : feedback::Result::None;
             if (completion.update_result!=feedback::Result::None)
                 completion.text=feedback::Describe(completion.update_result).status;
             completion.guidance=help; completion.advice=advice; QueueEvent(std::move(completion));
         }
 
-        {
-            std::lock_guard<std::mutex> lock(command_mutex_);
-            command_pending_or_busy_ = !commands_.empty();
-            if (commands_.empty()) cancel_requested_=false;
-        }
     }
 
     ProcessDisconnect();
+    thread_finished_ = true;
 }
 
 bool WorkerSession::ProcessOpenAndProbe(const Command& command,

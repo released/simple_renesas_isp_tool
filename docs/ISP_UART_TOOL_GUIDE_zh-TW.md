@@ -20,9 +20,9 @@ F24 I2C 的原始 App 及 8..247 KiB 容量測試映像已有一般更新與重�
 
 F24 UART 的原始 App 與 8..247 KiB 映像亦有 END／App 確認及 UART0 運作資料；見 [F24 UART 更新量測](#f24-uart-update-measurements)。
 
-F24 Xmodem 的 Transfer、原始 App 與 8..247 KiB 更新結果見 [F24 Xmodem 量測與限制](#f24-xmodem-update-measurements)；累積錯誤快照與成功更新分別呈現。
-
 Boot 流程與協定格式可依介面直接查閱：
+
+F24 Xmodem 的 Transfer、原始 App 與 8..247 KiB 更新結果見 [F24 Xmodem 量測與限制](#f24-xmodem-update-measurements)；累積錯誤快照與成功更新分別呈現。
 
 | 平台 | UART | I2C | Xmodem | 共用契約 |
 | --- | --- | --- | --- | --- |
@@ -293,16 +293,16 @@ App 工程的 `generate_test_bins.ps1`／建置後步驟依該次 `_update.bin` 
 
 #### UART0 本機操作與封包文字
 
-- F13／F24 I2C App 與 Custom Transfer，以獨立 UART0 提供診斷文字；I2C 傳送二進位協定。
+- F13、F24、G16、G22、RH850 的 UART／I2C App 與 Custom Transfer，以獨立 UART0 提供診斷文字；資料介面維持 UART1 或 I2C。
 - Terminal 使用 115200、8-N-1；傳送 `z` 或 `Z` 可要求一般 MCU 重置。App 重啟仍經過原本的 Boot 驗證流程；進入更新模式使用 Tool 的 Enter Boot。
 - 有效封包顯示 `RX`／`TX`、16-bit `seq`、`cmd`、`len` 與完整 payload。回覆需對應相同 sequence；Tool 另外檢查 CRC 與回傳資料。
 - PING／ECHO 測試資料為 `i XOR 0xA5`，例如 `A5 A4 A7 A6`；sequence 隨 request 遞增，資料本身維持固定測試圖樣。
 - 文字輸出在主迴圈進行；I2C 的 TX trace 等到完整回覆經最後 NACK／STOP 確認。CRC 錯誤或不完整的 frame 不會成為有效封包 trace。
-- `TRACE ISP LOG_DROP` 表示診斷文字被丟棄，不能據此推定資料傳輸遺失。F13／F24 使用獨立有上限的文字佇列。
+- `TRACE ISP LOG_DROP` 表示診斷文字被丟棄，不能據此推定資料傳輸遺失。G16 借用既有封包緩衝區，文字服務最多延後下一筆解析 200ms；其餘 MCU 使用獨立有上限的文字佇列。
 - I2C 回覆未被完整讀取時，mailbox 在最後活動後 2 秒放棄交易。該回覆不算成功傳送，待輸出的相關 trace 以文字丟棄處理，待執行的 ENTER 動作也會取消。
 - 交易已放棄、資料 bus idle 且沒有更新作業時，UART0 `z/Z` 可要求一般重置；不需要先完成另一筆通訊。bus 仍忙碌時持續等待，逾時本身不會自動重置 MCU。
 
-此處本機控制說明適用於 F13／F24 I2C App 與 Transfer。
+此本機控制適用於上述 UART／I2C App 與 Transfer，不改變各 Boot 或 Xmodem 專案的控制功能。
 
 Transfer Test 分開記錄 PING／ECHO／counter（Xmodem 另含 CRC128 streaming）與最後 live INFO 重讀結果。
 子測試通過後若 INFO 重讀失敗，整體作業仍為失敗。操作名稱及錯誤檢查方向依實際 I2C／UART／Xmodem 介面顯示；原始錯誤保留於 Log 與錯誤明細。

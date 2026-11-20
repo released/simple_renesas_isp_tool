@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cwctype>
 #include <string>
+#include "operation_outcome.h"
 
 namespace firmware_upgrade::guidance {
 enum class Transport { Unspecified, Uart, I2c, Xmodem };
@@ -13,11 +14,14 @@ struct Advice {
     std::wstring next;
 };
 // These are inspection suggestions, not a diagnosis of the physical bus.
-inline Advice Explain(const std::wstring& message,Transport transport=Transport::Unspecified) {
+inline Advice Explain(const std::wstring& message,Transport transport=Transport::Unspecified,
+                      operation::Outcome outcome=operation::Outcome::Unspecified) {
     std::wstring s=message;
     std::transform(s.begin(),s.end(),s.begin(),[](wchar_t c){return static_cast<wchar_t>(std::towlower(c));});
     const auto has=[&](const wchar_t* text){return s.find(text)!=std::wstring::npos;};
-    if(has(L"cancel")) return {L"Canceled",L"Wait for worker cleanup. Probe/discover again before another update; interrupted App flash may require Boot recovery."};
+    if(outcome==operation::Outcome::Canceled ||
+       (outcome==operation::Outcome::Unspecified && has(L"cancel")))
+        return {L"Canceled",L"Wait for worker cleanup. Probe/discover again before another update; interrupted App flash may require Boot recovery."};
     if(has(L"app_ready") || has(L"app reconnect") || has(L"run returned") || has(L"run sent"))
         return {L"App confirmation",L"Keep the current image and report. Check power and App initialization, then read live INFO. Do not repeat erase or RUN to resolve an unknown result."};
     if(has(L"host returned timeout for command 0x21."))

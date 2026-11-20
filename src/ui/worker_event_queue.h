@@ -13,7 +13,9 @@ namespace firmware_upgrade::ui {
 template<class Event>
 class WorkerEventQueue {
 public:
-    explicit WorkerEventQueue(std::size_t maximum=256U) : maximum_((std::max)(std::size_t{1U},maximum)) {}
+    // One admitted operation has at most three protected events (report start,
+    // report result, completion). Keep room for them and one replaceable item.
+    explicit WorkerEventQueue(std::size_t maximum=256U) : maximum_((std::max)(std::size_t{4U},maximum)) {}
     bool Push(Event event) {
         using Kind=decltype(event.kind);
         if(event.kind==Kind::Progress) {
@@ -27,12 +29,35 @@ public:
                 }
             }
         }
+        if (event.kind == Kind::State) {
+            for (auto it = events_.rbegin(); it != events_.rend(); ++it) {
+                if (it->kind != Kind::Log && it->kind != Kind::State) break;
+                if (it->kind == Kind::State) {
+                    events_.erase(std::next(it).base());
+                    break;
+                }
+            }
+        }
         if(events_.size()>=maximum_) {
-            const auto log=std::find_if(events_.begin(),events_.end(),
-                [](const Event& pending) {return pending.kind==Kind::Log;});
-            if(log!=events_.end()) events_.erase(log);
-            else events_.pop_front();
+            auto discard = events_.end();
+            for (const auto kind : {Kind::Log, Kind::Progress, Kind::State}) {
+                discard = std::find_if(events_.begin(), events_.end(),
+                    [kind](const Event& pending) {return pending.kind == kind;});
+                if (discard != events_.end()) break;
+            }
             ++dropped_;
+            const bool last_state = discard != events_.end() && discard->kind == Kind::State &&
+                std::none_of(std::next(discard), events_.end(),
+                    [](const Event& pending) {return pending.kind == Kind::State;});
+            if (discard == events_.end() ||
+                (last_state && (event.kind == Kind::Log || event.kind == Kind::Progress))) {
+                // Unsupported control-only floods fail closed: keep the owned
+                // results and latest live state, bound memory, and expose loss.
+                if (wake_pending_) return false;
+                wake_pending_ = true;
+                return true;
+            }
+            events_.erase(discard);
         }
         events_.push_back(std::move(event));
         if(wake_pending_) return false;

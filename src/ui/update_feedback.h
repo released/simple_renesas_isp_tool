@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "../core/operation_outcome.h"
 
 namespace firmware_upgrade::feedback {
 
@@ -79,9 +80,14 @@ inline View Describe(Result result) {
     }
 }
 
+inline std::wstring ReportResult(operation::Outcome outcome, Result result) {
+    if (outcome == operation::Outcome::Succeeded && Describe(result).warning) return L"PASS_WITH_WARNINGS";
+    return operation::Label(outcome);
+}
+
 inline std::wstring ReportResult(bool success, bool canceled, Result result) {
-    if (!success) return canceled ? L"CANCELED" : L"FAIL";
-    return Describe(result).warning ? L"PASS_WITH_WARNINGS" : L"PASS";
+    return ReportResult(success ? operation::Outcome::Succeeded :
+        canceled ? operation::Outcome::Canceled : operation::Outcome::Failed, result);
 }
 
 inline std::wstring CanNextStep(bool host, bool discovered, bool boot) {

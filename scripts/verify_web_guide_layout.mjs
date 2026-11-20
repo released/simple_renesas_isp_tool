@@ -11,6 +11,18 @@ const web=resolve(process.argv[2]);
 const layout=JSON.parse(await readFile(join(tool,'scripts/web_guide_layout.json'),'utf8'));
 const rendered=process.argv[3]?JSON.parse(await readFile(process.argv[3],'utf8')):null;
 let chapters=0,aliases=0;
+function sourceMayContainAnchor(md,id) {
+  if(md.includes('id="'+id+'"'))return true;
+  const prose=md.replace(/^```[^\n]*\n[^]*?^```\s*$/gm,'');
+  const counts=new Map();
+  for(const [,heading] of prose.matchAll(/^#{1,4}\s+(.+)$/gm)) {
+    const text=heading.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/<[^>]*>/g,'').replace(/[*`]/g,'');
+    const slug=text.trim().toLowerCase().replace(/[`~!@#$%^&*()+=\[\]{}\\|;:'",.<>/?，。；：「」『』（）]/g,'').replace(/\s+/g,'-');
+    const count=(counts.get(slug)||0)+1;counts.set(slug,count);
+    if(id===(count===1?slug:slug+'-'+count))return true;
+  }
+  return false;
+}
 for(const [site,config] of Object.entries(layout)){
   const root=join(web,site);
   const map=JSON.parse(await readFile(join(root,'guide-map.json'),'utf8'));
@@ -52,11 +64,22 @@ for(const [site,config] of Object.entries(layout)){
     assert.ok(target.page==='basic_uart_i2c/'||Object.hasOwn(config.pages,target.page.replace(/\.html$/,'')),
       'allowlisted local destination '+target.page);
     assert.ok(!/[?#\\]|\.\./.test(target.page),'no query,path traversal or external route');
+    let source,finalPage=target.page,finalAnchor=target.anchor;
+    if(target.page==='basic_uart_i2c/') {
+      const nested=JSON.parse(await readFile(join(root,'basic_uart_i2c/legacy-routes.json'),'utf8'));
+      const item=nested[target.anchor];
+      if(item){finalPage='basic_uart_i2c/'+item.page;finalAnchor=item.anchor;}
+      source=await readFile(join(root,'basic_uart_i2c',item?item.source:'index.md'),'utf8');
+      assert.ok(sourceMayContainAnchor(source,item?item.anchor:target.anchor),'missing nested alias target '+id);
+    } else {
+      source=files[target.page.replace(/\.html$/,'')];
+      assert.ok(sourceMayContainAnchor(source,target.anchor),'missing alias target '+site+'/#'+id);
+    }
     if(rendered){
-      const path='/'+site+'/'+(target.page==='index.html'?'':target.page);
+      const path='/'+site+'/'+(finalPage==='index.html'?'':finalPage.replace(/index\.html$/,''));
       const actual=rendered.results.find(r=>r.path===path);
       assert.ok(actual,'missing browser destination '+path);
-      assert.ok(actual.contentIds.includes(target.anchor),'missing legacy target '+site+'/#'+id+' -> '+target.page+'#'+target.anchor);
+      assert.ok(actual.contentIds.includes(finalAnchor),'missing legacy target '+site+'/#'+id+' -> '+finalPage+'#'+finalAnchor);
     }
     aliases++;
   }
@@ -68,8 +91,11 @@ for(const [site,config] of Object.entries(layout)){
     let replaced=null;const handlers={};
     const location={href:url.href,hash:url.hash,origin:url.origin,pathname:url.pathname,search:url.search,
       replace(value){replaced=value;}};
-    runInNewContext(script,{URL,location,document:{body:{hasAttribute(){return false;}},
+    const window={};
+    runInNewContext(script,{URL,location,window,document:{body:{hasAttribute(){return false;}},
       getElementById(){return existing?{}:null;}},addEventListener(name,fn){handlers[name]=fn;}});
+    assert.deepEqual(JSON.parse(JSON.stringify(window.webGuideNavigation)),config.pages,'chapter navigation data '+site);
+    assert.ok(handlers['guide:content-ready']&&handlers['guide:ready'],'early and compatible ready handlers');
     return replaced;
   }
   for(const [id,target] of Object.entries(map.aliases)){

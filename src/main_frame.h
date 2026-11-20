@@ -168,6 +168,8 @@ private:
     void PumpWorkerEvents();
     void FlushWorkerLogBatch();
     static constexpr UINT_PTR kWorkerEventPumpTimerId=3U;
+    static constexpr UINT_PTR kWorkerShutdownTimerId=4U;
+    void FinishWorkerShutdown();
     void ApplyWorkerEvent(const firmware_upgrade::ui::WorkerEvent& event);
     void InitializeSettingsFile();
     void LoadUiSettings();

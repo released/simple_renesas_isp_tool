@@ -81,7 +81,7 @@ Boot 建立時脈與 RAM／ECC 狀態；App 接續核對交接時脈，再初始
 
 Boot→App 交接會先遮罩中斷、停止 Boot 周邊、更新 RAM cookie，再透過 assembly 入口設定 App 的 EBASE／INTBP。
 
-CAN／CAN FD 的 RH850 工程各自保有 `boot_app_handoff.h`，使用 `0xFEDFFFF0..0xFEDFFFFF` 的 16-byte retention RAM：
+CAN／CAN FD 與 serial ISP 的 RH850 工程各自保有 `boot_app_handoff.h`，使用 `0xFEDFFFF0..0xFEDFFFFF` 的 16-byte retention RAM：
 
 | 相對位置 | 內容 | 用途 |
 | --- | --- | --- |

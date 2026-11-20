@@ -29,6 +29,7 @@
 #include "core/image_analysis.h"
 #include "core/scoped_flag.h"
 #include "core/operation_guidance.h"
+#include "core/operation_outcome.h"
 
 struct WorkerResponsivenessFixture;
 
@@ -130,6 +131,11 @@ struct WorkerEvent {
     int progress = 0;
     bool indeterminate = false;
     bool success = false;
+    operation::Outcome outcome = operation::Outcome::Unspecified;
+    operation::Outcome ResolvedOutcome() const {
+        return outcome == operation::Outcome::Unspecified ?
+            (success ? operation::Outcome::Succeeded : operation::Outcome::Failed) : outcome;
+    }
     feedback::Result update_result = feedback::Result::None;
     std::wstring text;
     std::wstring guidance;
@@ -153,6 +159,9 @@ public:
 
     bool Start(HWND notify_window, UINT notify_message);
     void StopAndJoin();
+    void RequestStop();
+    bool IsStopped() const;
+    bool IsOperationPending();
 
     bool OpenAndProbe(const std::wstring& port_name, std::uint32_t baudrate);
     bool LoadImage(const std::wstring& path, bool restored);
@@ -287,6 +296,8 @@ private:
     std::condition_variable command_ready_;
     std::deque<Command> commands_;
     bool command_pending_or_busy_ = false;
+    bool completion_pending_ = false;
+    std::atomic<bool> thread_finished_{true};
     bool started_ = false;
     std::atomic<bool> stopping_{false};
     std::wstring current_phase_;

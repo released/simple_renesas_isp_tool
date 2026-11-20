@@ -63,6 +63,16 @@
       "FD_DEVICE": "device-guides",
       "SERIAL_DEVICE_GUIDE": "device-guides",
       "RH850_DEVICE": "index"
+    },
+    "legacyRedirects": {
+      "app-a／b-工程驗證": {
+        "page": "device-guides.html",
+        "anchor": "device-metadata-vector-workshop"
+      },
+      "實板驗證紀錄": {
+        "page": "status-and-reports.html",
+        "anchor": "update-validation-scope"
+      }
     }
   },
   "slide_boot_loader_for_RL78": {
