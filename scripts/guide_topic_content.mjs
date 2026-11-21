@@ -43,7 +43,7 @@ export async function topicBodies(tool,platform,bodies){
       '| I2C／UART／Xmodem | 工程說明可查；本指南尚未列實板更新紀錄 | [各介面工程](index.html#boot-interfaces) |');
   }else{
     index.push('| CAN／CAN FD | F13／F24，按模式與 MCU 分列 | [映像大小與報告](#device-update-timing) |');
-    for(const [bus,models] of [['i2c',['f13','f24','g16']],['uart',['f13','f24']],['xmodem',['f13','f24']]])
+    for(const [bus,models] of [['i2c',['f13','f24','g16']],['uart',['f13','f24','g16']],['xmodem',['f13','f24','g16']]])
       index.push(`| ${bus==='i2c'?'I2C':bus==='uart'?'UART':'Xmodem'} | ${models.map(model=>`[${model.toUpperCase()}](#${model}-${bus}-update-measurements)`).join('／')} | [工程與機制](${bus}-device.html) |`);
     index.push('| 其他工程組合 | 本指南未列實板更新紀錄 | [依介面選擇工程](index.html#boot-interfaces) |');
   }

@@ -156,6 +156,15 @@
     "docs/TOOL_INTERFACE_OPERATIONS_zh-TW.md",
     "scripts/guide_topic_content.mjs",
     "tests/test_guide_topic_ownership.py",
-    "docs/RH850_CAN_DEVICE_GUIDE_zh-TW.md"
+    "docs/RH850_CAN_DEVICE_GUIDE_zh-TW.md",
+    "scripts/sync_g16_serial_evidence.mjs",
+    "docs/data/g16_uart_update_timing/g16_uart_10240b.json",
+    "docs/data/g16_uart_update_timing/g16_uart_23552b.json",
+    "docs/data/g16_uart_update_timing/g16_uart_transfer.json",
+    "docs/data/g16_xmodem_update_timing/g16_xmodem_12304b.json",
+    "docs/data/g16_xmodem_update_timing/g16_xmodem_23552b.json",
+    "docs/data/g16_xmodem_update_timing/g16_xmodem_transfer.json",
+    "docs/ISP_UART_DEVICE_DESIGN_zh-TW.md",
+    "docs/ISP_UART_DEVICE_DESIGN_zh-TW.pdf"
   ]
 }

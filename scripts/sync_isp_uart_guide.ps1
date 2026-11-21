@@ -4,6 +4,8 @@ $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'workspace_paths.ps1')
 . (Join-Path $PSScriptRoot 'web_guide_projection.ps1')
 $WebRoot=Get-CompanionPath -Kind Web -ExplicitPath $WebRoot
+& node (Join-Path $PSScriptRoot 'sync_g16_serial_evidence.mjs') $WebRoot $(if($CheckOnly){'--check'})
+if($LASTEXITCODE){throw 'G16 UART/Xmodem evidence projection failed.'}
 & node (Join-Path $PSScriptRoot 'sync_g16_i2c_evidence.mjs') $WebRoot $(if($CheckOnly){'--check'})
 if($LASTEXITCODE){throw 'G16 I2C evidence projection failed.'}
 & node (Join-Path $PSScriptRoot 'sync_f13_serial_evidence.mjs') $WebRoot $(if($CheckOnly){'--check'})

@@ -34,7 +34,7 @@ function Test-ToolPublicationPath([string]$Path) {
         if(!(Test-Path -LiteralPath $profilePath -PathType Leaf)){return $false}
         try {
             $profiles=Get-Content -LiteralPath $profilePath -Raw -Encoding UTF8|ConvertFrom-Json
-            $accepted=@('f13-can','f13-i2c','f13-uart','f13-xmodem','f24-can','f24-can-fd','f24-uart','f24-i2c','f24-xmodem','g16-i2c','rh850-can','rh850-can-fd')
+            $accepted=@('f13-can','f13-i2c','f13-uart','f13-xmodem','f24-can','f24-can-fd','f24-uart','f24-i2c','f24-xmodem','g16-i2c','g16-uart','g16-xmodem','rh850-can','rh850-can-fd')
             return ($profiles.Count -eq $accepted.Count -and
                 @(Compare-Object @($profiles.key|Sort-Object) @($accepted|Sort-Object)).Count -eq 0)
         } catch {return $false}

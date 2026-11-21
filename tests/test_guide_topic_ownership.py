@@ -42,7 +42,7 @@ class GuideTopicOwnershipTests(unittest.TestCase):
         self.assertLess(owner.index('id="experiment-i2c"'), owner.index('id="experiment-uart"'))
         self.assertLess(owner.index('id="experiment-uart"'), owner.index('id="experiment-xmodem"'))
         for anchor in ('f13-i2c', 'f13-uart', 'f13-xmodem', 'f24-i2c',
-                       'f24-uart', 'f24-xmodem', 'g16-i2c'):
+                       'f24-uart', 'f24-xmodem', 'g16-i2c', 'g16-uart', 'g16-xmodem'):
             marker = f'id="{anchor}-update-measurements"'
             self.assertEqual(owner.count(marker), 1)
             for page in (WEB/'slide_boot_loader_for_RL78').glob('*.md'):

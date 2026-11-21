@@ -151,6 +151,23 @@
     ]
   },
   {
+    "key": "g16-uart",
+    "platform": "RL78",
+    "model": "G16",
+    "bus": "UART",
+    "page": "uart-device",
+    "boot": "RL78_G16_ISP_Boot_loader_UART",
+    "app": "RL78_G16_ISP_Boot_loader_UART_app",
+    "part": "R5F121BCAFP",
+    "target": 363,
+    "app_start": 8192,
+    "capacity": 23552,
+    "measurements": [
+      "g16_uart_10240b.json",
+      "g16_uart_23552b.json"
+    ]
+  },
+  {
     "key": "g16-i2c",
     "platform": "RL78",
     "model": "G16",
@@ -165,6 +182,23 @@
     "measurements": [
       "g16_i2c_12116b.json",
       "g16_i2c_23552b.json"
+    ]
+  },
+  {
+    "key": "g16-xmodem",
+    "platform": "RL78",
+    "model": "G16",
+    "bus": "Xmodem",
+    "page": "xmodem-device",
+    "boot": "RL78_G16_ISP_Boot_loader_Xmodem",
+    "app": "RL78_G16_ISP_Boot_loader_Xmodem_app",
+    "part": "R5F121BCAFP",
+    "target": 363,
+    "app_start": 8192,
+    "capacity": 23552,
+    "measurements": [
+      "g16_xmodem_12304b.json",
+      "g16_xmodem_23552b.json"
     ]
   },
   {
