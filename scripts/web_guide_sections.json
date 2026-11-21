@@ -2,8 +2,8 @@
   "UART_TOOL_GUIDE": {
     "owner": "slide_simple_renesas_isp_tool",
     "anchor": "uart-device-operation",
-    "title": "UART／Xmodem／I2C device 操作",
-    "description": "RL78與RH850串列ISP的接線、可調通訊設定、App更新及Custom Transfer集中於ISP Tool頁。"
+    "title": "串列介面共用操作",
+    "description": "各介面操作、共用接線與更新流程的直接入口。"
   },
   "SERIAL_DEVICE_GUIDE": {
     "owner": "slide_boot_loader_for_RL78",
@@ -15,7 +15,8 @@
     "owner": "slide_boot_loader_for_RH850",
     "anchor": "rh850-can-device",
     "title": "其他 MCU 指南",
-    "description": "RH850 的 CAN／CAN FD、App Metadata／IRQ、串列介面與 Flash 移植集中於獨立 Bootloader 指南。"
+    "description": "RH850 的 CAN／CAN FD、App Metadata／IRQ、串列介面與 Flash 移植集中於獨立 Bootloader 指南。",
+    "entry": "index.html#boot-interfaces"
   },
   "FD_TRANSFER": {
     "owner": "slide_simple_renesas_isp_tool",

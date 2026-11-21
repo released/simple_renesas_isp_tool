@@ -9,7 +9,7 @@ assert.ok(process.argv[2],'explicit WebRoot required');
 const check=process.argv.includes('--check');
 const source=join(tool,'docs/data/f24_i2c_update_timing');
 const destination=join(web,'slide_simple_renesas_isp_tool/data');
-const guide=join(tool,'docs/ISP_UART_TOOL_GUIDE_zh-TW.md');
+const guide=join(tool,'docs/SERIAL_UPDATE_MEASUREMENTS_zh-TW.md');
 const html=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=p=>readFile(p,'utf8').then(s=>s.replace(/^\uFEFF/,''));
 async function output(path,text){

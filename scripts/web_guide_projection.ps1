@@ -9,13 +9,20 @@ function Get-WebGuideProjection {
     if ($config.PSObject.Properties['deferred'] -and $config.deferred) {
         return "<!-- ${Section}_BEGIN -->`n<!-- ${Section}_END -->"
     }
-    if ($Folder -ceq $config.owner) { return $Canonical }
+    if ($Folder -ceq $config.owner) {
+        if ($Section -ceq 'DEVICE_WORKSHOP') {
+            return [regex]::Replace($Canonical,'(?s)<a id="device-update-timing"></a>.*?(?=<!-- DEVICE_WORKSHOP_END -->)',
+                "[App update measurements](experiments.html#device-update-timing).`n")
+        }
+        return $Canonical
+    }
     $layout = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'web_guide_layout.json')) | ConvertFrom-Json
     $page = $layout.PSObject.Properties[$config.owner].Value.sections.PSObject.Properties[$Section].Value
     if (!$page) { throw "Missing owner chapter for $Section" }
     $url = 'https://released.github.io/'+$config.owner+'/'+$page+'.html#'+$config.anchor
+    if ($config.PSObject.Properties['entry']) { $url='https://released.github.io/'+$config.owner+'/'+$config.entry }
     $linkText=$config.title
-    return "<!-- ${Section}_BEGIN -->`n<a id=`"$($config.anchor)`"></a>`n`n## $($config.title)`n`n$($config.description)`n[$linkText]($url)`n<!-- ${Section}_END -->"
+    return "<!-- ${Section}_BEGIN -->`n<a id=`"$($config.anchor)`"></a>`n`n## $($config.title)`n`n[$linkText]($url)`n<!-- ${Section}_END -->"
 }
 
 function Sync-WebGuideSection {

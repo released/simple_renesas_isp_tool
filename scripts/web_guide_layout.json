@@ -13,25 +13,41 @@
         "title": "Tool 連線與操作",
         "description": "COM／Host 識別、畫面、接線、更新政策與錯誤資訊。"
       },
+      "can-update": {
+        "title": "CAN 操作",
+        "description": "Classical CAN 的連線設定、App 更新與通訊測試。"
+      },
+      "can-fd": {
+        "title": "CAN FD 操作",
+        "description": "FD+BRS、速率、App 更新與通訊測試。"
+      },
+      "i2c": {
+        "title": "I2C 操作",
+        "description": "I2C port、7-bit 位址、時脈、App 更新與 Custom Transfer。"
+      },
+      "uart": {
+        "title": "UART 操作",
+        "description": "Device baud、UART ISP 更新與 Custom Transfer。"
+      },
+      "xmodem": {
+        "title": "Xmodem 操作",
+        "description": "XMODEM-CRC128 更新與無 Flash 串流測試。"
+      },
+      "serial-isp": {
+        "title": "串列共用接線與更新流程",
+        "description": "I2C／UART／Xmodem 的共用接線、相容條件、操作流程與診斷。"
+      },
       "status-and-reports": {
         "title": "欄位、更新確認與報告",
         "description": "BIN／live 資料、狀態訊息、進度、取消及 HTML 更新報告。"
       },
-      "can-update": {
-        "title": "CAN／CAN FD App 更新",
-        "description": "Classical CAN：F13／F24／RH850；CAN FD：F24／RH850。"
+      "custom-transfer": {
+        "title": "Custom Transfer 通訊驗證",
+        "description": "F13／F24／RH850 Classical CAN，以及F24／RH850 CAN FD的獨立通訊測試。"
       },
       "can-protocol": {
         "title": "CAN 更新逐層導讀",
         "description": "對照 Tool、MCU CAN host 與 MCU CAN device 的資料流。"
-      },
-      "serial-isp": {
-        "title": "UART／Xmodem／I2C 操作",
-        "description": "接線、可調通訊設定、App 更新及串列通訊測試。"
-      },
-      "custom-transfer": {
-        "title": "Custom Transfer 通訊驗證",
-        "description": "F13／F24／RH850 Classical CAN，以及F24／RH850 CAN FD的獨立通訊測試。"
       },
       "host-firmware": {
         "title": "MCU host 韌體與自身更新",
@@ -48,7 +64,7 @@
       "COMMON_IMAGE_POLICY": "operation",
       "UPDATE_EVIDENCE": "status-and-reports",
       "TOOL_DEVICE_MEDIA": "can-update",
-      "FD_UPDATE": "can-update",
+      "FD_UPDATE": "can-fd",
       "CAN_WALKTHROUGH": "can-protocol",
       "UART_TOOL_GUIDE": "serial-isp",
       "TRANSFER_EXAMPLES": "custom-transfer",
@@ -72,6 +88,67 @@
       "實板驗證紀錄": {
         "page": "status-and-reports.html",
         "anchor": "update-validation-scope"
+      },
+      "f13-i2c-update-measurements": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "f13-i2c-update-measurements"
+      },
+      "f13-uart-update-measurements": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "f13-uart-update-measurements"
+      },
+      "f13-xmodem-update-measurements": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "f13-xmodem-update-measurements"
+      },
+      "f24-i2c-update-measurements": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "f24-i2c-update-measurements"
+      },
+      "f24-uart-update-measurements": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "f24-uart-update-measurements"
+      },
+      "f24-xmodem-update-measurements": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "f24-xmodem-update-measurements"
+      },
+      "g16-i2c-update-measurements": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "g16-i2c-update-measurements"
+      },
+      "f13-i2c-update-summary": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "f13-i2c-update-measurements"
+      },
+      "serial-update-results": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "experiments.html",
+        "anchor": "experiment-scope"
+      },
+      "f24-i2c-transfer": {
+        "page": "i2c.html",
+        "anchor": "i2c-operation"
+      },
+      "f24-i2c-update": {
+        "page": "i2c.html",
+        "anchor": "i2c-operation"
+      },
+      "i2c-image-waits": {
+        "page": "status-and-reports.html",
+        "anchor": "app-restart-confirmation"
+      },
+      "i2c-test-bin-sequence": {
+        "page": "status-and-reports.html",
+        "anchor": "app-restart-confirmation"
       }
     }
   },
@@ -81,29 +158,37 @@
         "title": "RL78 Bootloader 實作指南",
         "description": "MCU device Boot／App 開發與參考入口。"
       },
+      "architecture": {
+        "title": "Bootloader 整體架構",
+        "description": "Boot／App／Host 分工、啟動驗證、更新流程與 RAM 交接。"
+      },
       "can-device": {
-        "title": "Classical CAN／CAN FD device 工程",
+        "title": "CAN Bootloader 與工程",
         "description": "F13／F24 Classical CAN、F24 CAN FD 的 Boot／App 工程與啟動流程。"
       },
-      "app-development": {
-        "title": "App Metadata、IRQ 與更新耗時",
-        "description": "C header 編輯、產表、App 建置、驗證、CAN 速率與更新耗時。"
-      },
-      "serial-device": {
-        "title": "串列 ISP 共用工程與協定契約",
-        "description": "平台配置、C header、建置、Metadata、SC 與共用 Frame／命令／INFO／Status。"
-      },
-      "uart-device": {
-        "title": "UART Bootloader 與協定格式",
-        "description": "資料 UART、接收中斷、framed ISP 更新、封包範例與診斷。"
+      "can-fd-device": {
+        "title": "CAN FD Bootloader 與工程",
+        "description": "CAN FD 的設定、接收與更新契約；各 MCU 工程直接入口。"
       },
       "i2c-device": {
         "title": "I2C Bootloader 與協定格式",
         "description": "I2C Slave、STOP mailbox、111-byte reply window 與更新完成條件。"
       },
+      "uart-device": {
+        "title": "UART Bootloader 與協定格式",
+        "description": "資料 UART、接收中斷、framed ISP 更新、封包範例與診斷。"
+      },
       "xmodem-device": {
         "title": "Xmodem Bootloader 與協定格式",
         "description": "Framed control、XMODEM-CRC128、串流寫入、重送與最終 ACK。"
+      },
+      "app-development": {
+        "title": "App Metadata 與 IRQ",
+        "description": "映像設定、Metadata 產生、IRQ mapping 與建置驗證。"
+      },
+      "serial-device": {
+        "title": "串列 ISP 共用工程與協定契約",
+        "description": "平台配置、C header、建置、Metadata、SC 與共用 Frame／命令／INFO／Status。"
       },
       "porting": {
         "title": "Boot／App 移植與 Flash",
@@ -113,6 +198,10 @@
         "title": "Flash、Metadata 與 CAN 封包參考",
         "description": "位址、全部 Metadata bytes、對應程式與 CAN payload。"
       },
+      "experiments": {
+        "title": "各介面實驗資料",
+        "description": "依介面與 MCU 查閱實板紀錄、量測條件、報告與確認範圍。"
+      },
       "tool-guides": {
         "title": "Tool 操作與通訊驗證入口",
         "description": "下載、更新、報告、MCU host 與 Custom Transfer 的主題連結。"
@@ -121,7 +210,7 @@
     "sections": {
       "F13_BOOT_DECISION": "can-device",
       "F24_DEVICE": "can-device",
-      "FD_DEVICE": "can-device",
+      "FD_DEVICE": "can-fd-device",
       "DEVICE_WORKSHOP": "app-development",
       "SERIAL_DEVICE_GUIDE": "serial-device",
       "RL78_PORTING": "porting",
@@ -137,6 +226,12 @@
       "UART_DEVICE": "uart-device",
       "I2C_DEVICE": "i2c-device",
       "XMODEM_DEVICE": "xmodem-device"
+    },
+    "legacyRedirects": {
+      "device-upgrade-paths": {
+        "page": "index.html",
+        "anchor": "boot-interfaces"
+      }
     }
   },
   "slide_boot_loader_for_RH850": {
@@ -145,29 +240,37 @@
         "title": "RH850 Bootloader 實作指南",
         "description": "RH850 MCU device 的 Boot、App 與通訊驗證入口。"
       },
+      "architecture": {
+        "title": "Bootloader 整體架構",
+        "description": "Boot／App／Host 分工、啟動驗證、更新流程與 RAM 交接。"
+      },
       "can-device": {
-        "title": "Classical CAN／CAN FD device 工程",
+        "title": "CAN Bootloader 與工程",
         "description": "EVM、CAN port、接收資源、更新 owner 與 Boot 啟動流程。"
       },
-      "app-development": {
-        "title": "App Metadata、IRQ 與更新耗時",
-        "description": "C header 編輯、512-entry IRQ table、建置產物及 CAN／CAN FD 實測時間。"
-      },
-      "serial-device": {
-        "title": "串列 ISP 共用工程與協定契約",
-        "description": "平台配置、C header、建置、Metadata、SC 與共用 Frame／命令／INFO／Status。"
-      },
-      "uart-device": {
-        "title": "UART Bootloader 與協定格式",
-        "description": "資料 UART、接收中斷、framed ISP 更新、封包範例與診斷。"
+      "can-fd-device": {
+        "title": "CAN FD Bootloader 與工程",
+        "description": "CAN FD 的設定、接收與更新契約；各 MCU 工程直接入口。"
       },
       "i2c-device": {
         "title": "I2C Bootloader 與協定格式",
         "description": "I2C Slave、STOP mailbox、111-byte reply window 與更新完成條件。"
       },
+      "uart-device": {
+        "title": "UART Bootloader 與協定格式",
+        "description": "資料 UART、接收中斷、framed ISP 更新、封包範例與診斷。"
+      },
       "xmodem-device": {
         "title": "Xmodem Bootloader 與協定格式",
         "description": "Framed control、XMODEM-CRC128、串流寫入、重送與最終 ACK。"
+      },
+      "app-development": {
+        "title": "App Metadata 與 IRQ",
+        "description": "映像設定、Metadata 產生、IRQ mapping 與建置驗證。"
+      },
+      "serial-device": {
+        "title": "串列 ISP 共用工程與協定契約",
+        "description": "平台配置、C header、建置、Metadata、SC 與共用 Frame／命令／INFO／Status。"
       },
       "porting": {
         "title": "Boot／App 移植與 Flash",
@@ -177,6 +280,10 @@
         "title": "Flash、Metadata 與 CAN 封包參考",
         "description": "RH850 位址、256-byte Metadata 範例、8-byte control 與 raw data。"
       },
+      "experiments": {
+        "title": "各介面實驗資料",
+        "description": "依介面與 MCU 查閱實板紀錄、量測條件、報告與確認範圍。"
+      },
       "tool-guides": {
         "title": "Tool 操作與通訊驗證入口",
         "description": "共用 ISP Tool、更新報告、Custom Transfer 與操作章節的連結。"
@@ -185,13 +292,24 @@
     "sections": {
       "RH850_DEVICE": "can-device",
       "RH850_APP_CHAPTER": "app-development",
-      "RH850_TIMING": "app-development",
+      "RH850_TIMING": "experiments",
       "RH850_SERIAL_CHAPTER": "serial-device",
       "RH850_PORTING_CHAPTER": "porting",
       "RH850_REFERENCE_CHAPTER": "reference",
       "UART_DEVICE": "uart-device",
       "I2C_DEVICE": "i2c-device",
       "XMODEM_DEVICE": "xmodem-device"
+    },
+    "legacyRedirects": {
+      "device-upgrade-paths": {
+        "page": "index.html",
+        "anchor": "boot-interfaces"
+      },
+      "serial-status-codes": {
+        "guide": "slide_boot_loader_for_RL78",
+        "page": "serial-device.html",
+        "anchor": "serial-status-codes"
+      }
     }
   }
 }

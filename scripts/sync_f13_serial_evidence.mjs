@@ -73,7 +73,7 @@ ${table}
 - Transfer 成功段前後的累積 Device RX errors 均為 **${transfer.device_uart_before.rx_errors}**，drops／TX timeouts 為 0；不能與更新後 App 的 0 跨執行相減。${bus === 'uart' ? '較早曾有 Host command 0x61 INTERNAL_ERROR；其原因未由本批資料確立。' : ''}
 - 本批涵蓋正常更新後 App 確認；z/Z 人工重置、冷啟動、斷電及其他型號的結果另行驗證。
 <!-- ${marker}_END -->`;
-    for (const name of ['docs/ISP_UART_TOOL_GUIDE_zh-TW.md', 'docs/DEVICE_APP_UPGRADE_PATHS_zh-TW.md']) {
+    for (const name of ['docs/SERIAL_UPDATE_MEASUREMENTS_zh-TW.md']) {
       const path = join(tool,name), source = await read(path);
       const pattern = new RegExp('<!-- ' + marker + '_BEGIN -->[^]*?<!-- ' + marker + '_END -->','g');
       const matches = [...source.matchAll(pattern)]; assert.ok(matches.length <= 1);

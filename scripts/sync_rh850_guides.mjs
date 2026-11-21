@@ -37,7 +37,7 @@ function localLinks(source){
     'RH850_CAN_DEVICE_GUIDE_zh-TW.md':'can-device.html',
     'RH850_ISP_DEVICE_DESIGN_zh-TW.md':'serial-device.html',
     'RH850_BOOT_APP_PORTING_GUIDE_zh-TW.md':'porting.html',
-    'RH850_UPDATE_TIMING_zh-TW.md':'app-development.html#rh850-update-timing',
+    'RH850_UPDATE_TIMING_zh-TW.md':'experiments.html#rh850-update-timing',
     'RH850_IMAGE_REFERENCE_zh-TW.md':'reference.html',
   };
   source=source.replaceAll('https://released.github.io/'+site+'/','');
@@ -46,6 +46,10 @@ function localLinks(source){
     .replaceAll('](SHARED_CONSOLE_BRIDGE_GUIDE_zh-TW.md','](../slide_simple_renesas_isp_tool/operation.html')
     .replaceAll('](https://released.github.io/slide_simple_renesas_isp_tool/operation.html','](../slide_simple_renesas_isp_tool/operation.html')
     .replaceAll('](ISP_UART_DEVICE_DESIGN_zh-TW.md','](../slide_boot_loader_for_RL78/serial-device.html');
+  const fdAnchors=new Set([...block(can,'RH850_CAN_FD').matchAll(/<a id="([^"]+)"><\/a>/g)].map(item=>item[1]));
+  source=source.replace(/can-device\.html#([^\s)"]+)/g,(all,id)=>fdAnchors.has(id)?'can-fd-device.html#'+id:all)
+    .replace(/app-development\.html#(rh850-update-timing|guide-app-development-8|device-update-timing)/g,'experiments.html#$1')
+    .replace(/can-update\.html#can-fd-update/g,'can-fd.html#can-fd-update');
   return source;
 }
 const layout=JSON.parse(await utf8(join(tool,'scripts/web_guide_layout.json')))[site];
@@ -90,7 +94,7 @@ for(const [filename,summary] of [...cachedReports].sort(([a],[b])=>a.localeCompa
   const file=filename.replace(/\.json$/,'');
   await output(join(root,'data',filename),JSON.stringify(summary,null,2)+'\n');
   const cells=Object.entries(summary).map(([k,v])=>`<tr><th>${html(k)}</th><td><pre>${html(typeof v==='object'?JSON.stringify(v,null,2):v??'')}</pre></td></tr>`).join('\n');
-  await output(join(root,'data',file+'.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RH850 更新量測報告摘要</title><style>body{font:16px system-ui;margin:2rem;max-width:70rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:.6rem;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}th{width:15rem;background:#eee}@media(max-width:600px){body{margin:1rem}table,tbody,tr,th,td{display:block;width:auto}tr{margin:.8rem 0}th{border-bottom:0}td pre{font-size:14px}}</style><h1>RH850 更新量測報告摘要</h1><p><a href="../app-development.html#rh850-update-timing">更新時間表</a> · <a href="${file}.json">JSON 摘要</a></p><p>欄位取自來源 report。映像大小使用本次 input_bytes；診斷與更新完成結果分別保留。來源 report 以檔名與 SHA256 識別。</p><table>${cells}</table></html>\n`);
+  await output(join(root,'data',file+'.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RH850 更新量測報告摘要</title><style>body{font:16px system-ui;margin:2rem;max-width:70rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:.6rem;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}th{width:15rem;background:#eee}@media(max-width:600px){body{margin:1rem}table,tbody,tr,th,td{display:block;width:auto}tr{margin:.8rem 0}th{border-bottom:0}td pre{font-size:14px}}</style><h1>RH850 更新量測報告摘要</h1><p><a href="../experiments.html#rh850-update-timing">更新時間表</a> · <a href="${file}.json">JSON 摘要</a></p><p>欄位取自來源 report。映像大小使用本次 input_bytes；診斷與更新完成結果分別保留。來源 report 以檔名與 SHA256 識別。</p><table>${cells}</table></html>\n`);
   reports.push({filename,summary,file});
 }
 assert.ok(reports.length,'At least one completed RH850 CAN report is required');
@@ -111,8 +115,14 @@ const groups=[...conditions.values()].sort((a,b)=>{
     (a[0].summary.host_baud+'|'+a[0].summary.can).localeCompare(b[0].summary.host_baud+'|'+b[0].summary.can);
 });
 const timingRows=[];
+const measuredModes=new Set();
 for(const group of groups){
   const first=group[0].summary;
+  const measuredMode=first.can.startsWith('Classical CAN ')?'can':'can-fd';
+  if(!measuredModes.has(measuredMode)){
+    timingRows.push(`<a id="rh850-${measuredMode}-update-measurements"></a>`,'');
+    measuredModes.add(measuredMode);
+  }
   const label=(first.can.startsWith('Classical CAN ')?'Classical CAN':'CAN FD')+'／Host '+first.host_baud+' baud';
   const dates=[...new Set(group.map(r=>r.summary.recorded_at_utc.slice(0,10)))].join('、');
   const versions=[...new Set(group.map(r=>r.summary.tool))].join('、');
@@ -180,15 +190,13 @@ await output(referencePath,reference);
 const can=await utf8(join(tool,'docs/RH850_CAN_DEVICE_GUIDE_zh-TW.md'));
 const porting=await utf8(join(tool,'docs/RH850_BOOT_APP_PORTING_GUIDE_zh-TW.md'));
 const serialPath=join(tool,'docs/RH850_ISP_DEVICE_DESIGN_zh-TW.md');
-const wire=block(await utf8(join(tool,'docs/ISP_UART_DEVICE_DESIGN_zh-TW.md')),'SERIAL_WIRE_REFERENCE')
- .replaceAll('slide_boot_loader_for_RL78','slide_boot_loader_for_RH850')
- .replace('RL78硬體錯誤／丟棄／TX計數飽和於65535，RH850飽和於0xFFFFFFFF；欄位仍統一序列化為32bits。','RH850硬體錯誤／丟棄／TX計數飽和於0xFFFFFFFF，欄位序列化為32bits。')
- .replaceAll('IICA ISR','RIIC ISR');
+const wire='<a id="guide-serial-device-5"></a>\n\n### Framed control與INFO\n\n[共用 Frame、命令、INFO 與 Status](../slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5)由 RL78 共用契約章節維護。RH850 的 RLIN31／RIIC1、IRQ、位址與計數上限以本頁平台設定及各介面工程為準。';
 const serialCanonical=replaceBlock(await utf8(serialPath),'RH850_SERIAL_WIRE',wire);
 await output(serialPath,serialCanonical);
 const serial=serialCanonical.replace(/^<a id="article_top"><\/a>\s*# [^\n]+\n/,'');
 const bodies={
  ...await serialTransportBodies(tool,'RH850'),
+ 'experiments':wrap('RH850_TIMING',block(timing,'RH850_TIMING')),
  'can-device':wrap('RH850_DEVICE',['RH850_CAN_INTRO','RH850_BOOT_FLOW','RH850_CAN_FD'].map(k=>block(can,k)).join('\n\n')),
  'app-development':wrap('RH850_APP_CHAPTER',block(can,'RH850_APP'))+'\n\n'+wrap('RH850_TIMING',block(timing,'RH850_TIMING')),
  'serial-device':wrap('RH850_SERIAL_CHAPTER',serial),

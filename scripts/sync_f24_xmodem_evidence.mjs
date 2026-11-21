@@ -80,7 +80,7 @@ ${table}
 - 六次 App 重啟均有 boot-validated、update completed、UART0 console 與後續 counter；提供的 log 沒有 z/Z 人工重置訊息，故不將功能宣告視為該操作的實板證據。
 - 本表涵蓋一般更新與軟體重啟後 App 確認；冷啟動、斷電及其他故障恢復不由本批資料推定。
 <!-- F24_XMODEM_MEASURED_END -->`;
-  for (const name of ['docs/ISP_UART_TOOL_GUIDE_zh-TW.md', 'docs/DEVICE_APP_UPGRADE_PATHS_zh-TW.md']) {
+  for (const name of ['docs/SERIAL_UPDATE_MEASUREMENTS_zh-TW.md']) {
     const path = join(tool, name), source = await read(path);
     const matches = [...source.matchAll(/<!-- F24_XMODEM_MEASURED_BEGIN -->[^]*?<!-- F24_XMODEM_MEASURED_END -->/g)];
     assert.ok(matches.length <= 1, 'one canonical F24 Xmodem measurement block per guide');

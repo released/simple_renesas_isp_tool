@@ -71,7 +71,7 @@ ${table}
 - 獨立 Transfer 的本批擷取涵蓋 Discover／INFO、一組 RX／TX、每列 8 bytes，沒有 Flash 命令；PING／ECHO／counters 尚未由此擷取證實。[Discover 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/g16_i2c_transfer.html)
 - 結果限正常更新後 App 確認。UART0 z/Z 人工重置、冷啟動、斷電恢復、其他介面／型號與故障注入另行驗證。
 <!-- G16_I2C_MEASURED_END -->`;
-  for(const name of ['docs/ISP_UART_TOOL_GUIDE_zh-TW.md','docs/DEVICE_APP_UPGRADE_PATHS_zh-TW.md']) {
+  for(const name of ['docs/SERIAL_UPDATE_MEASUREMENTS_zh-TW.md']) {
     const path=join(tool,name),text=await read(path);
     const pattern=/<!-- G16_I2C_MEASURED_BEGIN -->[^]*?<!-- G16_I2C_MEASURED_END -->/g;
     const matches=[...text.matchAll(pattern)];assert.ok(matches.length<=1);

@@ -59,7 +59,7 @@ ${table}
 - UART Custom Transfer 及獨立 Xmodem Transfer 均有通過紀錄；Xmodem Boot／App 的更新與 UART0 trace 證據集中於 [F24 Xmodem 更新量測](https://released.github.io/slide_simple_renesas_isp_tool/serial-isp.html#f24-xmodem-update-measurements)。
 - 本表涵蓋一般更新與軟體重啟後 App 確認；冷啟動、斷電及其他故障恢復不由本批資料推定。
 <!-- F24_UART_MEASURED_END -->`;
-  for (const name of ['docs/ISP_UART_TOOL_GUIDE_zh-TW.md', 'docs/DEVICE_APP_UPGRADE_PATHS_zh-TW.md']) {
+  for (const name of ['docs/SERIAL_UPDATE_MEASUREMENTS_zh-TW.md']) {
     const path = join(tool, name), source = await read(path);
     const matches = [...source.matchAll(/<!-- F24_UART_MEASURED_BEGIN -->[^]*?<!-- F24_UART_MEASURED_END -->/g)];
     assert.ok(matches.length <= 1, 'one canonical F24 UART measurement block per guide');

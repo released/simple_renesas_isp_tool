@@ -30,6 +30,8 @@ App啟動確認及CAN_STOP，記錄的Host錯誤差值與重試為0。這些結�
 [Boot安裝與尾端配置](https://released.github.io/slide_boot_loader_for_RH850/porting.html#guide-porting-4)。
 
 <!-- RH850_TIMING_DATA_BEGIN -->
+<a id="rh850-can-update-measurements"></a>
+
 #### Classical CAN／Host 115200 baud
 
 量測日期：2026-11-02；Tool：0.1.0.0114。
@@ -52,6 +54,8 @@ Host Baud：115200 bit/s；報告記錄的 bus 條件：Classical CAN 500K, stan
 | [20261102_104640](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261102_104640_859_63508_432284781_19.html) | 1063 ms | 63 ms | 99187 ms | 160 ms | 2515 ms | 103513 ms |
 | [20261102_105059](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261102_105059_529_63508_432543421_20.html) | 1060 ms | 159 ms | 231390 ms | 336 ms | 4565 ms | 238036 ms |
 | [20261102_105946](https://released.github.io/slide_boot_loader_for_RH850/data/update_20261102_105946_691_63508_433070515_21.html) | 1062 ms | 336 ms | 496944 ms | 688 ms | 6488 ms | 506058 ms |
+
+<a id="rh850-can-fd-update-measurements"></a>
 
 #### CAN FD／Host 115200 baud
 

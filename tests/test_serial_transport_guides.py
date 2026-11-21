@@ -4,6 +4,7 @@ import binascii
 import json
 import os
 import re
+import subprocess
 import unittest
 import zlib
 
@@ -15,6 +16,14 @@ WEB = Path(os.environ['FIRMWARE_WEB_ROOT']) if os.environ.get('FIRMWARE_WEB_ROOT
 class SerialTransportGuideTests(unittest.TestCase):
     def source(self, name):
         return (ROOT/'docs'/name).read_text(encoding='utf-8-sig')
+
+    def test_offline_operation_links_resolve_numeric_interface_names(self):
+        module = (ROOT/'scripts/serial_guide_content.mjs').as_uri()
+        code = f'import {{toolOperationPdfSource}} from {json.dumps(module)}; process.stdout.write(await toolOperationPdfSource({json.dumps(ROOT.as_posix())}));'
+        text = subprocess.check_output(['node', '--input-type=module', '-e', code], encoding='utf-8')
+        for page in ('i2c', 'uart', 'xmodem'):
+            self.assertIn('https://released.github.io/slide_simple_renesas_isp_tool/'+page+'.html', text)
+            self.assertNotIn(']('+page+'.html)', text)
 
     def test_both_platforms_have_direct_boot_and_protocol_entries(self):
         for platform in ('RL78', 'RH850'):
@@ -75,11 +84,16 @@ class SerialTransportGuideTests(unittest.TestCase):
         for platform in ('RL78', 'RH850'):
             site = WEB/('slide_boot_loader_for_'+platform)
             common = (site/'serial-device.md').read_text(encoding='utf-8')
-            self.assertIn('| Frame byte |', common)
+            if platform == 'RL78':
+                self.assertIn('| Frame byte |', common)
+            else:
+                self.assertNotIn('| Frame byte |', common)
+                self.assertIn('../slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5', common)
             for bus in ('uart', 'i2c', 'xmodem'):
                 page = (site/(bus+'-device.md')).read_text(encoding='utf-8')
                 self.assertNotIn('| Frame byte |', page)
-                self.assertIn('serial-device.html#guide-serial-device-5', page)
+                self.assertIn('serial-device.html#guide-serial-device-5' if platform == 'RL78'
+                              else f'../slide_boot_loader_for_RL78/{bus}-device.html', page)
                 self.assertNotRegex(page, r'(?<![A-Za-z])[A-Za-z]:[\\/]|_Avery|SourceCode')
             self.assertNotIn('#### UART診斷格式', common)
             self.assertNotIn('### XMODEM-CRC128資料與診斷', common)
@@ -93,6 +107,20 @@ class SerialTransportGuideTests(unittest.TestCase):
             diagnostics = page.split('#### UART診斷格式')[1]
             self.assertIn(limit, diagnostics)
             self.assertNotIn(excluded, diagnostics)
+
+    def test_measured_serial_results_are_discoverable_from_operation_entry(self):
+        operation = self.source('ISP_UART_TOOL_GUIDE_zh-TW.md')
+        self.assertNotIn('_MEASURED_BEGIN', operation)
+        page = (WEB/'slide_boot_loader_for_RL78/experiments.md').read_text(encoding='utf-8')
+        entry = (WEB/'slide_boot_loader_for_RL78/i2c-device.md').read_text(encoding='utf-8')
+        self.assertIn('experiments.html#f13-i2c-update-measurements', entry)
+        self.assertLess(entry.index('experiments.html#f13-i2c-update-measurements'),
+                        entry.index('id="upgrade-f13-i2c"'))
+        for summary in (ROOT/'docs/data/f13_i2c_update_timing').glob('*.json'):
+            report = json.loads(summary.read_text(encoding='utf-8-sig'))
+            self.assertEqual(report['program']['last_confirmed'], 'app_confirmed')
+            self.assertIn(summary.with_suffix('.html').name, page)
+            self.assertNotIn(summary.with_suffix('.html').name, operation)
 
 
 if __name__ == '__main__':

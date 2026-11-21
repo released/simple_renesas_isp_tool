@@ -61,7 +61,9 @@ for(const [site,config] of Object.entries(layout)){
   }
   for(const [id,target] of Object.entries(map.aliases)){
     assert.ok(id&&target.anchor,'nonempty legacy bookmark');
-    assert.ok(target.page==='basic_uart_i2c/'||Object.hasOwn(config.pages,target.page.replace(/\.html$/,'')),
+    const targetSite=target.guide||site;
+    assert.ok(Object.hasOwn(layout,targetSite),'known guide destination');
+    assert.ok(target.page==='basic_uart_i2c/'||Object.hasOwn(layout[targetSite].pages,target.page.replace(/\.html$/,'')),
       'allowlisted local destination '+target.page);
     assert.ok(!/[?#\\]|\.\./.test(target.page),'no query,path traversal or external route');
     let source,finalPage=target.page,finalAnchor=target.anchor;
@@ -72,11 +74,11 @@ for(const [site,config] of Object.entries(layout)){
       source=await readFile(join(root,'basic_uart_i2c',item?item.source:'index.md'),'utf8');
       assert.ok(sourceMayContainAnchor(source,item?item.anchor:target.anchor),'missing nested alias target '+id);
     } else {
-      source=files[target.page.replace(/\.html$/,'')];
+      source=target.guide?await readFile(join(web,targetSite,target.page.replace(/\.html$/,'.md')),'utf8'):files[target.page.replace(/\.html$/,'')];
       assert.ok(sourceMayContainAnchor(source,target.anchor),'missing alias target '+site+'/#'+id);
     }
     if(rendered){
-      const path='/'+site+'/'+(finalPage==='index.html'?'':finalPage.replace(/index\.html$/,''));
+      const path='/'+targetSite+'/'+(finalPage==='index.html'?'':finalPage.replace(/index\.html$/,''));
       const actual=rendered.results.find(r=>r.path===path);
       assert.ok(actual,'missing browser destination '+path);
       assert.ok(actual.contentIds.includes(finalAnchor),'missing legacy target '+site+'/#'+id+' -> '+finalPage+'#'+finalAnchor);
@@ -99,7 +101,7 @@ for(const [site,config] of Object.entries(layout)){
     return replaced;
   }
   for(const [id,target] of Object.entries(map.aliases)){
-    const expected=new URL(target.page,'https://released.github.io/'+site+'/');
+    const expected=new URL(target.guide?'../'+target.guide+'/'+target.page:target.page,'https://released.github.io/'+site+'/');
     expected.search='?view=example';expected.hash=target.anchor;
     assert.equal(route('#'+encodeURIComponent(id)),expected.href,'actual route JS '+id);
   }

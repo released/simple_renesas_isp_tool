@@ -10,7 +10,7 @@ function Test-ToolPublicationPath([string]$Path) {
                     'tests/test_tool_ui_field_guide.py','tests/isp_console_runtime_mock.inc',
                     'tests/uart0_console_tests.c')) { return $false }
     # The combined model guide also contains hardware-pending serial roles.
-    # F13 I2C acceptance does not release this complete aggregate or its inputs.
+    # Shared guide files require the exact board-accepted public subset; no runtime release is implied.
     if($path -cin @('docs/DEVICE_APP_UPGRADE_PATHS_zh-TW.md',
                     'docs/Device_App_Upgrade_Guide_zh-TW.pdf',
                     'docs/data/device_upgrade_paths.json',
@@ -18,7 +18,18 @@ function Test-ToolPublicationPath([string]$Path) {
                     'scripts/verify_device_upgrade_paths.mjs',
                     'docs/ISP_SERIAL_TRANSPORT_GUIDE_zh-TW.md',
                     'docs/ISP_UART_DEVICE_DESIGN_zh-TW.md',
-                    'docs/ISP_UART_DEVICE_DESIGN_zh-TW.pdf')) {
+                    'docs/ISP_UART_DEVICE_DESIGN_zh-TW.pdf',
+                    'docs/BOOTLOADER_ARCHITECTURE_zh-TW.md',
+                    'docs/RH850_BOOTLOADER_ARCHITECTURE_zh-TW.md',
+                    'docs/TOOL_INTERFACE_OPERATIONS_zh-TW.md',
+                    'docs/SERIAL_UPDATE_MEASUREMENTS_zh-TW.md',
+                    'docs/Serial_Update_Experiments_zh-TW.pdf',
+                    'docs/RH850_ISP_DEVICE_DESIGN_zh-TW.md',
+                    'docs/RH850_ISP_DEVICE_DESIGN_zh-TW.pdf',
+                    'scripts/guide_topic_content.mjs',
+                    'scripts/serial_guide_content.mjs',
+                    'tests/test_serial_transport_guides.py',
+                    'tests/test_guide_topic_ownership.py')) {
         $profilePath=Join-Path (Split-Path -Parent $PSScriptRoot) 'docs/data/device_upgrade_paths.json'
         if(!(Test-Path -LiteralPath $profilePath -PathType Leaf)){return $false}
         try {

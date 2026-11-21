@@ -1,6 +1,23 @@
 {
+  "architecture": {
+    "title": "Bootloader 整體架構",
+    "topics": [
+      [
+        "Boot、App 與 Host 的責任",
+        "Boot、App 與 Host 的責任",
+        "boot-architecture",
+        "boot-architecture"
+      ],
+      [
+        "啟動、更新與交接",
+        "啟動、更新與交接",
+        "boot-app-handoff",
+        "boot-app-handoff"
+      ]
+    ]
+  },
   "can-device": {
-    "title": "Classical CAN／CAN FD device 工程",
+    "title": "CAN Bootloader 與工程",
     "topics": [
       [
         "工程與用途",
@@ -25,7 +42,12 @@
         "Boot 啟動與更新",
         "f13-boot-decision",
         "guide-can-device-4"
-      ],
+      ]
+    ]
+  },
+  "can-fd-device": {
+    "title": "CAN FD Bootloader 與工程",
+    "topics": [
       [
         "MCU CAN FD device 工程設定",
         "MCU CAN FD device 工程設定",
@@ -37,165 +59,6 @@
         "設定來源",
         "guide-can-device-6",
         "guide-can-device-6"
-      ],
-      [
-        "接收與中斷",
-        "接收與中斷",
-        "guide-can-device-7",
-        "guide-can-device-7"
-      ],
-      [
-        "更新區塊與 Flash 交接",
-        "更新區塊與 Flash 交接",
-        "guide-can-device-8",
-        "guide-can-device-8"
-      ],
-      [
-        "工程與建置",
-        "工程與建置",
-        "guide-can-device-9",
-        "guide-can-device-9"
-      ],
-      [
-        "驗證項目",
-        "驗證項目",
-        "guide-can-device-10",
-        "guide-can-device-10"
-      ]
-    ]
-  },
-  "app-development": {
-    "title": "App Metadata、IRQ 與更新耗時",
-    "topics": [
-      [
-        "A. 專案配置與共用介面",
-        "A. 專案配置與共用介面",
-        "guide-app-development-1",
-        "guide-app-development-1"
-      ],
-      [
-        "B. Metadata 設定與產生來源",
-        "B. Metadata 設定與產生來源",
-        "guide-app-development-2",
-        "guide-app-development-2"
-      ],
-      [
-        "C. App Vector Table：新增 IRQ 範例",
-        "C. App Vector Table：新增 IRQ 範例",
-        "guide-app-development-3",
-        "guide-app-development-3"
-      ],
-      [
-        "D. 產生與建置",
-        "D. 產生與建置",
-        "guide-app-development-4",
-        "guide-app-development-4"
-      ],
-      [
-        "E. BIN 與向量驗證",
-        "E. BIN 與向量驗證",
-        "guide-app-development-5",
-        "guide-app-development-5"
-      ],
-      [
-        "F. 常見錯誤與只換 App 的邊界",
-        "F. 常見錯誤與只換 App 的邊界",
-        "guide-app-development-6",
-        "guide-app-development-6"
-      ],
-      [
-        "G. Device CAN 速率：250K／500K／1M",
-        "G. Device CAN 速率：250K／500K／1M",
-        "guide-app-development-7",
-        "guide-app-development-7"
-      ],
-      [
-        "App BIN 更新耗時參考",
-        "App BIN 更新耗時參考",
-        "guide-app-development-8",
-        "guide-app-development-8"
-      ]
-    ]
-  },
-  "serial-device": {
-    "title": "串列 ISP 共用工程與協定契約",
-    "topics": [
-      [
-        "配置與資料來源",
-        "配置與資料來源",
-        "guide-serial-device-1",
-        "guide-serial-device-1"
-      ],
-      [
-        "編輯、產生與建置",
-        "編輯、產生與建置",
-        "guide-serial-device-2",
-        "guide-serial-device-2"
-      ],
-      [
-        "Metadata offset與協定配置",
-        "Metadata offset與協定配置",
-        "guide-serial-device-3",
-        "guide-serial-device-3"
-      ],
-      [
-        "SC設定與重新產生",
-        "SC設定與重新產生",
-        "guide-serial-device-4",
-        "guide-serial-device-4"
-      ],
-      [
-        "Framed control與INFO",
-        "Framed control與INFO",
-        "guide-serial-device-5",
-        "guide-serial-device-5"
-      ],
-      [
-        "驗證範圍",
-        "驗證範圍",
-        "guide-serial-device-9",
-        "guide-serial-device-9"
-      ]
-    ]
-  },
-  "uart-device": {
-    "title": "UART Bootloader 與協定格式",
-    "topics": [
-      [
-        "工程與接線",
-        "工程與接線",
-        "guide-uart-device-1",
-        "guide-uart-device-1"
-      ],
-      [
-        "通訊設定",
-        "通訊設定",
-        "guide-uart-device-2",
-        "guide-uart-device-2"
-      ],
-      [
-        "Boot 執行流程",
-        "Boot 執行流程",
-        "guide-uart-device-3",
-        "guide-uart-device-3"
-      ],
-      [
-        "Protocol Format",
-        "Protocol Format",
-        "guide-uart-device-4",
-        "guide-uart-device-4"
-      ],
-      [
-        "異常與完成條件",
-        "異常與完成條件",
-        "guide-uart-device-5",
-        "guide-uart-device-5"
-      ],
-      [
-        "程式對照與診斷",
-        "程式對照與診斷",
-        "guide-uart-device-6",
-        "guide-uart-device-6"
       ]
     ]
   },
@@ -240,6 +103,47 @@
       ]
     ]
   },
+  "uart-device": {
+    "title": "UART Bootloader 與協定格式",
+    "topics": [
+      [
+        "工程與接線",
+        "工程與接線",
+        "guide-uart-device-1",
+        "guide-uart-device-1"
+      ],
+      [
+        "通訊設定",
+        "通訊設定",
+        "guide-uart-device-2",
+        "guide-uart-device-2"
+      ],
+      [
+        "Boot 執行流程",
+        "Boot 執行流程",
+        "guide-uart-device-3",
+        "guide-uart-device-3"
+      ],
+      [
+        "Protocol Format",
+        "Protocol Format",
+        "guide-uart-device-4",
+        "guide-uart-device-4"
+      ],
+      [
+        "異常與完成條件",
+        "異常與完成條件",
+        "guide-uart-device-5",
+        "guide-uart-device-5"
+      ],
+      [
+        "程式對照與診斷",
+        "程式對照與診斷",
+        "guide-uart-device-6",
+        "guide-uart-device-6"
+      ]
+    ]
+  },
   "xmodem-device": {
     "title": "Xmodem Bootloader 與協定格式",
     "topics": [
@@ -278,6 +182,94 @@
         "程式對照與診斷",
         "guide-xmodem-device-6",
         "guide-xmodem-device-6"
+      ]
+    ]
+  },
+  "app-development": {
+    "title": "App Metadata 與 IRQ",
+    "topics": [
+      [
+        "A. 專案配置與共用介面",
+        "A. 專案配置與共用介面",
+        "guide-app-development-1",
+        "guide-app-development-1"
+      ],
+      [
+        "B. Metadata 設定與產生來源",
+        "B. Metadata 設定與產生來源",
+        "guide-app-development-2",
+        "guide-app-development-2"
+      ],
+      [
+        "C. App Vector Table：新增 IRQ 範例",
+        "C. App Vector Table：新增 IRQ 範例",
+        "guide-app-development-3",
+        "guide-app-development-3"
+      ],
+      [
+        "D. 產生與建置",
+        "D. 產生與建置",
+        "guide-app-development-4",
+        "guide-app-development-4"
+      ],
+      [
+        "E. BIN 與向量驗證",
+        "E. BIN 與向量驗證",
+        "guide-app-development-5",
+        "guide-app-development-5"
+      ],
+      [
+        "F. 常見錯誤與只換 App 的邊界",
+        "F. 常見錯誤與只換 App 的邊界",
+        "guide-app-development-6",
+        "guide-app-development-6"
+      ],
+      [
+        "G. Device CAN 速率：250K／500K／1M",
+        "G. Device CAN 速率：250K／500K／1M",
+        "guide-app-development-7",
+        "guide-app-development-7"
+      ]
+    ]
+  },
+  "serial-device": {
+    "title": "串列 ISP 共用工程與協定契約",
+    "topics": [
+      [
+        "配置與資料來源",
+        "配置與資料來源",
+        "guide-serial-device-1",
+        "guide-serial-device-1"
+      ],
+      [
+        "編輯、產生與建置",
+        "編輯、產生與建置",
+        "guide-serial-device-2",
+        "guide-serial-device-2"
+      ],
+      [
+        "Metadata offset與協定配置",
+        "Metadata offset與協定配置",
+        "guide-serial-device-3",
+        "guide-serial-device-3"
+      ],
+      [
+        "SC設定與重新產生",
+        "SC設定與重新產生",
+        "guide-serial-device-4",
+        "guide-serial-device-4"
+      ],
+      [
+        "Framed control與INFO",
+        "Framed control與INFO",
+        "guide-serial-device-5",
+        "guide-serial-device-5"
+      ],
+      [
+        "驗證範圍",
+        "驗證範圍",
+        "guide-serial-device-9",
+        "guide-serial-device-9"
       ]
     ]
   },
@@ -441,6 +433,23 @@
       ]
     ]
   },
+  "experiments": {
+    "title": "各介面實驗資料",
+    "topics": [
+      [
+        "實驗資料與確認範圍",
+        "實驗資料與確認範圍",
+        "experiment-scope",
+        "experiment-scope"
+      ],
+      [
+        "App BIN 更新耗時參考",
+        "App BIN 更新耗時參考",
+        "guide-app-development-8",
+        "guide-app-development-8"
+      ]
+    ]
+  },
   "tool-guides": {
     "title": "Tool 操作與通訊驗證入口",
     "topics": [
@@ -487,8 +496,8 @@
         "can-fd-custom-transfer"
       ],
       [
-        "UART／Xmodem／I2C device 操作",
-        "UART／Xmodem／I2C device 操作",
+        "串列介面共用操作",
+        "串列介面共用操作",
         "uart-device-operation",
         "uart-device-operation"
       ]

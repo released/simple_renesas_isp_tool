@@ -1,28 +1,28 @@
-# 依型號與周邊的 App 更新操作與機制
+# MCU 與介面工程配置索引
 
-各組合各自包含接線與配對映像、Tool 操作、Boot 接收／驗證流程、App 命令與 RAM 交接，以及完成與錯誤判讀。
-依型號與周邊選擇章節，操作不需要先讀完其他 MCU。
+各組合保留配對工程、映像配置及 RAM 交接位址；Tool 操作、共用流程與實驗資料依連結查閱。
+依型號與介面選擇章節，不需要先讀完其他 MCU。
 工程行為與硬體驗證範圍分開描述；正常更新成功不代表冷啟動、斷電恢復或所有故障條件均通過。
 
 | 型號與周邊 | 章節 |
 | --- | --- |
-| F13 / CAN | [操作、Boot 與 App](#upgrade-f13-can) |
-| F13 / I2C | [操作、Boot 與 App](#upgrade-f13-i2c) |
-| F13 / UART | [獨立 Boot 與 App](#upgrade-f13-uart) |
-| F13 / Xmodem | [獨立 Boot 與 App](#upgrade-f13-xmodem) |
-| F24 / CAN | [操作、Boot 與 App](#upgrade-f24-can) |
-| F24 / CAN FD | [操作、Boot 與 App](#upgrade-f24-can-fd) |
-| F24 / UART | [操作、Boot 與 App](#upgrade-f24-uart) |
-| F24 / I2C | [操作、Boot 與 App](#upgrade-f24-i2c) |
-| F24 / Xmodem | [操作、Boot 與 App](#upgrade-f24-xmodem) |
-| G16 / I2C | [操作、Boot 與 App](#upgrade-g16-i2c) |
-| RH850 / CAN | [操作、Boot 與 App](#upgrade-rh850-can) |
-| RH850 / CAN FD | [操作、Boot 與 App](#upgrade-rh850-can-fd) |
+| F13 / CAN | [工程設定與機制入口](#upgrade-f13-can) |
+| F13 / UART | [工程設定與機制入口](#upgrade-f13-uart) |
+| F13 / I2C | [工程設定與機制入口](#upgrade-f13-i2c) |
+| F13 / Xmodem | [工程設定與機制入口](#upgrade-f13-xmodem) |
+| F24 / CAN | [工程設定與機制入口](#upgrade-f24-can) |
+| F24 / CAN FD | [工程設定與機制入口](#upgrade-f24-can-fd) |
+| F24 / UART | [工程設定與機制入口](#upgrade-f24-uart) |
+| F24 / I2C | [工程設定與機制入口](#upgrade-f24-i2c) |
+| F24 / Xmodem | [工程設定與機制入口](#upgrade-f24-xmodem) |
+| G16 / I2C | [工程設定與機制入口](#upgrade-g16-i2c) |
+| RH850 / CAN | [工程設定與機制入口](#upgrade-rh850-can) |
+| RH850 / CAN FD | [工程設定與機制入口](#upgrade-rh850-can-fd) |
 
 <!-- DEVICE_UPGRADE_F13_CAN_BEGIN -->
 <a id="upgrade-f13-can"></a>
 
-### F13 × CAN：App 更新與兩端機制
+### F13 × CAN：工程設定
 
 #### 配對工程、接線與映像
 
@@ -37,252 +37,18 @@
 | 資料介面 | Classical 500K；standard control 0x700／reply 0x701，raw 0x720..0x727（各 8 bytes） |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF700` |
 
-- Host 與 device 的 CANH 對 CANH、CANL 對 CANL；共地，bus 兩端依實際接線配置終端電阻。 F13 target board 為 P10 TX／P11 RX，P12 STB LOW，CAN transceiver 的 EVDD 為 5V；MCU 腳位經 transceiver 接 bus。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；F24 Host App 需宣告 Classical burst bit12。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **CAN TAB：CAN，Nominal 500K**，選實接 Bridge port，Workflow 選 **CAN Upgrade**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F13_Boot_loader_CAN_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。CAN_STOP ACK 後會釋放 device bus，保留 Host COM；STOP 失敗保留 cleanup warning。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- CAN 接收後由主迴圈解析；Flash 邏輯與 ISR 分離。
-- Metadata 以 `RESET 0x0A → 64 筆 METADATA 0x08 → SEAL 0x09` 分段暫存；完整 256 bytes 的 CRC、identity、介面、分區與 IRQ 契約先通過，`START 0x02` 才接受更新 session。
-- `BLOCK_BEGIN 0x0B` 帶 offset 與 block CRC32，接著接收以 raw ID 低三位作段索引，收齊最多八段；尾塊依有效長度收齊，最末段可為 4 bytes，`BLOCK_COMMIT 0x0C` 核對 offset、完整性、CRC 與已封存 Metadata 後才提交 backend。
-- 每個有效區塊經 RAM Flash driver 擦寫 App；按 1-KiB erase／4-byte program 執行，不觸及 Boot 與尾端保留區。
-- 即時前一個已提交區塊的合法重播只回覆確認，不再次擦寫；其他 offset、衝突資料與超界寫入回覆錯誤。Tool 的既有有界重試與人工重新開始是不同操作。
-- `END 0x04` 確認完整 size、CRC32、Metadata 與 App 入口／IRQ；通過後才走更新完成與重啟。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["CAN 接收<br/>主迴圈解析"] --> FRAME{"ID / mode / 長度<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["BEGIN / raw / COMMIT"] --> VALID{"offset / 段完整性 / CRC32<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["回覆成功結果"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 回覆 INFO／installed 狀態，Flash 命令由 Boot 執行。
-- **ENTER `0x06`** 是 Tool 的返回 Boot 命令；F13 CAN App 在嘗試送出 ENTER ACK 後要求 Boot；Tool 是否收到 ACK 與板端是否已 reset 分別判斷，下一步仍須重新 Discover。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> FLAGS["讀取 / 消費標記<br/>缺失記 direct / unknown"]
-        FLAGS --> INIT["初始化 clock / UART<br/>timer / CAN"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 06 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK["嘗試傳送 ENTER ACK"]
-        ACK --> MARK
-        MARK["寫返回 Boot request<br/>0xFF700"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 06| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[CAN 協定與映像](https://released.github.io/slide_boot_loader_for_RL78/reference.html#guide-reference-10)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
+- [Tool CAN 操作](https://released.github.io/slide_simple_renesas_isp_tool/can-update.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/can-device.html#f13-boot-decision)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#device-update-timing)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_F13_CAN_END -->
-
-<!-- DEVICE_UPGRADE_F13_I2C_BEGIN -->
-<a id="upgrade-f13-i2c"></a>
-
-### F13 × I2C：App 更新與兩端機制
-
-#### 配對工程、接線與映像
-
-| 項目 | 此組合的設定 |
-| --- | --- |
-| Device／target | R5F10BMG／`0xF13B` |
-| Boot 工程 | `RL78_F13_ISP_Boot_loader_I2C` |
-| App 工程 | `RL78_F13_ISP_Boot_loader_I2C_app` |
-| 初次安裝 | Boot 工程的 `DefaultBuild/boot0000_1FFF.hex`，由 programmer 安裝；確認 MCU 與擦除範圍 |
-| Tool 更新檔 | App 工程的 `DefaultBuild/RL78_F13_ISP_Boot_loader_I2C_app_update.bin`；HEX、boot_app 合併檔與 Transfer HEX 不放入 App 更新欄 |
-| Flash 配置 | App 起點 `0x02000`，容量 `119 KiB`；8 KiB Boot、App 最大 119 KiB；最後 1 KiB 為保留區，App 容量包含 vectors、Metadata、padding 與 CRC。 |
-| 資料介面 | I2C framed ISP；0x20／100 kHz 為範例值，Boot／App／BIN／Tool 必須一致 |
-| RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
-
-- Bridge SCL P62 接 device SCL P62；SDA P63 接 P63。共地並使用電壓相容的上拉；Tool 填未左移的 7-bit 0x20。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；Host 必須宣告所選 I2C port／rate；使用 I2C ISP，不能選 G16 Reference read-only。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **I2C TAB：7-bit address 0x20、100 kHz**，選實接 Bridge port，Workflow 選 **I2C ISP**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F13_ISP_Boot_loader_I2C_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。更新完成會釋放 device bus，保留 Host COM；Host counter 不可用時仍獨立標示 UNAVAILABLE。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- ISR 只處理接收與周邊狀態，主迴圈才解碼。framed control 為 10-byte header、0..96-byte payload、LE32 CRC32；先檢查 frame extent、CRC、request type、sequence，再交給 `IspDeviceProcess()`。
-- `METADATA 0x03` 依 offset 暫存完整 256 bytes；`START 0x04` 核對 target、介面、App 起點／容量、size、IRQ ABI 與 installed App 的版本政策，建立新的更新 session。
-- I2C request 以 STOP 分隔；讀取固定 111-byte window，byte0 為 `00 busy`／`A5 ready`，其後為完整 framed reply 與 FF padding。I2C bus ACK 只代表 bus 接收；命令結果由 framed reply status 判斷。完整回覆、最終 NACK 與 STOP 都完成後才執行 pending reset；放棄／逾時的 App 回覆取消待執行動作。
-- `WRITE 0x05` 帶 LE32 offset 與最多 64 image bytes；必須等於 next offset、符合區塊與尾塊長度、App 範圍及 Metadata 重疊內容，通過後才交給 Flash backend。成功 reply 表示該次 session 接受；完整映像仍待 END 驗證。
-- RL78 由所屬 MCU 的 Flash driver 執行 App 區擦寫；Boot 與尾端 1 KiB 保留區不在可更新範圍。
-- `END 0x06` 核對完整 size、CRC32、Metadata、入口與 IRQ table；成功回覆完成後才允許重啟，Tool 再核對 APP_READY 與 installed metadata。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["I2C 接收<br/>主迴圈解析"] --> FRAME{"header / sequence / CRC32<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["WRITE / offset / data"] --> VALID{"offset / 長度 / Metadata<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["完整成功 reply 完成"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 提供 INFO、PING 20、ECHO 21、STATS 22，以及依 capability 開放的診斷；Flash 命令由 Boot 執行。
-- **ENTER `0x02`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 02 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"reply 完整讀取<br/>最終 NACK / STOP?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 02| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率及 7-bit address／上拉；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[串列共用封包／INFO／Status](https://released.github.io/slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
-
-<a id="f13-i2c-update-measurements"></a>
-
-#### F13 I2C 更新量測與範圍
-
-條件為 R5F10BMG、F24 bridge、I2C 100 kHz／7-bit 0x20、Host Link 115200；Tool 0.1.0.138、Host FW 1.8.1／build 20261023。時間單位為秒。
-
-| App BIN | bytes | WRITE | END CRC | App 確認 | 總耗時 | 結果與資料 |
-| --- | --- | --- | --- | --- | --- | --- |
-| 原始 App | 12316 | 21.071 | 0.188 | 1.990 | 24.127 | [PASS／摘要](https://released.github.io/slide_boot_loader_for_RL78/data/f13_i2c_12316b.html) |
-| 24 KiB | 24576 | 42.026 | 0.324 | 2.007 | 45.238 | [PASS／摘要](https://released.github.io/slide_boot_loader_for_RL78/data/f13_i2c_24576b.html) |
-| 56 KiB | 57344 | 98.240 | 0.650 | 2.150 | 101.918 | [PASS／摘要](https://released.github.io/slide_boot_loader_for_RL78/data/f13_i2c_57344b.html) |
-| 119 KiB | 121856 | 208.912 | 1.183 | 3.385 | 214.357 | [PASS／摘要](https://released.github.io/slide_boot_loader_for_RL78/data/f13_i2c_121856b.html) |
-
-- 四份映像均取得 START／END 成功回覆、APP_READY，並核對全部 256-byte installed metadata；UART0 有對應的 boot-validated 啟動與後續 counter。
-- 119 KiB 在重啟後唯讀 App 確認期間有四次 I2C_NACK，之後確認成功；Host Link retries=0 不能解讀成每次 I2C 查詢都一次成功。
-- Host counter assessment 為 UNAVAILABLE，與更新 PASS 分開判斷；總耗時來自本次 report elapsed_ms，不採載入下一個 BIN 時仍顯示的前次 Result／Elapsed。
-- 結果限上述四份映像的一般更新與重啟後確認；冷啟動、斷電／故障恢復、其他速率或 MCU 另行確認。
-
-<!-- DEVICE_UPGRADE_F13_I2C_END -->
 
 <!-- DEVICE_UPGRADE_F13_UART_BEGIN -->
 <a id="upgrade-f13-uart"></a>
 
-### F13 × UART：App 更新與兩端機制
+### F13 × UART：工程設定
 
 #### 配對工程、接線與映像
 
@@ -297,136 +63,44 @@ flowchart LR
 | 資料介面 | UART framed ISP，115200／8-N-1 為範例值 |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
 
-- Bridge UART1 TX P74 接 device RX P75；Bridge RX P75 接 device TX P74。共地並核對 I/O 電壓，二進位資料不經診斷 UART。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；Host 必須宣告 UART forwarding 能力，所選 Device baud 須由 Host 接受；Host Baud 與 Device baud 分別設定。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **UART / Xmodem TAB：Device baud 115200、8-N-1**，選實接 Bridge port，Workflow 選 **UART ISP**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F13_ISP_Boot_loader_UART_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。更新完成會釋放 device bus，保留 Host COM；Host counter 不可用時仍獨立標示 UNAVAILABLE。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- ISR 只處理接收與周邊狀態，主迴圈才解碼。framed control 為 10-byte header、0..96-byte payload、LE32 CRC32；先檢查 frame extent、CRC、request type、sequence，再交給 `IspDeviceProcess()`。
-- `METADATA 0x03` 依 offset 暫存完整 256 bytes；`START 0x04` 核對 target、介面、App 起點／容量、size、IRQ ABI 與 installed App 的版本政策，建立新的更新 session。
-- `WRITE 0x05` 帶 LE32 offset 與最多 64 image bytes；必須等於 next offset、符合區塊與尾塊長度、App 範圍及 Metadata 重疊內容，通過後才交給 Flash backend。成功 reply 表示該次 session 接受；完整映像仍待 END 驗證。
-- RL78 由所屬 MCU 的 Flash driver 執行 App 區擦寫；Boot 與尾端 1 KiB 保留區不在可更新範圍。
-- `END 0x06` 核對完整 size、CRC32、Metadata、入口與 IRQ table；成功回覆完成後才允許重啟，Tool 再核對 APP_READY 與 installed metadata。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["UART 接收<br/>主迴圈解析"] --> FRAME{"header / sequence / CRC32<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["WRITE / offset / data"] --> VALID{"offset / 長度 / Metadata<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["完整成功 reply 完成"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 提供 INFO、PING 20、ECHO 21、STATS 22，以及依 capability 開放的診斷；Flash 命令由 Boot 執行。
-- **ENTER `0x02`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 02 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"成功回覆完整送出?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 02| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[串列共用封包／INFO／Status](https://released.github.io/slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
-
-<!-- F13_UART_MEASURED_BEGIN -->
-<a id="f13-uart-update-measurements"></a>
-
-#### F13 UART ISP App 更新量測
-
-- Device：R5F10BMG；F24 bridge；Device UART1 與 Host Link 各為 115200／8-N-1。Tool 0.1.0.139，Host FW 1.8.1 build 20261023。
-- 四份報告與實際 BIN 的大小、CRC32、SHA256 相符。START、END／EOT、完整接受 bytes、APP_READY 及全部 256-byte installed metadata 均已確認。
-- UART0 有四次 boot-validated／update completed、後續 counter 與完整 framed RX／TX；payload 每列 8 bytes。
-
-| 映像 | Bytes | Write 秒 | END CRC 秒 | App 確認秒 | 總秒數 | 報告 |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| 原始 App | 10556 | 15.750 | 0.176 | 1.944 | 18.761 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_uart_10556b.html) |
-| 24 KiB | 24576 | 36.784 | 0.303 | 1.960 | 39.940 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_uart_24576b.html) |
-| 56 KiB | 57344 | 85.957 | 0.576 | 2.024 | 89.445 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_uart_57344b.html) |
-| 119 KiB | 121856 | 182.768 | 1.136 | 3.209 | 188.001 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_uart_121856b.html) |
-
-- 更新後 Device UART 快照的 RX errors／drops／TX timeouts 為 0；Bridge UART1 deltas 的 RX errors／drops 為 0，每次記有 backend aborts=1。abort 計數與 Device UART 錯誤為不同觀察項。
-- Host counter assessment 為 **UNAVAILABLE**，Host Link retry 為 0；不能由此推定所有 Host 計數全程零錯誤。
-- 獨立 Transfer 的 PING／ECHO／counters 通過，沒有 Flash 命令。8 組 UART0 RX／TX 的 sequence、command、payload 與八位元組分行相符。[Transfer 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_uart_transfer.html)
-- Transfer 成功段前後的累積 Device RX errors 均為 **1159**，drops／TX timeouts 為 0；不能與更新後 App 的 0 跨執行相減。較早曾有 Host command 0x61 INTERNAL_ERROR；其原因未由本批資料確立。
-- 本批涵蓋正常更新後 App 確認；z/Z 人工重置、冷啟動、斷電及其他型號的結果另行驗證。
-<!-- F13_UART_MEASURED_END -->
+- [Tool UART 操作](https://released.github.io/slide_simple_renesas_isp_tool/uart.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/uart-device.html#uart-boot-flow)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#f13-uart-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_F13_UART_END -->
+
+<!-- DEVICE_UPGRADE_F13_I2C_BEGIN -->
+<a id="upgrade-f13-i2c"></a>
+
+### F13 × I2C：工程設定
+
+#### 配對工程、接線與映像
+
+| 項目 | 此組合的設定 |
+| --- | --- |
+| Device／target | R5F10BMG／`0xF13B` |
+| Boot 工程 | `RL78_F13_ISP_Boot_loader_I2C` |
+| App 工程 | `RL78_F13_ISP_Boot_loader_I2C_app` |
+| 初次安裝 | Boot 工程的 `DefaultBuild/boot0000_1FFF.hex`，由 programmer 安裝；確認 MCU 與擦除範圍 |
+| Tool 更新檔 | App 工程的 `DefaultBuild/RL78_F13_ISP_Boot_loader_I2C_app_update.bin`；HEX、boot_app 合併檔與 Transfer HEX 不放入 App 更新欄 |
+| Flash 配置 | App 起點 `0x02000`，容量 `119 KiB`；8 KiB Boot、App 最大 119 KiB；最後 1 KiB 為保留區，App 容量包含 vectors、Metadata、padding 與 CRC。 |
+| 資料介面 | I2C framed ISP；0x20／100 kHz 為範例值，Boot／App／BIN／Tool 必須一致 |
+| RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
+
+- [Tool I2C 操作](https://released.github.io/slide_simple_renesas_isp_tool/i2c.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/i2c-device.html#i2c-boot-flow)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#f13-i2c-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
+
+<!-- DEVICE_UPGRADE_F13_I2C_END -->
 
 <!-- DEVICE_UPGRADE_F13_XMODEM_BEGIN -->
 <a id="upgrade-f13-xmodem"></a>
 
-### F13 × Xmodem：App 更新與兩端機制
+### F13 × Xmodem：工程設定
 
 #### 配對工程、接線與映像
 
@@ -441,136 +115,18 @@ flowchart LR
 | 資料介面 | XMODEM-CRC128 raw blocks，framed control 與 115200／8-N-1 |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
 
-- Bridge UART1 TX P74 接 device RX P75；Bridge RX P75 接 device TX P74。共地並核對 I/O 電壓，二進位資料不經診斷 UART。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；Host 必須宣告 UART forwarding 能力，所選 Device baud 須由 Host 接受；Host Baud 與 Device baud 分別設定。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **UART / Xmodem TAB：Device baud 115200、8-N-1**，選實接 Bridge port，Workflow 選 **XMODEM-CRC**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F13_ISP_Boot_loader_Xmodem_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 EOT 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。更新完成會釋放 device bus，保留 Host COM；Host counter 不可用時仍獨立標示 UNAVAILABLE。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- ISR 只處理接收與周邊狀態，主迴圈才解碼。framed control 為 10-byte header、0..96-byte payload、LE32 CRC32；先檢查 frame extent、CRC、request type、sequence，再交給 `IspDeviceProcess()`。
-- `METADATA 0x03` 依 offset 暫存完整 256 bytes；`START 0x04` 核對 target、介面、App 起點／容量、size、IRQ ABI 與 installed App 的版本政策，建立新的更新 session。
-- START 成功回覆後 Boot 送 `C`，開始 raw SOH／block number／反碼／128 bytes／CRC16-XMODEM。順序、反碼與 CRC16 通過才接受新 block；完全相同的前一塊 duplicate 只 ACK，不再寫入。EOT 觸發全映像驗證；最終 ACK 未送出會中止 streaming 並清除待重啟動作。
-- RL78 由所屬 MCU 的 Flash driver 執行 App 區擦寫；Boot 與尾端 1 KiB 保留區不在可更新範圍。
-- EOT 核對完整 size、CRC32、Metadata、入口與 IRQ table；成功回覆完成後才允許重啟，Tool 再核對 APP_READY 與 installed metadata。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["Xmodem 接收<br/>主迴圈解析"] --> FRAME{"header / sequence / CRC32<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["SOH / 128-byte block"] --> VALID{"順序 / 反碼 / CRC16<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"EOT：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["最終 ACK 完整送出"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 提供 INFO、PING 20、ECHO 21、STATS 22，以及依 capability 開放的診斷；Flash 命令由 Boot 執行。 STREAM_TEST 24 僅作 RAM CRC32 sink，不能視為 App 更新成功。
-- **ENTER `0x02`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 02 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"成功回覆完整送出?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 02| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[串列共用封包／INFO／Status](https://released.github.io/slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
-
-<!-- F13_XMODEM_MEASURED_BEGIN -->
-<a id="f13-xmodem-update-measurements"></a>
-
-#### F13 Xmodem App 更新量測
-
-- Device：R5F10BMG；F24 bridge；Device UART1 與 Host Link 各為 115200／8-N-1。Tool 0.1.0.139，Host FW 1.8.1 build 20261023。
-- 四份報告與實際 BIN 的大小、CRC32、SHA256 相符。START、END／EOT、完整接受 bytes、APP_READY 及全部 256-byte installed metadata 均已確認。
-- UART0 有四次 boot-validated／update completed、後續 counter 與完整 framed RX／TX；payload 每列 8 bytes。
-
-| 映像 | Bytes | Write 秒 | END CRC 秒 | App 確認秒 | 總秒數 | 報告 |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| 原始 App | 12636 | 11.108 | 0.192 | 1.944 | 15.143 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_xmodem_12636b.html) |
-| 24 KiB | 24576 | 21.721 | 0.287 | 1.958 | 25.862 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_xmodem_24576b.html) |
-| 56 KiB | 57344 | 51.094 | 0.576 | 2.022 | 55.588 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_xmodem_57344b.html) |
-| 119 KiB | 121856 | 108.767 | 1.136 | 3.208 | 115.010 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_xmodem_121856b.html) |
-
-- 更新後 Device UART 快照的 RX errors／drops／TX timeouts 為 0；Bridge UART1 deltas 的 RX errors／drops 為 0，每次記有 backend aborts=1。abort 計數與 Device UART 錯誤為不同觀察項。
-- Host counter assessment 為 **UNAVAILABLE**，Host Link retry 為 0；不能由此推定所有 Host 計數全程零錯誤。
-- 獨立 Transfer 的 PING／ECHO／counters 及 CRC128 streaming 通過，沒有 Flash 命令。11 組 UART0 RX／TX 的 sequence、command、payload 與八位元組分行相符。[Transfer 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f13_xmodem_transfer.html)
-- Transfer 成功段前後的累積 Device RX errors 均為 **658**，drops／TX timeouts 為 0；不能與更新後 App 的 0 跨執行相減。
-- 本批涵蓋正常更新後 App 確認；z/Z 人工重置、冷啟動、斷電及其他型號的結果另行驗證。
-<!-- F13_XMODEM_MEASURED_END -->
+- [Tool Xmodem 操作](https://released.github.io/slide_simple_renesas_isp_tool/xmodem.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/xmodem-device.html#xmodem-boot-flow)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#f13-xmodem-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_F13_XMODEM_END -->
 
 <!-- DEVICE_UPGRADE_F24_CAN_BEGIN -->
 <a id="upgrade-f24-can"></a>
 
-### F24 × CAN：App 更新與兩端機制
+### F24 × CAN：工程設定
 
 #### 配對工程、接線與映像
 
@@ -585,114 +141,18 @@ flowchart LR
 | 資料介面 | Classical 500K；standard control 0x700／reply 0x701，raw 0x720..0x727（各 8 bytes） |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
 
-- Host 與 device 的 CANH 對 CANH、CANL 對 CANL；共地，bus 兩端依實際接線配置終端電阻。 Device 為 P10 TX／P11 RX，P12 STB LOW；MCU 腳位經 transceiver 接 bus。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；F24 Host App 需宣告 Classical burst bit12。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **CAN TAB：CAN，Nominal 500K**，選實接 Bridge port，Workflow 選 **CAN Upgrade**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F24_Boot_loader_CAN_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。CAN_STOP ACK 後會釋放 device bus，保留 Host COM；STOP 失敗保留 cleanup warning。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- CAN 接收後由主迴圈解析；Flash 邏輯與 ISR 分離。
-- Metadata 以 `RESET 0x0A → 64 筆 METADATA 0x08 → SEAL 0x09` 分段暫存；完整 256 bytes 的 CRC、identity、介面、分區與 IRQ 契約先通過，`START 0x02` 才接受更新 session。
-- `BLOCK_BEGIN 0x0B` 帶 offset 與 block CRC32，接著接收以 raw ID 低三位作段索引，收齊最多八段；尾塊依有效長度收齊，最末段可為 4 bytes，`BLOCK_COMMIT 0x0C` 核對 offset、完整性、CRC 與已封存 Metadata 後才提交 backend。
-- 每個有效區塊經 RAM Flash driver 擦寫 App；按 1-KiB erase／4-byte program 執行，不觸及 Boot 與尾端保留區。
-- 即時前一個已提交區塊的合法重播只回覆確認，不再次擦寫；其他 offset、衝突資料與超界寫入回覆錯誤。Tool 的既有有界重試與人工重新開始是不同操作。
-- `END 0x04` 確認完整 size、CRC32、Metadata 與 App 入口／IRQ；通過後才走更新完成與重啟。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["CAN 接收<br/>主迴圈解析"] --> FRAME{"ID / mode / 長度<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["BEGIN / raw / COMMIT"] --> VALID{"offset / 段完整性 / CRC32<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["回覆成功結果"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 回覆 INFO／installed 狀態，Flash 命令由 Boot 執行。
-- **ENTER `0x06`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 06 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"成功回覆完整送出?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 06| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[CAN 協定與映像](https://released.github.io/slide_boot_loader_for_RL78/reference.html#guide-reference-10)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
+- [Tool CAN 操作](https://released.github.io/slide_simple_renesas_isp_tool/can-update.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/can-device.html#f13-boot-decision)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#device-update-timing)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_F24_CAN_END -->
 
 <!-- DEVICE_UPGRADE_F24_CAN_FD_BEGIN -->
 <a id="upgrade-f24-can-fd"></a>
 
-### F24 × CAN FD：App 更新與兩端機制
+### F24 × CAN FD：工程設定
 
 #### 配對工程、接線與映像
 
@@ -707,114 +167,18 @@ flowchart LR
 | 資料介面 | nominal 500K、data 2M、BRS；standard control 0x700／reply 0x701，raw 0x720（64 bytes） |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
 
-- Host 與 device 的 CANH 對 CANH、CANL 對 CANL；共地，bus 兩端依實際接線配置終端電阻。 Device 為 P10 TX／P11 RX，P12 STB LOW；MCU 腳位經 transceiver 接 bus。 收發器與 bus 接線需支援 CAN FD 2 Mbit/s。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；F24 Host App 需宣告 FD burst bit13。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **CAN TAB：CAN FD，Nominal 500K、Data 2M**，選實接 Bridge port，Workflow 選 **CAN Upgrade**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F24_Boot_loader_CAN_FD_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。CAN_STOP ACK 後會釋放 device bus，保留 Host COM；STOP 失敗保留 cleanup warning。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- CAN RX IRQ／RAM queue → 主迴圈解析；不在 ISR 內驗證映像或執行 Flash。
-- Metadata 以 `RESET 0x0A → 64 筆 METADATA 0x08 → SEAL 0x09` 分段暫存；完整 256 bytes 的 CRC、identity、介面、分區與 IRQ 契約先通過，`START 0x02` 才接受更新 session。
-- `BLOCK_BEGIN 0x0B` 帶 offset 與 block CRC32，接著接收一個 FD+BRS、wire DLC15／64-byte raw frame；尾塊傳輸補 FF，但區塊 CRC 與有效寫入長度依實際 image bytes，`BLOCK_COMMIT 0x0C` 核對 offset、完整性、CRC 與已封存 Metadata 後才提交 backend。
-- 每個有效區塊經 RAM Flash driver 擦寫 App；按 1-KiB erase／4-byte program 執行，不觸及 Boot 與尾端保留區。
-- 即時前一個已提交區塊的合法重播只回覆確認，不再次擦寫；其他 offset、衝突資料與超界寫入回覆錯誤。Tool 的既有有界重試與人工重新開始是不同操作。
-- `END 0x04` 確認完整 size、CRC32、Metadata 與 App 入口／IRQ；通過後才走更新完成與重啟。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["CAN FD 接收<br/>主迴圈解析"] --> FRAME{"ID / mode / 長度<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["BEGIN / raw / COMMIT"] --> VALID{"offset / 段完整性 / CRC32<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["回覆成功結果"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 回覆 INFO／installed 狀態，Flash 命令由 Boot 執行。
-- **ENTER `0x06`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 06 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"成功回覆完整送出?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 06| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[CAN 協定與映像](https://released.github.io/slide_boot_loader_for_RL78/reference.html#guide-reference-10)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
+- [Tool CAN FD 操作](https://released.github.io/slide_simple_renesas_isp_tool/can-fd.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/can-fd-device.html#can-fd-device-engineering)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#device-update-timing)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_F24_CAN_FD_END -->
 
 <!-- DEVICE_UPGRADE_F24_UART_BEGIN -->
 <a id="upgrade-f24-uart"></a>
 
-### F24 × UART：App 更新與兩端機制
+### F24 × UART：工程設定
 
 #### 配對工程、接線與映像
 
@@ -829,138 +193,18 @@ flowchart LR
 | 資料介面 | UART framed ISP，115200／8-N-1 為範例值 |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
 
-- Bridge UART1 TX P74 接 device RX P75；Bridge RX P75 接 device TX P74。共地並核對 I/O 電壓，二進位資料不經診斷 UART。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；Host 必須宣告 UART forwarding 能力，所選 Device baud 須由 Host 接受；Host Baud 與 Device baud 分別設定。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **UART / Xmodem TAB：Device baud 115200、8-N-1**，選實接 Bridge port，Workflow 選 **UART ISP**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F24_ISP_Boot_loader_UART_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。更新完成會釋放 device bus，保留 Host COM；Host counter 不可用時仍獨立標示 UNAVAILABLE。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- ISR 只處理接收與周邊狀態，主迴圈才解碼。framed control 為 10-byte header、0..96-byte payload、LE32 CRC32；先檢查 frame extent、CRC、request type、sequence，再交給 `IspDeviceProcess()`。
-- `METADATA 0x03` 依 offset 暫存完整 256 bytes；`START 0x04` 核對 target、介面、App 起點／容量、size、IRQ ABI 與 installed App 的版本政策，建立新的更新 session。
-- `WRITE 0x05` 帶 LE32 offset 與最多 64 image bytes；必須等於 next offset、符合區塊與尾塊長度、App 範圍及 Metadata 重疊內容，通過後才交給 Flash backend。成功 reply 表示該次 session 接受；完整映像仍待 END 驗證。
-- RL78 由所屬 MCU 的 Flash driver 執行 App 區擦寫；Boot 與尾端 1 KiB 保留區不在可更新範圍。
-- `END 0x06` 核對完整 size、CRC32、Metadata、入口與 IRQ table；成功回覆完成後才允許重啟，Tool 再核對 APP_READY 與 installed metadata。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["UART 接收<br/>主迴圈解析"] --> FRAME{"header / sequence / CRC32<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["WRITE / offset / data"] --> VALID{"offset / 長度 / Metadata<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["完整成功 reply 完成"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 提供 INFO、PING 20、ECHO 21、STATS 22，以及依 capability 開放的診斷；Flash 命令由 Boot 執行。
-- **ENTER `0x02`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 02 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"成功回覆完整送出?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 02| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[串列共用封包／INFO／Status](https://released.github.io/slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
-
-<!-- F24_UART_MEASURED_BEGIN -->
-<a id="f24-uart-update-measurements"></a>
-
-#### F24 UART App 更新量測
-
-- Device：R7F124FPJ5xFB；F24 bridge；UART1 115200／8-N-1，Host Link 115200。
-- Tool 0.1.0.139；Host FW 1.8.1 build 20261023。六份獨立報告與實際 BIN 的 size／CRC32 相符。
-- 六次 START、END 均已確認，接受 bytes 等於映像大小；APP_READY 與全部 256-byte installed metadata 相符，UART0 有 boot-validated、update completed 及後續 counter。
-
-| 映像 | Bytes | Write 秒 | END CRC 秒 | App 確認秒 | 總秒數 | 報告 |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| 原始 App | 6724 | 10.573 | 0.128 | 1.930 | 13.615 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_uart_6724b.html) |
-| 8 KiB | 8192 | 12.208 | 0.144 | 1.946 | 15.187 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_uart_8192b.html) |
-| 24 KiB | 24576 | 36.835 | 0.256 | 1.961 | 39.942 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_uart_24576b.html) |
-| 56 KiB | 57344 | 86.038 | 0.480 | 1.962 | 89.369 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_uart_57344b.html) |
-| 120 KiB | 122880 | 184.479 | 0.945 | 2.635 | 188.949 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_uart_122880b.html) |
-| 247 KiB | 252928 | 380.445 | 1.842 | 9.557 | 392.734 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_uart_252928b.html) |
-
-- Device UART 的 RX errors、RX drops、TX timeouts 均為 0；這些欄位是 Device 當次執行快照。
-- Host counter assessment 為 **UNAVAILABLE**，不能據此推定 Host 全程零錯誤；Host Link retry 為 0。
-- 247 KiB 的唯讀 App 確認有 37 次 Host BUSY 觀察，最終確認成功；沒有重送 Flash START／END。
-- UART Custom Transfer 及獨立 Xmodem Transfer 均有通過紀錄；Xmodem Boot／App 的更新與 UART0 trace 證據集中於 [F24 Xmodem 更新量測](https://released.github.io/slide_simple_renesas_isp_tool/serial-isp.html#f24-xmodem-update-measurements)。
-- 本表涵蓋一般更新與軟體重啟後 App 確認；冷啟動、斷電及其他故障恢復不由本批資料推定。
-<!-- F24_UART_MEASURED_END -->
+- [Tool UART 操作](https://released.github.io/slide_simple_renesas_isp_tool/uart.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/uart-device.html#uart-boot-flow)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#f24-uart-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_F24_UART_END -->
 
 <!-- DEVICE_UPGRADE_F24_I2C_BEGIN -->
 <a id="upgrade-f24-i2c"></a>
 
-### F24 × I2C：App 更新與兩端機制
+### F24 × I2C：工程設定
 
 #### 配對工程、接線與映像
 
@@ -975,114 +219,18 @@ flowchart LR
 | 資料介面 | I2C framed ISP；0x20／100 kHz 為範例值，Boot／App／BIN／Tool 必須一致 |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
 
-- Bridge SCL P62 接 device SCL P62；SDA P63 接 P63。共地並使用電壓相容的上拉；Tool 填未左移的 7-bit 0x20。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；Host 必須宣告所選 I2C port／rate；使用 I2C ISP，不能選 G16 Reference read-only。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **I2C TAB：7-bit address 0x20、100 kHz**，選實接 Bridge port，Workflow 選 **I2C ISP**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F24_ISP_Boot_loader_I2C_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。更新完成會釋放 device bus，保留 Host COM；Host counter 不可用時仍獨立標示 UNAVAILABLE。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- ISR 只處理接收與周邊狀態，主迴圈才解碼。framed control 為 10-byte header、0..96-byte payload、LE32 CRC32；先檢查 frame extent、CRC、request type、sequence，再交給 `IspDeviceProcess()`。
-- `METADATA 0x03` 依 offset 暫存完整 256 bytes；`START 0x04` 核對 target、介面、App 起點／容量、size、IRQ ABI 與 installed App 的版本政策，建立新的更新 session。
-- I2C request 以 STOP 分隔；讀取固定 111-byte window，byte0 為 `00 busy`／`A5 ready`，其後為完整 framed reply 與 FF padding。I2C bus ACK 只代表 bus 接收；命令結果由 framed reply status 判斷。完整回覆、最終 NACK 與 STOP 都完成後才執行 pending reset；放棄／逾時的 App 回覆取消待執行動作。
-- `WRITE 0x05` 帶 LE32 offset 與最多 64 image bytes；必須等於 next offset、符合區塊與尾塊長度、App 範圍及 Metadata 重疊內容，通過後才交給 Flash backend。成功 reply 表示該次 session 接受；完整映像仍待 END 驗證。
-- RL78 由所屬 MCU 的 Flash driver 執行 App 區擦寫；Boot 與尾端 1 KiB 保留區不在可更新範圍。
-- `END 0x06` 核對完整 size、CRC32、Metadata、入口與 IRQ table；成功回覆完成後才允許重啟，Tool 再核對 APP_READY 與 installed metadata。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["I2C 接收<br/>主迴圈解析"] --> FRAME{"header / sequence / CRC32<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["WRITE / offset / data"] --> VALID{"offset / 長度 / Metadata<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["完整成功 reply 完成"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 提供 INFO、PING 20、ECHO 21、STATS 22，以及依 capability 開放的診斷；Flash 命令由 Boot 執行。
-- **ENTER `0x02`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 02 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"reply 完整讀取<br/>最終 NACK / STOP?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 02| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率及 7-bit address／上拉；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[串列共用封包／INFO／Status](https://released.github.io/slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
+- [Tool I2C 操作](https://released.github.io/slide_simple_renesas_isp_tool/i2c.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/i2c-device.html#i2c-boot-flow)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#f24-i2c-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_F24_I2C_END -->
 
 <!-- DEVICE_UPGRADE_F24_XMODEM_BEGIN -->
 <a id="upgrade-f24-xmodem"></a>
 
-### F24 × Xmodem：App 更新與兩端機制
+### F24 × Xmodem：工程設定
 
 #### 配對工程、接線與映像
 
@@ -1097,141 +245,18 @@ flowchart LR
 | 資料介面 | XMODEM-CRC128 raw blocks，framed control 與 115200／8-N-1 |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
 
-- Bridge UART1 TX P74 接 device RX P75；Bridge RX P75 接 device TX P74。共地並核對 I/O 電壓，二進位資料不經診斷 UART。
-- 獨立診斷 UART TX P15／RX P16，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；Host 必須宣告 UART forwarding 能力，所選 Device baud 須由 Host 接受；Host Baud 與 Device baud 分別設定。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **UART / Xmodem TAB：Device baud 115200、8-N-1**，選實接 Bridge port，Workflow 選 **XMODEM-CRC**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_F24_ISP_Boot_loader_Xmodem_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 EOT 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。更新完成會釋放 device bus，保留 Host COM；Host counter 不可用時仍獨立標示 UNAVAILABLE。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- ISR 只處理接收與周邊狀態，主迴圈才解碼。framed control 為 10-byte header、0..96-byte payload、LE32 CRC32；先檢查 frame extent、CRC、request type、sequence，再交給 `IspDeviceProcess()`。
-- `METADATA 0x03` 依 offset 暫存完整 256 bytes；`START 0x04` 核對 target、介面、App 起點／容量、size、IRQ ABI 與 installed App 的版本政策，建立新的更新 session。
-- START 成功回覆後 Boot 送 `C`，開始 raw SOH／block number／反碼／128 bytes／CRC16-XMODEM。順序、反碼與 CRC16 通過才接受新 block；完全相同的前一塊 duplicate 只 ACK，不再寫入。EOT 觸發全映像驗證；最終 ACK 未送出會中止 streaming 並清除待重啟動作。
-- RL78 由所屬 MCU 的 Flash driver 執行 App 區擦寫；Boot 與尾端 1 KiB 保留區不在可更新範圍。
-- EOT 核對完整 size、CRC32、Metadata、入口與 IRQ table；成功回覆完成後才允許重啟，Tool 再核對 APP_READY 與 installed metadata。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["Xmodem 接收<br/>主迴圈解析"] --> FRAME{"header / sequence / CRC32<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["SOH / 128-byte block"] --> VALID{"順序 / 反碼 / CRC16<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"EOT：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["最終 ACK 完整送出"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 提供 INFO、PING 20、ECHO 21、STATS 22，以及依 capability 開放的診斷；Flash 命令由 Boot 執行。 STREAM_TEST 24 僅作 RAM CRC32 sink，不能視為 App 更新成功。
-- **ENTER `0x02`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 02 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"成功回覆完整送出?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 02| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[串列共用封包／INFO／Status](https://released.github.io/slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
-
-<!-- F24_XMODEM_MEASURED_BEGIN -->
-<a id="f24-xmodem-update-measurements"></a>
-
-#### F24 Xmodem App 更新量測
-
-- Device：R7F124FPJ5xFB；F24 bridge；UART1 115200／8-N-1，Host Link 115200。
-- Tool 0.1.0.139；Host FW 1.8.1 build 20261023。六份獨立報告與實際 BIN 的 size／CRC32 相符。
-- 六次 START、END 均已確認，接受 bytes 等於映像大小；APP_READY 與全部 256-byte installed metadata 相符，UART0 有 boot-validated、update completed 及後續 counter。
-
-| 映像 | Bytes | Write 秒 | END CRC 秒 | App 確認秒 | 總秒數 | 報告 |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| 原始 App | 7856 | 6.883 | 0.127 | 1.944 | 10.851 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_xmodem_7856b.html) |
-| 8 KiB | 8192 | 7.155 | 0.127 | 1.956 | 11.138 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_xmodem_8192b.html) |
-| 24 KiB | 24576 | 21.464 | 0.240 | 1.943 | 25.544 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_xmodem_24576b.html) |
-| 56 KiB | 57344 | 50.549 | 0.480 | 1.958 | 54.884 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_xmodem_57344b.html) |
-| 120 KiB | 122880 | 108.125 | 0.928 | 2.648 | 113.598 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_xmodem_122880b.html) |
-| 247 KiB | 252928 | 222.702 | 1.841 | 9.531 | 235.969 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_xmodem_252928b.html) |
-
-- Device UART 的 RX errors、RX drops、TX timeouts 均為 0；這些欄位是 Device 當次執行快照。
-- Host counter assessment 為 **UNAVAILABLE**，不能據此推定 Host 全程零錯誤；Host Link retry 為 0。
-- 247 KiB 的唯讀 App 確認有 37 次 Host BUSY 觀察，最終確認成功；沒有重送 Flash START／END。
-- 獨立 Xmodem Transfer 通過 PING、96-byte ECHO、389-byte CRC32 sink／CRC128 串流與 counters；UART0 的 9 組 framed RX／TX、sequence／command、完整 payload 及每列 8 bytes 可互相核對。[Transfer 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/f24_xmodem_transfer.html)
-- Transfer 成功段前後的 Device UART RX errors 均為 **44**，RX drops／TX timeouts 為 0；這是同一次執行的累積快照，不能解讀成全程零錯誤，也不能與更新後 App 的 0 跨執行相減。
-- 原始連線階段曾有 Host command 0x61 TIMEOUT 及讀取中斷 995；重新 Open + Probe 後才取得上述 Transfer 成功紀錄。錯誤原因沒有由本批資料確立。
-- 六次 App 重啟均有 boot-validated、update completed、UART0 console 與後續 counter；提供的 log 沒有 z/Z 人工重置訊息，故不將功能宣告視為該操作的實板證據。
-- 本表涵蓋一般更新與軟體重啟後 App 確認；冷啟動、斷電及其他故障恢復不由本批資料推定。
-<!-- F24_XMODEM_MEASURED_END -->
+- [Tool Xmodem 操作](https://released.github.io/slide_simple_renesas_isp_tool/xmodem.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/xmodem-device.html#xmodem-boot-flow)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#f24-xmodem-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_F24_XMODEM_END -->
 
 <!-- DEVICE_UPGRADE_G16_I2C_BEGIN -->
 <a id="upgrade-g16-i2c"></a>
 
-### G16 × I2C：App 更新與兩端機制
+### G16 × I2C：工程設定
 
 #### 配對工程、接線與映像
 
@@ -1247,141 +272,18 @@ flowchart LR
 | 資料介面 | I2C framed ISP；0x20／100 kHz 為範例值，Boot／App／BIN／Tool 必須一致 |
 | RAM 交接 | `0xFF710..0xFF71F`；返回 Boot request：`0xFF71C` |
 
-- Bridge SCL P62 接 device SCL P60；SDA P63 接 P61。共地並使用電壓相容的上拉；Tool 填未左移的 7-bit 0x20。
-- 獨立診斷 UART TX P03／RX P04，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；Host 必須宣告所選 I2C port／rate；使用 I2C ISP，不能選 G16 Reference read-only。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **I2C TAB：7-bit address 0x20、100 kHz**，選實接 Bridge port，Workflow 選 **I2C ISP**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `RL78_G16_ISP_Boot_loader_I2C_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。更新完成會釋放 device bus，保留 Host COM；Host counter 不可用時仍獨立標示 UNAVAILABLE。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- ISR 只處理接收與周邊狀態，主迴圈才解碼。framed control 為 10-byte header、0..96-byte payload、LE32 CRC32；先檢查 frame extent、CRC、request type、sequence，再交給 `IspDeviceProcess()`。
-- `METADATA 0x03` 依 offset 暫存完整 256 bytes；`START 0x04` 核對 target、介面、App 起點／容量、size、IRQ ABI 與 installed App 的版本政策，建立新的更新 session。
-- I2C request 以 STOP 分隔；讀取固定 111-byte window，byte0 為 `00 busy`／`A5 ready`，其後為完整 framed reply 與 FF padding。I2C bus ACK 只代表 bus 接收；命令結果由 framed reply status 判斷。完整回覆、最終 NACK 與 STOP 都完成後才執行 pending reset；放棄／逾時的 App 回覆取消待執行動作。
-- `WRITE 0x05` 帶 LE32 offset 與最多 64 image bytes；必須等於 next offset、符合區塊與尾塊長度、App 範圍及 Metadata 重疊內容，通過後才交給 Flash backend。成功 reply 表示該次 session 接受；完整映像仍待 END 驗證。
-- RL78 由所屬 MCU 的 Flash driver 執行 App 區擦寫；Boot 與尾端 1 KiB 保留區不在可更新範圍。
-- `END 0x06` 核對完整 size、CRC32、Metadata、入口與 IRQ table；成功回覆完成後才允許重啟，Tool 再核對 APP_READY 與 installed metadata。
-
-```mermaid
-flowchart LR
-    accTitle: G16 I2C Boot receive and validation
-    accDescr: Validate the frame and metadata before writing only the App region; verify the complete image before reply, reset and App confirmation.
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["I2C 接收<br/>主迴圈解析"] --> FRAME{"header / sequence / CRC32<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["WRITE / offset / data"] --> VALID{"offset / 長度 / Metadata<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["完整成功 reply 完成"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 提供 INFO、PING 20、ECHO 21、STATS 22，以及依 capability 開放的診斷；Flash 命令由 Boot 執行。
-- **ENTER `0x02`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    accTitle: G16 I2C App return to Boot
-    accDescr: Initialize with preserved handoff RAM; serve read-only commands; return to Boot only after a valid ENTER reply, final NACK and STOP complete.
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 02 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"reply 完整讀取<br/>最終 NACK / STOP?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>0xFF71C"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 02| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率及 7-bit address／上拉；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[串列共用封包／INFO／Status](https://released.github.io/slide_boot_loader_for_RL78/serial-device.html#guide-serial-device-5)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RL78/porting.html#guide-porting-5)。
-
-<!-- G16_I2C_MEASURED_BEGIN -->
-<a id="g16-i2c-update-measurements"></a>
-
-#### G16 I2C App 更新量測
-
-配對接線、操作步驟與 Boot／App 流程見 [G16 × I2C](https://released.github.io/slide_boot_loader_for_RL78/i2c-device.html#upgrade-g16-i2c)。
-
-- Device：R5F121BCAFP，HOCO／CPU 16 MHz；F24 bridge；I2C 100 kHz／7-bit 0x20；Host Link 115200。Tool 0.1.0.139，Host FW 1.8.1 build 20261023。
-- 兩份報告與對應 BIN 的長度、CRC32 相符，映像及來源報告由 SHA256 識別。START／END 成功、完整接受 bytes、APP_READY 與全部 256-byte installed metadata 均已確認。
-- 獨立 UART0 擷取有兩次 boot-validated／update completed 與後續 counter；唯讀 metadata 回覆與兩份 BIN 的 256 bytes 分別相符。
-
-| 映像 | Bytes | Write 秒 | END CRC 秒 | App 確認秒 | 總秒數 | 報告 |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| 原始 App | 12116 | 20.736 | 0.356 | 1.992 | 23.959 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/g16_i2c_12116b.html) |
-| 23 KiB | 23552 | 40.147 | 0.539 | 2.039 | 43.606 | [PASS 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/g16_i2c_23552b.html) |
-
-- 最大完整 App BIN 為 23 KiB，範圍至 `0x07BFF`；Boot 8 KiB 與尾端 `0x07C00..0x07FFF` 保留區不在 App 更新範圍。
-- 第二次更新從執行中的 App 經 ENTER 返回 Boot。UART0 擷取有 ENTER RX，沒有對應 TX trace；Tool 的 Boot 確認與後續更新成功分開記錄，不以此推定回覆遺失原因。
-- Host counter assessment 為 **UNAVAILABLE**，Host Link retry 為 0；本段未觀察到 App 確認 I2C_NACK，仍不能推定所有 bus 計數全程零錯誤。
-- 獨立 Transfer 的本批擷取涵蓋 Discover／INFO、一組 RX／TX、每列 8 bytes，沒有 Flash 命令；PING／ECHO／counters 尚未由此擷取證實。[Discover 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/g16_i2c_transfer.html)
-- 結果限正常更新後 App 確認。UART0 z/Z 人工重置、冷啟動、斷電恢復、其他介面／型號與故障注入另行驗證。
-<!-- G16_I2C_MEASURED_END -->
+- [Tool I2C 操作](https://released.github.io/slide_simple_renesas_isp_tool/i2c.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RL78/i2c-device.html#i2c-boot-flow)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RL78/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RL78/experiments.html#g16-i2c-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RL78/porting.html)。
 
 <!-- DEVICE_UPGRADE_G16_I2C_END -->
 
 <!-- DEVICE_UPGRADE_RH850_CAN_BEGIN -->
 <a id="upgrade-rh850-can"></a>
 
-### RH850 × CAN：App 更新與兩端機制
+### RH850 × CAN：工程設定
 
 #### 配對工程、接線與映像
 
@@ -1396,114 +298,18 @@ flowchart LR
 | 資料介面 | Classical 500K；standard control 0x700／reply 0x701，raw 0x720..0x727（各 8 bytes） |
 | RAM 交接 | `0xFEDFFFF0..0xFEDFFFFF`；返回 Boot request：`signature／request／反碼／owner` |
 
-- Host 與 device 的 CANH 對 CANH、CANL 對 CANL；共地，bus 兩端依實際接線配置終端電阻。 CAN1 TX P10_7／RX P10_6 接板上 CAN0／CN6；CAN4 TX P0_10／RX P0_9 接 CAN1／CN8。Boot／App 的 can_port_config.h 必須啟用同一實接通道；BLDC V2 使用 S7 路由，ASK V3 使用 J20 路由。
-- 獨立診斷 UART TX P0_2／RX 依板件 UART0 接線，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；F24 Host App 需宣告 Classical burst bit12。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **CAN TAB：CAN，Nominal 500K**，選實接 Bridge port，Workflow 選 **CAN Upgrade**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `Sample_Project_RH850_S1_Boot_loader_CAN_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。CAN_STOP ACK 後會釋放 device bus，保留 Host COM；STOP 失敗保留 cleanup warning。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- CAN RX IRQ／RAM queue → 主迴圈解析；不在 ISR 內驗證映像或執行 Flash。
-- Metadata 以 `RESET 0x0A → 64 筆 METADATA 0x08 → SEAL 0x09` 分段暫存；完整 256 bytes 的 CRC、identity、介面、分區與 IRQ 契約先通過，`START 0x02` 才接受更新 session。
-- `BLOCK_BEGIN 0x0B` 帶 offset 與 block CRC32，接著接收以 raw ID 低三位作段索引，收齊最多八段；尾塊依有效長度收齊，最末段可為 4 bytes，`BLOCK_COMMIT 0x0C` 核對 offset、完整性、CRC 與已封存 Metadata 後才提交 backend。
-- 64-byte 區塊併入 256-byte RAM page；page 滿或映像結尾才送 FCL，尾頁補 FF。COMMIT ACK 是 session 接受，未滿 page 時資料仍可能在 RAM。
-- 即時前一個已提交區塊的合法重播只回覆確認，不再次擦寫；其他 offset、衝突資料與超界寫入回覆錯誤。Tool 的既有有界重試與人工重新開始是不同操作。
-- `END 0x04` 確認完整 size、CRC32、Metadata 與 App 入口／IRQ；通過後才走更新完成與重啟。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["CAN 接收<br/>主迴圈解析"] --> FRAME{"ID / mode / 長度<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["BEGIN / raw / COMMIT"] --> VALID{"offset / 段完整性 / CRC32<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["回覆成功結果"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 回覆 INFO／installed 狀態，Flash 命令由 Boot 執行。
-- **ENTER `0x06`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 06 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"成功回覆完整送出?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>signature／request／反碼／owner"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 06| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[CAN 協定與映像](https://released.github.io/slide_boot_loader_for_RH850/reference.html#guide-reference-10)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RH850/porting.html#rh850-startup-handoff)。
+- [Tool CAN 操作](https://released.github.io/slide_simple_renesas_isp_tool/can-update.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RH850/can-device.html#guide-can-device-4)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RH850/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RH850/experiments.html#rh850-can-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RH850/porting.html)。
 
 <!-- DEVICE_UPGRADE_RH850_CAN_END -->
 
 <!-- DEVICE_UPGRADE_RH850_CAN_FD_BEGIN -->
 <a id="upgrade-rh850-can-fd"></a>
 
-### RH850 × CAN FD：App 更新與兩端機制
+### RH850 × CAN FD：工程設定
 
 #### 配對工程、接線與映像
 
@@ -1518,106 +324,11 @@ flowchart LR
 | 資料介面 | nominal 500K、data 2M、BRS；standard control 0x700／reply 0x701，raw 0x720（64 bytes） |
 | RAM 交接 | `0xFEDFFFF0..0xFEDFFFFF`；返回 Boot request：`signature／request／反碼／owner` |
 
-- Host 與 device 的 CANH 對 CANH、CANL 對 CANL；共地，bus 兩端依實際接線配置終端電阻。 CAN1 TX P10_7／RX P10_6 接板上 CAN0／CN6；CAN4 TX P0_10／RX P0_9 接 CAN1／CN8。Boot／App 的 can_port_config.h 必須啟用同一實接通道；BLDC V2 使用 S7 路由，ASK V3 使用 J20 路由。 收發器與 bus 接線需支援 CAN FD 2 Mbit/s。
-- 獨立診斷 UART TX P0_2／RX 依板件 UART0 接線，115200、8-N-1；terminal 與 binary data link 分開。
-- PC 連接 F24 bridge 的 Host Link UART0，預設 115200；F24 Host App 需宣告 FD burst bit13。
-- 編輯配對工程的 image／IRQ／transport 設定後重新建置 App，Tool 必須重新 Load Update Image 才會取代已快取的舊 bytes。Bridge 只轉送資料，Device Boot 負責 target、Flash 與映像驗證。
-
-#### Simple Renesas ISP Tool 操作步驟
-
-1. 安裝本組合的 Boot HEX；一般換 App 時保留配對 Boot。若需先檢查接線，使用獨立 Transfer 工程並選 Custom Transfer；Transfer 不等於本組合的 Boot／App。
-2. 開啟 Tool，選實接 bridge COM，按 **Open + Probe Host**。核對 Host LIVE 身分與所需能力，不能從 USB-UART 名稱推定 Host 型號。
-3. 設定 **CAN TAB：CAN FD，Nominal 500K、Data 2M**，選實接 Bridge port，Workflow 選 **CAN Upgrade**；速率與安裝的 Boot／App 及 BIN 一致。
-4. **Load Update Image** 載入 `Sample_Project_RH850_S1_Boot_loader_CAN_FD_app_update.bin`。核對 CRC、Device target、介面、App 起點／容量、版本政策與 IRQ ABI；讀取 **BIN Details／Preflight** 排除 blocker。
-5. 按 **Discover Target**。應得到此型號的 Boot 或 App；若為 App，按 **Enter Boot** 後重新確認 Boot。若已在 Boot，直接進入下一步；有效 App 的 Boot 等待窗口會到期，開始前仍核對 live mode。
-6. 按 **Start Device Update**。Tool staging Metadata，再開始傳輸與驗證；傳輸進度 100% 並非 App 已啟動。
-7. 等待 END 成功與重啟後確認。**APP_READY 與全部 256-byte installed metadata 相符**才代表 App 身分與啟動確認完成。
-8. 核對完成提示、JSON／HTML report、UART App 啟動與持續 counter。CAN_STOP ACK 後會釋放 device bus，保留 Host COM；STOP 失敗保留 cleanup warning。
-
-#### Boot 如何接收與驗證 Host raw data
-
-- CAN RX IRQ／RAM queue → 主迴圈解析；不在 ISR 內驗證映像或執行 Flash。
-- Metadata 以 `RESET 0x0A → 64 筆 METADATA 0x08 → SEAL 0x09` 分段暫存；完整 256 bytes 的 CRC、identity、介面、分區與 IRQ 契約先通過，`START 0x02` 才接受更新 session。
-- `BLOCK_BEGIN 0x0B` 帶 offset 與 block CRC32，接著接收一個 FD+BRS、wire DLC15／64-byte raw frame；尾塊傳輸補 FF，但區塊 CRC 與有效寫入長度依實際 image bytes，`BLOCK_COMMIT 0x0C` 核對 offset、完整性、CRC 與已封存 Metadata 後才提交 backend。
-- 64-byte 區塊併入 256-byte RAM page；page 滿或映像結尾才送 FCL，尾頁補 FF。COMMIT ACK 是 session 接受，未滿 page 時資料仍可能在 RAM。
-- 即時前一個已提交區塊的合法重播只回覆確認，不再次擦寫；其他 offset、衝突資料與超界寫入回覆錯誤。Tool 的既有有界重試與人工重新開始是不同操作。
-- `END 0x04` 確認完整 size、CRC32、Metadata 與 App 入口／IRQ；通過後才走更新完成與重啟。
-
-```mermaid
-flowchart LR
-    subgraph AUTHORIZE["接收與更新授權"]
-        direction TB
-        RX["CAN FD 接收<br/>主迴圈解析"] --> FRAME{"ID / mode / 長度<br/>正確?"}
-        FRAME -->|否| E1["拒絕 / 錯誤"]
-        FRAME -->|是| START{"256-byte Metadata<br/>START 契約通過?"}
-        START -->|否| E1
-    end
-    subgraph WRITE["分段資料與 Flash"]
-        direction TB
-        RAW["BEGIN / raw / COMMIT"] --> VALID{"offset / 段完整性 / CRC32<br/>通過?"}
-        VALID -->|否| E2["拒絕本區塊"]
-        VALID -->|是| FLASH["只提交 App backend<br/>回覆接受結果"]
-        FLASH --> MORE{"還有待傳資料?"}
-        MORE -->|是| RAW
-    end
-    subgraph COMPLETE["完成與交接"]
-        direction TB
-        END{"END：size / CRC32<br/>Metadata / IRQ 通過?"} -->|否| E3["錯誤 / 保留 Boot"]
-        END -->|是| ACK["回覆成功結果"]
-        ACK --> RESET["更新標記 / reset<br/>Boot 再驗證與交接"]
-        RESET --> APP["App ready<br/>Tool 核對 installed metadata"]
-    end
-    AUTHORIZE -->|START 通過| WRITE
-    WRITE -->|全部資料接受| COMPLETE
-```
-
-#### App 的命令與返回 Boot
-
-- App 回覆 INFO／installed 狀態，Flash 命令由 Boot 執行。
-- **ENTER `0x06`** 是 Tool 的返回 Boot 命令；只有符合命令與回覆完成條件的 ENTER 才執行返回 Boot；UART0 z/Z 為另一個本機操作。
-- RAM marker 是一次性交接資料；linker 必須保留此區，startup 的 stack／BSS／data／ECC 初始化避開此區。冷上電不可假設 RAM 值有效，仍由 Boot 驗證 Flash 後重建交接。
-- 前景 UART0 **z/Z 是正常 MCU reset**，需要 bus idle／沒有更新；不等同 ENTER 的強制停留 Boot。有效 App 可在 Boot 檢查後重新啟動。
-
-```mermaid
-flowchart LR
-    subgraph STARTUP["App 啟動"]
-        direction TB
-        S["保留交接 RAM"] --> H{"handoff / 板端條件<br/>符合?"}
-        H -->|否| RECOVER["Boot recovery"]
-        H -->|是| INIT["消費標記<br/>初始化周邊 / IRQ"]
-    end
-    subgraph FOREGROUND["App 前景服務"]
-        direction TB
-        LOOP["工作負載 / 診斷 UART"] --> CMD{"收到命令?"}
-        CMD -->|INFO / 唯讀| INFO["身分 / ready / installed 回覆"]
-        INFO --> LOOP
-        CMD -->|其他命令| OTHER["處理或回覆錯誤<br/>App 不擦寫自身"]
-        OTHER --> LOOP
-    end
-    subgraph ENTER["返回 Boot"]
-        direction TB
-        V{"ENTER 06 長度<br/>與狀態符合?"} -->|否| DEFER["保留 App / 取消待執行動作"]
-        V -->|是| ACK{"成功回覆完整送出?"}
-        ACK -->|否| DEFER
-        ACK -->|是| MARK
-        MARK["寫返回 Boot request<br/>signature／request／反碼／owner"] --> RESET["MCU reset<br/>Boot 等待更新"]
-    end
-    STARTUP -->|初始化完成| FOREGROUND
-    FOREGROUND -->|ENTER 06| ENTER
-    ENTER -->|條件未成立| FOREGROUND
-```
-
-#### 完成條件、錯誤與程式對照
-
-| 現象／階段 | 判讀與處理 |
-| --- | --- |
-| Discover 無回覆 | 核對所選 MCU／周邊、Boot 或 Transfer 身分、供電、共地、pin／port、速率；先保留原始錯誤 |
-| START／Metadata 被拒絕 | 尚未通過該 session 的映像契約；核對 exact BIN、live mode、版本政策與相容 Boot |
-| 傳輸中失敗／取消 | 保留最後確認 stage／offset 與 Flash status；不從百分比猜測續傳，不手動重送 erase／START／END |
-| END／EOT 通過但 App 未確認 | Flash 驗證與 App 啟動分開；保留報告並唯讀 Discover，核對 UART、startup、RAM 交接、clock 與 IRQ，不盲目 RUN／重寫 |
-| App confirmed | installed identity／Metadata 與 BIN 相符，UART 啟動及持續工作另作觀察；不延伸成冷啟動、斷電恢復或全部故障情境的保證 |
-| 程式入口 | Boot／App 各自的 `custom_func.c`：`hardware_init()`／`loop()`；`boot_app_handoff.h`、`image_metadata_config.h` 與各自 `hal/isp/` |
-
-進一步欄位定義：[CAN 協定與映像](https://released.github.io/slide_boot_loader_for_RH850/reference.html#guide-reference-10)；[RAM／startup 與 Flash](https://released.github.io/slide_boot_loader_for_RH850/porting.html#rh850-startup-handoff)。
+- [Tool CAN FD 操作](https://released.github.io/slide_simple_renesas_isp_tool/can-fd.html)提供接線、Discover、Enter Boot、更新與結果確認。
+- [Boot 接收與驗證機制](https://released.github.io/slide_boot_loader_for_RH850/can-fd-device.html#can-fd-device-engineering)集中描述此介面的接收、CRC、更新命令與完成回覆。
+- [App 返回 Boot 與 RAM 交接](https://released.github.io/slide_boot_loader_for_RH850/architecture.html#boot-app-handoff)說明 ENTER 與 UART0 z/Z 的差異；實際保留位址以本節表格為準。
+- [此組合的實驗資料與限制](https://released.github.io/slide_boot_loader_for_RH850/experiments.html#rh850-can-fd-update-measurements)與工程設定分開呈現，沒有實板紀錄的組合不推定為已驗證。
+- 程式入口為配對工程的 `custom_func.c`：`hardware_init()`／`loop()`；移植修改位置見 [Boot／App 移植](https://released.github.io/slide_boot_loader_for_RH850/porting.html)。
 
 <!-- DEVICE_UPGRADE_RH850_CAN_FD_END -->
+

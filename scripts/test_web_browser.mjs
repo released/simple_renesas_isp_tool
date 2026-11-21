@@ -45,7 +45,7 @@ assert.ok(chrome,'installed browser required');
 const profile=join(out,'profile');await mkdir(profile);
 const child=spawn(chrome,['--headless=new','--disable-default-apps','--disable-background-networking','--disable-gpu','--no-first-run','--disable-extensions','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
-async function wait(test,label,timeout=45000){const end=Date.now()+timeout;while(Date.now()<end){if(await test())return;await pause(100);}throw Error('Timeout: '+label);}
+async function wait(test,label,timeout=45000){const end=Date.now()+timeout;while(Date.now()<end){try{if(await test())return;}catch(error){if(!/Inspected target navigated or closed|Execution context was destroyed|Cannot find context/.test(String(error)))throw error;}await pause(100);}throw Error('Timeout: '+label);}
 let socket;let next=0;const pending=new Map();const errors=[];const results=[];const navigation=[];
 async function call(method,params={}){const id=++next;return new Promise((resolve,reject)=>{pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});}
 async function evaluate(expression){const value=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(value.exceptionDetails)throw Error(JSON.stringify(value.exceptionDetails));return value.result.value;}
@@ -66,11 +66,15 @@ try{
   const paths=process.argv.slice(3);
   for(const path of paths.length?paths:['/','/slide_boot_loader_for_RL78/','/slide_simple_renesas_isp_tool/','/__rh850_serial__/','/__rh850_can__/']){
     const requested=new URL(path,base);let expected=new URL(requested);
-    const legacy=/^\/(slide_(?:boot_loader_for_(?:RL78|RH850)|simple_renesas_isp_tool))\/(?:index.html)?$/.exec(requested.pathname);
+    const legacy=/^\/(slide_(?:boot_loader_for_(?:RL78|RH850)|simple_renesas_isp_tool))\/(?:[a-z-]+\.html)?$/.exec(requested.pathname);
     if(legacy&&requested.hash){
       const map=JSON.parse(await readFile(join(web,legacy[1],'guide-map.json'),'utf8'));
       const item=map.aliases[decodeURIComponent(requested.hash.slice(1))];
-      if(item){expected=new URL(item.page,requested);expected.hash=item.anchor;}
+      const name=requested.pathname.split('/').at(-1)||'index.html';
+      const current=await readFile(join(web,legacy[1],name.replace(/\.html$/,'.md')),'utf8');
+      if(item&&!current.includes('id="'+decodeURIComponent(requested.hash.slice(1))+'"')){
+        expected=new URL(item.guide?'../'+item.guide+'/'+item.page:item.page,requested);expected.hash=item.anchor;
+      }
     }
     await call('Emulation.setDeviceMetricsOverride',{width:1366,height:900,deviceScaleFactor:1,mobile:false});
     await call('Page.navigate',{url:base+path});
@@ -100,6 +104,19 @@ try{
     await wait(()=>evaluate("!!document.querySelector('#content h1') && !document.querySelector('.loading,.render-error')"),'render '+path);
     await wait(()=>evaluate("!document.querySelector('.render-warning') && [...document.querySelectorAll('.mermaid')].every(n=>!!n.querySelector('svg'))"),'all Mermaid '+path);
     await evaluate('document.fonts.ready.then(()=>true)');
+    if(!path.includes('__')){
+      const chapters=await evaluate('({count:document.querySelectorAll(".guide-chapters").length,links:document.querySelectorAll(".guide-chapters a").length,current:document.querySelectorAll(".guide-chapters a[aria-current=page]").length})');
+      assert.equal(chapters.count,1,'one chapter directory on the published runtime');
+      assert.ok(chapters.links>=13&&chapters.current===1,'chapter directory destinations/current page');
+    }
+
+    if(path.includes('slide_boot_loader_for_RL78/architecture.html')){
+      const diagrams=await evaluate('[...document.querySelectorAll(".mermaid svg")].map(svg=>({title:svg.querySelector("title")?.textContent,description:svg.querySelector("desc")?.textContent}))');
+      assert.equal(diagrams.length,1,'one shared lifecycle diagram');
+      assert.ok(diagrams[0].title&&diagrams[0].description,'diagram has accessible title and description');
+      const ax=await call('Accessibility.getFullAXTree');
+      assert.ok(ax.nodes.some(node=>!node.ignored&&node.name?.value===diagrams[0].title),'lifecycle title exposed in accessibility tree');
+    }
     if(path.includes('#upgrade-g16-i2c')){
       const accessible=await evaluate(`Array.from(document.querySelectorAll('.mermaid svg')).filter(svg=>svg.querySelector('title')?.textContent.startsWith('G16 I2C')).map(svg=>({title:svg.querySelector('title')?.textContent,description:svg.querySelector('desc')?.textContent,labelled:!!svg.getAttribute('aria-labelledby')&&svg.getAttribute('aria-labelledby').split(' ').filter(Boolean).every(id=>!!document.getElementById(id)),described:!!svg.getAttribute('aria-describedby')&&svg.getAttribute('aria-describedby').split(' ').every(id=>!!document.getElementById(id))}))`);
       const ax=await call('Accessibility.getFullAXTree');
@@ -160,14 +177,7 @@ try{
     await evaluate('document.querySelector("#sidebar-toc-btn").click()');
     results.push({path,...data,narrow});console.log('PASS browser',path,data.diagrams,'Mermaid',data.tables,'tables');
     if(/^\/slide_boot_loader_for_(?:RL78|RH850)\/$/.test(path)){
-      const shortcut=await evaluate("[...document.querySelectorAll('#content a')].find(a=>a.textContent.includes('查看更新耗時表'))?.getAttribute('href')");
-      assert.ok(shortcut,'visible timing shortcut');
-      await evaluate("[...document.querySelectorAll('#content a')].find(a=>a.textContent.includes('查看更新耗時表')).click()");
-      const target=new URL(shortcut,base+path);
-      await wait(()=>evaluate('location.pathname==='+JSON.stringify(target.pathname)+' && !!document.getElementById('+JSON.stringify(target.hash.slice(1))+') && !!document.querySelector("#content table")'),'actual timing shortcut '+path);
-      navigation.push({kind:'timing-shortcut',from:path,to:target.pathname+target.hash});
-      await call('Page.navigate',{url:base+path});
-      await wait(()=>evaluate('location.pathname==='+JSON.stringify(path)+' && !!document.querySelector("#content h1") && !![...document.querySelectorAll("#content a")].find(a=>a.textContent.includes("查看更新耗時表"))'),'return to overview');
+      assert.ok(await evaluate('!!document.querySelector("#content a[href=\\"experiments.html\\"]")'),'direct experiments owner');
     } else if(/^\/slide_boot_loader_for_(?:RL78|RH850)\/[a-z-]+\.html$/.test(new URL(path,base).pathname)){
       const peerPath=path.includes('for_RH850')?'slide_boot_loader_for_RL78':'slide_boot_loader_for_RH850';
       const peerLink=await evaluate('[...document.querySelectorAll("#content a")].find(a=>a.getAttribute("href")?.startsWith('+JSON.stringify('../'+peerPath+'/')+') && a.hash)?.getAttribute("href")');
@@ -180,13 +190,18 @@ try{
       }
     }
     if(/^\/slide_(?:boot_loader_for_(?:RL78|RH850)|simple_renesas_isp_tool)\/$/.test(path)){
-      const link=await evaluate('document.querySelector("#content a[href$=\\".html\\"]")?.getAttribute("href")');
-      assert.ok(link,'overview chapter link '+path);
-      await evaluate('document.querySelector("#content a[href$=\\".html\\"]").click()');
+      const chapter=path.includes('isp_tool')?'i2c.html':'i2c-device.html';
+      const selector='#content a[href="'+chapter+'"]';
+      const link=await evaluate('document.querySelector('+JSON.stringify(selector)+')?.getAttribute("href")');
+      assert.ok(link,'first-visit I2C chapter link '+path);
+      await evaluate('document.querySelector('+JSON.stringify(selector)+').focus()');
+      assert.equal(await evaluate('document.activeElement?.getAttribute("href")'),link,'keyboard focus on interface entry');
+      await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+      await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
       const target=new URL(link,base+path);
       const markdown=target.pathname.split('/').at(-1).replace(/\.html$/,'.md');
       await wait(()=>evaluate('location.pathname==='+JSON.stringify(target.pathname)+' && document.body.getAttribute("data-markdown")==='+JSON.stringify(markdown)+' && !!document.querySelector("#content h1")'),'actual overview chapter click '+path);
-      navigation.push({from:path,to:target.pathname});
+      navigation.push({kind:'keyboard-interface-entry',from:path,to:target.pathname});
     }
   }
   assert.deepEqual(errors,[],'browser console exceptions/errors');

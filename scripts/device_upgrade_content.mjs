@@ -32,8 +32,8 @@ export async function deviceUpgradeContent(tool) {
     assert.ok(profile.body.includes('id="upgrade-' + profile.key + '"'), 'stable path anchor');
     assert.ok(profile.body.includes('`' + profile.boot + '`'), 'exact Boot project');
     assert.ok(profile.body.includes('`' + profile.app + '`'), 'exact App project');
-    assert.equal((profile.body.match(/```mermaid/g) || []).length, 2,
-      'independent Boot and App diagrams ' + profile.key);
+    assert.equal((profile.body.match(/```mermaid/g) || []).length, 0,
+      'model configuration links the shared mechanism instead of copying diagrams ' + profile.key);
   }
   const index = platform => {
     const rows = ['<a id="device-upgrade-paths"></a>', '', '## 依型號與周邊更新 App', '',
@@ -51,15 +51,23 @@ export async function deviceUpgradeContent(tool) {
     rows.push('', '「—」表示本指南沒有該型號與介面的配對工程。');
     return rows.join('\n');
   };
-  const chapter = (platform, page) => {
+  const chapter = (platform, page, placement='full') => {
     const selected = profiles.filter(profile => profile.platform === platform && profile.page === page);
-    if (!selected.length) return '';
-    const rows = ['<!-- DEVICE_UPGRADE_PATHS_BEGIN -->', '## 依型號閱讀完整更新流程', '',
-      '| 型號與介面 | 章節 |', '| --- | --- |'];
-    for (const profile of selected) {
-      rows.push(`| ${profile.model} / ${profile.bus} | [操作、Boot 與 App](#upgrade-${profile.key}) |`);
+    if (!selected.length) {
+      if(!['can-device','can-fd-device','uart-device','i2c-device','xmodem-device'].includes(page))return '';
+      return '<!-- DEVICE_UPGRADE_PATHS_BEGIN -->\n## MCU 與實板資料\n\n本指南尚未列出此介面的實板更新紀錄；[平台工程設定](serial-device.html#guide-serial-device-1)與下方共用機制仍可查閱。工程資訊與硬體驗證分開判讀。\n<!-- DEVICE_UPGRADE_PATHS_END -->';
     }
-    return rows.join('\n') + '\n\n' + selected.map(profile => profile.body).join('\n\n') +
+    const rows = ['<!-- DEVICE_UPGRADE_PATHS_BEGIN -->', '## MCU 工程與實驗索引', '',
+      '工程設定與實板紀錄分開列出；每個入口直接到達對應主題。', '',
+      '| MCU／料號 | 工程設定 | 實驗資料 |', '| --- | --- | --- |'];
+    for (const profile of selected) {
+      const measured = publicUpgradeKeys.includes(profile.key);
+      const anchor = !measured ? 'experiment-scope' : profile.bus.startsWith('CAN')
+        ? (platform === 'RL78' ? 'device-update-timing' : 'rh850-'+(profile.bus==='CAN'?'can':'can-fd')+'-update-measurements')
+        : profile.key + '-update-measurements';
+      rows.push(`| ${profile.model}／${profile.part} | [配對工程與配置](#upgrade-${profile.key}) | [${measured ? '實板紀錄與限制' : '工程資料；未列實板更新紀錄'}](experiments.html#${anchor}) |`);
+    }
+    return rows.join('\n') + '\n\n' + (placement==='index'?'':selected.map(profile => profile.body).join('\n\n')) +
       '\n<!-- DEVICE_UPGRADE_PATHS_END -->';
   };
   const measuredAssets = async (web, output) => {
@@ -91,7 +99,7 @@ export async function deviceUpgradeContent(tool) {
       const rows = Object.entries(summary).map(([key, value]) =>
         `<tr><th>${escape(key)}</th><td><pre>${escape(typeof value === 'object' ? JSON.stringify(value, null, 2) : value)}</pre></td></tr>`).join('\n');
       await output(join(root, name.replace('.json', '.html')),
-        `<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>F13 I2C 更新量測摘要</title><style>body{font:16px system-ui;margin:2rem;max-width:70rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:.6rem;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}th{width:15rem;background:#eee}@media(max-width:600px){body{margin:1rem}table,tbody,tr,th,td{display:block;width:auto}tr{margin:.8rem 0}th{border-bottom:0}}</style><h1>F13 I2C 更新量測摘要</h1><p><a href="../i2c-device.html#f13-i2c-update-measurements">更新時間表與條件</a></p><p>來源報告的選定欄位；映像與來源報告由 SHA256 識別。</p><table>${rows}</table></html>\n`);
+        `<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>F13 I2C 更新量測摘要</title><style>body{font:16px system-ui;margin:2rem;max-width:70rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:.6rem;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}th{width:15rem;background:#eee}@media(max-width:600px){body{margin:1rem}table,tbody,tr,th,td{display:block;width:auto}tr{margin:.8rem 0}th{border-bottom:0}}</style><h1>F13 I2C 更新量測摘要</h1><p><a href="../experiments.html#f13-i2c-update-measurements">更新時間表與條件</a></p><p>來源報告的選定欄位；映像與來源報告由 SHA256 識別。</p><table>${rows}</table></html>\n`);
     }
   };
   return {profiles, index, chapter, measuredAssets};

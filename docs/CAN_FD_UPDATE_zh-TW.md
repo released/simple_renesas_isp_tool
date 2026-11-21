@@ -191,7 +191,7 @@ CRC／診斷欄位見 [Custom Transfer診斷](https://released.github.io/slide_s
 - Tool／MCU CAN host：負責傳輸。
 - MCU CAN device Boot：負責映像驗證與 Flash 寫入。
 - F24 證據範圍：一般 App 寫入、END CRC、APP_READY、UART counter、初次 Boot 更新，以及 App → Enter Boot → 更新 → App 確認；重啟後七項 Host 錯誤計數差值均為零。
-- RH850：沿用相同 Tool 操作；EVM 接線、256-byte Flash page 與實測耗時見 [RH850工程](https://released.github.io/slide_boot_loader_for_RH850/can-device.html#guide-can-device-5)／[更新耗時](https://released.github.io/slide_boot_loader_for_RH850/app-development.html#rh850-update-timing)。
+- RH850：沿用相同 Tool 操作；EVM 接線、256-byte Flash page 與實測耗時見 [RH850工程](https://released.github.io/slide_boot_loader_for_RH850/can-fd-device.html#guide-can-device-5)／[更新耗時](https://released.github.io/slide_boot_loader_for_RH850/experiments.html#rh850-update-timing)。
 - 未涵蓋範圍：長時間連續更新、queue 壓力與故障／斷電恢復。
 
 ### 準備與設定

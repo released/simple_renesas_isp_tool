@@ -24,7 +24,7 @@ function outline(source){
 }
 function aliasesScript(aliases,pages){
   const routes='Object.assign(Object.create(null),'+JSON.stringify(aliases).replaceAll('<','\\u003c')+')';
-  return `// Generated from guide-map.json; routes stay within this guide.\n(function(){\n  "use strict";\n  window.webGuideNavigation=${JSON.stringify(pages).replaceAll('<','\\u003c')};\n  var routes=${routes};\n  function destination(item){\n    var target=new URL(item.page,location.href);\n    if(target.origin!==location.origin)return null;\n    target.search=location.search;target.hash=item.anchor;return target;\n  }\n  function route(){\n    var hash;try{hash=decodeURIComponent(location.hash.slice(1));}catch(e){return;}\n    if(document.getElementById(hash))return;\n    var item=routes[hash];if(!item)return;\n    var target=destination(item);if(!target)return;\n    if(target.pathname!==location.pathname||target.hash!==location.hash)location.replace(target.href);\n  }\n  function prepareRoutes(){\n    document.querySelectorAll('#content a[href^="#"]').forEach(function(link){\n      var id;try{id=decodeURIComponent(link.hash.slice(1));}catch(e){return;}\n      if(document.getElementById(id)||!routes[id])return;\n      var target=destination(routes[id]);if(target)link.href=target.href;\n    });route();\n  }\n  addEventListener("guide:content-ready",prepareRoutes);\n  addEventListener("guide:ready",prepareRoutes);\n  addEventListener("hashchange",route);\n  if(!document.body.hasAttribute("data-markdown"))route();\n}());\n`;
+  return `// Generated from guide-map.json; routes stay within the declared guides.\n(function(){\n  "use strict";\n  window.webGuideNavigation=${JSON.stringify(pages).replaceAll('<','\\u003c')};\n  var routes=${routes};\n  function destination(item){\n    var target=new URL(item.guide?"../"+item.guide+"/"+item.page:item.page,location.href);\n    if(target.origin!==location.origin)return null;\n    target.search=location.search;target.hash=item.anchor;return target;\n  }\n  function route(){\n    var hash;try{hash=decodeURIComponent(location.hash.slice(1));}catch(e){return;}\n    if(document.getElementById(hash))return;\n    var item=routes[hash];if(!item)return;\n    var target=destination(item);if(!target)return;\n    if(target.pathname!==location.pathname||target.hash!==location.hash)location.replace(target.href);\n  }\n  function prepareChapters(){\n    if(document.querySelector('.guide-chapters'))return;\n    var brand=document.querySelector('.sidebar-brand');if(!brand)return;\n    var nav=document.createElement('nav');nav.className='guide-chapters';\n    nav.setAttribute('aria-label','指南章節');nav.style.padding='8px 0';\n    Object.keys(window.webGuideNavigation).forEach(function(page){\n      var link=document.createElement('a');link.href=page+'.html';link.textContent=window.webGuideNavigation[page].title;\n      link.style.display='block';link.style.padding='4px 3px';link.style.fontSize='0.85rem';link.style.color='inherit';\n      if(new URL(link.href).pathname===location.pathname||(page==='index'&&location.pathname.endsWith('/'))){\n        link.setAttribute('aria-current','page');link.style.fontWeight='bold';\n      }\n      nav.appendChild(link);\n    });\n    brand.parentNode.insertBefore(nav,brand.nextSibling);\n  }\n  function prepareRoutes(){\n    prepareChapters();\n    document.querySelectorAll('#content a[href^="#"]').forEach(function(link){\n      var id;try{id=decodeURIComponent(link.hash.slice(1));}catch(e){return;}\n      if(document.getElementById(id)||!routes[id])return;\n      var target=destination(routes[id]);if(target)link.href=target.href;\n    });route();\n  }\n  addEventListener("guide:content-ready",prepareRoutes);\n  addEventListener("guide:ready",prepareRoutes);\n  addEventListener("hashchange",route);\n  if(!document.body.hasAttribute("data-markdown"))route();\n}());\n`;
 }
 let baseline;
 if(mode==='--migrate'){
@@ -63,6 +63,25 @@ for(const [site,config] of Object.entries(layout)){
           map.aliases[slug(heading)]={page:page+'.html',anchor:ids[platform-2]};
         }
       }
+    }
+    // Move legacy implicit-heading bookmarks with their sole remaining owner.
+    const documents=new Map();
+    for(const page of Object.keys(config.pages))documents.set(page,await readFile(join(root,page+'.md'),'utf8'));
+    function contains(md,id){
+      if(md.includes('id="'+id+'"'))return true;
+      const counts=new Map();
+      for(const [,heading] of md.replace(/^```[^]*?^```\s*$/gm,'').matchAll(/^#{1,6}\s+(.+)$/gm)){
+        const key=slug(heading.replace(/<[^>]*>/g,'').replace(/[*`]/g,''));
+        const count=(counts.get(key)||0)+1;counts.set(key,count);
+        if(id===(count===1?key:key+'-'+count))return true;
+      }
+      return false;
+    }
+    for(const item of Object.values(map.aliases)){
+      if(item.guide||item.page==='basic_uart_i2c/')continue;
+      if(contains(documents.get(item.page.replace(/\.html$/,''))||'',item.anchor))continue;
+      const matches=[...documents].filter(([,md])=>contains(md,item.anchor));
+      if(matches.length===1)item.page=matches[0][0]+'.html';
     }
     Object.assign(map.aliases,config.legacyRedirects||{});
     await writeFile(join(root,'guide-map.json'),JSON.stringify(map,null,2)+'\n');
