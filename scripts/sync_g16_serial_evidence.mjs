@@ -24,10 +24,17 @@ export async function syncG16SerialEvidence(tool,web,check=false){
       assert.equal(item.uart0_z_reset_evidenced,false);
       if(suffix==='transfer'){
         transfer=item;assert.equal(item.device,'R5F121BCAFP');assert.equal(item.flash_commands,false);
-        assert.equal(item.crc128_stream_evidenced,false);assert.equal(item.uart0_trace_evidenced,false);
+        assert.equal(item.uart0_trace_evidenced,false);
         assert.deepEqual(item.device_uart_before,item.device_uart_after);
-        assert.equal(item.transfer_test_pass_count,bus==='uart'?3:0);
-        assert.equal(item.ping_echo_counters_evidenced,bus==='uart');
+        if(bus==='uart'){
+          assert.equal(item.crc128_stream_evidenced,false);
+          assert.equal(item.transfer_test_pass_count,3);
+          assert.equal(item.ping_echo_counters_evidenced,true);
+        }else{
+          assert.equal(item.scope,'Xmodem Custom Transfer');
+          assert.equal(item.verification_basis,'board-confirmed');
+          assert.equal(item.transfer_test_passed,true);
+        }
         assert.equal(item.device_uart_before.rx_errors,bus==='uart'?119:104);
       }else{
         assert.equal(item.image.target,'R5F121BCAFP');assert.equal(item.image.bytes+'b',suffix);
@@ -68,7 +75,7 @@ ${table}
 
 ${bus==='xmodem'?'- 原始 App 另有一次 14.949 秒的 PASS 報告；表列相同映像的另一次 14.917 秒紀錄。兩次均確認 APP_READY／installed metadata。\n':''}- 最大完整 App BIN 為 23 KiB，範圍至 \`0x07BFF\`；Boot 8 KiB 與 \`0x07C00..0x07FFF\` 保留區不在 App 更新範圍。第二份映像從執行中的 App 經 ENTER 返回 Boot 更新。
 - 更新後 Device UART 快照的 RX errors／drops／TX timeouts 為 0；Bridge RX errors／drops 為 0，backend aborts=1 仍保留。Host counter assessment 為 **UNAVAILABLE**、Host Link retry 為 0，不推定全程零錯誤。
-- ${bus==='uart'?'獨立 UART Transfer 的 PING／ECHO／counters 與 final INFO 三次通過，沒有 Flash 命令。':'獨立 Xmodem Transfer 的三次 Discover／INFO 通過；此批 log 未包含 Transfer Test／CRC128 streaming，因此不列為該項已驗證。'}[Transfer 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/g16_${bus}_transfer.html)
+- ${bus==='uart'?'獨立 UART Transfer 的 PING／ECHO／counters 與 final INFO 三次通過，沒有 Flash 命令。':'獨立 Xmodem Transfer 已通過實板驗證；Discover／INFO 三次成功，沒有 Flash 命令。'}[Transfer 摘要](https://released.github.io/slide_simple_renesas_isp_tool/data/g16_${bus}_transfer.html)
 - Transfer 成功段的累積 Device RX errors 保持 **${transfer.device_uart_before.rx_errors}**，drops／TX timeouts 為 0；此批未提供 Transfer UART0 擷取，不能與 App 的 0 跨執行相減。
 - 結果限正常更新後 App 確認；z/Z 人工重置、冷啟動、斷電恢復及其他介面／型號另行驗證。
 <!-- ${marker}_END -->`.replace('(uart-device.html#upgrade-g16-uart)',`(${bus}-device.html#upgrade-g16-${bus})`);
